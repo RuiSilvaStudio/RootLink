@@ -1,0 +1,15 @@
+[project]
+name = "rootlink-backend"
+version = "0.1.0"
+description = "RootLink backend — community platform for gardeners, makers & homesteaders"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
