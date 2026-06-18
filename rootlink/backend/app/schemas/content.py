@@ -28,8 +28,33 @@ class ContentResponse(BaseModel):
 
 
 class SearchResult(BaseModel):
-    content: ContentResponse
+    content: "SearchContentResponse"
     score: float
+
+
+class SearchContentResponse(BaseModel):
+    """Flexible content response for unified search — uses str instead of enums
+    so groups, plants, articles, events, courses, and videos can all be returned."""
+    id: int
+    title: str
+    url: str | None = None
+    content_type: str
+    category: str
+    summary: str | None = None
+    full_text: str | None = None
+    image_url: str | None = None
+    source: str
+    source_url: str | None = None
+    created_by: int | None = None
+    published_at: datetime | None = None
+    crawled_at: datetime | None = None
+    created_at: datetime | None = None
+    verification_status: str = "unreviewed"
+    validated_by: int | None = None
+    cross_referenced_sources: list[int] | None = None
+
+
+SearchResult.model_rebuild()
 
 
 class SearchResponse(BaseModel):

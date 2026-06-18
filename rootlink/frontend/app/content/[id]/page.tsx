@@ -2,9 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { ArrowLeft, ExternalLink, Bookmark, Calendar, Globe, MessageSquare, Send, Trash2 } from "lucide-react";
+import { ExternalLink, Bookmark, Calendar, Globe, MessageSquare, Send, Trash2, Leaf, Clock, User } from "lucide-react";
 import { api } from "@/lib/api";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useLocale } from "@/lib/locale-context";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Avatar } from "@/components/ui/Avatar";
 
 function findComment(comments: any[], id: number): any | null {
   for (const c of comments) {
@@ -26,26 +30,31 @@ function CommentThread({ comment, onReply, onDelete, currentUserId, depth = 0 }:
 }) {
   const { t } = useLocale();
   return (
-    <div className={`${depth > 0 ? "ml-6 pl-4 border-l-2 border-stone-200" : ""}`}>
-      <div className="py-3">
-        <div className="flex items-center gap-2 text-sm text-stone-500 mb-1">
-          <span className="font-medium text-stone-700">User #{comment.user_id}</span>
-          <span>·</span>
-          <span>{comment.created_at ? new Date(comment.created_at).toLocaleDateString() : ""}</span>
+    <div className={`${depth > 0 ? "ml-6 pl-4 border-l-2 border-primary-100" : ""}`}>
+      <div className="py-4">
+        <div className="flex items-center gap-2.5 mb-1.5">
+          <Avatar fallback={`User #${comment.user_id}`} size="sm" />
+          <div>
+            <span className="text-sm font-medium text-stone-700">User #{comment.user_id}</span>
+            <span className="text-xs text-stone-400 ml-2">
+              {comment.created_at ? new Date(comment.created_at).toLocaleDateString() : ""}
+            </span>
+          </div>
         </div>
-        <p className="text-stone-700">{comment.body}</p>
-        <div className="flex gap-3 mt-1">
+        <p className="text-stone-700 text-sm ml-12">{comment.body}</p>
+        <div className="flex gap-3 ml-12 mt-1.5">
           <button
             onClick={() => onReply(comment.id)}
-            className="text-xs text-primary-600 hover:underline"
+            className="text-xs text-primary-600 hover:text-primary-700 font-medium transition"
           >
             {t("content.reply")}
           </button>
           {currentUserId === comment.user_id && (
             <button
               onClick={() => onDelete(comment.id)}
-              className="text-xs text-red-500 hover:underline"
+              className="text-xs text-red-500 hover:text-red-600 font-medium transition"
             >
+              <Trash2 className="w-3 h-3 inline mr-0.5" />
               {t("content.delete")}
             </button>
           )}
@@ -135,103 +144,118 @@ export default function ContentDetailPage() {
   };
 
   if (loading) {
-    return <div className="max-w-3xl mx-auto px-4 py-8 text-stone-500">{t("content.loading")}</div>;
+    return (
+      <div className="max-w-3xl mx-auto px-4 sm:px-8 py-12 space-y-6">
+        <div className="h-6 w-48 bg-primary-100 rounded-lg animate-pulse" />
+        <div className="space-y-3">
+          <div className="h-10 w-3/4 bg-primary-100 rounded-lg animate-pulse" />
+          <div className="h-4 w-full bg-primary-100 rounded animate-pulse" />
+          <div className="h-4 w-5/6 bg-primary-100 rounded animate-pulse" />
+        </div>
+      </div>
+    );
   }
 
   if (!content) {
-    return <div className="max-w-3xl mx-auto px-4 py-8 text-stone-500">{t("content.not_found")}</div>;
+    return (
+      <div className="max-w-3xl mx-auto px-4 sm:px-8 py-20 text-center">
+        <Leaf className="w-12 h-12 text-stone-300 mx-auto mb-4" />
+        <p className="text-stone-500">{t("content.not_found")}</p>
+      </div>
+    );
   }
 
   const replyToComment = replyTo ? findComment(comments, replyTo) : null;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <a href="/search" className="text-sm text-primary-600 hover:underline flex items-center gap-1 mb-6">
-        <ArrowLeft className="w-4 h-4" /> {t("content.back_to_search")}
-      </a>
+    <div className="max-w-3xl mx-auto px-4 sm:px-8 py-12">
+      <Breadcrumbs items={[
+        { label: t("nav.search"), href: "/search" },
+        { label: content.title }
+      ]} />
 
-      <article>
-        <div className="flex gap-2 mb-4 flex-wrap">
+      <article className="mt-6">
+        <div className="flex gap-2 mb-5 flex-wrap">
           {content.verification_status === "community_reviewed" && (
-            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded font-medium">
-              {t("content.community_reviewed")}
-            </span>
+            <Badge variant="green" dot>{t("content.community_reviewed")}</Badge>
           )}
           {content.verification_status === "cross_referenced" && (
-            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-medium">
-              {t("content.cross_referenced")}
-            </span>
+            <Badge variant="blue" dot>{t("content.cross_referenced")}</Badge>
           )}
-          <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded">
-            {content.category}
-          </span>
-          <span className="text-xs bg-stone-100 text-stone-600 px-2 py-0.5 rounded">
-            {content.content_type}
-          </span>
+          <Badge variant="sage">{content.category}</Badge>
+          <Badge variant="stone">{content.content_type}</Badge>
         </div>
 
-        <h1 className="text-3xl font-bold text-stone-800 font-serif mb-4">
+        <h1 className="text-3xl sm:text-4xl font-serif font-bold text-stone-800 leading-tight mb-5">
           {content.title}
         </h1>
 
-        <div className="flex items-center gap-4 text-sm text-stone-500 mb-6">
+        <div className="flex items-center gap-4 text-sm text-stone-500 mb-8 flex-wrap">
           {content.published_at && (
-            <span className="flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
+            <span className="flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-stone-400" />
               {new Date(content.published_at).toLocaleDateString()}
             </span>
           )}
           {content.source_url && (
-            <span className="flex items-center gap-1">
-              <Globe className="w-4 h-4" />
+            <span className="flex items-center gap-1.5">
+              <Globe className="w-4 h-4 text-stone-400" />
               {new URL(content.source_url).hostname}
             </span>
           )}
         </div>
 
         {content.summary && (
-          <p className="text-lg text-stone-700 leading-relaxed mb-6">
-            {content.summary}
-          </p>
+          <div className="bg-primary-50 rounded-2xl p-6 mb-8 border border-primary-100">
+            <p className="text-stone-700 leading-relaxed font-light">{content.summary}</p>
+          </div>
         )}
 
         {content.full_text && (
-          <div className="prose prose-stone max-w-none">
-            {content.full_text.split("\n").map((p: string, i: number) => (
-              <p key={i} className="mb-4 text-stone-700 leading-relaxed">
-                {p}
-              </p>
+          <div className="text-stone-700 leading-relaxed space-y-5 font-light">
+            {content.full_text.split("\n").filter(Boolean).map((p: string, i: number) => (
+              <p key={i}>{p}</p>
             ))}
           </div>
         )}
 
-        <div className="flex gap-3 mt-8 pt-6 border-t border-stone-200">
+        <div className="flex gap-3 mt-10 pt-6 border-t border-primary-100">
           {content.url && (
-            <a href={content.url} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition text-sm">
-              <ExternalLink className="w-4 h-4" /> {t("content.view_original")}
+            <a href={content.url} target="_blank" rel="noopener noreferrer">
+              <Button variant="primary" className="flex items-center gap-2">
+                <ExternalLink className="w-4 h-4" /> {t("content.view_original")}
+              </Button>
             </a>
           )}
-          <button onClick={handleBookmark} disabled={bookmarked}
-            className="flex items-center gap-2 border border-stone-300 text-stone-600 px-4 py-2 rounded-lg hover:bg-stone-50 transition text-sm disabled:opacity-50">
-            <Bookmark className="w-4 h-4" />
+          <Button
+            variant="secondary"
+            onClick={handleBookmark}
+            disabled={bookmarked}
+          >
+            <Bookmark className={`w-4 h-4 ${bookmarked ? "fill-primary-500 text-primary-500" : ""}`} />
             {bookmarked ? t("content.saved") : t("content.bookmark")}
-          </button>
+          </Button>
         </div>
       </article>
 
-      <section className="mt-12 pt-8 border-t border-stone-200">
-        <h2 className="text-xl font-bold text-stone-800 font-serif mb-6 flex items-center gap-2">
-          <MessageSquare className="w-5 h-5" /> {t("content.discussion")}
+      {/* Discussion */}
+      <section className="mt-14 pt-8 border-t border-primary-100">
+        <h2 className="text-xl font-serif font-bold text-stone-800 mb-6 flex items-center gap-2">
+          <MessageSquare className="w-5 h-5 text-primary-500" />
+          {t("content.discussion")}
+          {comments.length > 0 && (
+            <span className="text-sm font-normal text-stone-400 font-sans">({comments.length})</span>
+          )}
         </h2>
 
         {currentUser ? (
           <form onSubmit={handleComment} className="mb-8">
             {replyTo && replyToComment && (
-              <div className="text-sm text-primary-600 mb-2 flex items-center gap-2">
+              <div className="text-sm text-primary-600 mb-3 flex items-center gap-2 bg-primary-50 rounded-xl px-4 py-2">
+                <User className="w-3.5 h-3.5" />
                 {t("content.replying_to", { name: `User #${replyToComment.user_id}` })}
                 <button type="button" onClick={() => setReplyTo(null)}
-                  className="text-stone-400 hover:text-stone-600 text-xs underline">
+                  className="text-stone-400 hover:text-stone-600 text-xs underline ml-auto">
                   {t("content.cancel")}
                 </button>
               </div>
@@ -242,24 +266,28 @@ export default function ContentDetailPage() {
                 value={commentBody}
                 onChange={(e) => setCommentBody(e.target.value)}
                 placeholder={replyTo ? t("content.write_reply") : t("content.share_thoughts")}
-                className="flex-1 px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="flex-1 px-4 py-2.5 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15 transition-all"
               />
-              <button type="submit" disabled={submitting || !commentBody.trim()}
-                className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition disabled:opacity-50">
+              <Button type="submit" disabled={submitting || !commentBody.trim()} loading={submitting}>
                 <Send className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
           </form>
         ) : (
-          <p className="text-sm text-stone-500 mb-8">
-            <a href="/auth/login" className="text-primary-600 hover:underline">{t("content.sign_in_to_join")}</a>
-          </p>
+          <div className="bg-primary-50 rounded-2xl p-6 text-center mb-8 border border-primary-100">
+            <p className="text-sm text-stone-500">
+              <a href="/auth/login" className="text-primary-600 hover:text-primary-700 font-medium">{t("content.sign_in_to_join")}</a>
+            </p>
+          </div>
         )}
 
         {comments.length === 0 ? (
-          <p className="text-stone-400 text-center py-8">{t("content.no_comments")}</p>
+          <div className="text-center py-10 text-stone-400">
+            <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm font-light">{t("content.no_comments")}</p>
+          </div>
         ) : (
-          <div>
+          <div className="divide-y divide-primary-50">
             {comments.map((comment) => (
               <CommentThread
                 key={comment.id}

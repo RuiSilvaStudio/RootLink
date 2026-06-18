@@ -2,9 +2,16 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Search, MapPin, Users, MessageCircle, Shuffle } from "lucide-react";
+import { Search, MapPin, Users, MessageCircle, Shuffle, User, Sparkles, BarChart3, Globe, Hash } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Card } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { CardSkeleton } from "@/components/ui/LoadingSkeleton";
+import { ProgressBar } from "@/components/ui/ProgressBar";
 
 export default function NetworkPage() {
   const { t } = useLocale();
@@ -15,8 +22,12 @@ export default function NetworkPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [following, setFollowing] = useState<Set<number>>(new Set());
   const [geo, setGeo] = useState<{ lat: number; lng: number } | null>(null);
-
   const [token, setToken] = useState<string | null>(null);
+
+  // Stats state
+  const [regions, setRegions] = useState<{ region: string; count: number }[]>([]);
+  const [skills, setSkills] = useState<{ skill: string; count: number }[]>([]);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => { setToken(localStorage.getItem("token")); }, []);
   useEffect(() => {
@@ -24,6 +35,17 @@ export default function NetworkPage() {
     api.auth.me().then(setCurrentUser).catch(() => {});
     api.social.following().then((fl) => setFollowing(new Set(fl.map((u: any) => u.id)))).catch(() => {});
   }, [token]);
+
+  // Fetch stats
+  useEffect(() => {
+    Promise.all([
+      api.users.stats.regions().catch(() => []),
+      api.users.stats.skills().catch(() => []),
+    ]).then(([r, s]) => {
+      setRegions(r);
+      setSkills(s);
+    }).finally(() => setStatsLoading(false));
+  }, []);
 
   useEffect(() => {
     if (!token) { setUsers([]); setLoading(false); return; }
@@ -73,65 +95,82 @@ export default function NetworkPage() {
     } catch {}
   };
 
+  const tabs = [
+    { id: "match" as const, label: t("network.match_by_interest"), icon: Sparkles },
+    { id: "search" as const, label: t("network.search_people"), icon: Search },
+    { id: "nearby" as const, label: t("network.nearby"), icon: MapPin },
+  ];
+
+  const maxRegionCount = Math.max(...regions.map(r => r.count), 1);
+  const maxSkillCount = Math.max(...skills.map(s => s.count), 1);
+
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-stone-800 font-serif">{t("network.title")}</h1>
-        <p className="text-stone-500 mt-1">{t("network.subtitle")}</p>
-      </div>
+    <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
+      <PageHeader
+        icon={<Users className="w-5 h-5 text-primary-500" />}
+        title={t("network.title")}
+        subtitle={t("network.subtitle")}
+      />
 
       {!token && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-sm text-amber-800">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 text-sm text-amber-800">
           <a href="/auth/login" className="font-medium hover:underline">{t("network.sign_in")}</a> {t("network.or")}{" "}
           <a href="/auth/register" className="font-medium hover:underline">{t("network.register")}</a> {t("network.to_discover")}
         </div>
       )}
-      <div className="flex gap-2 mb-6 flex-wrap">
-        <button onClick={() => setTab("match")} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm border transition ${tab === "match" ? "bg-primary-600 text-white border-primary-600" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`}>
-          <Shuffle className="w-4 h-4" /> {t("network.match_by_interest")}
-        </button>
-        <button onClick={() => setTab("search")} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm border transition ${tab === "search" ? "bg-primary-600 text-white border-primary-600" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`}>
-          <Search className="w-4 h-4" /> {t("network.search_people")}
-        </button>
-        <button onClick={() => setTab("nearby")} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm border transition ${tab === "nearby" ? "bg-primary-600 text-white border-primary-600" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`}>
-          <MapPin className="w-4 h-4" /> {t("network.nearby")}
-        </button>
+
+      <div className="flex gap-2 mb-8 flex-wrap">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm border transition-all ${
+              tab === t.id
+                ? "bg-primary-500 text-white border-primary-500 shadow-sm"
+                : "bg-white text-stone-600 border-primary-100 hover:border-primary-300"
+            }`}
+          >
+            <t.icon className="w-4 h-4" /> {t.label}
+          </button>
+        ))}
       </div>
 
       {tab === "search" && (
         <form onSubmit={handleSearch} className="mb-6">
           <div className="relative max-w-xl">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 w-5 h-5" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 w-5 h-5" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("network.search_placeholder")}
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full pl-12 pr-4 py-2.5 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15"
             />
           </div>
         </form>
       )}
 
       {tab === "nearby" && geo && (
-        <p className="text-sm text-stone-500 mb-4">
+        <p className="text-sm text-stone-500 mb-4 font-light">
           {t("network.showing_near", { lat: geo.lat.toFixed(2), lng: geo.lng.toFixed(2) })}
         </p>
       )}
 
       {loading ? (
-        <p className="text-stone-500 py-8">{t("network.loading")}</p>
-      ) : users.length === 0 ? (
-        <div className="text-center py-20 text-stone-400">
-          <Users className="w-16 h-16 mx-auto mb-4 opacity-50" />
-          <p>{tab === "match" ? t("network.no_matches") : t("network.no_users")}</p>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => <CardSkeleton key={i} />)}
         </div>
+      ) : users.length === 0 ? (
+        <EmptyState
+          icon={<Users className="w-7 h-7" />}
+          title={tab === "match" ? t("network.no_matches") : t("network.no_users")}
+        />
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {users.map((user) => (
-            <div key={user.id} className="bg-white p-5 rounded-xl border border-stone-200 hover:shadow-md transition">
+            <div key={user.id} className="card-lift p-5">
               <Link href={`/profile/${user.id}`} className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-medium shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-primary-100 flex items-center justify-center text-primary-700 font-bold shrink-0 text-lg">
                   {user.name?.[0]?.toUpperCase() || "?"}
                 </div>
                 <div className="min-w-0">
@@ -139,29 +178,92 @@ export default function NetworkPage() {
                   {user.location && <p className="text-xs text-stone-400 truncate">{user.location}</p>}
                 </div>
               </Link>
-              {user.bio && <p className="text-sm text-stone-600 line-clamp-2 mb-3">{user.bio}</p>}
+              {user.bio && <p className="text-sm text-stone-500 line-clamp-2 mb-3 font-light">{user.bio}</p>}
               {user.skills && user.skills.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-2">
                   {user.skills.slice(0, 3).map((s: string) => (
-                    <span key={s} className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded">{s}</span>
+                    <Badge key={s} variant="sage" className="text-[11px]">{s}</Badge>
                   ))}
-                  {user.skills.length > 3 && <span className="text-xs text-stone-400">+{user.skills.length - 3}</span>}
+                  {user.skills.length > 3 && <Badge variant="stone" className="text-[11px]">+{user.skills.length - 3}</Badge>}
                 </div>
               )}
               {currentUser && currentUser.id !== user.id && (
                 <div className="flex gap-2 mt-3">
-                  <button onClick={() => handleFollow(user.id)}
-                    className={`text-xs px-3 py-1.5 rounded-lg transition ${following.has(user.id) ? "border border-stone-300 text-stone-600 hover:bg-stone-50" : "bg-primary-600 text-white hover:bg-primary-700"}`}>
+                  <Button
+                    variant={following.has(user.id) ? "secondary" : "primary"}
+                    size="sm"
+                    onClick={() => handleFollow(user.id)}
+                  >
                     {following.has(user.id) ? t("network.unfollow") : t("network.follow")}
-                  </button>
-                  <Link href={`/messages?user=${user.id}`}
-                    className="text-xs px-3 py-1.5 rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-50 flex items-center gap-1">
-                    <MessageCircle className="w-3 h-3" /> {t("network.message")}
+                  </Button>
+                  <Link href={`/messages?user=${user.id}`}>
+                    <Button variant="secondary" size="sm">
+                      <MessageCircle className="w-3 h-3" /> {t("network.message")}
+                    </Button>
                   </Link>
                 </div>
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Network visualization */}
+      {!statsLoading && (regions.length > 0 || skills.length > 0) && (
+        <div className="mt-16 grid md:grid-cols-2 gap-8">
+          {/* Region distribution */}
+          {regions.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Globe className="w-5 h-5 text-primary-500" />
+                <h2 className="text-lg font-serif font-bold text-stone-800">{t("network.regions_title") || "Community by region"}</h2>
+              </div>
+              <Card variant="plain" className="p-5 space-y-2.5">
+                {regions.slice(0, 8).map((r) => (
+                  <div key={r.region} className="flex items-center gap-3">
+                    <span className="text-xs text-stone-500 w-2 text-right font-medium">{r.count}</span>
+                    <div className="flex-1">
+                      <div className="flex justify-between mb-0.5">
+                        <span className="text-xs text-stone-700 font-light truncate">{r.region}</span>
+                      </div>
+                      <div className="h-2 bg-primary-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-primary-500 rounded-full transition-all"
+                          style={{ width: `${(r.count / maxRegionCount) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </Card>
+            </div>
+          )}
+
+          {/* Skills distribution */}
+          {skills.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Hash className="w-5 h-5 text-earth-500" />
+                <h2 className="text-lg font-serif font-bold text-stone-800">{t("network.skills_title") || "Top skills"}</h2>
+              </div>
+              <Card variant="plain" className="p-5 space-y-2.5">
+                {skills.slice(0, 10).map((s) => (
+                  <div key={s.skill} className="flex items-center gap-3">
+                    <span className="text-xs text-stone-500 w-2 text-right font-medium">{s.count}</span>
+                    <div className="flex-1">
+                      <div className="flex justify-between mb-0.5">
+                        <span className="text-xs text-stone-700 font-medium capitalize truncate">{s.skill}</span>
+                      </div>
+                      <div className="h-2 bg-earth-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-earth-500 rounded-full transition-all"
+                          style={{ width: `${(s.count / maxSkillCount) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </Card>
+            </div>
+          )}
         </div>
       )}
     </div>

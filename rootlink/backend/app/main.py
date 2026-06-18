@@ -1,14 +1,34 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-from app.core.config import settings
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
+from app.api import (
+    admin,
+    auth,
+    checklist,
+    comments,
+    content,
+    crawl,
+    events,
+    external,
+    farmers_guide,
+    groups,
+    images,
+    learning,
+    messages,
+    notifications,
+    plants,
+    social,
+    users,
+)
+from app.core.config import settings
 from app.core.database import engine
 from app.models.base import Base
-from app.api import auth, content, groups, events, comments, social, notifications, learning, users, messages, admin, crawl, plants, checklist, farmers_guide
+from app.models.image_asset import ImageAsset  # noqa: F401 - ensure table creation
 
 
 @asynccontextmanager
@@ -92,6 +112,51 @@ async def lifespan(app: FastAPI):
             )
         except Exception as e:
             print(f"checklist migration: {e}")
+        # Event Manager migrations
+        for col, typedef in [
+            ("visibility", "VARCHAR(50) DEFAULT 'all'"),
+            ("visibility_roles", "JSON"),
+            ("status", "VARCHAR(50) DEFAULT 'published'"),
+            ("ticket_type", "VARCHAR(50) DEFAULT 'free'"),
+            ("ticket_price", "INTEGER"),
+            ("currency", "VARCHAR(3) DEFAULT 'EUR'"),
+            ("donation_goal", "INTEGER"),
+            ("description_long", "TEXT"),
+            ("contact_email", "VARCHAR(255)"),
+            ("contact_phone", "VARCHAR(50)"),
+            ("requirements", "TEXT"),
+            ("tags", "JSON"),
+            ("image_gallery", "JSON"),
+        ]:
+            try:
+                await conn.execute(text(f"ALTER TABLE events ADD COLUMN {col} {typedef}"))
+            except Exception:
+                pass
+        # Event sponsor/vendor agreement migrations
+        for table, col, typedef in [
+            ("event_sponsors", "agreement_url", "VARCHAR(2000)"),
+            ("event_sponsors", "agreement_status", "VARCHAR(50) DEFAULT 'none'"),
+            ("event_vendors", "agreement_status", "VARCHAR(50) DEFAULT 'none'"),
+        ]:
+            try:
+                await conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {typedef}"))
+            except Exception:
+                pass
+        # Event ticket tiers migration
+        try:
+            await conn.execute(text("ALTER TABLE events ADD COLUMN ticket_tiers JSON"))
+        except Exception:
+            pass
+        # Event recurrence migrations
+        for table, col, typedef in [
+            ("events", "recurrence_type", "VARCHAR(50) DEFAULT 'none'"),
+            ("events", "recurrence_config", "JSON"),
+            ("event_schedule", "day_of_week", "INTEGER"),
+        ]:
+            try:
+                await conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {typedef}"))
+            except Exception:
+                pass
     yield
     await engine.dispose()
 
@@ -121,6 +186,13 @@ app.include_router(crawl.router)
 app.include_router(plants.router)
 app.include_router(checklist.router)
 app.include_router(farmers_guide.router)
+app.include_router(external.router)
+app.include_router(images.router)
+
+# Serve uploaded media files
+media_path = Path(settings.media_dir)
+media_path.mkdir(parents=True, exist_ok=True)
+app.mount("/media", StaticFiles(directory=str(media_path)), name="media")
 
 
 @app.get("/api/health")

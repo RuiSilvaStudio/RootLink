@@ -6,6 +6,9 @@ import { User, Mail, MapPin, Save, LogOut, Users, UserPlus, UserMinus, Eye } fro
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/locale-context";
+import { useToast } from "@/lib/toast-context";
+import { PageSkeleton } from "@/components/Skeleton";
+import { useDirtyGuard } from "@/lib/use-dirty-guard";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -77,7 +80,8 @@ export default function ProfilePage() {
         visible_in_network: visibleInNetwork,
       });
       setProfile(updated);
-    } catch (err: any) { alert(err.message); } finally { setSaving(false); }
+      addToast("success", t("profile.saved"));
+    } catch (err: any) { addToast("error", err.message); } finally { setSaving(false); }
   };
 
   const handleFollow = async () => {
@@ -95,13 +99,23 @@ export default function ProfilePage() {
 
   const { t } = useLocale();
   const { logout } = useAuth();
+  const { addToast } = useToast();
   const handleLogout = () => {
     logout();
     router.push("/");
   };
 
-  if (loading) return <div className="p-8 text-stone-500">{t("profile.loading")}</div>;
   const isOwnProfile = currentUser && profile && currentUser.id === profile.id;
+  const profileDirty = !!(profile && (
+    name !== (profile.name || "")
+    || bio !== (profile.bio || "")
+    || location !== (profile.location || "")
+    || skills !== ((profile.skills || []).join(", "))
+    || interests !== ((profile.interests || []).join(", "))
+    || visibleInNetwork !== (profile.visible_in_network !== false)
+  ));
+  useDirtyGuard(profileDirty && isOwnProfile);
+  if (loading) return <PageSkeleton />;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">

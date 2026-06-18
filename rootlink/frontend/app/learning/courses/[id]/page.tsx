@@ -1,16 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
-import { BookOpen, Clock, CheckCircle, PlayCircle, ArrowLeft, ChevronDown, ChevronUp, Edit, Plus, Trash2 } from "lucide-react";
+import { BookOpen, Clock, CheckCircle, PlayCircle, ChevronDown, ChevronUp, Edit, Plus, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useLocale } from "@/lib/locale-context";
 
 export default function CourseDetailPage() {
   const { t } = useLocale();
   const params = useParams();
-  const router = useRouter();
   const [course, setCourse] = useState<any>(null);
   const [lessons, setLessons] = useState<any[]>([]);
   const [enrollment, setEnrollment] = useState<any>(null);
@@ -120,13 +120,15 @@ export default function CourseDetailPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <button onClick={() => router.back()} className="flex items-center gap-1 text-sm text-stone-500 hover:text-primary-700 mb-6">
-        <ArrowLeft className="w-4 h-4" /> {t("learning.back")}
-      </button>
+      <Breadcrumbs items={[
+        { label: t("nav.learning"), href: "/learning" },
+        { label: t("learning.course_title"), href: "/learning/courses" },
+        { label: course.title }
+      ]} />
 
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          {course.image_url && <img src={course.image_url} alt="" className="w-full h-48 object-cover rounded-xl mb-6" />}
+          {course.image_url && <img src={course.image_url} alt="" loading="lazy" className="w-full h-48 object-cover rounded-xl mb-6" />}
           <div className="flex items-start justify-between gap-4">
             <h1 className="text-3xl font-bold text-stone-800 font-serif">{course.title}</h1>
             {canEdit && (

@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import { Search, Plus, Pencil, Trash2, Upload, ExternalLink, Sprout, Flower2 } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Upload, ExternalLink, Sprout, Flower2, ChevronDown } from "lucide-react";
 import { useLocale } from "@/lib/locale-context";
+import { Collapsible } from "@/components/Collapsible";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 export default function AdminPlantsPage() {
   const { t } = useLocale();
@@ -225,6 +227,7 @@ function PlantCard({ plant, expanded, onToggle, onEdit, onDelete }: {
           <img
             src={plant.image_url}
             alt={plant.scientific_name}
+            loading="lazy"
             className="w-14 h-14 rounded-lg object-cover border border-stone-200 shrink-0"
           />
         ) : (
@@ -265,7 +268,7 @@ function PlantCard({ plant, expanded, onToggle, onEdit, onDelete }: {
           )}
         </div>
       </div>
-      {expanded && hasDetail && (
+      <Collapsible open={expanded && hasDetail}>
         <div className="px-3 pb-3 pt-0 border-t border-stone-100 mt-0">
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-stone-500 mt-2">
             {plant.distribution_general && (
@@ -289,21 +292,13 @@ function PlantCard({ plant, expanded, onToggle, onEdit, onDelete }: {
             )}
             {plant.image_url && (
               <div className="col-span-2 mt-1">
-                <img src={plant.image_url} alt="" className="max-h-40 rounded border border-stone-200" />
+                <img src={plant.image_url} alt="" loading="lazy" className="max-h-40 rounded border border-stone-200" />
               </div>
             )}
           </div>
         </div>
-      )}
+      </Collapsible>
     </div>
-  );
-}
-
-function ChevronDown({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="m6 9 6 6 6-6" />
-    </svg>
   );
 }
 
@@ -367,7 +362,7 @@ function PlantFormModal({ plant, onSave, onClose, saving, t }: {
         {/* Image preview */}
         {plant?.image_url && (
           <div className="mb-5 rounded-lg overflow-hidden border border-stone-200">
-            <img src={plant.image_url} alt="" className="w-full max-h-48 object-cover" />
+            <img src={plant.image_url} alt="" loading="lazy" className="w-full max-h-48 object-cover" />
           </div>
         )}
 
@@ -505,9 +500,14 @@ function PlantFormModal({ plant, onSave, onClose, saving, t }: {
           <fieldset>
             <legend className="text-sm font-semibold text-stone-700 mb-2 pb-1 border-b border-stone-200 w-full">Media & Notes</legend>
             <div className="space-y-3">
+              <ImageUpload
+                onUpload={(urls) => set("image_url", urls.thumb)}
+                label="Upload image"
+                maxSizeMb={10}
+              />
               <div>
-                <Label>Image URL</Label>
-                <input value={form.image_url || ""} onChange={str("image_url")} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+                <Label>Or paste Image URL</Label>
+                <input value={form.image_url || ""} onChange={str("image_url")} placeholder="https://..." className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
               </div>
               <div>
                 <Label>Notes</Label>

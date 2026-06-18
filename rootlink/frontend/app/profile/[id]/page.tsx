@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { User, MapPin, Mail, MessageCircle, UserPlus, UserMinus, ArrowLeft } from "lucide-react";
+import { User, MapPin, MessageCircle, UserPlus, UserMinus } from "lucide-react";
 import { api } from "@/lib/api";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default function PublicProfilePage() {
   const params = useParams();
@@ -41,14 +42,26 @@ export default function PublicProfilePage() {
     } catch {}
   };
 
-  if (loading) return <div className="text-center py-20 text-stone-500">Loading...</div>;
+  if (loading) return (
+    <div className="max-w-2xl mx-auto px-4 py-12 space-y-6">
+      <div className="flex gap-4">
+        <div className="w-16 h-16 rounded-full bg-stone-200 animate-pulse" />
+        <div className="space-y-2 flex-1">
+          <div className="h-6 bg-stone-200 rounded w-48 animate-pulse" />
+          <div className="h-4 bg-stone-200 rounded w-64 animate-pulse" />
+        </div>
+      </div>
+      <div className="h-40 bg-stone-200 rounded-xl animate-pulse" />
+    </div>
+  );
   if (!profile) return <div className="text-center py-20 text-stone-400">User not found</div>;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <button onClick={() => router.back()} className="flex items-center gap-1 text-sm text-stone-500 hover:text-primary-700 mb-6">
-        <ArrowLeft className="w-4 h-4" /> Back
-      </button>
+      <Breadcrumbs items={[
+        { label: "Profile", href: "/profile" },
+        { label: profile.name }
+      ]} />
 
       <div className="flex justify-between items-start mb-8">
         <div className="flex items-center gap-4">

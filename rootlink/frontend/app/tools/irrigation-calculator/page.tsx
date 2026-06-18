@@ -2,59 +2,65 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, Search, Droplets, Ruler, ThermometerSun, ToggleLeft, ToggleRight } from "lucide-react";
+import { ArrowLeft, Search, Droplets, Ruler, ThermometerSun, ToggleLeft, ToggleRight, Leaf, ChevronRight } from "lucide-react";
 import { useLocale } from "@/lib/locale-context";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Card } from "@/components/ui/Card";
+import { Section } from "@/components/ui/Section";
+import { ProgressBar } from "@/components/ui/ProgressBar";
+import { ShareButton } from "@/components/ShareButton";
 import { api } from "@/lib/api";
 
 const GROWTH_STAGES = ["initial", "mid", "late"] as const;
 
-const CLIMATES = [
-  { value: "cool", label: "Fria (Norte / Serras)", eto: 2.5 },
-  { value: "moderate", label: "Temperada (Centro / Litoral)", eto: 4.0 },
-  { value: "warm", label: "Quente (Sul / Interior)", eto: 6.0 },
-  { value: "hot", label: "Muito quente (Algarve / Vale do Tejo)", eto: 7.5 },
+const CLIMATES = (t: (key: string) => string) => [
+  { value: "cool", label: t("calc.climate_cool"), eto: 2.5 },
+  { value: "moderate", label: t("calc.climate_moderate"), eto: 4.0 },
+  { value: "warm", label: t("calc.climate_warm"), eto: 6.0 },
+  { value: "hot", label: t("calc.climate_hot"), eto: 7.5 },
 ];
 
-const SEASONS = [
-  { value: "spring", label: "Primavera", factor: 1.0 },
-  { value: "summer", label: "Verão", factor: 1.4 },
-  { value: "fall", label: "Outono", factor: 0.7 },
-  { value: "winter", label: "Inverno", factor: 0.35 },
+const SEASONS = (t: (key: string) => string) => [
+  { value: "spring", label: t("calc.season_spring"), factor: 1.0 },
+  { value: "summer", label: t("calc.season_summer"), factor: 1.4 },
+  { value: "fall", label: t("calc.season_fall"), factor: 0.7 },
+  { value: "winter", label: t("calc.season_winter"), factor: 0.35 },
 ];
 
-const SOILS = [
-  { value: "sandy", label: "Areia (drena muito rápido)", factor: 0.5 },
-  { value: "loamy", label: "Terra vegetal / limosa (equilibrada)", factor: 0.8 },
-  { value: "clay", label: "Argila (retenção alta)", factor: 0.95 },
-  { value: "stony", label: "Pedregosa (drena rápido)", factor: 0.55 },
+const SOILS = (t: (key: string) => string) => [
+  { value: "sandy", label: t("calc.soil_sandy"), factor: 0.5 },
+  { value: "loamy", label: t("calc.soil_loamy"), factor: 0.8 },
+  { value: "clay", label: t("calc.soil_clay"), factor: 0.95 },
+  { value: "stony", label: t("calc.soil_stony"), factor: 0.55 },
 ];
 
-const RAIN = [
-  { value: "none", label: "Não", factor: 1.0 },
-  { value: "light", label: "Pouco (chuvisco ocasional)", factor: 0.8 },
-  { value: "heavy", label: "Bastante (chuvas nos últimos dias)", factor: 0.5 },
+const RAIN = (t: (key: string) => string) => [
+  { value: "none", label: t("calc.rain_none"), factor: 1.0 },
+  { value: "light", label: t("calc.rain_light"), factor: 0.8 },
+  { value: "heavy", label: t("calc.rain_heavy"), factor: 0.5 },
 ];
 
-const IRRIGATIONS = [
-  { value: "drip", label: "Gota-a-gota", efficiency: 0.9 },
-  { value: "sprinkler", label: "Aspersão", efficiency: 0.7 },
-  { value: "flood", label: "Inundação / sulcos", efficiency: 0.5 },
-  { value: "manual", label: "Mangueira manual", efficiency: 0.6 },
-  { value: "none", label: "Nenhum (apenas chuva)", efficiency: 1.0 },
+const IRRIGATIONS = (t: (key: string) => string) => [
+  { value: "drip", label: t("calc.irrigation_drip"), efficiency: 0.9 },
+  { value: "sprinkler", label: t("calc.irrigation_sprinkler"), efficiency: 0.7 },
+  { value: "flood", label: t("calc.irrigation_flood"), efficiency: 0.5 },
+  { value: "manual", label: t("calc.irrigation_manual"), efficiency: 0.6 },
+  { value: "none", label: t("calc.irrigation_none"), efficiency: 1.0 },
 ];
 
-function estimateETo(climate: string, season: string): number {
-  const c = CLIMATES.find((x) => x.value === climate);
-  const s = SEASONS.find((x) => x.value === season);
+function estimateETo(t: (key: string, vars?: any) => string, climate: string, season: string): number {
+  const c = CLIMATES(t).find((x: any) => x.value === climate);
+  const s = SEASONS(t).find((x: any) => x.value === season);
   if (!c) return 4;
   return Math.round((c.eto * (s?.factor ?? 1.0)) * 10) / 10;
 }
 
-function waterAdvice(efficiency: number, stony: boolean): string {
-  if (efficiency >= 0.9) return "Sistema eficiente — pouca perda de água.";
-  if (stony) return "Solo pedregoso: a água drena depressa — regue com mais frequência mas menor quantidade.";
-  if (efficiency <= 0.6) return "Perdas por evaporação elevadas — considere regar de manhã cedo ou ao final da tarde.";
-  return "Rega moderadamente eficiente.";
+function waterAdvice(t: (key: string, vars?: any) => string, efficiency: number, stony: boolean): string {
+  if (efficiency >= 0.9) return t("calc.water_advice_efficient");
+  if (stony) return t("calc.water_advice_stony");
+  if (efficiency <= 0.6) return t("calc.water_advice_inefficient");
+  return t("calc.water_advice_ok");
 }
 
 function irrigationTime(totalLiters: number, flowLh: number): number {
@@ -116,7 +122,7 @@ function IrrigationCalculatorContent() {
     setResult(null);
   };
 
-  const etoValue = simple ? estimateETo(climate, season) : parseFloat(etoManual) || 0;
+  const etoValue = simple ? estimateETo(t, climate, season) : parseFloat(etoManual) || 0;
 
   const handleCalc = async () => {
     if (!selected) return;
@@ -143,39 +149,52 @@ function IrrigationCalculatorContent() {
       : selected.kc_late
     : null;
 
-  const soilObj = SOILS.find((s) => s.value === soil);
-  const irrObj = IRRIGATIONS.find((i) => i.value === irrigation);
+  const soils = SOILS(t);
+  const irrigations = IRRIGATIONS(t);
+  const soilObj = soils.find((s: any) => s.value === soil);
+  const irrObj = irrigations.find((i: any) => i.value === irrigation);
   const soilFactor = soilObj?.factor ?? 0.8;
   const irrEfficiency = irrObj?.efficiency ?? 1.0;
   const isStony = soil === "stony";
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-12">
-      <a href="/tools" className="flex items-center gap-1 text-sm text-stone-500 hover:text-primary-700 mb-6">
+    <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
+      <a href="/tools" className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-primary-700 mb-6 transition">
         <ArrowLeft className="w-4 h-4" /> {t("tools.back")}
       </a>
 
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="text-3xl font-bold text-stone-800 font-serif">{t("tools.irrigation_title")}</h1>
-        <button
-          onClick={() => setSimple(!simple)}
-          className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-primary-600 bg-stone-100 hover:bg-primary-50 px-3 py-1.5 rounded-full transition"
-        >
-          {simple ? <ToggleLeft className="w-4 h-4" /> : <ToggleRight className="w-4 h-4" />}
-          {simple ? "Modo simples" : "Modo avançado"}
-        </button>
-      </div>
-      <p className="text-stone-600 mb-2">{t("tools.irrigation_desc")}</p>
-      <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 mb-6 text-xs text-amber-700 flex items-center gap-2">
-        <span>🇵🇹</span>
-        <span>{t("calc.portugal_disclaimer")}</span>
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+            <Droplets className="w-5 h-5 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-serif font-bold text-stone-800">{t("tools.irrigation_title")}</h1>
+            <p className="text-stone-500 font-light">{t("tools.irrigation_desc")}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <ShareButton url={typeof window !== "undefined" ? window.location.href : ""} title="Irrigation Calculator" />
+          <button
+            onClick={() => setSimple(!simple)}
+            className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-primary-600 bg-primary-50 hover:bg-primary-100 px-3 py-1.5 rounded-full transition"
+          >
+            {simple ? <ToggleLeft className="w-4 h-4" /> : <ToggleRight className="w-4 h-4" />}
+            {simple ? t("calc.simple_mode") : t("calc.advanced_mode")}
+          </button>
+        </div>
       </div>
 
-      <div className="grid lg:grid-cols-5 gap-8">
+      <div className="bg-stone-100/50 border border-stone-200/40 rounded-2xl px-4 py-2.5 mb-8 text-xs text-stone-400 flex items-center justify-end gap-2">
+        <span className="text-[10px]">🇵🇹</span>
+        <span className="font-light">{t("calc.portugal_disclaimer")}</span>
+      </div>
+
+      <div className="grid lg:grid-cols-5 gap-6">
         {/* Plant selector */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="bg-white border border-stone-200 rounded-xl p-5">
-            <h2 className="font-semibold text-stone-700 mb-3 flex items-center gap-2">
+          <Card variant="plain" className="p-5">
+            <h2 className="font-semibold text-stone-700 mb-3 flex items-center gap-2 text-sm">
               <Search className="w-4 h-4" /> {t("calc.plant_search")}
             </h2>
             <input
@@ -183,27 +202,27 @@ function IrrigationCalculatorContent() {
               value={query}
               onChange={(e) => { setQuery(e.target.value); search(e.target.value, filterType, filterGenus, filterFamily); }}
               placeholder={t("calc.search_placeholder")}
-              className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15"
             />
-          </div>
+          </Card>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <select value={filterType} onChange={(e) => setFilterType(e.target.value)}
-              className="flex-1 border border-stone-300 rounded-lg px-2 py-1.5 text-xs bg-white">
+              className="flex-1 min-w-0 px-3 py-1.5 rounded-xl border border-primary-100 bg-white text-xs focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
               <option value="">{t("calc.filter_type_all")}</option>
               {Array.from(new Set(plants.filter(p => p.plant_type).map(p => p.plant_type))).sort().map(ptype => (
-                <option key={ptype} value={ptype}>{ptype === "tree" ? "🌳" : ptype === "shrub" ? "🌿" : ptype === "herb" ? "🌱" : ptype === "climber" ? "🌿" : "🌱"} {t(`calc.type_${ptype}`)}</option>
+                <option key={ptype} value={ptype}>{t(`calc.type_${ptype}`)}</option>
               ))}
             </select>
             <select value={filterGenus} onChange={(e) => setFilterGenus(e.target.value)}
-              className="flex-1 border border-stone-300 rounded-lg px-2 py-1.5 text-xs bg-white">
+              className="flex-1 min-w-0 px-3 py-1.5 rounded-xl border border-primary-100 bg-white text-xs focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
               <option value="">{t("calc.filter_genus_all")}</option>
               {Array.from(new Set(plants.filter(p => p.genus).map(p => p.genus))).sort().map(g => (
                 <option key={g} value={g}>{g}</option>
               ))}
             </select>
             <select value={filterFamily} onChange={(e) => setFilterFamily(e.target.value)}
-              className="flex-1 border border-stone-300 rounded-lg px-2 py-1.5 text-xs bg-white">
+              className="flex-1 min-w-0 px-3 py-1.5 rounded-xl border border-primary-100 bg-white text-xs focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
               <option value="">{t("calc.filter_family_all")}</option>
               {Array.from(new Set(plants.filter(p => p.family).map(p => p.family))).sort().map(f => (
                 <option key={f} value={f}>{f}</option>
@@ -211,22 +230,22 @@ function IrrigationCalculatorContent() {
             </select>
           </div>
 
-          <div className="bg-white border border-stone-200 rounded-xl max-h-96 overflow-y-auto">
-            {searching && <p className="p-4 text-sm text-stone-400 text-center">{t("common.loading")}</p>}
+          <Card variant="plain" className="max-h-96 overflow-y-auto">
+            {searching && <p className="p-4 text-sm text-stone-400 text-center font-light">{t("common.loading")}</p>}
             {!searching && plants.length === 0 && (
-              <p className="p-4 text-sm text-stone-400 text-center">{t("calc.no_plants")}</p>
+              <p className="p-4 text-sm text-stone-400 text-center font-light">{t("calc.no_plants")}</p>
             )}
             {plants.map((p) => (
               <button
                 key={p.id}
                 onClick={() => handleSelect(p)}
-                className={`w-full text-left p-3 border-b border-stone-100 hover:bg-primary-50 transition flex gap-3 ${
-                  selected?.id === p.id ? "bg-primary-100 border-l-4 border-l-primary-600" : ""
+                className={`w-full text-left p-3 border-b border-primary-50 hover:bg-primary-50/50 transition flex gap-3 ${
+                  selected?.id === p.id ? "bg-primary-50 border-l-[3px] border-l-primary-500" : ""
                 }`}
               >
                 {p.image_url && (
-                  <img src={p.image_url} alt={p.scientific_name}
-                    className="w-12 h-12 object-cover rounded-lg flex-shrink-0 bg-stone-100"
+                  <img src={p.image_url} alt={p.scientific_name} loading="lazy"
+                    className="w-12 h-12 object-cover rounded-xl shrink-0 bg-stone-100"
                     onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                   />
                 )}
@@ -236,262 +255,220 @@ function IrrigationCalculatorContent() {
                   </div>
                   <div className="text-xs text-stone-400 italic truncate">{p.scientific_name}</div>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {p.kc_mid && (
-                      <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Kc: {p.kc_mid}</span>
-                    )}
-                    {p.plant_type && (
-                      <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">{t(`calc.type_${p.plant_type}`)}</span>
-                    )}
+                    {p.plant_type && <Badge variant="sage" className="text-[10px]">{t(`calc.type_${p.plant_type}`)}</Badge>}
                   </div>
                 </div>
               </button>
             ))}
-          </div>
+          </Card>
         </div>
 
         {/* Calculator panel */}
         <div className="lg:col-span-3 space-y-4">
           {selected && (
-            <div className="bg-white border border-stone-200 rounded-xl p-5">
+            <Card variant="plain" className="p-5 sm:p-6">
               {/* Plant header */}
-              <div className="flex gap-4 mb-4">
+              <div className="flex gap-4 mb-5">
                 {selected.image_url && (
-                  <img src={selected.image_url} alt={selected.scientific_name}
-                    className="w-24 h-24 object-cover rounded-xl flex-shrink-0 bg-stone-100 border border-stone-200"
+                  <img src={selected.image_url} alt={selected.scientific_name} loading="lazy"
+                    className="w-20 h-20 object-cover rounded-xl shrink-0 bg-stone-100 border border-primary-100"
                     onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                   />
                 )}
                 <div>
-                  <h2 className="font-semibold text-stone-700 text-lg">
+                  <h2 className="font-semibold text-stone-800 text-lg">
                     {selected.common_names_pt?.[0] || selected.scientific_name}
                   </h2>
-                  <p className="text-sm text-stone-400 italic">{selected.scientific_name_full || selected.scientific_name}</p>
+                  <p className="text-sm text-stone-400 italic font-light">{selected.scientific_name_full || selected.scientific_name}</p>
                   <div className="flex gap-2 mt-1">
-                    {selected.genus && <span className="text-xs bg-stone-100 text-stone-500 px-2 py-0.5 rounded">{selected.genus}</span>}
-                    {selected.family && <span className="text-xs bg-stone-100 text-stone-500 px-2 py-0.5 rounded">{selected.family}</span>}
+                    {selected.genus && <Badge variant="stone" className="text-[11px]">{selected.genus}</Badge>}
+                    {selected.family && <Badge variant="stone" className="text-[11px]">{selected.family}</Badge>}
                   </div>
                 </div>
               </div>
 
-              {/* Kc cards */}
-              <div className="grid grid-cols-3 gap-3 mb-5">
-                <div className="bg-stone-50 rounded-lg p-3 text-center">
-                  <Droplets className="w-5 h-5 text-blue-500 mx-auto mb-1" />
-                  <div className="text-xs text-stone-500">{t("calc.kc_initial")}</div>
-                  <div className="font-semibold">{selected.kc_initial ?? "—"}</div>
+              {/* Plant stats */}
+              <div className="grid grid-cols-3 gap-2 mb-5">
+                <div className="bg-earth-50 rounded-xl p-3 text-center">
+                  <div className="text-[10px] text-stone-500 font-medium">{t("calc.root_depth")}</div>
+                  <div className="font-bold text-stone-800 text-lg">{selected.root_depth_cm ?? "—"}</div>
+                  <div className="text-[9px] text-stone-400">cm</div>
                 </div>
-                <div className="bg-stone-50 rounded-lg p-3 text-center">
-                  <Droplets className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-                  <div className="text-xs text-stone-500">{t("calc.kc_mid")}</div>
-                  <div className="font-semibold">{selected.kc_mid ?? "—"}</div>
+                <div className="bg-blue-50 rounded-xl p-3 text-center">
+                  <div className="text-[10px] text-stone-500 font-medium">{t("calc.drought_tolerance")}</div>
+                  <div className="text-xs font-bold text-stone-800">{t(`calc.tol_${selected.drought_tolerance || "medium"}`)}</div>
                 </div>
-                <div className="bg-stone-50 rounded-lg p-3 text-center">
-                  <Droplets className="w-5 h-5 text-blue-700 mx-auto mb-1" />
-                  <div className="text-xs text-stone-500">{t("calc.kc_late")}</div>
-                  <div className="font-semibold">{selected.kc_late ?? "—"}</div>
-                </div>
-                <div className="bg-stone-50 rounded-lg p-3 text-center">
-                  <Ruler className="w-5 h-5 text-amber-500 mx-auto mb-1" />
-                  <div className="text-xs text-stone-500">{t("calc.root_depth")}</div>
-                  <div className="font-semibold">{selected.root_depth_cm ?? "—"} cm</div>
-                </div>
-                <div className="bg-stone-50 rounded-lg p-3 text-center">
-                  <ThermometerSun className="w-5 h-5 text-orange-500 mx-auto mb-1" />
-                  <div className="text-xs text-stone-500">{t("calc.drought_tolerance")}</div>
-                  <div className="font-semibold text-sm">{t(`calc.tol_${selected.drought_tolerance || "medium"}`)}</div>
-                </div>
-                <div className="bg-stone-50 rounded-lg p-3 text-center">
-                  <span className="text-lg mb-1 block">↔</span>
-                  <div className="text-xs text-stone-500">{t("calc.spacing")}</div>
-                  <div className="font-semibold text-sm">
+                <div className="bg-stone-50 rounded-xl p-3 text-center">
+                  <div className="text-[10px] text-stone-500 font-medium">{t("calc.spacing")}</div>
+                  <div className="text-xs font-bold text-stone-800">
                     {selected.row_spacing_cm && selected.plant_spacing_cm
-                      ? `${selected.row_spacing_cm}×${selected.plant_spacing_cm} cm`
+                      ? `${selected.row_spacing_cm}×${selected.plant_spacing_cm}`
                       : "—"}
                   </div>
                 </div>
               </div>
 
               {/* Growth stage */}
-              <div className="mb-4">
+              <div className="mb-5">
                 <label className="block text-sm font-medium text-stone-700 mb-2">{t("calc.growth_stage")}</label>
                 <div className="flex gap-2">
                   {GROWTH_STAGES.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => setStage(s)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                        stage === s ? "bg-primary-600 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                    <button key={s} onClick={() => setStage(s)}
+                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                        stage === s ? "bg-primary-500 text-white shadow-sm" : "bg-primary-50 text-stone-600 hover:bg-primary-100"
                       }`}
                     >
                       {t(`calc.stage_${s}`)}
                     </button>
                   ))}
                 </div>
-                {kcVal !== null && <p className="text-xs text-stone-400 mt-1">Kc = {kcVal}</p>}
+                {kcVal !== null && <p className="text-xs text-stone-400 mt-1.5">Kc = <strong>{kcVal}</strong></p>}
               </div>
 
               {/* SIMPLE mode */}
               {simple && (
-                <div className="space-y-4 mb-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
-                  <h3 className="font-semibold text-sm text-blue-800">🌤️ Descreva o seu clima e solo</h3>
-
+                <div className="space-y-4 mb-5 p-5 bg-blue-50/50 rounded-2xl border border-blue-100">
+                  <h3 className="font-semibold text-sm text-blue-800">{t("calc.simple_title")}</h3>
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-stone-600 mb-1">Clima da sua região</label>
-                      <select value={climate} onChange={(e) => setClimate(e.target.value)} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm">
-                        {CLIMATES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-stone-600 mb-1">Época do ano</label>
-                      <select value={season} onChange={(e) => setSeason(e.target.value)} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm">
-                        {SEASONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-stone-600 mb-1">Tipo de solo</label>
-                      <select value={soil} onChange={(e) => setSoil(e.target.value)} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm">
-                        {SOILS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-stone-600 mb-1">Sistema de rega</label>
-                      <select value={irrigation} onChange={(e) => setIrrigation(e.target.value)} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm">
-                        {IRRIGATIONS.map((i) => <option key={i.value} value={i.value}>{i.label}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-stone-600 mb-1">Choveu nos últimos dias?</label>
-                      <select value={rain} onChange={(e) => setRain(e.target.value)} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm">
-                        {RAIN.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-                      </select>
-                    </div>
+                    {[
+                      { label: t("calc.climate_region"), value: climate, set: setClimate, opts: CLIMATES(t) },
+                      { label: t("calc.season"), value: season, set: setSeason, opts: SEASONS(t) },
+                      { label: t("calc.soil_type"), value: soil, set: setSoil, opts: soils },
+                      { label: t("calc.irrigation_system"), value: irrigation, set: setIrrigation, opts: irrigations },
+                      { label: t("calc.rain_question"), value: rain, set: setRain, opts: RAIN(t) },
+                    ].map((field) => (
+                      <div key={field.label}>
+                        <label className="block text-xs font-medium text-stone-600 mb-1">{field.label}</label>
+                        <select value={field.value} onChange={(e) => field.set(e.target.value)}
+                          className="w-full px-3 py-1.5 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+                          {field.opts.map((o: any) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        </select>
+                      </div>
+                    ))}
                   </div>
-
-                  <div className="text-xs text-blue-600 bg-blue-100 rounded-lg px-3 py-2">
-                    ETo estimado: <strong>{etoValue} mm/dia</strong> — baseado no clima e estação ({CLIMATES.find((c) => c.value === climate)?.label}, {SEASONS.find((s) => s.value === season)?.label})
+                  <div className="text-xs text-blue-600 bg-blue-100/50 rounded-xl px-4 py-2.5 font-light">
+                    {t("calc.eto_estimated", { value: etoValue, climate: CLIMATES(t).find((c: any) => c.value === climate)?.label ?? "", season: SEASONS(t).find((s: any) => s.value === season)?.label ?? "" })}
                   </div>
                 </div>
               )}
 
               {/* EXPERT mode */}
               {!simple && (
-                <div className="mb-4">
+                <div className="mb-5">
                   <label className="block text-sm font-medium text-stone-700 mb-1">
-                    {t("calc.eto")} <span className="text-xs text-stone-400">(mm/day)</span>
+                    {t("calc.eto")} <span className="text-xs text-stone-400 font-light">(mm/day)</span>
                   </label>
-                  <input
-                    type="number" step="0.1" value={etoManual}
+                  <input type="number" step="0.1" value={etoManual}
                     onChange={(e) => setEtoManual(e.target.value)}
                     placeholder="e.g. 5.0"
-                    className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
+                    className="w-full max-w-xs px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                 </div>
               )}
 
               {/* Area / count / flow */}
-              <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="grid grid-cols-3 gap-3 mb-5">
                 <div>
                   <label className="block text-xs font-medium text-stone-600 mb-1">{t("calc.area")}</label>
                   <input type="number" step="0.1" value={area} onChange={(e) => setArea(e.target.value)}
-                    placeholder={`m²`} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+                    placeholder="m²" className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-stone-600 mb-1">{t("calc.plants_count")}</label>
                   <input type="number" value={count} onChange={(e) => setCount(e.target.value)}
-                    placeholder={t("calc.count_placeholder")} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+                    placeholder={t("calc.count_placeholder")} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-stone-600 mb-1">Caudal (L/h)</label>
+                  <label className="block text-xs font-medium text-stone-600 mb-1">{t("calc.flow_rate") || "Flow rate (L/h)"}</label>
                   <input type="number" step="0.1" value={flowRate} onChange={(e) => setFlowRate(e.target.value)}
-                    placeholder="ex: 24" className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+                    placeholder="ex: 24" className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                 </div>
               </div>
 
-              {/* Calculate */}
-              <button onClick={handleCalc} disabled={loading || !etoValue}
-                className="w-full bg-primary-600 text-white py-2.5 rounded-lg hover:bg-primary-700 transition font-medium disabled:opacity-50">
-                {loading ? t("common.loading") : t("calc.calculate")}
-              </button>
+              <Button onClick={handleCalc} disabled={loading || !etoValue} loading={loading} className="w-full">
+                {t("calc.calculate")}
+              </Button>
 
               {/* Results */}
               {result && (
-                <div className="mt-5 space-y-3">
-                  <div className="bg-green-50 border border-green-200 rounded-xl p-5">
-                    <h3 className="font-semibold text-green-800 mb-3">{t("calc.results")}</h3>
+                <div className="mt-6 space-y-4 animate-fade-in">
+                  <div className="bg-green-50 border border-green-200 rounded-2xl p-5">
+                    <h3 className="font-semibold text-green-800 mb-4">{t("calc.results")}</h3>
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-white rounded-lg p-3">
-                        <div className="text-xs text-stone-500">{t("calc.etc")}</div>
-                        <div className="text-xl font-bold text-green-700">{result.etc_mm} <span className="text-sm font-normal">mm/day</span></div>
+                      <div className="bg-white rounded-xl p-4">
+                        <div className="text-xs text-stone-500 font-medium">{t("calc.etc")}</div>
+                        <div className="text-2xl font-bold text-green-700 mt-1">{result.etc_mm} <span className="text-sm font-normal text-stone-400">mm/day</span></div>
                       </div>
-                      <div className="bg-white rounded-lg p-3">
-                        <div className="text-xs text-stone-500">{t("calc.water_per_plant")}</div>
-                        <div className="text-xl font-bold text-blue-700">
-                          {result.water_per_plant_liters != null ? `${result.water_per_plant_liters} L/day` : "—"}
+                      <div className="bg-white rounded-xl p-4">
+                        <div className="text-xs text-stone-500 font-medium">{t("calc.water_per_plant")}</div>
+                        <div className="text-2xl font-bold text-blue-700 mt-1">
+                          {result.water_per_plant_liters != null ? `${result.water_per_plant_liters}` : "—"}
+                          <span className="text-sm font-normal text-stone-400"> L/day</span>
                         </div>
                       </div>
-                      <div className="bg-white rounded-lg p-3 col-span-2">
-                        <div className="text-xs text-stone-500">{t("calc.total_water")}</div>
-                        <div className="text-xl font-bold text-primary-700">
-                          {result.total_water_liters != null ? `${result.total_water_liters} L/day` : "—"}
+                      <div className="bg-white rounded-xl p-4 col-span-2">
+                        <div className="text-xs text-stone-500 font-medium">{t("calc.total_water")}</div>
+                        <div className="text-2xl font-bold text-primary-700 mt-1">
+                          {result.total_water_liters != null ? `${result.total_water_liters}` : "—"}
+                          <span className="text-sm font-normal text-stone-400"> L/day</span>
                         </div>
+                        <ProgressBar value={result.total_water_liters} max={result.total_water_liters * 1.5} size="sm" className="mt-2" />
                       </div>
-                      <div className="bg-white rounded-lg p-3">
-                        <div className="text-xs text-stone-500">{t("calc.kc_used")}</div>
-                        <div className="text-lg font-semibold">{result.kc_used}</div>
-                      </div>
-                      <div className="bg-white rounded-lg p-3">
-                        <div className="text-xs text-stone-500">{t("calc.root_depth_used")}</div>
-                        <div className="text-lg font-semibold">{result.root_depth_cm != null ? `${result.root_depth_cm} cm` : "—"}</div>
-                      </div>
+                    </div>
+                    <div className="flex gap-3 mt-3 text-xs text-stone-500">
+                      <span>Kc: {result.kc_used}</span>
+                      <span>Root: {result.root_depth_cm ?? "—"} cm</span>
                     </div>
                   </div>
 
                   {/* Practical advice */}
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
-                    <h3 className="font-semibold text-amber-800 mb-2">💡 Conselhos práticos</h3>
-                    <ul className="text-sm text-amber-700 space-y-1.5">
-                      <li>{waterAdvice(irrEfficiency, isStony)}</li>
-                      {isStony && <li>⚠️ Solo pedregoso: a água escorre mais depressa. Aplique <strong>mulch</strong> (palha/composto) à volta da planta para reter humidade.</li>}
-                      {irrEfficiency < 0.8 && <li>💧 Considere regar <strong>gota-a-gota</strong> para reduzir evaporação e poupar água.</li>}
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+                    <h3 className="font-semibold text-amber-800 mb-3">{t("calc.advice_title")}</h3>
+                    <ul className="text-sm text-amber-700 space-y-2 font-light">
+                      <li className="flex items-start gap-2"><ChevronRight className="w-4 h-4 shrink-0 mt-0.5" />{waterAdvice(t, irrEfficiency, isStony)}</li>
+                      {isStony && <li className="flex items-start gap-2"><ChevronRight className="w-4 h-4 shrink-0 mt-0.5" />{t("calc.advice_stony")}</li>}
+                      {irrEfficiency < 0.8 && <li className="flex items-start gap-2"><ChevronRight className="w-4 h-4 shrink-0 mt-0.5" />{t("calc.advice_drip")}</li>}
                       {rain !== "none" && (
-                        <li>☔ Registou {RAIN.find((r) => r.value === rain)?.label.toLowerCase()}. Reduza a rega para <strong>{(RAIN.find((r) => r.value === rain)?.factor ?? 1) * 100}%</strong> do valor calculado esta semana.</li>
+                        <li className="flex items-start gap-2"><ChevronRight className="w-4 h-4 shrink-0 mt-0.5" />
+                          {t("calc.advice_rain_adjust", { rain_label: RAIN(t).find((r: any) => r.value === rain)?.label ?? "", factor: ((RAIN(t).find((r: any) => r.value === rain)?.factor ?? 1) * 100) })}
+                        </li>
                       )}
                       {result.total_water_liters != null && parseFloat(flowRate) > 0 && (
-                        <li>
-                          ⏱️ Com o seu sistema ({flowRate} L/h), precisa de deixar a rega ligada <strong>{irrigationTime(result.total_water_liters * (isStony ? 0.7 : soilFactor) / irrEfficiency * (RAIN.find((r) => r.value === rain)?.factor ?? 1), parseFloat(flowRate))} minutos/dia</strong>.
+                        <li className="flex items-start gap-2"><ChevronRight className="w-4 h-4 shrink-0 mt-0.5" />
+                          {t("calc.advice_irrigation_time", { flow_rate: flowRate, minutes: irrigationTime(result.total_water_liters * (isStony ? 0.7 : soilFactor) / irrEfficiency * (RAIN(t).find((r: any) => r.value === rain)?.factor ?? 1), parseFloat(flowRate)) })}
                         </li>
                       )}
                       {selected.root_depth_cm && (
-                        <li>🌱 Regue de forma a humedecer até {selected.root_depth_cm} cm de profundidade (raízes). Regas curtas e frequentes favorecem raízes superficiais.</li>
+                        <li className="flex items-start gap-2"><ChevronRight className="w-4 h-4 shrink-0 mt-0.5" />{t("calc.advice_root_depth", { depth: selected.root_depth_cm })}</li>
                       )}
                     </ul>
                   </div>
 
                   {/* Technical details */}
-                  <details className="text-xs text-stone-400">
-                    <summary className="cursor-pointer hover:text-stone-600">Ver detalhes técnicos</summary>
-                    <div className="mt-2 space-y-1 p-3 bg-stone-50 rounded-lg">
-                      <p>ETo estimado: <strong>{etoValue} mm/dia</strong></p>
-                      <p>Fator do solo ({soilObj?.label}): ×{soilFactor}</p>
-                      <p>Eficiência da rega ({irrObj?.label}): ×{irrEfficiency}</p>
-                      {rain !== "none" && <p>Ajuste por chuva: ×{RAIN.find((r) => r.value === rain)?.factor ?? 1}</p>}
-                      <p>ETc (necessidade base): {result.etc_mm} mm/dia</p>
-                      {result.water_per_plant_liters != null && <p>Água/planta: {result.water_per_plant_liters} L/dia (ajustado ao solo)</p>}
-                      {result.total_water_liters != null && <p>Total: {result.total_water_liters} L/dia (ajustado ao solo × {soilFactor})</p>}
+                  <details className="text-xs text-stone-400 group">
+                    <summary className="cursor-pointer hover:text-stone-600 font-medium transition">{t("calc.technical_details")}</summary>
+                    <div className="mt-2 space-y-1.5 p-4 bg-primary-50 rounded-xl">
+                      <p>{t("calc.tech_eto", { value: etoValue })}</p>
+                      <p>{t("calc.tech_soil_factor", { label: soilObj?.label ?? "", factor: soilFactor })}</p>
+                      <p>{t("calc.tech_irr_efficiency", { label: irrObj?.label ?? "", factor: irrEfficiency })}</p>
+                      {rain !== "none" && <p>{t("calc.tech_rain_adjust", { factor: RAIN(t).find((r: any) => r.value === rain)?.factor ?? 1 })}</p>}
+                      <p>{t("calc.tech_etc", { value: result.etc_mm })}</p>
+                      {result.water_per_plant_liters != null && <p>{t("calc.tech_water_per_plant", { value: result.water_per_plant_liters, factor: soilFactor })}</p>}
+                      {result.total_water_liters != null && <p>{t("calc.tech_total", { value: result.total_water_liters, factor: soilFactor })}</p>}
                     </div>
                   </details>
                 </div>
               )}
-            </div>
+            </Card>
           )}
 
           {!selected && (
-            <div className="bg-white border border-stone-200 rounded-xl p-8 text-center text-stone-400">
-              <Droplets className="w-12 h-12 mx-auto mb-3 text-stone-300" />
-              <p>{t("calc.select_plant")}</p>
-              <p className="text-xs mt-2 text-stone-300">Selecione uma planta na lista ao lado para começar</p>
-            </div>
+            <Card variant="plain" className="p-8 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-primary-50 flex items-center justify-center mx-auto mb-4">
+                <Droplets className="w-8 h-8 text-primary-300" />
+              </div>
+              <p className="text-stone-500 font-light">{t("calc.select_plant")}</p>
+              <p className="text-xs text-stone-400 mt-1.5 font-light">{t("calc.select_plant_hint")}</p>
+            </Card>
           )}
         </div>
       </div>
@@ -501,7 +478,7 @@ function IrrigationCalculatorContent() {
 
 export default function IrrigationCalculatorPage() {
   return (
-    <Suspense fallback={<div className="max-w-6xl mx-auto px-4 py-12 text-stone-400">A carregar...</div>}>
+    <Suspense fallback={<div className="max-w-6xl mx-auto px-4 sm:px-8 py-12 space-y-4"><div className="h-8 bg-primary-100 rounded w-96 animate-pulse" /><div className="h-4 bg-primary-100 rounded w-64 animate-pulse" /><div className="grid lg:grid-cols-5 gap-8"><div className="lg:col-span-2 h-64 bg-primary-100 rounded-xl animate-pulse" /><div className="lg:col-span-3 h-96 bg-primary-100 rounded-xl animate-pulse" /></div></div>}>
       <IrrigationCalculatorContent />
     </Suspense>
   );

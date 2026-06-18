@@ -15,6 +15,8 @@ from app.schemas.plant import (
     CalendarPlantItem,
 )
 from app.services.plant_crawler import crawl_utad_species, normalize_name, merge_plant_data
+from app.services.inaturalist import search_taxa, get_portugal_observations
+from app.services.gbif import search_species, get_portugal_occurrences
 
 ZONE_OFFSETS = {"cool": 1, "moderate": 0, "warm": -1, "hot": -2}
 
@@ -139,6 +141,40 @@ async def get_plant(plant_id: int, db: AsyncSession = Depends(get_db)):
     if not plant:
         raise HTTPException(404, "Plant not found")
     return plant
+
+
+@router.get("/{plant_id}/detail")
+async def get_plant_detail(plant_id: int, db: AsyncSession = Depends(get_db)):
+    """Get plant with enriched external data (iNaturalist + GBIF)."""
+    plant = await db.get(Plant, plant_id)
+    if not plant:
+        raise HTTPException(404, "Plant not found")
+
+    # Fetch external data concurrently
+    inat_results = await search_taxa(plant.scientific_name, limit=3)
+    gbif_results = await search_species(plant.scientific_name, limit=3)
+
+    # Get GBIF occurrences if we have a taxon key
+    gbif_occurrences = {"total": 0, "occurrences": []}
+    if gbif_results:
+        gbif_occurrences = await get_portugal_occurrences(gbif_results[0]["key"], limit=10)
+
+    # Get iNaturalist observations
+    inat_observations = await get_portugal_observations(plant.scientific_name, limit=5)
+
+    return {
+        "plant": PlantResponse.model_validate(plant),
+        "external": {
+            "inaturalist": {
+                "taxa": inat_results,
+                "observations_pt": inat_observations,
+            },
+            "gbif": {
+                "species": gbif_results,
+                "occurrences_pt": gbif_occurrences,
+            },
+        },
+    }
 
 
 @router.post("", response_model=PlantResponse)

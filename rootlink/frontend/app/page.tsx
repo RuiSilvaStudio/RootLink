@@ -1,198 +1,297 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Leaf, TreePine, Wrench, Users, BookOpen, Calendar, CheckSquare, Droplets } from "lucide-react";
+import { Search, Leaf, TreePine, Wrench, Users, BookOpen, Calendar, CheckSquare, Droplets, Sprout, ArrowRight, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { StatCounter } from "@/components/ui/StatCounter";
+import { ContentCardSkeleton } from "@/components/ui/LoadingSkeleton";
 
 const categories = [
-  { tKey: "search.category_gardening", slug: "gardening", icon: Leaf, color: "bg-green-100 text-green-700" },
-  { tKey: "search.category_woodworking", slug: "woodworking", icon: TreePine, color: "bg-amber-100 text-amber-700" },
-  { tKey: "search.category_craft_trades", slug: "craft_trades", icon: Wrench, color: "bg-stone-100 text-stone-700" },
+  { tKey: "search.category_gardening", slug: "gardening", icon: Sprout, color: "bg-primary-100/50" },
+  { tKey: "search.category_woodworking", slug: "woodworking", icon: TreePine, color: "bg-earth-100/50" },
+  { tKey: "search.category_craft_trades", slug: "craft_trades", icon: Wrench, color: "bg-stone-200/50" },
 ];
 
 export default function Home() {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<any[]>([]);
   const [recent, setRecent] = useState<any[]>([]);
-  const [searched, setSearched] = useState(false);
+  const [stats, setStats] = useState<any>(null);
+  const [statsError, setStatsError] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { t } = useLocale();
+  const router = useRouter();
 
   useEffect(() => {
-    api.content.recent(8).then(setRecent).catch(() => {});
+    Promise.all([
+      api.content.recent(8),
+      api.content.publicStats().catch((e: Error) => {
+        console.warn("publicStats failed:", e);
+        setStatsError(true);
+        return null;
+      }),
+    ]).then(([recentData, statsData]) => {
+      setRecent(recentData || []);
+      setStats(statsData);
+    }).finally(() => setLoading(false));
   }, []);
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
-    setSearched(true);
-    const res = await api.content.search({ q: query });
-    setResults(res.results);
+    router.push(`/search?q=${encodeURIComponent(query.trim())}`);
   };
 
   return (
     <div>
-      <section className="bg-gradient-to-b from-primary-50 to-stone-50 py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl font-bold text-primary-900 font-serif mb-4">
-            {t("home.hero_title")}
-          </h1>
-          <p className="text-xl text-stone-600 mb-8 max-w-2xl mx-auto">
-            {t("home.hero_subtitle")}
-          </p>
-          <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 w-5 h-5" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t("home.search_placeholder")}
-                className="w-full pl-12 pr-4 py-4 rounded-xl border border-stone-300 bg-white shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-lg"
-              />
+      {/* ========== HERO — editorial split ========== */}
+      <section className="hero-grad min-h-[90vh] flex items-center px-4 sm:px-8 pt-16">
+        <div className="max-w-6xl mx-auto w-full">
+          <div className="grid lg:grid-cols-5 gap-12 items-center">
+            <div className="lg:col-span-3 animate-fade-in">
+              <Badge variant="sage" className="mb-6">
+                {t("home.discover_rootlink")}
+              </Badge>
+              <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-display font-semibold text-stone-800 leading-[0.95] tracking-tight">
+                {t("home.hero_title")}
+              </h1>
+              <div className="mt-6 w-20 h-0.5 bg-primary-300/50 rounded-full" />
+              <p className="text-lg sm:text-xl text-stone-500 mt-6 max-w-lg font-serif leading-relaxed">
+                {t("home.hero_subtitle")}
+              </p>
+              <form onSubmit={handleSearch} className="mt-8 flex flex-col sm:flex-row gap-3 max-w-lg">
+                <div className="relative flex-1">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={t("home.search_placeholder")}
+                    className="w-full pl-11 pr-4 py-3 rounded-xl2 border border-primary-200/60 bg-white/80 backdrop-blur-sm text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none transition-all font-serif"
+                  />
+                </div>
+                <Button type="submit" size="md">{t("home.search")}</Button>
+              </form>
             </div>
-          </form>
-          {searched && (
-            <div className="mt-8 text-left max-w-2xl mx-auto">
-              {results.length === 0 ? (
-                <p className="text-stone-500 text-center">{t("home.no_results")}</p>
-              ) : (
-                <div className="space-y-4">
-                  {results.map((r: any) => (
-                    <a
-                      key={r.content.id}
-                      href={r.content.url || `/content/${r.content.id}`}
-                      target={r.content.url ? "_blank" : undefined}
-                      rel={r.content.url ? "noopener noreferrer" : undefined}
-                      className="block bg-white p-4 rounded-lg border border-stone-200 hover:shadow-md transition"
-                    >
-                      <h3 className="font-semibold text-primary-800">{r.content.title}</h3>
-                      <p className="text-sm text-stone-600 mt-1">
-                        {r.content.summary?.slice(0, 200)}...
-                      </p>
-                      <div className="flex gap-2 mt-2 flex-wrap">
-                        {r.content.verification_status === "community_reviewed" && (
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded font-medium">
-                            {t("home.reviewed")}
-                          </span>
-                        )}
-                        {r.content.verification_status === "cross_referenced" && (
-                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-medium">
-                            {t("home.cross_ref")}
-                          </span>
-                        )}
-                        <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded">
-                          {r.content.category}
-                        </span>
-                        <span className="text-xs bg-stone-100 text-stone-600 px-2 py-0.5 rounded">
-                          {r.content.content_type}
-                        </span>
-                        <span className="text-xs text-stone-400 ml-auto">
-                          {Math.round(r.score * 100)}% match
-                        </span>
+
+            {/* Editorial stat column */}
+            <div className="lg:col-span-2 space-y-8 lg:border-l lg:border-primary-200/30 lg:pl-12 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+              {statsError ? (
+                <div className="space-y-6">
+                  {[t("home.active_members"), t("home.articles_curated"), t("home.community_gardens"), t("home.guides_courses")].map((label, i) => (
+                    <div key={label}>
+                      {i > 0 && <div className="w-full h-px bg-primary-200/20 mb-6" />}
+                      <div className="text-center">
+                        <div className="number-lg text-4xl sm:text-5xl text-stone-300">—</div>
+                        <p className="text-sm text-stone-400 mt-2 font-serif tracking-wide italic">{label}</p>
                       </div>
-                    </a>
+                    </div>
                   ))}
                 </div>
+              ) : (
+                <div className="space-y-6">
+                  <StatCounter value={stats?.users || 0} label={t("home.active_members")} />
+                  <div className="w-full h-px bg-primary-200/20" />
+                  <StatCounter value={stats?.content || 0} label={t("home.articles_curated")} />
+                  <div className="w-full h-px bg-primary-200/20" />
+                  <StatCounter value={stats?.groups || 0} label={t("home.community_gardens")} />
+                  <div className="w-full h-px bg-primary-200/20" />
+                  <StatCounter value={stats?.courses || 0} label={t("home.guides_courses")} />
+                </div>
               )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========== CATEGORIES — editorial feature grid ========== */}
+      <section className="px-4 sm:px-8 py-24 sm:py-32">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-16">
+            <Badge variant="earth" className="mb-5">{t("home.browse_category")}</Badge>
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-display font-semibold text-stone-800 leading-[1.05] max-w-2xl">
+              {t("home.find_your_corner")}
+            </h2>
+            <div className="mt-5 w-16 h-0.5 bg-primary-300/40 rounded-full" />
+          </div>
+          <div className="grid sm:grid-cols-3 gap-6">
+            {categories.map((cat, i) => (
+              <a
+                key={cat.slug}
+                href={`/search?category=${cat.slug}`}
+                className="card-lift p-8 sm:p-10 group relative overflow-hidden"
+                style={{ animationDelay: `${i * 0.12}s` }}
+              >
+                <div className={`w-14 h-14 rounded-2xl ${cat.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                  <cat.icon className="w-7 h-7 text-primary-600" />
+                </div>
+                <h3 className="text-2xl font-display font-semibold text-stone-800 mb-3">{t(cat.tKey)}</h3>
+                <p className="text-stone-500 font-serif leading-relaxed">
+                  {t("home.discover_category", { category: t(cat.tKey).toLowerCase() })}
+                </p>
+                <span className="inline-flex items-center gap-2 text-sm font-display font-medium text-primary-600 mt-6 group-hover:gap-3 transition-all">
+                  {t("home.explore")} <ArrowRight className="w-3.5 h-3.5" />
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ========== TOOLS — editorial spread ========== */}
+      <section className="px-4 sm:px-8 py-24 sm:py-32 bg-primary-50/40 noise-bg">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-16 max-w-2xl">
+            <Badge variant="sage" className="mb-5">{t("home.featured_tools")}</Badge>
+            <h2 className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 leading-[1.05]">
+              {t("home.built_for_seasons")}
+            </h2>
+            <p className="mt-5 text-lg text-stone-500 font-serif leading-relaxed">{t("home.tools_subtitle")}</p>
+            <div className="mt-5 w-16 h-0.5 bg-primary-300/40 rounded-full" />
+          </div>
+          <div className="grid sm:grid-cols-3 gap-6">
+            <a href="/tools/gardening-calendar" className="card-lift p-8 sm:p-10 group">
+              <div className="w-12 h-12 rounded-xl bg-primary-100/60 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
+                <Calendar className="w-6 h-6 text-primary-600" />
+              </div>
+              <h3 className="text-xl font-display font-semibold text-stone-800">{t("home.gardening_calendar")}</h3>
+              <p className="text-stone-500 mt-3 font-serif text-sm leading-relaxed">{t("home.gardening_calendar_desc")}</p>
+            </a>
+            <a href="/tools/monthly-checklist" className="card-lift p-8 sm:p-10 group">
+              <div className="w-12 h-12 rounded-xl bg-earth-100/60 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
+                <CheckSquare className="w-6 h-6 text-earth-600" />
+              </div>
+              <h3 className="text-xl font-display font-semibold text-stone-800">{t("home.monthly_checklist")}</h3>
+              <p className="text-stone-500 mt-3 font-serif text-sm leading-relaxed">{t("home.monthly_checklist_desc")}</p>
+            </a>
+            <a href="/tools/irrigation-calculator" className="card-lift p-8 sm:p-10 group">
+              <div className="w-12 h-12 rounded-xl bg-sky-100/60 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
+                <Droplets className="w-6 h-6 text-sky-600" />
+              </div>
+              <h3 className="text-xl font-display font-semibold text-stone-800">{t("home.irrigation_calculator")}</h3>
+              <p className="text-stone-500 mt-3 font-serif text-sm leading-relaxed">{t("home.irrigation_calculator_desc")}</p>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ========== COMMUNITY — editorial spread ========== */}
+      <section className="px-4 sm:px-8 py-24 sm:py-32">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-16">
+            <Badge variant="green" className="mb-5">{t("home.community")}</Badge>
+            <h2 className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 leading-[1.05]">{t("home.learning")}</h2>
+            <div className="mt-5 w-16 h-0.5 bg-primary-300/40 rounded-full" />
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            <a href="/groups" className="group border border-primary-200/30 rounded-2xl p-8 transition-all duration-200 hover:shadow-lg hover:shadow-primary-900/5 hover:-translate-y-0.5 hover:border-primary-300/50 bg-white">
+              <div className="w-12 h-12 rounded-xl bg-primary-100/50 flex items-center justify-center mb-5 group-hover:bg-primary-100 transition">
+                <Users className="w-6 h-6 text-primary-600" />
+              </div>
+              <h3 className="text-xl font-display font-semibold text-stone-800 mb-2 group-hover:text-primary-700 transition">{t("home.community")}</h3>
+              <p className="text-stone-500 font-serif text-sm leading-relaxed mb-5">{t("home.community_desc")}</p>
+              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 group-hover:gap-2.5 transition-all">
+                {t("home.explore")} <span className="text-lg leading-none">→</span>
+              </span>
+            </a>
+            <a href="/learning" className="group border border-primary-200/30 rounded-2xl p-8 transition-all duration-200 hover:shadow-lg hover:shadow-primary-900/5 hover:-translate-y-0.5 hover:border-primary-300/50 bg-white">
+              <div className="w-12 h-12 rounded-xl bg-primary-100/50 flex items-center justify-center mb-5 group-hover:bg-primary-100 transition">
+                <BookOpen className="w-6 h-6 text-primary-600" />
+              </div>
+              <h3 className="text-xl font-display font-semibold text-stone-800 mb-2 group-hover:text-primary-700 transition">{t("home.learning")}</h3>
+              <p className="text-stone-500 font-serif text-sm leading-relaxed mb-5">{t("home.learning_desc")}</p>
+              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 group-hover:gap-2.5 transition-all">
+                {t("home.explore")} <span className="text-lg leading-none">→</span>
+              </span>
+            </a>
+            <a href="/events" className="group border border-primary-200/30 rounded-2xl p-8 transition-all duration-200 hover:shadow-lg hover:shadow-primary-900/5 hover:-translate-y-0.5 hover:border-primary-300/50 bg-white">
+              <div className="w-12 h-12 rounded-xl bg-primary-100/50 flex items-center justify-center mb-5 group-hover:bg-primary-100 transition">
+                <Calendar className="w-6 h-6 text-primary-600" />
+              </div>
+              <h3 className="text-xl font-display font-semibold text-stone-800 mb-2 group-hover:text-primary-700 transition">{t("home.events")}</h3>
+              <p className="text-stone-500 font-serif text-sm leading-relaxed mb-5">{t("home.events_desc")}</p>
+              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 group-hover:gap-2.5 transition-all">
+                {t("home.explore")} <span className="text-lg leading-none">→</span>
+              </span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ========== RECENT CONTENT — editorial grid ========== */}
+      <section className="px-4 sm:px-8 py-24 sm:py-32 bg-primary-50/40 noise-bg">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-16">
+            <Badge variant="green" className="mb-5">{t("home.recently_indexed")}</Badge>
+            <h2 className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 leading-[1.05]">{t("home.from_community")}</h2>
+            <div className="mt-5 w-16 h-0.5 bg-primary-300/40 rounded-full" />
+          </div>
+          {loading ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {[1, 2, 3, 4].map((i) => (
+                <ContentCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : recent.length === 0 ? (
+            <p className="text-center text-stone-400 py-12 font-serif">{t("home.no_recent_content")}</p>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {recent.slice(0, 8).map((item: any) => (
+                <a
+                  key={item.id}
+                  href={item.url || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="card-lift overflow-hidden group"
+                >
+                  <div className="h-40 bg-primary-100/40 flex items-center justify-center overflow-hidden">
+                    {item.image_url ? (
+                      <img src={item.image_url} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy"
+                        onError={(e) => { e.currentTarget.style.display = "none"; (e.currentTarget.parentElement!.classList.add("bg-primary-100/40")); }}
+                      />
+                    ) : (
+                      <Leaf className="w-10 h-10 text-primary-300" />
+                    )}
+                  </div>
+                  <div className="p-5">
+                    <div className="flex items-center gap-2 mb-3 flex-wrap">
+                      <Badge variant="sage" className="text-[10px]">{item.category}</Badge>
+                      {item.content_type && <Badge variant="stone" className="text-[10px]">{item.content_type}</Badge>}
+                    </div>
+                    <h3 className="font-display font-semibold text-stone-800 text-sm leading-snug line-clamp-2 group-hover:text-primary-700 transition">{item.title}</h3>
+                    {item.summary && (
+                      <p className="text-stone-500 text-xs mt-2 font-serif leading-relaxed line-clamp-2">{item.summary}</p>
+                    )}
+                  </div>
+                </a>
+              ))}
             </div>
           )}
         </div>
       </section>
 
-      <section className="py-16 px-4 max-w-6xl mx-auto">
-        <h2 className="text-2xl font-bold text-stone-800 font-serif mb-8">
-          {t("home.browse_category")}
-        </h2>
-        <div className="grid md:grid-cols-3 gap-6">
-          {categories.map((cat) => (
-            <a
-              key={cat.slug}
-              href={`/search?category=${cat.slug}`}
-              className={`p-6 rounded-xl border border-stone-200 bg-white hover:shadow-lg transition group ${cat.color}`}
-            >
-              <cat.icon className="w-10 h-10 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">{t(cat.tKey)}</h3>
-              <p className="text-stone-600 text-sm">
-                {t("home.discover_category", { category: t(cat.tKey).toLowerCase() })}
-              </p>
-            </a>
-          ))}
+      {/* ========== CTA ========== */}
+      <section className="px-4 sm:px-8 py-24 sm:py-32">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="w-12 h-px bg-primary-300/40 mx-auto mb-8" />
+          <Badge variant="sage" className="mb-5">{t("home.join_community")}</Badge>
+          <h2 className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 leading-[1.05]">{t("home.ready_to_share")}</h2>
+          <p className="text-stone-500 mt-5 max-w-md mx-auto font-serif text-lg leading-relaxed">{t("home.cta_subtitle")}</p>
+          <div className="flex flex-wrap justify-center gap-4 mt-10">
+            <Button variant="primary" size="lg" onClick={() => window.location.href = "/submit"}>
+              {t("home.submit_link")}
+            </Button>
+            <Button variant="secondary" size="lg" onClick={() => window.location.href = "/search"}>
+              {t("home.browse_all")}
+            </Button>
+          </div>
+          <div className="mt-10 w-12 h-px bg-primary-300/40 mx-auto" />
         </div>
       </section>
-
-      <section className="py-16 px-4 max-w-6xl mx-auto">
-        <h2 className="text-2xl font-bold text-stone-800 font-serif mb-8">
-          {t("home.featured_tools")}
-        </h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <a href="/tools/gardening-calendar" className="p-6 rounded-xl border border-stone-200 bg-white hover:shadow-lg transition group">
-            <Calendar className="w-10 h-10 mb-3 text-green-600" />
-            <h3 className="text-lg font-semibold text-stone-800 mb-1">{t("home.gardening_calendar")}</h3>
-            <p className="text-sm text-stone-500">{t("home.gardening_calendar_desc")}</p>
-          </a>
-          <a href="/tools/monthly-checklist" className="p-6 rounded-xl border border-stone-200 bg-white hover:shadow-lg transition group">
-            <CheckSquare className="w-10 h-10 mb-3 text-amber-600" />
-            <h3 className="text-lg font-semibold text-stone-800 mb-1">{t("home.monthly_checklist")}</h3>
-            <p className="text-sm text-stone-500">{t("home.monthly_checklist_desc")}</p>
-          </a>
-          <a href="/tools/irrigation-calculator" className="p-6 rounded-xl border border-stone-200 bg-white hover:shadow-lg transition group">
-            <Droplets className="w-10 h-10 mb-3 text-blue-600" />
-            <h3 className="text-lg font-semibold text-stone-800 mb-1">{t("home.irrigation_calculator")}</h3>
-            <p className="text-sm text-stone-500">{t("home.irrigation_calculator_desc")}</p>
-          </a>
-        </div>
-      </section>
-
-      <section className="bg-stone-100 py-16 px-4">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8">
-          <div className="text-center p-6">
-            <Users className="w-12 h-12 text-primary-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-stone-800">{t("home.community")}</h3>
-            <p className="text-stone-600 mt-2">
-              {t("home.community_desc")}
-            </p>
-          </div>
-          <div className="text-center p-6">
-            <BookOpen className="w-12 h-12 text-primary-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-stone-800">{t("home.learning")}</h3>
-            <p className="text-stone-600 mt-2">
-              {t("home.learning_desc")}
-            </p>
-          </div>
-          <div className="text-center p-6">
-            <Calendar className="w-12 h-12 text-primary-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-stone-800">{t("home.events")}</h3>
-            <p className="text-stone-600 mt-2">
-              {t("home.events_desc")}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {recent.length > 0 && (
-        <section className="py-16 px-4 max-w-6xl mx-auto">
-          <h2 className="text-2xl font-bold text-stone-800 font-serif mb-8">
-            {t("home.recently_indexed")}
-          </h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {recent.map((item: any) => (
-              <a
-                key={item.id}
-                href={item.url || "#"}
-                className="block bg-white p-4 rounded-lg border border-stone-200 hover:shadow-md transition"
-              >
-                <h3 className="font-medium text-stone-800 line-clamp-2">
-                  {item.title}
-                </h3>
-                <p className="text-xs text-stone-400 mt-2">
-                  {item.category} · {item.content_type}
-                </p>
-              </a>
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 }

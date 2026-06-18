@@ -1,11 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, delete
+from sqlalchemy import select, func, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user, get_optional_user
 from app.models.user import User
 from app.models.content import Content, Bookmark, SearchQueryLog
+from app.models.group import Group
+from app.models.comment import Comment
+from app.models.event import Event
+from app.models.learning import Course, Enrollment
 from app.schemas.content import ContentResponse, SearchResponse, BookmarkResponse, BookmarkCreate, IndexRequest
 from app.services.search import hybrid_search
 from app.services.embeddings import embed_text
@@ -37,6 +41,20 @@ async def recent(
 ):
     result = await db.execute(
         select(Content).order_by(Content.crawled_at.desc()).limit(limit)
+    )
+    return result.scalars().all()
+
+
+@router.get("/popular", response_model=list[ContentResponse])
+async def popular(
+    limit: int = Query(10, ge=1, le=50),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Content)
+        .where(Content.verification_status.in_(["community_reviewed", "cross_referenced"]))
+        .order_by(Content.published_at.desc(), Content.crawled_at.desc())
+        .limit(limit)
     )
     return result.scalars().all()
 
@@ -152,3 +170,33 @@ async def index_content(
     await db.refresh(content)
     await auto_cross_reference(db, content)
     return content
+
+
+@router.get("/stats/public")
+async def public_stats(db: AsyncSession = Depends(get_db)):
+    users_count = await db.scalar(select(func.count(User.id)))
+    content_count = await db.scalar(select(func.count(Content.id)))
+    groups_count = await db.scalar(select(func.count(Group.id)))
+    events_count = await db.scalar(select(func.count(Event.id)))
+    courses_count = await db.scalar(select(func.count(Course.id)))
+    return {
+        "users": users_count or 0,
+        "content": content_count or 0,
+        "groups": groups_count or 0,
+        "events": events_count or 0,
+        "courses": courses_count or 0,
+    }
+
+
+@router.get("/trending-searches")
+async def trending_searches(
+    limit: int = Query(10, ge=1, le=50),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(SearchQueryLog.query, func.count(SearchQueryLog.id).label("count"))
+        .group_by(SearchQueryLog.query)
+        .order_by(func.count(SearchQueryLog.id).desc())
+        .limit(limit)
+    )
+    return [{"query": row[0], "count": row[1]} for row in result.all()]

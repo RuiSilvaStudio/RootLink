@@ -74,6 +74,12 @@ export const api = {
     },
     recent: (limit = 20) =>
       request<any[]>(`/api/content/recent?limit=${limit}`),
+    popular: (limit = 10) =>
+      request<any[]>(`/api/content/popular?limit=${limit}`),
+    trendingSearches: (limit = 10) =>
+      request<{ query: string; count: number }[]>(`/api/content/trending-searches?limit=${limit}`),
+    publicStats: () =>
+      request<{ users: number; content: number; groups: number; events: number; courses: number }>("/api/content/stats/public"),
     byCategory: (category: string, limit = 20) =>
       request<any[]>(`/api/content/by-category/${category}?limit=${limit}`),
     get: (id: number) => request<any>(`/api/content/${id}`),
@@ -109,11 +115,12 @@ export const api = {
     members: (id: number) => request<any[]>(`/api/groups/${id}/members`),
   },
   events: {
-    list: (upcoming = true, category?: string, group_id?: number) => {
+    list: (upcoming = true, category?: string, group_id?: number, status?: string) => {
       const qs = new URLSearchParams();
       qs.set("upcoming", String(upcoming));
       if (category) qs.set("category", category);
       if (group_id) qs.set("group_id", String(group_id));
+      if (status) qs.set("status", status);
       return request<any[]>(`/api/events/?${qs}`);
     },
     get: (id: number) => request<any>(`/api/events/${id}`),
@@ -136,6 +143,88 @@ export const api = {
     attendees: (id: number) =>
       request<any[]>(`/api/events/${id}/attendees`),
     myRsvps: () => request<any[]>("/api/events/my/rsvps"),
+    // Venue
+    getVenue: (id: number) => request<any>(`/api/events/${id}/venue`),
+    upsertVenue: (id: number, data: any) =>
+      request<any>(`/api/events/${id}/venue`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    // Amenities
+    getAmenities: (id: number) => request<any[]>(`/api/events/${id}/amenities`),
+    createAmenity: (id: number, data: any) =>
+      request<any>(`/api/events/${id}/amenities`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    updateAmenity: (id: number, amenityId: number, data: any) =>
+      request<any>(`/api/events/${id}/amenities/${amenityId}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    deleteAmenity: (id: number, amenityId: number) =>
+      request<void>(`/api/events/${id}/amenities/${amenityId}`, { method: "DELETE" }),
+    // Schedule
+    getSchedule: (id: number) => request<any[]>(`/api/events/${id}/schedule`),
+    createScheduleItem: (id: number, data: any) =>
+      request<any>(`/api/events/${id}/schedule`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    updateScheduleItem: (id: number, itemId: number, data: any) =>
+      request<any>(`/api/events/${id}/schedule/${itemId}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    deleteScheduleItem: (id: number, itemId: number) =>
+      request<void>(`/api/events/${id}/schedule/${itemId}`, { method: "DELETE" }),
+    // Sponsors
+    getSponsors: (id: number, visibleOnly = false) =>
+      request<any[]>(`/api/events/${id}/sponsors?visible_only=${visibleOnly}`),
+    createSponsor: (id: number, data: any) =>
+      request<any>(`/api/events/${id}/sponsors`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    updateSponsor: (id: number, sponsorId: number, data: any) =>
+      request<any>(`/api/events/${id}/sponsors/${sponsorId}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    deleteSponsor: (id: number, sponsorId: number) =>
+      request<void>(`/api/events/${id}/sponsors/${sponsorId}`, { method: "DELETE" }),
+    // Vendors
+    getVendors: (id: number, visibleOnly = false) =>
+      request<any[]>(`/api/events/${id}/vendors?visible_only=${visibleOnly}`),
+    createVendor: (id: number, data: any) =>
+      request<any>(`/api/events/${id}/vendors`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    updateVendor: (id: number, vendorId: number, data: any) =>
+      request<any>(`/api/events/${id}/vendors/${vendorId}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    deleteVendor: (id: number, vendorId: number) =>
+      request<void>(`/api/events/${id}/vendors/${vendorId}`, { method: "DELETE" }),
+    // Donations
+    getDonations: (id: number) => request<any[]>(`/api/events/${id}/donations`),
+    getDonationStats: (id: number) => request<any>(`/api/events/${id}/donations/stats`),
+    donate: (id: number, data: any) =>
+      request<any>(`/api/events/${id}/donate`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    // Tickets
+    purchaseTicket: (id: number, data: any) =>
+      request<any>(`/api/events/${id}/tickets/purchase`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    myTicket: (id: number) => request<any>(`/api/events/${id}/tickets/my`),
+    checkIn: (id: number, ticketId: number) =>
+      request<any>(`/api/events/${id}/check-in/${ticketId}`, { method: "POST" }),
   },
   learning: {
     courses: {
@@ -233,6 +322,10 @@ export const api = {
     nearby: (lat: number, lng: number, radiusKm = 50) =>
       request<any[]>(`/api/users/nearby?lat=${lat}&lng=${lng}&radius_km=${radiusKm}`),
     get: (id: number) => request<any>(`/api/users/${id}`),
+    stats: {
+      regions: () => request<{ region: string; count: number }[]>("/api/users/stats/regions"),
+      skills: () => request<{ skill: string; count: number }[]>("/api/users/stats/skills"),
+    },
   },
   messages: {
     conversations: () => request<any[]>("/api/messages/conversations"),
@@ -319,6 +412,62 @@ export const api = {
       request<void>(`/api/admin/comments/${id}`, { method: "DELETE" }),
     broadcast: (message: string) =>
       request<{ sent_to: number }>(`/api/admin/broadcast?message=${encodeURIComponent(message)}`, { method: "POST" }),
+    // Tickets
+    listTickets: (params?: { event_id?: number; ticket_type?: string; payment_status?: string; q?: string; limit?: number; offset?: number }) => {
+      const qs = new URLSearchParams();
+      if (params?.event_id) qs.set("event_id", String(params.event_id));
+      if (params?.ticket_type) qs.set("ticket_type", params.ticket_type);
+      if (params?.payment_status) qs.set("payment_status", params.payment_status);
+      if (params?.q) qs.set("q", params.q);
+      if (params?.limit) qs.set("limit", String(params.limit));
+      if (params?.offset) qs.set("offset", String(params.offset));
+      return request<any[]>(`/api/admin/tickets?${qs}`);
+    },
+    ticketStats: () => request<any>("/api/admin/tickets/stats"),
+    // Donations
+    listDonations: (params?: { event_id?: number; is_anonymous?: boolean; payment_status?: string; q?: string; limit?: number; offset?: number }) => {
+      const qs = new URLSearchParams();
+      if (params?.event_id) qs.set("event_id", String(params.event_id));
+      if (params?.is_anonymous !== undefined) qs.set("is_anonymous", String(params.is_anonymous));
+      if (params?.payment_status) qs.set("payment_status", params.payment_status);
+      if (params?.q) qs.set("q", params.q);
+      if (params?.limit) qs.set("limit", String(params.limit));
+      if (params?.offset) qs.set("offset", String(params.offset));
+      return request<any[]>(`/api/admin/donations?${qs}`);
+    },
+    donationStats: () => request<any>("/api/admin/donations/stats"),
+    // Sponsors
+    listSponsors: (params?: { event_id?: number; tier?: string; agreement_status?: string; is_active?: boolean; q?: string; limit?: number; offset?: number }) => {
+      const qs = new URLSearchParams();
+      if (params?.event_id) qs.set("event_id", String(params.event_id));
+      if (params?.tier) qs.set("tier", params.tier);
+      if (params?.agreement_status) qs.set("agreement_status", params.agreement_status);
+      if (params?.is_active !== undefined) qs.set("is_active", String(params.is_active));
+      if (params?.q) qs.set("q", params.q);
+      if (params?.limit) qs.set("limit", String(params.limit));
+      if (params?.offset) qs.set("offset", String(params.offset));
+      return request<any[]>(`/api/admin/sponsors?${qs}`);
+    },
+    updateSponsor: (id: number, data: any) =>
+      request<any>(`/api/admin/sponsors/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    deleteSponsor: (id: number) =>
+      request<void>(`/api/admin/sponsors/${id}`, { method: "DELETE" }),
+    // Vendors
+    listVendors: (params?: { event_id?: number; service_type?: string; status?: string; agreement_status?: string; q?: string; limit?: number; offset?: number }) => {
+      const qs = new URLSearchParams();
+      if (params?.event_id) qs.set("event_id", String(params.event_id));
+      if (params?.service_type) qs.set("service_type", params.service_type);
+      if (params?.status) qs.set("status", params.status);
+      if (params?.agreement_status) qs.set("agreement_status", params.agreement_status);
+      if (params?.q) qs.set("q", params.q);
+      if (params?.limit) qs.set("limit", String(params.limit));
+      if (params?.offset) qs.set("offset", String(params.offset));
+      return request<any[]>(`/api/admin/vendors?${qs}`);
+    },
+    updateVendor: (id: number, data: any) =>
+      request<any>(`/api/admin/vendors/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    deleteVendor: (id: number) =>
+      request<void>(`/api/admin/vendors/${id}`, { method: "DELETE" }),
   },
   plants: {
     search: (params: { q?: string; plant_type?: string; genus?: string; family?: string; has_kc?: boolean; limit?: number }) => {
@@ -332,6 +481,7 @@ export const api = {
       return request<any[]>(`/api/plants/search?${qs}`);
     },
     get: (id: number) => request<any>(`/api/plants/${id}`),
+    getDetail: (id: number) => request<any>(`/api/plants/${id}/detail`),
     create: (data: any) =>
       request<any>("/api/plants", {
         method: "POST",
@@ -411,5 +561,53 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       }),
+  },
+  external: {
+    moon: () => request<{ phase: string; icon: string; illumination: number; agricultural_pt: string; agricultural_en: string; date: string }>("/api/external/moon"),
+    sun: (lat: number, lng: number) => request<{ sunrise: string; sunset: string; day_length_hours: number; golden_hour_morning: string; golden_hour_evening: string }>(`/api/external/sun?lat=${lat}&lng=${lng}`),
+    species: (q: string, limit = 5) => request<{ inaturalist: any[]; gbif: any[] }>(`/api/external/species?q=${encodeURIComponent(q)}&limit=${limit}`),
+    speciesAutocomplete: (q: string, limit = 5) => request<any[]>(`/api/external/species/autocomplete?q=${encodeURIComponent(q)}&limit=${limit}`),
+    speciesObservations: (taxonName: string, limit = 10) => request<any[]>(`/api/external/species/${encodeURIComponent(taxonName)}/observations?limit=${limit}`),
+    speciesOccurrences: (taxonKey: number, limit = 20) => request<{ total: number; occurrences: any[] }>(`/api/external/species/${taxonKey}/occurrences?limit=${limit}`),
+  },
+  images: {
+    upload: async (file: File, opts?: { source_type?: string; author?: string; license?: string; attribution_text?: string }) => {
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("file", file);
+      if (opts?.source_type) formData.append("source_type", opts.source_type);
+      if (opts?.author) formData.append("author", opts.author);
+      if (opts?.license) formData.append("license", opts.license);
+      if (opts?.attribution_text) formData.append("attribution_text", opts.attribution_text);
+
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const res = await fetch(`${API_URL}/api/images/upload`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: "Upload failed" }));
+        throw new Error(err.detail || "Upload failed");
+      }
+      return res.json();
+    },
+    fromUrl: (data: { url: string; source_type?: string; author?: string; license?: string; attribution_text?: string }) =>
+      request<any>("/api/images/from-url", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    get: (id: number) => request<any>(`/api/images/${id}`),
+    delete: (id: number) =>
+      request<void>(`/api/images/${id}`, { method: "DELETE" }),
+    serveUrl: (id: number, size: "original" | "large" | "medium" | "thumb") => {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      return `${API_URL}/api/images/${id}/serve/${size}`;
+    },
+    serveByHash: (hash: string, size: "original" | "large" | "medium" | "thumb") => {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      return `${API_URL}/api/images/by-hash/${hash}/${size}`;
+    },
   },
 };

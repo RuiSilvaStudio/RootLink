@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, func, delete
+from sqlalchemy import select, func, delete, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -8,13 +8,13 @@ from app.models.user import User, UserRole
 from app.models.content import Content, SearchQueryLog, VerificationStatus
 from app.models.group import Group, GroupMember
 from app.models.comment import Comment
-from app.models.event import Event, EventRSVP
+from app.models.event import Event, EventTicket, EventDonation, EventSponsor, EventVendor
 from app.models.learning import Course, Enrollment
 from app.models.notification import Notification, NotificationType
 from app.schemas.content import ContentResponse
+from app.schemas.event import SponsorUpdate, VendorUpdate
 from app.schemas.group import GroupResponse
 from app.schemas.comment import CommentResponse
-from app.schemas.notification import NotificationResponse
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -337,3 +337,281 @@ async def broadcast_notification(
         ))
     await db.commit()
     return {"sent_to": len(user_ids)}
+
+
+# ── Tickets Management ──
+
+@router.get("/tickets")
+async def admin_list_tickets(
+    event_id: int | None = None,
+    ticket_type: str | None = None,
+    payment_status: str | None = None,
+    q: str | None = None,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    _=require_mod,
+):
+    stmt = (
+        select(EventTicket, Event.title.label("event_title"), User.name.label("user_name"), User.email.label("user_email"))
+        .join(Event, EventTicket.event_id == Event.id)
+        .join(User, EventTicket.user_id == User.id)
+    )
+    if event_id:
+        stmt = stmt.where(EventTicket.event_id == event_id)
+    if ticket_type:
+        stmt = stmt.where(EventTicket.ticket_type == ticket_type)
+    if payment_status:
+        stmt = stmt.where(EventTicket.payment_status == payment_status)
+    if q:
+        stmt = stmt.where(or_(User.name.ilike(f"%{q}%"), User.email.ilike(f"%{q}%")))
+    stmt = stmt.order_by(EventTicket.created_at.desc()).offset(offset).limit(limit)
+    result = await db.execute(stmt)
+    rows = result.all()
+    return [
+        {
+            "id": t.id, "event_id": t.event_id, "event_title": event_title,
+            "user_id": t.user_id, "user_name": user_name, "user_email": user_email,
+            "ticket_type": t.ticket_type, "price": t.price, "quantity": t.quantity,
+            "total_paid": t.total_paid, "payment_status": t.payment_status,
+            "checked_in": t.checked_in, "checked_in_at": t.checked_in_at,
+            "created_at": t.created_at,
+        }
+        for t, event_title, user_name, user_email in rows
+    ]
+
+
+@router.get("/tickets/stats")
+async def admin_ticket_stats(
+    db: AsyncSession = Depends(get_db),
+    _=require_mod,
+):
+    total = await db.scalar(select(func.count(EventTicket.id))) or 0
+    revenue = await db.scalar(select(func.coalesce(func.sum(EventTicket.total_paid), 0))) or 0
+    by_type = await db.execute(
+        select(EventTicket.ticket_type, func.count(EventTicket.id))
+        .group_by(EventTicket.ticket_type)
+    )
+    by_event = await db.execute(
+        select(Event.title, func.count(EventTicket.id), func.coalesce(func.sum(EventTicket.total_paid), 0))
+        .join(Event, EventTicket.event_id == Event.id)
+        .group_by(Event.id)
+    )
+    return {
+        "total_tickets": total,
+        "total_revenue": revenue,
+        "by_type": [{"type": t, "count": c} for t, c in by_type.all()],
+        "by_event": [{"event_title": t, "count": c, "revenue": r} for t, c, r in by_event.all()],
+    }
+
+
+# ── Donations Management ──
+
+@router.get("/donations")
+async def admin_list_donations(
+    event_id: int | None = None,
+    is_anonymous: bool | None = None,
+    payment_status: str | None = None,
+    q: str | None = None,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    _=require_mod,
+):
+    stmt = (
+        select(EventDonation, Event.title.label("event_title"))
+        .join(Event, EventDonation.event_id == Event.id)
+    )
+    if event_id:
+        stmt = stmt.where(EventDonation.event_id == event_id)
+    if is_anonymous is not None:
+        stmt = stmt.where(EventDonation.is_anonymous == is_anonymous)
+    if payment_status:
+        stmt = stmt.where(EventDonation.payment_status == payment_status)
+    if q:
+        stmt = stmt.where(or_(EventDonation.donor_name.ilike(f"%{q}%"), EventDonation.donor_email.ilike(f"%{q}%")))
+    stmt = stmt.order_by(EventDonation.created_at.desc()).offset(offset).limit(limit)
+    result = await db.execute(stmt)
+    rows = result.all()
+    return [
+        {
+            "id": d.id, "event_id": d.event_id, "event_title": event_title,
+            "user_id": d.user_id, "amount": d.amount, "currency": d.currency,
+            "donor_name": "Anonymous" if d.is_anonymous else d.donor_name,
+            "donor_email": "Anonymous" if d.is_anonymous else d.donor_email,
+            "message": d.message, "is_anonymous": d.is_anonymous,
+            "payment_method": d.payment_method, "payment_status": d.payment_status,
+            "created_at": d.created_at,
+        }
+        for d, event_title in rows
+    ]
+
+
+@router.get("/donations/stats")
+async def admin_donation_stats(
+    db: AsyncSession = Depends(get_db),
+    _=require_mod,
+):
+    total = await db.scalar(
+        select(func.coalesce(func.sum(EventDonation.amount), 0))
+        .where(EventDonation.payment_status == "completed")
+    ) or 0
+    count = await db.scalar(
+        select(func.count(EventDonation.id))
+        .where(EventDonation.payment_status == "completed")
+    ) or 0
+    by_event = await db.execute(
+        select(Event.title, func.count(EventDonation.id), func.coalesce(func.sum(EventDonation.amount), 0))
+        .join(Event, EventDonation.event_id == Event.id)
+        .where(EventDonation.payment_status == "completed")
+        .group_by(Event.id)
+    )
+    return {
+        "total_raised": total,
+        "total_donations": count,
+        "by_event": [{"event_title": t, "count": c, "total": r} for t, c, r in by_event.all()],
+    }
+
+
+# ── Sponsors Management ──
+
+@router.get("/sponsors")
+async def admin_list_sponsors(
+    event_id: int | None = None,
+    tier: str | None = None,
+    agreement_status: str | None = None,
+    is_active: bool | None = None,
+    q: str | None = None,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    _=require_mod,
+):
+    stmt = (
+        select(EventSponsor, Event.title.label("event_title"))
+        .join(Event, EventSponsor.event_id == Event.id)
+    )
+    if event_id:
+        stmt = stmt.where(EventSponsor.event_id == event_id)
+    if tier:
+        stmt = stmt.where(EventSponsor.tier == tier)
+    if agreement_status:
+        stmt = stmt.where(EventSponsor.agreement_status == agreement_status)
+    if is_active is not None:
+        stmt = stmt.where(EventSponsor.is_active == is_active)
+    if q:
+        stmt = stmt.where(EventSponsor.name.ilike(f"%{q}%"))
+    stmt = stmt.order_by(EventSponsor.created_at.desc()).offset(offset).limit(limit)
+    result = await db.execute(stmt)
+    rows = result.all()
+    return [
+        {
+            "id": s.id, "event_id": s.event_id, "event_title": event_title,
+            "name": s.name, "logo_url": s.logo_url, "tier": s.tier,
+            "contribution": s.contribution, "contact_name": s.contact_name,
+            "contact_email": s.contact_email, "agreement_url": s.agreement_url,
+            "agreement_status": s.agreement_status, "is_active": s.is_active,
+            "visible_to_attendees": s.visible_to_attendees, "created_at": s.created_at,
+        }
+        for s, event_title in rows
+    ]
+
+
+@router.patch("/sponsors/{sponsor_id}")
+async def admin_update_sponsor(
+    sponsor_id: int,
+    body: SponsorUpdate,
+    db: AsyncSession = Depends(get_db),
+    _=require_mod,
+):
+    result = await db.execute(select(EventSponsor).where(EventSponsor.id == sponsor_id))
+    sponsor = result.scalar_one_or_none()
+    if not sponsor:
+        raise HTTPException(status_code=404, detail="Sponsor not found")
+    for key, val in body.model_dump(exclude_unset=True).items():
+        setattr(sponsor, key, val)
+    await db.commit()
+    await db.refresh(sponsor)
+    return sponsor
+
+
+@router.delete("/sponsors/{sponsor_id}", status_code=204)
+async def admin_delete_sponsor(
+    sponsor_id: int,
+    db: AsyncSession = Depends(get_db),
+    _=require_mod,
+):
+    await db.execute(delete(EventSponsor).where(EventSponsor.id == sponsor_id))
+    await db.commit()
+
+
+# ── Vendors Management ──
+
+@router.get("/vendors")
+async def admin_list_vendors(
+    event_id: int | None = None,
+    service_type: str | None = None,
+    status: str | None = None,
+    agreement_status: str | None = None,
+    q: str | None = None,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    _=require_mod,
+):
+    stmt = (
+        select(EventVendor, Event.title.label("event_title"))
+        .join(Event, EventVendor.event_id == Event.id)
+    )
+    if event_id:
+        stmt = stmt.where(EventVendor.event_id == event_id)
+    if service_type:
+        stmt = stmt.where(EventVendor.service_type == service_type)
+    if status:
+        stmt = stmt.where(EventVendor.status == status)
+    if agreement_status:
+        stmt = stmt.where(EventVendor.agreement_status == agreement_status)
+    if q:
+        stmt = stmt.where(EventVendor.name.ilike(f"%{q}%"))
+    stmt = stmt.order_by(EventVendor.created_at.desc()).offset(offset).limit(limit)
+    result = await db.execute(stmt)
+    rows = result.all()
+    return [
+        {
+            "id": v.id, "event_id": v.event_id, "event_title": event_title,
+            "name": v.name, "service_type": v.service_type, "cost": v.cost,
+            "status": v.status, "contact_name": v.contact_name,
+            "contact_email": v.contact_email, "contract_url": v.contract_url,
+            "agreement_status": v.agreement_status, "visible_to_attendees": v.visible_to_attendees,
+            "created_at": v.created_at,
+        }
+        for v, event_title in rows
+    ]
+
+
+@router.patch("/vendors/{vendor_id}")
+async def admin_update_vendor(
+    vendor_id: int,
+    body: VendorUpdate,
+    db: AsyncSession = Depends(get_db),
+    _=require_mod,
+):
+    result = await db.execute(select(EventVendor).where(EventVendor.id == vendor_id))
+    vendor = result.scalar_one_or_none()
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor not found")
+    for key, val in body.model_dump(exclude_unset=True).items():
+        setattr(vendor, key, val)
+    await db.commit()
+    await db.refresh(vendor)
+    return vendor
+
+
+@router.delete("/vendors/{vendor_id}", status_code=204)
+async def admin_delete_vendor(
+    vendor_id: int,
+    db: AsyncSession = Depends(get_db),
+    _=require_mod,
+):
+    await db.execute(delete(EventVendor).where(EventVendor.id == vendor_id))
+    await db.commit()

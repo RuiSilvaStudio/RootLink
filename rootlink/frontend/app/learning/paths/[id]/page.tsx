@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Library, ArrowLeft, BookOpen, Plus, Edit, Trash2, X } from "lucide-react";
+import { Library, BookOpen, Plus, Edit, Trash2, X } from "lucide-react";
 import { api } from "@/lib/api";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useLocale } from "@/lib/locale-context";
 
 export default function LearningPathDetailPage() {
@@ -78,9 +79,11 @@ export default function LearningPathDetailPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <button onClick={() => router.back()} className="flex items-center gap-1 text-sm text-stone-500 hover:text-primary-700 mb-6">
-        <ArrowLeft className="w-4 h-4" /> {t("common.back")}
-      </button>
+      <Breadcrumbs items={[
+        { label: t("nav.learning"), href: "/learning" },
+        { label: t("learning.learning_paths_title"), href: "/learning/paths" },
+        { label: path.title }
+      ]} />
 
       <div className="flex items-start justify-between gap-4 mb-8">
         <div className="flex items-start gap-4">

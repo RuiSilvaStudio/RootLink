@@ -86,7 +86,7 @@ function CoursesContent() {
             const canEditCourse = user && (user.role === "admin" || user.role === "moderator" || course.created_by === user?.id);
             return (
               <Link key={course.id} href={`/learning/courses/${course.id}`} className="bg-white rounded-xl border border-stone-200 hover:shadow-md transition overflow-hidden group">
-                {course.image_url && <img src={course.image_url} alt="" className="w-full h-40 object-cover" />}
+                {course.image_url && <img src={course.image_url} alt="" loading="lazy" className="w-full h-40 object-cover" />}
                 <div className="p-5">
                   <div className="flex items-center justify-between gap-2">
                     <h3 className="font-semibold text-stone-800 text-lg truncate">{course.title}</h3>

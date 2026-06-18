@@ -8,6 +8,7 @@ from app.models.user import User
 from app.models.message import Conversation, ConversationParticipant, Message
 from app.models.notification import Notification, NotificationType
 from app.schemas.message import ConversationResponse, MessageResponse, MessageCreate
+from app.services.sse import sse_manager
 
 router = APIRouter(prefix="/api/messages", tags=["messages"])
 
@@ -139,6 +140,7 @@ async def send_message(
     )
     db.add(notif)
     await db.commit()
+    await sse_manager.notify(notif.user_id, {"count": 0})
 
     return ConversationResponse(
         id=conversation_id,
