@@ -10,6 +10,7 @@ from app.models.content import Content, Bookmark
 from app.models.event import Event
 from app.models.notification import Notification, NotificationType
 from app.schemas.auth import UserResponse
+from app.services.sse import sse_manager
 
 router = APIRouter(prefix="/api/social", tags=["social"])
 
@@ -50,6 +51,7 @@ async def follow_user(
     )
     db.add(notif)
     await db.commit()
+    await sse_manager.notify(notif.user_id, {"count": 0})
 
 
 @router.delete("/follow/{user_id}", status_code=204)

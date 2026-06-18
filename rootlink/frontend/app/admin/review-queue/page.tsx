@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { ExternalLink, ChevronDown, ChevronUp, Check } from "lucide-react";
+import { ExternalLink, ChevronDown, ChevronUp, Check, AlertTriangle, Eye } from "lucide-react";
 import { useLocale } from "@/lib/locale-context";
+import { Collapsible } from "@/components/Collapsible";
+import { Badge } from "@/components/ui/Badge";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 const CATEGORIES = [
   { value: "gardening", label: "Gardening" },
@@ -94,43 +97,55 @@ export default function ReviewQueue() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-stone-800 mb-2">{t("admin.review_queue_title")}</h1>
-      <p className="text-stone-500 text-sm mb-6">
-        {t("admin.review_queue_desc")}
-      </p>
+      <div className="mb-6">
+        <Badge variant="sage" className="mb-3">{t("admin.review_queue")}</Badge>
+        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 leading-[1.08]">
+          {t("admin.review_queue_title")}
+        </h1>
+        <p className="text-stone-500 text-sm mt-2 font-serif">{t("admin.review_queue_desc")}</p>
+      </div>
 
-      {loading && <p className="text-stone-400">{t("admin.loading")}</p>}
-
-      {!loading && items.length === 0 && (
-        <p className="text-stone-400 text-center py-12">{t("admin.no_content")}</p>
+      {loading && (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="rounded-2xl bg-stone-200/40 animate-pulse h-24" />
+          ))}
+        </div>
       )}
 
-      <div className="space-y-4">
+      {!loading && items.length === 0 && (
+        <div className="text-center py-16">
+          <p className="text-stone-400 font-serif">{t("admin.no_content")}</p>
+        </div>
+      )}
+
+      <div className="space-y-3">
         {items.map((c: any) => {
           const isExpanded = expanded[c.id];
           const images = allImages(c);
           return (
-            <div key={c.id} className="bg-white border border-stone-200 rounded-lg overflow-hidden">
-              {/* Header */}
-              <div className="p-4 flex items-start gap-4">
+            <div key={c.id} className="bg-white rounded-2xl border border-stone-200/60 overflow-hidden">
+              <div className="p-4 sm:p-5 flex items-start gap-4">
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-stone-800">{c.title}</h3>
-                  <p className="text-sm text-stone-500 mt-1 line-clamp-2">{c.summary || t("admin.no_summary")}</p>
-                  <div className="flex gap-2 mt-2 text-xs text-stone-400 flex-wrap items-center">
-                    <span className="text-stone-500 text-xs">{t("admin.category")}</span>
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <h3 className="font-display font-semibold text-stone-800 text-base">{c.title}</h3>
+                    <Badge variant="stone" className="text-[10px]">{c.content_type}</Badge>
+                  </div>
+                  <p className="text-sm text-stone-500 font-serif line-clamp-2">{c.summary || t("admin.no_summary")}</p>
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <span className="text-stone-400 text-xs font-serif">{t("admin.category")}</span>
                     <select
                       value={pendingCategory[c.id] || c.category}
                       onChange={(e) => handleCategoryChange(c.id, e.target.value)}
-                      className="text-xs border border-stone-300 rounded px-1.5 py-0.5 bg-white text-stone-700"
+                      className="text-xs border border-stone-200 rounded-lg px-2 py-1 bg-stone-50 text-stone-600 font-serif focus:outline-none focus:ring-1 focus:ring-primary-400"
                     >
                       {CATEGORIES.map((cat) => (
                         <option key={cat.value} value={cat.value}>{cat.label}</option>
                       ))}
                     </select>
-                    <span className="bg-stone-100 text-stone-600 px-2 py-0.5 rounded">{c.content_type}</span>
-                    <span className="bg-stone-100 text-stone-600 px-2 py-0.5 rounded">{c.source}</span>
+                    <Badge variant="stone" className="text-[10px]">{c.source}</Badge>
                     {c.source_url && (
-                      <a href={c.source_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary-600 hover:underline truncate max-w-[200px]">
+                      <a href={c.source_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary-600 hover:underline text-xs font-serif truncate max-w-[200px]">
                         {new URL(c.source_url).hostname}
                         <ExternalLink className="w-3 h-3 shrink-0" />
                       </a>
@@ -141,20 +156,22 @@ export default function ReviewQueue() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleApprove(c.id)}
-                      className="px-3 py-1.5 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-medium"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-emerald-100/60 text-emerald-700 border border-emerald-200/40 rounded-xl hover:bg-emerald-100 font-display font-medium transition"
                     >
+                      <Check className="w-3.5 h-3.5" />
                       {t("admin.approve")}
                     </button>
                     <button
                       onClick={() => handleReject(c.id)}
-                      className="px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 font-medium"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-stone-100/60 text-stone-600 border border-stone-200/40 rounded-xl hover:bg-stone-100 font-display font-medium transition"
                     >
+                      <AlertTriangle className="w-3.5 h-3.5" />
                       {t("admin.unreview")}
                     </button>
                   </div>
                   <button
                     onClick={() => handleExpand(c.id)}
-                    className="text-xs text-stone-400 hover:text-stone-600 flex items-center gap-1"
+                    className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-600 transition font-serif"
                   >
                     {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                     {isExpanded ? t("admin.hide_content") : t("admin.preview_content")}
@@ -162,12 +179,10 @@ export default function ReviewQueue() {
                 </div>
               </div>
 
-              {/* Expanded: content preview + image selector */}
-              {isExpanded && (
+              <Collapsible open={isExpanded}>
                 <div className="border-t border-stone-100">
-                  {/* Image selector */}
-                  <div className="px-4 py-3 bg-stone-50 border-b border-stone-100">
-                    <p className="text-xs font-medium text-stone-500 mb-2">{t("admin.select_image")}</p>
+                  <div className="px-4 py-3 bg-stone-50/50 border-b border-stone-100">
+                    <p className="text-xs font-display font-medium text-stone-400 uppercase tracking-wider mb-2">{t("admin.select_image")}</p>
                     <div className="flex gap-3 flex-wrap">
                       {images.map((img, idx) => {
                         const isSelected = (selectedImage[c.id] || c.image_url || images[0]) === img;
@@ -176,13 +191,13 @@ export default function ReviewQueue() {
                           <button
                             key={idx}
                             onClick={() => handleImageSelect(c.id, img)}
-                            className={`relative w-24 h-16 rounded-lg overflow-hidden border-2 transition shrink-0 ${
+                            className={`relative w-24 h-16 rounded-xl overflow-hidden border-2 transition shrink-0 ${
                               isSelected ? "border-primary-500 ring-2 ring-primary-200" : "border-stone-200 hover:border-stone-300"
                             }`}
                           >
-                            <img src={img} alt="" className="w-full h-full object-cover" />
+                            <img src={img} alt="" loading="lazy" className="w-full h-full object-cover" />
                             {isTemplate && (
-                              <span className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] text-center leading-4">
+                              <span className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] text-center leading-4 font-serif">
                                 {t("admin.template")}
                               </span>
                             )}
@@ -195,31 +210,29 @@ export default function ReviewQueue() {
                         );
                       })}
                       <div className="flex items-center">
-                        <label className="text-xs text-stone-400 cursor-pointer hover:text-stone-600">
-                          <span className="bg-white border border-stone-300 rounded px-2 py-1.5 text-xs text-stone-500 hover:border-primary-400 transition">
-                            {t("admin.upload")}
-                          </span>
-                          <input type="file" accept="image/*" className="hidden" />
-                        </label>
+                        <ImageUpload
+                          onUpload={(urls) => handleImageSelect(c.id, urls.thumb)}
+                          label=""
+                          maxSizeMb={10}
+                        />
                       </div>
                     </div>
                   </div>
 
-                  {/* Full text */}
                   <div className="px-4 py-3">
                     {c.full_text ? (
-                      <div className="text-sm text-stone-700 whitespace-pre-wrap max-h-96 overflow-y-auto leading-relaxed">
+                      <div className="text-sm text-stone-700 whitespace-pre-wrap max-h-96 overflow-y-auto leading-relaxed font-serif">
                         {c.full_text.slice(0, 10000)}
                         {c.full_text.length > 10000 && (
                           <p className="text-stone-400 mt-2 italic">{t("admin.text_truncated")}</p>
                         )}
                       </div>
                     ) : (
-                      <p className="text-sm text-stone-400 italic">{t("admin.no_full_text")}</p>
+                      <p className="text-sm text-stone-400 italic font-serif">{t("admin.no_full_text")}</p>
                     )}
                   </div>
                 </div>
-              )}
+              </Collapsible>
             </div>
           );
         })}

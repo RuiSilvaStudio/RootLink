@@ -1,9 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { ArrowLeft, Check, Plus, Trash2, Loader2, Notebook, RefreshCw, BookOpen, LogIn } from "lucide-react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { ArrowLeft, Check, Plus, Trash2, Loader2, Notebook, BookOpen, LogIn, Pencil, Save, X, CheckCircle } from "lucide-react";
 import { useLocale } from "@/lib/locale-context";
 import { api } from "@/lib/api";
+import { useSearchParams, useRouter } from "next/navigation";
+import { ShareButton } from "@/components/ShareButton";
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { ProgressBar } from "@/components/ui/ProgressBar";
 
 const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
@@ -28,9 +34,12 @@ const CATEGORY_ICONS: Record<string, string> = {
   harvesting: "🍎",
 };
 
-export default function MonthlyChecklistPage() {
+function MonthlyChecklistContent() {
   const { t, locale } = useLocale();
   const isPt = locale === "pt";
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const inited = useRef(false);
 
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
   const [zone, setZone] = useState("moderate");
@@ -40,6 +49,7 @@ export default function MonthlyChecklistPage() {
   const [guideLoading, setGuideLoading] = useState(true);
   const [guideExpanded, setGuideExpanded] = useState(true);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
+  const [addedTasks, setAddedTasks] = useState<Set<string>>(new Set());
 
   const toggleCat = (cat: string) => {
     setExpandedCats(prev => {
@@ -54,11 +64,27 @@ export default function MonthlyChecklistPage() {
   const [loading, setLoading] = useState(true);
   const [newTask, setNewTask] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [generatedMsg, setGeneratedMsg] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editText, setEditText] = useState("");
 
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    if (inited.current) return;
+    inited.current = true;
+    const m = searchParams.get("month");
+    if (m) setCurrentMonth(parseInt(m));
+    const z = searchParams.get("zone");
+    if (z) setZone(z);
+  }, [searchParams]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set("zone", zone);
+    params.set("month", String(currentMonth));
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }, [zone, currentMonth, router]);
 
   const isAuthenticated = mounted && !!localStorage.getItem("token");
 
@@ -71,7 +97,7 @@ export default function MonthlyChecklistPage() {
       .finally(() => setGuideLoading(false));
   }, [currentMonth, locale]);
 
-  // Fetch personal checklist (auth only)
+  // Fetch personal checklist (auth only) — sorted: non-done newest first, done at bottom
   const fetchItems = useCallback(async () => {
     if (!mounted) return;
     if (!isAuthenticated) {
@@ -81,7 +107,11 @@ export default function MonthlyChecklistPage() {
     setLoading(true);
     try {
       const res = await api.checklist.list(currentMonth);
-      setItems(res);
+      const sorted = [...res].sort((a: any, b: any) => {
+        if (a.is_completed !== b.is_completed) return a.is_completed ? 1 : -1;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      setItems(sorted);
     } catch {} finally {
       setLoading(false);
     }
@@ -91,7 +121,13 @@ export default function MonthlyChecklistPage() {
 
   const handleToggle = async (item: any) => {
     const updated = await api.checklist.update(item.id, { is_completed: !item.is_completed });
-    setItems(prev => prev.map(i => i.id === item.id ? updated : i));
+    setItems(prev => {
+      const next = prev.map(i => i.id === item.id ? { ...i, ...updated } : i);
+      return next.sort((a: any, b: any) => {
+        if (a.is_completed !== b.is_completed) return a.is_completed ? 1 : -1;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+    });
   };
 
   const handleDelete = async (id: number) => {
@@ -107,107 +143,146 @@ export default function MonthlyChecklistPage() {
       const item = await api.checklist.create({
         month: currentMonth,
         task: newTask.trim(),
-        sort_order: items.length,
+        sort_order: 0,
       });
-      setItems(prev => [...prev, item]);
+      setItems(prev => {
+        const next = [item, ...prev];
+        return next.sort((a: any, b: any) => {
+          if (a.is_completed !== b.is_completed) return a.is_completed ? 1 : -1;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+      });
       setNewTask("");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleGeneratePresets = async () => {
-    setGenerating(true);
-    setGeneratedMsg("");
+  const handleAddFromGuide = async (task: any) => {
+    if (!isAuthenticated) return;
     try {
-      const res = await api.checklist.presets(currentMonth, zone);
-      setGeneratedMsg(
-        res.generated > 0
-          ? `${res.generated} ${isPt ? "tarefas geradas" : "tasks generated"}`
-          : t("tools.checklist_already_exists")
-      );
-      await fetchItems();
-    } catch (err: any) {
-      setGeneratedMsg(err.message || "Error");
-    } finally {
-      setGenerating(false);
-    }
+      const item = await api.checklist.create({
+        month: currentMonth,
+        task: task.text,
+        sort_order: 0,
+      });
+      setItems(prev => {
+        const next = [item, ...prev];
+        return next.sort((a: any, b: any) => {
+          if (a.is_completed !== b.is_completed) return a.is_completed ? 1 : -1;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+      });
+      setAddedTasks(prev => new Set(prev).add(task.key));
+    } catch {}
+  };
+
+  const handleStartEdit = (item: any) => {
+    setEditingId(item.id);
+    setEditText(item.task);
+  };
+
+  const handleSaveEdit = async (id: number) => {
+    if (!editText.trim()) return;
+    const updated = await api.checklist.update(id, { task: editText.trim() });
+    setItems(prev => prev.map(i => i.id === id ? { ...i, ...updated } : i));
+    setEditingId(null);
+    setEditText("");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditText("");
   };
 
   const completedCount = items.filter(i => i.is_completed).length;
 
   // Group guide tasks by category
   const groupedTasks: Record<string, any[]> = {};
-  guideTasks.forEach(t => {
-    if (!groupedTasks[t.category]) groupedTasks[t.category] = [];
-    groupedTasks[t.category].push(t);
+  guideTasks.forEach(task => {
+    if (!groupedTasks[task.category]) groupedTasks[task.category] = [];
+    groupedTasks[task.category].push(task);
   });
   const categoryEntries = Object.entries(groupedTasks);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
-      <a href="/tools" className="flex items-center gap-1 text-sm text-stone-500 hover:text-primary-700 mb-6">
+    <div className="max-w-4xl mx-auto px-4 sm:px-8 py-12">
+      <a href="/tools" className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-primary-700 mb-6 transition">
         <ArrowLeft className="w-4 h-4" /> {t("tools.back")}
       </a>
 
-      <h1 className="text-3xl font-bold text-stone-800 font-serif mb-2">{t("tools.checklist_title")}</h1>
-      <p className="text-stone-600 mb-4">{t("tools.checklist_desc")}</p>
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+            <Notebook className="w-5 h-5 text-purple-600" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-serif font-bold text-stone-800">{t("tools.checklist_title")}</h1>
+            <p className="text-stone-500 font-light">{t("tools.checklist_desc")}</p>
+          </div>
+        </div>
+        <ShareButton url={typeof window !== "undefined" ? window.location.href : ""} title="Monthly Checklist" />
+      </div>
 
-      <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 mb-6 text-xs text-amber-700 flex items-center gap-2">
-        <span>🇵🇹</span>
-        <span>{t("calc.portugal_disclaimer")}</span>
+      <div className="bg-stone-100/50 border border-stone-200/40 rounded-2xl px-4 py-2.5 mb-8 text-xs text-stone-400 flex items-center justify-end gap-2">
+        <span className="text-[10px]">🇵🇹</span>
+        <span className="font-light">{t("calc.portugal_disclaimer")}</span>
       </div>
 
       {/* Month + Zone selector */}
       <div className="flex flex-wrap gap-3 mb-6">
-        <div className="flex gap-1 bg-white border border-stone-200 rounded-xl p-1 overflow-x-auto">
+        <Card variant="plain" className="flex gap-1 p-1 overflow-x-auto">
           {MONTHS.map(m => (
             <button key={m} onClick={() => setCurrentMonth(m)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition ${
-                m === currentMonth ? "bg-primary-600 text-white" : "hover:bg-stone-100 text-stone-600"
+                m === currentMonth ? "bg-primary-500 text-white shadow-sm" : "hover:bg-primary-50 text-stone-600"
               }`}
             >
               {t(`month.${m}`)}
             </button>
           ))}
+        </Card>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-medium text-stone-400 uppercase tracking-wider px-1">{t("calc.zone")}</label>
+          <select value={zone} onChange={(e) => setZone(e.target.value)}
+            className="px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+            {ZONES.map(z => <option key={z.value} value={z.value}>{z.label}</option>)}
+          </select>
         </div>
-        <select value={zone} onChange={(e) => setZone(e.target.value)}
-          className="border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white">
-          {ZONES.map(z => <option key={z.value} value={z.value}>{z.label}</option>)}
-        </select>
       </div>
 
       {/* ==================== FARMERS GUIDE SECTION ==================== */}
       <div className="mb-10">
         <button onClick={() => setGuideExpanded(!guideExpanded)}
-          className="flex items-center justify-between w-full bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-left"
+          className="flex items-center justify-between w-full bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4 text-left"
         >
-          <div className="flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-emerald-600" />
-            <span className="font-semibold text-emerald-800">{t("tools.farmers_guide_title")}</span>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+              <BookOpen className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div>
+              <span className="font-semibold text-emerald-800">{t("tools.farmers_guide_title")}</span>
+              <p className="text-xs text-emerald-600 font-light">{t("tools.farmers_guide_desc")}</p>
+            </div>
           </div>
-          <span className="text-emerald-500 text-sm">{guideExpanded ? "▼" : "▶"}</span>
+          <span className={`text-emerald-500 text-sm transition-transform ${guideExpanded ? "" : "rotate-180"}`}>▼</span>
         </button>
 
         {guideExpanded && (
-          <div className="mt-2">
-            <p className="text-xs text-stone-500 mb-3 px-1">{t("tools.farmers_guide_desc")}</p>
-
-            {/* Loading state */}
+          <div className="mt-3">
             {guideLoading && (
-              <div className="text-center text-stone-400 py-8 flex items-center justify-center gap-2">
+              <div className="text-center text-stone-400 py-12 flex items-center justify-center gap-2 font-light">
                 <Loader2 className="w-5 h-5 animate-spin" /> {t("tools.farmers_guide_loading")}
               </div>
             )}
 
-            {/* Category cards grid */}
             {!guideLoading && (
               <div>
                 {categoryEntries.length === 0 && (
-                  <div className="bg-white border border-stone-200 rounded-xl p-8 text-center text-stone-400">
+                  <Card variant="plain" className="p-8 text-center">
                     <BookOpen className="w-10 h-10 mx-auto mb-2 text-stone-300" />
-                    <p className="text-sm">{t("tools.farmers_guide_empty")}</p>
-                  </div>
+                    <p className="text-sm text-stone-400 font-light">{t("tools.farmers_guide_empty")}</p>
+                  </Card>
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {categoryEntries.map(([cat, tasks]) => {
@@ -215,30 +290,48 @@ export default function MonthlyChecklistPage() {
                     const label = tasks[0]?.category_label || cat;
                     const icon = CATEGORY_ICONS[cat] || "•";
                     return (
-                      <div key={cat}
-                        className="bg-white border border-stone-200 rounded-xl overflow-hidden"
-                      >
+                      <Card key={cat} variant="plain" className="overflow-hidden">
                         <button onClick={() => toggleCat(cat)}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-stone-50 transition"
+                          className="flex items-center gap-2 w-full px-4 py-3 text-left hover:bg-primary-50/30 transition"
                         >
-                          <span className="text-sm">{icon}</span>
+                          <span className="text-base">{icon}</span>
                           <span className="flex-1 text-sm font-medium text-stone-700">{label}</span>
-                          <span className="text-xs text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded-full">{tasks.length}</span>
+                          <Badge variant="stone" className="text-[11px]">{tasks.length}</Badge>
                           <span className={`text-stone-400 text-xs transition-transform ${isOpen ? "rotate-180" : ""}`}>▼</span>
                         </button>
                         {isOpen && (
-                          <div className="border-t border-stone-100 divide-y divide-stone-50">
-                            {tasks.map((task: any, idx: number) => (
-                              <div key={task.key || idx}
-                                className="flex items-start gap-2 px-3 py-1.5 text-xs text-stone-600"
-                              >
-                                <span className="mt-0.5 text-stone-300">•</span>
-                                <span>{task.text}</span>
-                              </div>
-                            ))}
+                          <div className="border-t border-primary-50 divide-y divide-primary-50">
+                            {tasks.map((task: any, idx: number) => {
+                              const isAdded = addedTasks.has(task.key);
+                              return (
+                                <div key={task.key || idx}
+                                  className="flex items-start gap-2 px-4 py-2 text-xs text-stone-600 font-light leading-relaxed"
+                                >
+                                  <span className="mt-1 w-1.5 h-1.5 rounded-full bg-primary-300 shrink-0" />
+                                  <span className="flex-1">{task.text}</span>
+                                  {isAuthenticated ? (
+                                    <button
+                                      onClick={() => !isAdded && handleAddFromGuide(task)}
+                                      disabled={isAdded}
+                                      className={`shrink-0 mt-0.5 flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full transition ${
+                                        isAdded
+                                          ? "bg-green-100 text-green-600"
+                                          : "bg-primary-50 text-primary-600 hover:bg-primary-100"
+                                      }`}
+                                    >
+                                      {isAdded ? (
+                                        <><CheckCircle className="w-3 h-3" /> {t("tools.checklist_added")}</>
+                                      ) : (
+                                        <><Plus className="w-3 h-3" /> {t("tools.checklist_add_to_list")}</>
+                                      )}
+                                    </button>
+                                  ) : null}
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
-                      </div>
+                      </Card>
                     );
                   })}
                 </div>
@@ -249,92 +342,67 @@ export default function MonthlyChecklistPage() {
       </div>
 
       {/* ==================== PERSONAL CHECKLIST SECTION ==================== */}
-      <div className="border-t border-stone-200 pt-8">
+      <div className="border-t border-primary-50 pt-8">
         <div className="flex items-center gap-2 mb-1">
           <Notebook className="w-5 h-5 text-stone-500" />
           <h2 className="text-xl font-bold text-stone-800 font-serif">{t("tools.farmers_guide_personal")}</h2>
         </div>
-        <p className="text-xs text-stone-500 mb-4">{t("tools.farmers_guide_personal_desc")}</p>
+        <p className="text-xs text-stone-500 mb-4 font-light">{t("tools.farmers_guide_personal_desc")}</p>
 
         {!isAuthenticated ? (
-          <div className="bg-stone-50 border border-stone-200 rounded-xl p-8 text-center">
+          <Card variant="plain" className="p-8 text-center">
             <LogIn className="w-10 h-10 mx-auto mb-2 text-stone-300" />
-            <p className="text-sm text-stone-500">{t("tools.farmers_guide_sign_in")}</p>
-          </div>
+            <p className="text-sm text-stone-500 font-light">{t("tools.farmers_guide_sign_in")}</p>
+          </Card>
         ) : (
           <>
-            {/* Progress summary */}
+            {/* Progress bar */}
             {!loading && items.length > 0 && (
               <div className="flex items-center gap-3 mb-4 text-sm text-stone-500">
-                <Check className="w-4 h-4 text-green-600" />
-                <span>{completedCount} / {items.length} {t("tools.checklist_progress")}</span>
-                <div className="flex-1 h-2 bg-stone-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-green-500 rounded-full transition-all"
-                    style={{ width: `${(completedCount / Math.max(items.length, 1)) * 100}%` }}
-                  />
-                </div>
+                <Check className="w-4 h-4 text-green-600 shrink-0" />
+                <span className="font-light">{completedCount} / {items.length} {t("tools.checklist_progress")}</span>
+                <ProgressBar value={completedCount} max={items.length} size="sm" className="flex-1" />
               </div>
             )}
 
-            {/* Generate presets */}
-            <div className="bg-white border border-stone-200 rounded-xl p-4 mb-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-stone-600">
-                  <Notebook className="w-4 h-4 text-stone-400" />
-                  <span>{t("tools.checklist_gen_suggestions")}</span>
-                </div>
-                <button onClick={handleGeneratePresets} disabled={generating}
-                  className="flex items-center gap-1.5 text-sm bg-primary-100 text-primary-700 hover:bg-primary-200 px-3 py-1.5 rounded-lg transition disabled:opacity-50"
-                >
-                  {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                  {generating ? t("tools.checklist_generating") : t("tools.checklist_generate")}
-                </button>
-              </div>
-              {generatedMsg && (
-                <p className="text-xs text-stone-500 mt-2">{generatedMsg}</p>
-              )}
-            </div>
-
             {/* New task input */}
-            <form onSubmit={handleAdd} className="flex gap-2 mb-6">
+            <form onSubmit={handleAdd} className="flex gap-2 mb-4">
               <input
                 type="text"
                 value={newTask}
                 onChange={(e) => setNewTask(e.target.value)}
                 placeholder={t("tools.checklist_placeholder")}
-                className="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="flex-1 px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15"
               />
-              <button type="submit" disabled={submitting || !newTask.trim()}
-                className="flex items-center gap-1.5 bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition disabled:opacity-50"
-              >
-                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              <Button type="submit" disabled={submitting || !newTask.trim()} loading={submitting}>
+                <Plus className="w-4 h-4" />
                 {t("tools.checklist_add")}
-              </button>
+              </Button>
             </form>
 
             {/* Checklist items */}
             {loading && (
-              <div className="text-center text-stone-400 py-12 flex items-center justify-center gap-2">
+              <div className="text-center text-stone-400 py-12 flex items-center justify-center gap-2 font-light">
                 <Loader2 className="w-5 h-5 animate-spin" /> {t("common.loading")}
               </div>
             )}
 
             {!loading && (
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {items.length === 0 && (
-                  <div className="bg-white border border-stone-200 rounded-xl p-12 text-center text-stone-400">
+                  <Card variant="plain" className="p-12 text-center">
                     <Notebook className="w-12 h-12 mx-auto mb-3 text-stone-300" />
-                    <p>{t("tools.checklist_no_tasks")}</p>
-                  </div>
+                    <p className="text-stone-400 font-light">{t("tools.checklist_no_tasks")}</p>
+                  </Card>
                 )}
                 {items.map(item => (
-                  <div key={item.id}
-                    className={`bg-white border rounded-xl flex items-center gap-3 px-4 py-3 transition ${
-                      item.is_completed ? "border-green-200 bg-green-50" : "border-stone-200 hover:border-stone-300"
+                  <Card key={item.id} variant="plain"
+                    className={`flex items-center gap-3 px-4 py-3 transition ${
+                      item.is_completed ? "border-green-200 bg-green-50" : "hover:border-primary-100"
                     }`}
                   >
                     <button onClick={() => handleToggle(item)}
-                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition ${
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition ${
                         item.is_completed
                           ? "bg-green-500 border-green-500 text-white"
                           : "border-stone-300 hover:border-primary-400"
@@ -342,15 +410,46 @@ export default function MonthlyChecklistPage() {
                     >
                       {item.is_completed && <Check className="w-3.5 h-3.5" />}
                     </button>
-                    <span className={`flex-1 text-sm ${item.is_completed ? "line-through text-stone-400" : "text-stone-700"}`}>
-                      {item.task}
-                    </span>
-                    <button onClick={() => handleDelete(item.id)}
-                      className="p-1 text-stone-400 hover:text-red-600 transition flex-shrink-0"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+
+                    {editingId === item.id ? (
+                      <div className="flex-1 flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleSaveEdit(item.id);
+                            if (e.key === "Escape") handleCancelEdit();
+                          }}
+                          className="flex-1 px-2 py-1 rounded-lg border border-primary-300 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15"
+                          autoFocus
+                        />
+                        <button onClick={() => handleSaveEdit(item.id)}
+                          className="p-1 text-green-600 hover:text-green-700 transition">
+                          <Save className="w-4 h-4" />
+                        </button>
+                        <button onClick={handleCancelEdit}
+                          className="p-1 text-stone-400 hover:text-stone-600 transition">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <span className={`flex-1 text-sm ${item.is_completed ? "line-through text-stone-400" : "text-stone-700"}`}>
+                          {item.task}
+                        </span>
+                        <button onClick={() => handleStartEdit(item)}
+                          className="p-1 text-stone-400 hover:text-primary-600 transition shrink-0">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => handleDelete(item.id)}
+                          className="p-1 text-stone-400 hover:text-red-600 transition shrink-0"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                  </Card>
                 ))}
               </div>
             )}
@@ -358,5 +457,13 @@ export default function MonthlyChecklistPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function MonthlyChecklistPage() {
+  return (
+    <Suspense fallback={<div className="max-w-4xl mx-auto px-4 sm:px-8 py-12 space-y-4"><div className="h-8 bg-primary-100 rounded w-96 animate-pulse" /><div className="h-4 bg-primary-100 rounded w-64 animate-pulse" /><div className="h-64 bg-primary-100 rounded-xl animate-pulse" /></div>}>
+      <MonthlyChecklistContent />
+    </Suspense>
   );
 }

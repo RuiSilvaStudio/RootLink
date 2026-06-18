@@ -2,8 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Users, UserPlus, UserMinus, ArrowLeft } from "lucide-react";
+import { Users, UserPlus, UserMinus, Hash } from "lucide-react";
 import { api } from "@/lib/api";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Card } from "@/components/ui/Card";
 
 export default function GroupDetailPage() {
   const params = useParams();
@@ -57,67 +61,73 @@ export default function GroupDetailPage() {
   };
 
   if (loading) {
-    return <div className="max-w-3xl mx-auto px-4 py-8 text-stone-500">Loading...</div>;
+    return (
+      <div className="max-w-3xl mx-auto px-4 sm:px-8 py-12 space-y-4">
+        <div className="h-8 bg-primary-100 rounded w-64 animate-pulse" />
+        <div className="h-4 bg-primary-100 rounded w-96 animate-pulse" />
+        <div className="h-32 bg-primary-100 rounded-xl animate-pulse" />
+      </div>
+    );
   }
 
   if (!group) {
-    return <div className="max-w-3xl mx-auto px-4 py-8 text-stone-500">Group not found.</div>;
+    return <div className="max-w-3xl mx-auto px-4 sm:px-8 py-12 text-stone-500">Group not found.</div>;
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <a href="/groups" className="text-sm text-primary-600 hover:underline flex items-center gap-1 mb-6">
-        <ArrowLeft className="w-4 h-4" /> Back to groups
-      </a>
+    <div className="max-w-3xl mx-auto px-4 sm:px-8 py-12">
+      <Breadcrumbs items={[
+        { label: "Groups", href: "/groups" },
+        { label: group.name }
+      ]} />
 
-      <div className="bg-white p-6 rounded-xl border border-stone-200">
+      <Card variant="plain" className="p-8 mt-6">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold text-stone-800 font-serif">{group.name}</h1>
-            <span className="inline-block mt-2 text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded">
-              {group.category}
-            </span>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-12 h-12 rounded-2xl bg-primary-100 flex items-center justify-center">
+                <Hash className="w-6 h-6 text-primary-500" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-serif font-bold text-stone-800">{group.name}</h1>
+                <Badge variant="sage" className="mt-1">{group.category}</Badge>
+              </div>
+            </div>
           </div>
           {joined ? (
-            <button
-              onClick={handleLeave}
-              className="flex items-center gap-2 border border-red-300 text-red-600 px-4 py-2 rounded-lg hover:bg-red-50 transition text-sm"
-            >
+            <Button variant="danger" size="sm" onClick={handleLeave}>
               <UserMinus className="w-4 h-4" /> Leave
-            </button>
+            </Button>
           ) : (
-            <button
-              onClick={handleJoin}
-              className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition text-sm"
-            >
+            <Button variant="primary" size="sm" onClick={handleJoin}>
               <UserPlus className="w-4 h-4" /> Join
-            </button>
+            </Button>
           )}
         </div>
 
         {group.description && (
-          <p className="text-stone-600 mt-4">{group.description}</p>
+          <p className="text-stone-600 mt-6 font-light leading-relaxed">{group.description}</p>
         )}
 
-        <div className="mt-6 pt-4 border-t border-stone-100">
-          <h2 className="text-sm font-medium text-stone-500 flex items-center gap-1 mb-3">
+        <div className="mt-8 pt-6 border-t border-primary-100">
+          <h2 className="text-sm font-medium text-stone-500 flex items-center gap-1.5 mb-4">
             <Users className="w-4 h-4" /> {members.length} member{members.length !== 1 ? "s" : ""}
           </h2>
           <div className="flex flex-wrap gap-2">
             {members.map((member) => (
-              <div key={member.id} className="flex items-center gap-2 bg-stone-50 px-3 py-1.5 rounded-full text-sm text-stone-600">
+              <div key={member.id} className="flex items-center gap-2 bg-primary-50 px-3 py-1.5 rounded-full text-sm text-stone-600">
                 <div className="w-6 h-6 rounded-full bg-primary-100 flex items-center justify-center">
-                  <Users className="w-3 h-3 text-primary-600" />
+                  <Users className="w-3 h-3 text-primary-500" />
                 </div>
                 User #{member.user_id}
                 {member.role !== "member" && (
-                  <span className="text-xs text-primary-600 font-medium">{member.role}</span>
+                  <Badge variant="sage" className="text-[10px]">{member.role}</Badge>
                 )}
               </div>
             ))}
           </div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

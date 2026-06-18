@@ -2,9 +2,46 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Calendar, MapPin, Plus, Users, Globe } from "lucide-react";
+import { Calendar, MapPin, Plus, Users, Globe, Clock, Sparkles, Tag, Shield, Building, Heart, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
+import { useToast } from "@/lib/toast-context";
+import { useDirtyGuard } from "@/lib/use-dirty-guard";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Card } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { EmptyState } from "@/components/ui/EmptyState";
+
+const VISIBILITY_OPTIONS = [
+  { value: "all", labelKey: "vis_all" },
+  { value: "registered", labelKey: "vis_registered" },
+  { value: "role_based", labelKey: "vis_role_based" },
+  { value: "group_only", labelKey: "vis_group_only" },
+];
+
+const TICKET_TYPES = [
+  { value: "free", labelKey: "ticket_free" },
+  { value: "paid", labelKey: "ticket_paid" },
+  { value: "donation_based", labelKey: "ticket_donation" },
+];
+
+const RECURRENCE_TYPES = [
+  { value: "none", labelKey: "recurrence_none" },
+  { value: "weekly", labelKey: "recurrence_weekly" },
+  { value: "monthly", labelKey: "recurrence_monthly" },
+  { value: "semi_annual", labelKey: "recurrence_semi_annual" },
+  { value: "annual", labelKey: "recurrence_annual" },
+  { value: "open_door", labelKey: "recurrence_open_door" },
+];
+
+const DAYS_OF_WEEK = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
+const defaultWeeklyHours = () => {
+  const hours: Record<string, { open: string; close: string } | null> = {};
+  DAYS_OF_WEEK.forEach((d) => { hours[d] = { open: "09:00", close: "18:00" }; });
+  return hours;
+};
 
 export default function EventsPage() {
   const [events, setEvents] = useState<any[]>([]);
@@ -19,7 +56,17 @@ export default function EventsPage() {
   const [isOnline, setIsOnline] = useState(false);
   const [eventCategory, setEventCategory] = useState("");
   const [maxAttendees, setMaxAttendees] = useState("");
+  const [visibility, setVisibility] = useState("all");
+  const [ticketType, setTicketType] = useState("free");
+  const [ticketPrice, setTicketPrice] = useState("");
+  const [ticketTiers, setTicketTiers] = useState<{ name: string; type: string; price: number }[]>([]);
+  const [recurrenceType, setRecurrenceType] = useState("none");
+  const [recurrenceConfig, setRecurrenceConfig] = useState<any>({});
+  const [descriptionLong, setDescriptionLong] = useState("");
+  const dirty = !!(title || description || date || location || maxAttendees || eventCategory || isOnline || descriptionLong);
+  useDirtyGuard(dirty);
   const { t } = useLocale();
+  const { addToast } = useToast();
 
   useEffect(() => { setToken(localStorage.getItem("token")); }, []);
   useEffect(() => { loadEvents(); }, [category]);
@@ -35,53 +82,60 @@ export default function EventsPage() {
       const event = await api.events.create({
         title,
         description,
+        description_long: descriptionLong || undefined,
         date: new Date(date).toISOString(),
         location: location || undefined,
         is_online: isOnline,
         category: eventCategory || undefined,
         max_attendees: maxAttendees ? Number(maxAttendees) : undefined,
+        visibility,
+        ticket_type: ticketType,
+        ticket_price: ticketType === "paid" && ticketPrice ? Number(ticketPrice) : undefined,
+        ticket_tiers: ticketType === "paid" && ticketTiers.length > 0 ? ticketTiers : undefined,
+        recurrence_type: recurrenceType,
+        recurrence_config: recurrenceType !== "none" ? recurrenceConfig : undefined,
       });
       setEvents([event, ...events]);
       setShowForm(false);
       setTitle(""); setDescription(""); setDate(""); setLocation("");
       setIsOnline(false); setEventCategory(""); setMaxAttendees("");
+      setVisibility("all"); setTicketType("free"); setTicketPrice(""); setTicketTiers([]);
+      setRecurrenceType("none"); setRecurrenceConfig({}); setDescriptionLong("");
     } catch (err: any) {
-      alert(err.message);
+      addToast("error", err.message);
     }
   };
 
-  return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-stone-800 font-serif">{t("events.title")}</h1>
-          <p className="text-stone-500 mt-1">{t("events.subtitle")}</p>
-        </div>
-        {token && (
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition text-sm"
-          >
-            <Plus className="w-4 h-4" /> {t("events.new_event")}
-          </button>
-        )}
-      </div>
+  const categories = [
+    ["", t("events.all")],
+    ["gardening", t("events.category_gardening")],
+    ["woodworking", t("events.category_woodworking")],
+    ["craft_trades", t("events.category_craft_trades")],
+    ["homesteading", t("events.category_homesteading")],
+  ];
 
-      <div className="flex gap-2 mb-6">
-        {[
-          ["", t("events.all")],
-          ["gardening", t("events.category_gardening")],
-          ["woodworking", t("events.category_woodworking")],
-          ["craft_trades", t("events.category_craft_trades")],
-          ["homesteading", t("events.category_homesteading")],
-        ].map(([val, label]) => (
+  return (
+    <div className="max-w-5xl mx-auto px-4 sm:px-8 py-12">
+      <PageHeader
+        icon={<Calendar className="w-5 h-5 text-primary-500" />}
+        title={t("events.title")}
+        subtitle={t("events.subtitle")}
+        action={token && (
+          <Button variant="primary" size="sm" onClick={() => setShowForm(!showForm)}>
+            <Plus className="w-4 h-4" /> {t("events.new_event")}
+          </Button>
+        )}
+      />
+
+      <div className="flex gap-2 mb-8 flex-wrap mt-8">
+        {categories.map(([val, label]) => (
           <button
             key={val}
             onClick={() => setCategory(val)}
-            className={`px-3 py-1.5 rounded-lg text-sm border transition ${
+            className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
               category === val
-                ? "bg-primary-600 text-white border-primary-600"
-                : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"
+                ? "bg-primary-500 text-white border-primary-500 shadow-sm"
+                : "bg-white text-stone-600 border-primary-100 hover:border-primary-300"
             }`}
           >
             {label}
@@ -90,25 +144,26 @@ export default function EventsPage() {
       </div>
 
       {showForm && (
-        <form onSubmit={handleCreate} className="bg-white p-6 rounded-xl border border-stone-200 mb-8 space-y-4">
+        <Card variant="plain" className="p-6 mb-8 space-y-4">
+          <h3 className="font-serif font-bold text-stone-800">{t("events.new_event")}</h3>
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.title_label")}</label>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required className="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.date_label")}</label>
-              <input type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} required className="w-full px-3 py-2 rounded-lg border border-stone-300" />
+              <input type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} required className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
             </div>
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.location_label")}</label>
-              <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-stone-300" />
+              <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
             </div>
           </div>
           <div className="grid md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.category_label")}</label>
-              <select value={eventCategory} onChange={(e) => setEventCategory(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-stone-300">
+              <select value={eventCategory} onChange={(e) => setEventCategory(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
                 <option value="">{t("events.category_none")}</option>
                 <option value="gardening">{t("events.category_gardening")}</option>
                 <option value="woodworking">{t("events.category_woodworking")}</option>
@@ -118,70 +173,246 @@ export default function EventsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.max_attendees")}</label>
-              <input type="number" value={maxAttendees} onChange={(e) => setMaxAttendees(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-stone-300" />
+              <input type="number" value={maxAttendees} onChange={(e) => setMaxAttendees(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
             </div>
             <div className="flex items-end pb-2">
               <label className="flex items-center gap-2 text-sm text-stone-700">
-                <input type="checkbox" checked={isOnline} onChange={(e) => setIsOnline(e.target.checked)} />
+                <input type="checkbox" checked={isOnline} onChange={(e) => setIsOnline(e.target.checked)} className="rounded border-primary-200 text-primary-500 focus:ring-primary-500" />
                 {t("events.online_event")}
               </label>
             </div>
           </div>
+          <div className="grid md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.visibility")}</label>
+              <select value={visibility} onChange={(e) => setVisibility(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+                {VISIBILITY_OPTIONS.map((v) => <option key={v.value} value={v.value}>{t(`events.${v.labelKey}`)}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.ticket_type")}</label>
+              <select value={ticketType} onChange={(e) => setTicketType(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+                {TICKET_TYPES.map((tt) => <option key={tt.value} value={tt.value}>{t(`events.${tt.labelKey}`)}</option>)}
+              </select>
+            </div>
+            {ticketType === "paid" && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.ticket_price")} (cents)</label>
+                  <input type="number" value={ticketPrice} onChange={(e) => setTicketPrice(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.ticket_tiers")}</label>
+                  <p className="text-xs text-stone-400 mb-2">{t("events.ticket_tiers_hint")}</p>
+                  <div className="space-y-2">
+                    {ticketTiers.map((tier, i) => (
+                      <div key={i} className="flex gap-2 items-center">
+                        <input placeholder={t("events.tier_name")} value={tier.name} onChange={(e) => { const t2 = [...ticketTiers]; t2[i] = { ...t2[i], name: e.target.value }; setTicketTiers(t2); }}
+                          className="flex-1 px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                        <select value={tier.type} onChange={(e) => { const t2 = [...ticketTiers]; t2[i] = { ...t2[i], type: e.target.value }; setTicketTiers(t2); }}
+                          className="px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+                          <option value="regular">{t("events.ticket_type_regular")}</option>
+                          <option value="early_bird">{t("events.ticket_type_early_bird")}</option>
+                          <option value="vip">{t("events.ticket_type_vip")}</option>
+                          <option value="student">{t("events.ticket_type_student")}</option>
+                        </select>
+                        <input type="number" placeholder={t("events.tier_price")} value={tier.price || ""} onChange={(e) => { const t2 = [...ticketTiers]; t2[i] = { ...t2[i], price: Number(e.target.value) }; setTicketTiers(t2); }}
+                          className="w-28 px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                        <button type="button" onClick={() => setTicketTiers(ticketTiers.filter((_, j) => j !== i))} className="text-stone-400 hover:text-red-500 transition">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <button type="button" onClick={() => setTicketTiers([...ticketTiers, { name: "", type: "regular", price: 0 }])}
+                      className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-medium">
+                      <Plus className="w-3 h-3" /> {t("events.add_tier")}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.recurrence")}</label>
+            <select value={recurrenceType} onChange={(e) => { setRecurrenceType(e.target.value); if (e.target.value === "open_door") setRecurrenceConfig({ weekly_hours: defaultWeeklyHours() }); else setRecurrenceConfig({}); }}
+              className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+              {RECURRENCE_TYPES.map((r) => <option key={r.value} value={r.value}>{t(`events.${r.labelKey}`)}</option>)}
+            </select>
+            {recurrenceType !== "none" && recurrenceType !== "open_door" && (
+              <div className="mt-2">
+                <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.recurrence_end")}</label>
+                <input type="datetime-local" value={recurrenceConfig.recurrence_end ? new Date(recurrenceConfig.recurrence_end).toISOString().slice(0, 16) : ""}
+                  onChange={(e) => setRecurrenceConfig({ ...recurrenceConfig, recurrence_end: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                  className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+              </div>
+            )}
+            {recurrenceType === "open_door" && (
+              <div className="mt-3 space-y-2">
+                <p className="text-xs text-stone-400">{t("events.weekly_hours_hint")}</p>
+                {DAYS_OF_WEEK.map((day) => {
+                  const hours = recurrenceConfig.weekly_hours?.[day];
+                  return (
+                    <div key={day} className="flex items-center gap-2">
+                      <label className="w-10 text-sm font-medium text-stone-600">{t(`events.day_${day}`)}</label>
+                      <input type="checkbox" checked={!!hours} onChange={(e) => {
+                        const wh = { ...(recurrenceConfig.weekly_hours || defaultWeeklyHours()) };
+                        wh[day] = e.target.checked ? { open: "09:00", close: "18:00" } : null;
+                        setRecurrenceConfig({ ...recurrenceConfig, weekly_hours: wh });
+                      }} className="rounded border-primary-200 text-primary-500" />
+                      {hours && (
+                        <>
+                          <input type="time" value={hours.open} onChange={(e) => {
+                            const wh = { ...(recurrenceConfig.weekly_hours || {}) };
+                            wh[day] = { ...wh[day], open: e.target.value };
+                            setRecurrenceConfig({ ...recurrenceConfig, weekly_hours: wh });
+                          }} className="px-2 py-1 rounded-lg border border-primary-100 bg-white text-sm" />
+                          <span className="text-stone-400">—</span>
+                          <input type="time" value={hours.close} onChange={(e) => {
+                            const wh = { ...(recurrenceConfig.weekly_hours || {}) };
+                            wh[day] = { ...wh[day], close: e.target.value };
+                            setRecurrenceConfig({ ...recurrenceConfig, weekly_hours: wh });
+                          }} className="px-2 py-1 rounded-lg border border-primary-100 bg-white text-sm" />
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.description_label")}</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full px-3 py-2 rounded-lg border border-stone-300" />
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
           </div>
-          <button type="submit" className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition">
-            {t("events.create_event")}
-          </button>
-        </form>
+          <Button type="submit" onClick={handleCreate}>{t("events.create_event")}</Button>
+        </Card>
       )}
 
       {loading ? (
-        <p className="text-stone-500">{t("events.loading")}</p>
-      ) : events.length === 0 ? (
-        <div className="text-center py-20 text-stone-400">
-          <Calendar className="w-16 h-16 mx-auto mb-4 opacity-50" />
-          <p>{t("events.no_events")}</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {events.map((event) => (
-            <Link
-              key={event.id}
-              href={`/events/${event.id}`}
-              className="block bg-white p-5 rounded-xl border border-stone-200 hover:shadow-md transition"
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-stone-800 text-lg">{event.title}</h3>
-                  <p className="text-sm text-stone-500 mt-1">
-                    {event.description?.slice(0, 200)}
-                  </p>
-                </div>
-                {event.category && (
-                  <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded ml-4 shrink-0">
-                    {event.category}
-                  </span>
-                )}
-              </div>
-              <div className="flex gap-4 mt-3 text-sm text-stone-500">
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
-                  {new Date(event.date).toLocaleDateString("en-US", {
-                    weekday: "short", month: "short", day: "numeric", year: "numeric",
-                  })}
-                </span>
-                {event.location && (
-                  <span className="flex items-center gap-1"><MapPin className="w-4 h-4" />{event.location}</span>
-                )}
-                {event.is_online && (
-                  <span className="flex items-center gap-1"><Globe className="w-4 h-4" />{t("events.online")}</span>
-                )}
-                <span className="flex items-center gap-1"><Users className="w-4 h-4" />{event.attendee_count}{event.max_attendees ? `/${event.max_attendees}` : ""}</span>
-              </div>
-            </Link>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="rounded-2xl bg-stone-100/60 animate-pulse h-72" />
           ))}
+        </div>
+      ) : events.length === 0 ? (
+        <EmptyState
+          icon={<Calendar className="w-7 h-7" />}
+          title={t("events.no_events")}
+        />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {events.map((event, idx) => {
+            const eventDate = new Date(event.date);
+            const now = new Date();
+            const isUpcoming = eventDate > now && idx === 0;
+            return (
+              <Link
+                key={event.id}
+                href={`/events/${event.id}`}
+                className={`group rounded-2xl border border-primary-100/40 bg-white overflow-hidden transition-all duration-200 hover:shadow-lg hover:shadow-primary-900/5 hover:-translate-y-0.5 animate-fade-in-up ${
+                  isUpcoming ? "ring-2 ring-primary-200/60" : ""
+                }`}
+                style={{ animationDelay: `${idx * 50}ms`, animationFillMode: "backwards" }}
+              >
+                {/* Image */}
+                <div className="relative h-40 bg-gradient-to-br from-primary-100 to-primary-50 overflow-hidden">
+                  {event.image_url ? (
+                    <img
+                      src={event.image_url}
+                      alt={event.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Calendar className="w-10 h-10 text-primary-200" />
+                    </div>
+                  )}
+                  {/* Date badge */}
+                  <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-xl px-3 py-1.5 shadow-sm">
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-stone-800 leading-none">{eventDate.getDate()}</div>
+                      <div className="text-[10px] font-medium text-stone-500 uppercase mt-0.5">
+                        {eventDate.toLocaleDateString("en-US", { month: "short" })}
+                      </div>
+                    </div>
+                  </div>
+                  {/* Upcoming badge */}
+                  {isUpcoming && (
+                    <div className="absolute top-3 right-3 bg-primary-500 text-white text-[10px] font-semibold px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                      <Sparkles className="w-3 h-3" /> Next
+                    </div>
+                  )}
+                  {/* Category badge */}
+                  {event.category && (
+                    <div className="absolute bottom-3 right-3">
+                      <Badge variant="sage" className="bg-white/90 backdrop-blur-sm shadow-sm">{event.category}</Badge>
+                    </div>
+                  )}
+                  {/* Status badge */}
+                  {event.status === "draft" && (
+                    <div className="absolute bottom-3 left-3">
+                      <Badge variant="stone" className="bg-white/90 backdrop-blur-sm shadow-sm">Draft</Badge>
+                    </div>
+                  )}
+                </div>
+
+                {/* Content */}
+                <div className="p-4">
+                  <h3 className="font-semibold text-stone-800 group-hover:text-primary-700 transition line-clamp-1 font-display">
+                    {event.title}
+                  </h3>
+                  {event.description && (
+                    <p className="text-sm text-stone-500 mt-1 line-clamp-2 font-light leading-relaxed">{event.description}</p>
+                  )}
+                  <div className="flex items-center gap-3 mt-3 text-xs text-stone-400 flex-wrap">
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      {eventDate.toLocaleDateString("en-US", {
+                        weekday: "short", month: "short", day: "numeric",
+                      })}
+                    </span>
+                    {event.location && (
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5" />{event.location}
+                      </span>
+                    )}
+                    {event.is_online && (
+                      <span className="flex items-center gap-1">
+                        <Globe className="w-3.5 h-3.5" />{t("events.online")}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <span className="flex items-center gap-1 text-xs text-stone-400">
+                      <Users className="w-3.5 h-3.5" />
+                      {event.attendee_count}{event.max_attendees ? `/${event.max_attendees}` : ""}
+                    </span>
+                    {event.ticket_type === "paid" && event.ticket_price && (
+                      <Badge variant="earth" className="text-[10px] px-1.5 py-0.5">
+                        <Tag className="w-2.5 h-2.5 mr-0.5" />€{(event.ticket_price / 100).toFixed(0)}
+                      </Badge>
+                    )}
+                    {event.ticket_type === "donation_based" && (
+                      <Badge variant="earth" className="text-[10px] px-1.5 py-0.5">
+                        <Heart className="w-2.5 h-2.5 mr-0.5" />
+                      </Badge>
+                    )}
+                    {event.visibility === "registered" && (
+                      <Badge variant="blue" className="text-[10px] px-1.5 py-0.5">
+                        <Shield className="w-2.5 h-2.5" />
+                      </Badge>
+                    )}
+                    {event.visibility === "group_only" && (
+                      <Badge variant="blue" className="text-[10px] px-1.5 py-0.5">
+                        <Building className="w-2.5 h-2.5" />
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

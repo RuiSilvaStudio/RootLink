@@ -3,7 +3,11 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.content import Content
-from app.schemas.content import ContentResponse, SearchResult, SearchResponse
+from app.models.event import Event
+from app.models.learning import Course, Lesson
+from app.models.group import Group
+from app.models.plant import Plant
+from app.schemas.content import SearchContentResponse, SearchResult, SearchResponse
 from app.services.embeddings import embed_text
 from app.core.config import settings
 
@@ -17,13 +21,23 @@ def cosine_similarity(a: list[float], b: list[float]) -> float:
     return dot / (norm_a * norm_b)
 
 
-def keyword_score(query: str, title: str, full_text: str | None) -> float:
-    text = (title + " " + (full_text or "")).lower()
+def keyword_score(query: str, *fields: str | None) -> float:
+    text = " ".join(f or "" for f in fields).lower()
     words = query.lower().split()
     matches = sum(1 for w in words if w in text)
     if not words:
         return 0.0
     return matches / len(words)
+
+
+def _normalize_category(cat, enum_cls=None) -> str:
+    if cat is None:
+        return ""
+    if enum_cls and hasattr(cat, 'value'):
+        return cat.value
+    if hasattr(cat, 'value'):
+        return cat.value
+    return str(cat)
 
 
 async def hybrid_search(
@@ -36,50 +50,187 @@ async def hybrid_search(
 ) -> SearchResponse:
     query_embedding = await embed_text(query)
 
-    stmt = select(Content)
-    if category:
-        stmt = stmt.where(Content.category == category)
-    if content_type:
-        stmt = stmt.where(Content.content_type == content_type)
-
-    result = await db.execute(stmt)
-    all_content = result.scalars().all()
-
     scored = []
-    for c in all_content:
-        semantic_score = 0.0
-        if c.embedding:
-            semantic_score = cosine_similarity(query_embedding, c.embedding)
 
-        kw_score = keyword_score(query, c.title, c.full_text)
+    # --- Articles ---
+    if content_type in (None, "article"):
+        stmt = select(Content)
+        if category:
+            stmt = stmt.where(Content.category == category)
+        result = await db.execute(stmt)
+        for c in result.scalars().all():
+            semantic_score = 0.0
+            if c.embedding:
+                semantic_score = cosine_similarity(query_embedding, c.embedding)
+            kw = keyword_score(query, c.title, c.full_text)
+            combined = semantic_score * 0.5 + kw * 0.5
+            scored.append((combined, {
+                "id": c.id,
+                "title": c.title,
+                "url": c.url,
+                "content_type": "article",
+                "category": _normalize_category(c.category),
+                "summary": c.summary,
+                "image_url": c.image_url,
+                "source": _normalize_category(c.source),
+                "source_url": c.source_url,
+                "created_by": c.created_by,
+                "published_at": c.published_at,
+                "crawled_at": c.crawled_at,
+                "created_at": c.created_at,
+                "verification_status": _normalize_category(c.verification_status),
+                "validated_by": c.validated_by,
+                "cross_referenced_sources": c.cross_referenced_sources,
+            }))
 
-        combined = semantic_score * 0.5 + kw_score * 0.5
-        scored.append((combined, c))
+    # --- Events ---
+    if content_type in (None, "event"):
+        stmt = select(Event)
+        if category:
+            stmt = stmt.where(Event.category == category)
+        result = await db.execute(stmt)
+        for e in result.scalars().all():
+            kw = keyword_score(query, e.title, e.description, e.location)
+            scored.append((kw, {
+                "id": e.id,
+                "title": e.title,
+                "url": e.url,
+                "content_type": "event",
+                "category": e.category or "",
+                "summary": e.description,
+                "image_url": e.image_url,
+                "source": "user",
+                "source_url": None,
+                "created_by": e.created_by,
+                "published_at": e.date,
+                "crawled_at": None,
+                "created_at": e.created_at,
+                "verification_status": "unreviewed",
+                "validated_by": None,
+                "cross_referenced_sources": None,
+            }))
+
+    # --- Courses ---
+    if content_type in (None, "course"):
+        stmt = select(Course)
+        if category:
+            stmt = stmt.where(Course.category == category)
+        result = await db.execute(stmt)
+        for co in result.scalars().all():
+            kw = keyword_score(query, co.title, co.description)
+            scored.append((kw, {
+                "id": co.id,
+                "title": co.title,
+                "url": None,
+                "content_type": "course",
+                "category": co.category or "",
+                "summary": co.description,
+                "image_url": co.image_url,
+                "source": "user",
+                "source_url": None,
+                "created_by": co.created_by,
+                "published_at": None,
+                "crawled_at": None,
+                "created_at": co.created_at,
+                "verification_status": "unreviewed",
+                "validated_by": None,
+                "cross_referenced_sources": None,
+            }))
+
+    # --- Videos (lessons with video_url) ---
+    if content_type in (None, "video"):
+        stmt = select(Lesson).where(Lesson.video_url.isnot(None))
+        result = await db.execute(stmt)
+        for les in result.scalars().all():
+            kw = keyword_score(query, les.title, les.body)
+            scored.append((kw, {
+                "id": les.id,
+                "title": les.title,
+                "url": les.video_url,
+                "content_type": "video",
+                "category": "",
+                "summary": les.body,
+                "image_url": None,
+                "source": "user",
+                "source_url": None,
+                "created_by": None,
+                "published_at": None,
+                "crawled_at": None,
+                "created_at": les.created_at,
+                "verification_status": "unreviewed",
+                "validated_by": None,
+                "cross_referenced_sources": None,
+            }))
+
+    # --- Groups ---
+    if content_type in (None, "group"):
+        stmt = select(Group)
+        if category:
+            stmt = stmt.where(Group.category == category)
+        result = await db.execute(stmt)
+        for g in result.scalars().all():
+            kw = keyword_score(query, g.name, g.description)
+            scored.append((kw, {
+                "id": g.id,
+                "title": g.name,
+                "url": f"/groups/{g.id}",
+                "content_type": "group",
+                "category": _normalize_category(g.category),
+                "summary": g.description,
+                "image_url": g.image_url,
+                "source": "user",
+                "source_url": None,
+                "created_by": g.created_by,
+                "published_at": None,
+                "crawled_at": None,
+                "created_at": g.created_at,
+                "verification_status": "unreviewed",
+                "validated_by": None,
+                "cross_referenced_sources": None,
+            }))
+
+    # --- Plants ---
+    if content_type in (None, "plant"):
+        stmt = select(Plant)
+        result = await db.execute(stmt)
+        for p in result.scalars().all():
+            # Build searchable text from all name fields
+            common_pt = " ".join(p.common_names_pt) if p.common_names_pt else ""
+            common_en = " ".join(p.common_names_en) if p.common_names_en else ""
+            kw = keyword_score(query, p.scientific_name, p.scientific_name_full, common_pt, common_en, p.genus, p.family, p.plant_type)
+            # Show common names as summary
+            names = []
+            if p.common_names_en:
+                names.extend(p.common_names_en[:3])
+            if p.common_names_pt:
+                names.extend(p.common_names_pt[:3])
+            summary = ", ".join(names) if names else p.scientific_name
+
+            scored.append((kw, {
+                "id": p.id,
+                "title": p.scientific_name,
+                "url": f"/plants/{p.id}",
+                "content_type": "plant",
+                "category": p.plant_type or "",
+                "summary": summary,
+                "image_url": p.image_url,
+                "source": "database",
+                "source_url": p.source_url,
+                "created_by": None,
+                "published_at": None,
+                "crawled_at": None,
+                "created_at": p.created_at,
+                "verification_status": "unreviewed",
+                "validated_by": None,
+                "cross_referenced_sources": None,
+            }))
 
     scored.sort(key=lambda x: x[0], reverse=True)
     total = len(scored)
     page = scored[offset:offset + limit]
 
     results = []
-    for score, c in page:
-        content_dict = {
-            "id": c.id,
-            "title": c.title,
-            "url": c.url,
-            "content_type": c.content_type.value if hasattr(c.content_type, 'value') else c.content_type,
-            "category": c.category.value if hasattr(c.category, 'value') else c.category,
-            "summary": c.summary,
-            "image_url": c.image_url,
-            "source": c.source.value if hasattr(c.source, 'value') else c.source,
-            "source_url": c.source_url,
-            "created_by": c.created_by,
-            "published_at": c.published_at,
-            "crawled_at": c.crawled_at,
-            "created_at": c.created_at,
-            "verification_status": c.verification_status.value if hasattr(c.verification_status, 'value') else c.verification_status,
-            "validated_by": c.validated_by,
-            "cross_referenced_sources": c.cross_referenced_sources,
-        }
-        results.append(SearchResult(content=ContentResponse(**content_dict), score=float(score)))
+    for score, content_dict in page:
+        results.append(SearchResult(content=SearchContentResponse(**content_dict), score=float(score)))
 
     return SearchResponse(results=results, total=total, query=query)

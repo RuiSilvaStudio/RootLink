@@ -2,9 +2,17 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Users, Plus, Search, ExternalLink } from "lucide-react";
+import { Users, Plus, Search, ExternalLink, Hash, MessageCircle, Calendar } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
+import { useToast } from "@/lib/toast-context";
+import { useDirtyGuard } from "@/lib/use-dirty-guard";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Card } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { CardSkeleton } from "@/components/ui/LoadingSkeleton";
 
 export default function GroupsPage() {
   const [groups, setGroups] = useState<any[]>([]);
@@ -16,7 +24,10 @@ export default function GroupsPage() {
   const [category, setCategory] = useState("gardening");
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [suggesting, setSuggesting] = useState(false);
+  const dirty = !!(name || slug || description);
+  useDirtyGuard(dirty);
   const { t } = useLocale();
+  const { addToast } = useToast();
 
   useEffect(() => {
     api.groups.list().then(setGroups).catch(() => {}).finally(() => setLoading(false));
@@ -48,59 +59,72 @@ export default function GroupsPage() {
       setDescription("");
       setSuggestions([]);
     } catch (err: any) {
-      alert(err.message);
+      addToast("error", err.message);
     }
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-stone-800 font-serif">{t("groups.title")}</h1>
-          <p className="text-stone-500 mt-1">{t("groups.subtitle")}</p>
+    <div className="max-w-5xl mx-auto px-4 sm:px-8 py-12">
+      <PageHeader
+        icon={<Users className="w-5 h-5 text-primary-500" />}
+        title={t("groups.title")}
+        subtitle={t("groups.subtitle")}
+        action={
+          <Button variant="primary" size="sm" onClick={() => setShowForm(!showForm)}>
+            <Plus className="w-4 h-4" /> {t("groups.new_group")}
+          </Button>
+        }
+      />
+
+      {/* Hero description */}
+      <Card variant="plain" className="p-6 mb-8 bg-gradient-to-br from-primary-50 to-white border-primary-100">
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center shrink-0">
+              <MessageCircle className="w-5 h-5 text-primary-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-stone-800 text-sm">{t("groups.hero_discuss") || "Discuss & Share"}</h3>
+              <p className="text-xs text-stone-500 mt-1 font-light leading-relaxed">{t("groups.hero_discuss_desc") || "Exchange tips, ask questions, and share your projects with like-minded people."}</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-earth-100 flex items-center justify-center shrink-0">
+              <Calendar className="w-5 h-5 text-earth-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-stone-800 text-sm">{t("groups.hero_events") || "Group Events"}</h3>
+              <p className="text-xs text-stone-500 mt-1 font-light leading-relaxed">{t("groups.hero_events_desc") || "Organise workshops, meetups, and gatherings for your community."}</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
+              <Users className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-stone-800 text-sm">{t("groups.hero_network") || "Grow Together"}</h3>
+              <p className="text-xs text-stone-500 mt-1 font-light leading-relaxed">{t("groups.hero_network_desc") || "Connect with fellow gardeners, woodworkers, and homesteaders in your region."}</p>
+            </div>
+          </div>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition text-sm"
-        >
-          <Plus className="w-4 h-4" /> {t("groups.new_group")}
-        </button>
-      </div>
+      </Card>
 
       {showForm && (
-        <form onSubmit={handleCreate} className="bg-white p-6 rounded-xl border border-stone-200 mb-8 space-y-4">
+        <Card variant="plain" className="p-6 mb-8 space-y-4">
+          <h3 className="font-serif font-bold text-stone-800">{t("groups.new_group")}</h3>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1">{t("groups.name_label")}</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""));
-                }}
-                required
-                className="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
+              <input type="text" value={name} onChange={(e) => { setName(e.target.value); setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")); }} required className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
             </div>
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1">{t("groups.slug_label")}</label>
-              <input
-                type="text"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                required
-                className="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
+              <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)} required className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1">{t("groups.category_label")}</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white"
-            >
+            <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
               <option value="gardening">{t("groups.category_gardening")}</option>
               <option value="woodworking">{t("groups.category_woodworking")}</option>
               <option value="craft_trades">{t("groups.category_craft_trades")}</option>
@@ -110,26 +134,21 @@ export default function GroupsPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1">{t("groups.description_label")}</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
           </div>
 
           {suggestions.length > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
               <div className="flex items-center gap-1.5 text-sm font-medium text-blue-800 mb-2">
                 <Search className="w-4 h-4" /> {t("groups.similar_groups")}
               </div>
               <div className="space-y-2">
                 {suggestions.map((sg) => (
                   <Link key={sg.id} href={`/groups/${sg.id}`}
-                    className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-blue-100 hover:border-blue-300 transition text-sm">
+                    className="flex items-center justify-between bg-white rounded-xl px-4 py-2.5 border border-blue-100 hover:border-blue-300 transition text-sm">
                     <div>
                       <span className="font-medium text-stone-800">{sg.name}</span>
-                      {sg.description && <span className="text-stone-500 ml-2">— {sg.description}</span>}
+                      {sg.description && <span className="text-stone-500 ml-2 font-light">— {sg.description}</span>}
                     </div>
                     <ExternalLink className="w-3.5 h-3.5 text-blue-500 shrink-0 ml-2" />
                   </Link>
@@ -139,36 +158,35 @@ export default function GroupsPage() {
           )}
 
           <div className="flex items-center gap-3">
-            <button type="submit" className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition">
-              {t("groups.create_group")}
-            </button>
+            <Button type="submit">{t("groups.create_group")}</Button>
             {suggesting && <span className="text-xs text-stone-400">{t("groups.searching")}</span>}
           </div>
-        </form>
+        </Card>
       )}
 
       {loading ? (
-        <p className="text-stone-500">{t("groups.loading")}</p>
-      ) : groups.length === 0 ? (
-        <div className="text-center py-20 text-stone-400">
-          <Users className="w-16 h-16 mx-auto mb-4 opacity-50" />
-          <p>{t("groups.no_groups")}</p>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => <CardSkeleton key={i} />)}
         </div>
+      ) : groups.length === 0 ? (
+        <EmptyState
+          icon={<Users className="w-7 h-7" />}
+          title={t("groups.no_groups")}
+        />
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {groups.map((group) => (
-            <a
-              key={group.id}
-              href={`/groups/${group.id}`}
-              className="block bg-white p-5 rounded-xl border border-stone-200 hover:shadow-md transition"
-            >
-              <h3 className="font-semibold text-stone-800 text-lg">{group.name}</h3>
-              <p className="text-sm text-stone-500 mt-1 line-clamp-2">
+            <a key={group.id} href={`/groups/${group.id}`} className="card-lift p-5 group">
+              <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                <Hash className="w-5 h-5 text-primary-500" />
+              </div>
+              <h3 className="font-semibold text-stone-800 group-hover:text-primary-700 transition">{group.name}</h3>
+              <p className="text-sm text-stone-500 mt-1 line-clamp-2 font-light">
                 {group.description || t("groups.no_description")}
               </p>
-              <span className="inline-block mt-3 text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded">
-                {group.category}
-              </span>
+              <div className="mt-3">
+                <Badge variant="sage">{group.category}</Badge>
+              </div>
             </a>
           ))}
         </div>

@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { api } from "@/lib/api";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default function ConversationPage() {
   const params = useParams();
@@ -36,16 +37,22 @@ export default function ConversationPage() {
     setBody("");
   };
 
-  if (loading) return <div className="text-center py-20 text-stone-500">Loading...</div>;
+  if (loading) return (
+    <div className="max-w-4xl mx-auto px-4 py-12 space-y-4">
+      <div className="h-8 bg-stone-200 rounded w-64 animate-pulse" />
+      <div className="h-64 bg-stone-200 rounded-xl animate-pulse" />
+    </div>
+  );
 
   const other = conversation?.other_user;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+      <Breadcrumbs items={[
+        { label: "Messages", href: "/messages" },
+        { label: conversation?.other_user?.name || "Conversation" }
+      ]} />
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.push("/messages")} className="text-stone-500 hover:text-primary-700">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
         <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-medium">
           {other?.name?.[0]?.toUpperCase() || "?"}
         </div>

@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RootLink — Design Mockup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #f6f7f4; color: #292524; }
+    h1, h2, h3, h4 { font-family: 'Merriweather', serif; }
+    .font-serif { font-family: 'Merriweather', serif; }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+    .reveal-delay-5 { transition-delay: 0.5s; }
+
+    .stat-value { font-family: 'Merriweather', serif; display: inline-block; }
+
+    .nav-glass {
+      background: rgba(246, 247, 244, 0.85);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(122, 154, 108, 0.10);
+    }
+
+    .hero-grad {
+      background: radial-gradient(ellipse 100% 70% at 30% 0%, rgba(122,154,108,0.12) 0%, transparent 60%),
+                  radial-gradient(ellipse 60% 50% at 80% 100%, rgba(196,168,130,0.08) 0%, transparent 50%),
+                  linear-gradient(180deg, #f6f7f4 0%, #fafaf9 100%);
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+    }
+
+    .card-base {
+      background: #ffffff;
+      border: 1px solid #e8ece4;
+      border-radius: 16px;
+      transition: all 0.3s ease;
+    }
+    .card-base:hover {
+      box-shadow: 0 8px 30px rgba(122, 154, 108, 0.10);
+      transform: translateY(-2px);
+    }
+    .card-lift {
+      background: #ffffff;
+      border: 1px solid #e8ece4;
+      border-radius: 16px;
+      transition: all 0.3s ease;
+    }
+    .card-lift:hover {
+      box-shadow: 0 12px 40px rgba(122, 154, 108, 0.12);
+      transform: translateY(-4px);
+    }
+
+    .btn-primary {
+      background: #7a9a6c;
+      color: white;
+      padding: 10px 24px;
+      border-radius: 12px;
+      font-weight: 500;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-primary:hover { background: #4d6a41; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(122, 154, 108, 0.3); }
+
+    .btn-secondary {
+      background: transparent;
+      color: #4d6a41;
+      padding: 10px 24px;
+      border-radius: 12px;
+      font-weight: 500;
+      font-size: 14px;
+      border: 1px solid #d4d9ce;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .btn-secondary:hover { border-color: #7a9a6c; background: rgba(122, 154, 108, 0.05); }
+
+    .btn-ghost {
+      background: transparent;
+      color: #57534e;
+      padding: 10px 24px;
+      border-radius: 12px;
+      font-weight: 500;
+      font-size: 14px;
+      border: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .btn-ghost:hover { background: rgba(122, 154, 108, 0.08); color: #4d6a41; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .badge-sage { background: #e8ece4; color: #4d6a41; }
+    .badge-earth { background: #f0ebe4; color: #8b6f50; }
+    .badge-green { background: #e4f0e4; color: #2d6a2d; }
+    .badge-stone { background: #f0f0ee; color: #57534e; }
+
+    .input-root {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid #d4d9ce;
+      background: white;
+      font-size: 15px;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+    .input-root:focus { border-color: #7a9a6c; box-shadow: 0 0 0 3px rgba(122, 154, 108, 0.15); }
+    .input-root::placeholder { color: #a8a29e; }
+
+    .swatch { width: 36px; height: 36px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.04); }
+
+    .img-placeholder {
+      background-size: cover;
+      background-position: center;
+    }
+
+    .hero-image {
+      background-image: url('https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?w=1600&q=80');
+    }
+
+    /* subtle overlay for hero readability */
+    .hero-overlay {
+      background: linear-gradient(90deg, rgba(246,247,244,0.92) 0%, rgba(246,247,244,0.4) 60%, transparent 100%);
+    }
+    @media (max-width: 640px) {
+      .hero-overlay {
+        background: linear-gradient(180deg, rgba(246,247,244,0.88) 0%, rgba(246,247,244,0.5) 100%);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========== NAVBAR ========== -->
+  <nav class="nav-glass fixed top-0 left-0 right-0 z-50 px-4 sm:px-8 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-lg bg-[#7a9a6c] flex items-center justify-center">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 3v12m0 0-3-3m3 3 3-3M5 21h14"/></svg>
+      </div>
+      <span class="font-serif text-lg font-bold text-[#4d6a41] tracking-tight">RootLink</span>
+    </div>
+    <div class="hidden md:flex items-center gap-6 text-sm font-medium text-[#57534e]">
+      <a href="#" class="hover:text-[#4d6a41] transition">Search</a>
+      <a href="#" class="hover:text-[#4d6a41] transition">Community</a>
+      <a href="#" class="hover:text-[#4d6a41] transition">Tools</a>
+      <a href="#" class="hover:text-[#4d6a41] transition">Learn</a>
+      <button class="btn-primary text-sm px-5 py-2">Sign In</button>
+    </div>
+    <button class="md:hidden text-[#57534e] p-2 rounded-lg hover:bg-[#e8ece4] transition">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+  </nav>
+
+  <!-- ========== HERO ========== -->
+  <section class="relative min-h-screen flex items-center pt-16 overflow-hidden">
+    <!-- background image -->
+    <div class="absolute inset-0 hero-image img-placeholder"></div>
+    <!-- overlay -->
+    <div class="absolute inset-0 hero-overlay"></div>
+
+    <div class="relative z-10 max-w-6xl mx-auto w-full px-4 sm:px-8">
+      <div class="max-w-2xl">
+        <span class="badge badge-sage mb-6 inline-block backdrop-blur-sm bg-white/60">Discover RootLink</span>
+        <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-[#292524] leading-[1.1] tracking-tight">
+          Cultivate knowledge.<br />
+          <span class="text-[#7a9a6c]">Grow together.</span>
+        </h1>
+        <p class="text-lg sm:text-xl text-[#57534e] mt-5 max-w-xl leading-relaxed font-light">
+          A community for gardeners, makers, and homesteaders to share what they know and learn from each other.
+        </p>
+        <div class="mt-8 flex flex-col sm:flex-row gap-3">
+          <div class="relative flex-1 max-w-md">
+            <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a8a29e]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input class="input-root pl-12" placeholder="Search plants, guides, tools..." />
+          </div>
+          <button class="btn-primary px-8 py-3 text-base">Search</button>
+        </div>
+      </div>
+
+      <!-- stat counters -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mt-16 sm:mt-24">
+        <div class="card-base p-5 sm:p-6 text-center reveal visible">
+          <div class="stat-value text-3xl sm:text-4xl font-bold text-[#7a9a6c]" data-target="1248">0</div>
+          <div class="text-sm text-[#57534e] mt-1 font-medium">Articles curated</div>
+        </div>
+        <div class="card-base p-5 sm:p-6 text-center reveal visible reveal-delay-1">
+          <div class="stat-value text-3xl sm:text-4xl font-bold text-[#7a9a6c]" data-target="89">0</div>
+          <div class="text-sm text-[#57534e] mt-1 font-medium">Community gardens</div>
+        </div>
+        <div class="card-base p-5 sm:p-6 text-center reveal visible reveal-delay-2">
+          <div class="stat-value text-3xl sm:text-4xl font-bold text-[#7a9a6c]" data-target="3402">0</div>
+          <div class="text-sm text-[#57534e] mt-1 font-medium">Active members</div>
+        </div>
+        <div class="card-base p-5 sm:p-6 text-center reveal visible reveal-delay-3">
+          <div class="stat-value text-3xl sm:text-4xl font-bold text-[#7a9a6c]" data-target="156">0</div>
+          <div class="text-sm text-[#57534e] mt-1 font-medium">Guides &amp; courses</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== CATEGORIES ========== -->
+  <section class="px-4 sm:px-8 py-20 sm:py-28">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-12 reveal">
+        <span class="badge badge-earth mb-4 inline-block">Browse by topic</span>
+        <h2 class="text-3xl sm:text-4xl font-serif font-bold text-[#292524]">Find your corner of the garden</h2>
+      </div>
+      <div class="grid sm:grid-cols-3 gap-5 sm:gap-6">
+        <div class="card-lift p-6 sm:p-8 reveal reveal-delay-1 cursor-pointer group">
+          <div class="w-12 h-12 rounded-2xl bg-[#e8ece4] flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+            <svg class="w-6 h-6 text-[#4d6a41]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v12m0 0-3-3m3 3 3-3M5 21h14"/></svg>
+          </div>
+          <h3 class="text-xl font-serif font-bold text-[#292524] mb-2">Gardening</h3>
+          <p class="text-[#57534e] text-sm leading-relaxed font-light">Plant guides, season calendars, and tips from experienced growers.</p>
+          <span class="inline-flex items-center gap-1 text-sm font-medium text-[#7a9a6c] mt-4 group-hover:gap-2 transition-all">Explore <span>&rarr;</span></span>
+        </div>
+        <div class="card-lift p-6 sm:p-8 reveal reveal-delay-2 cursor-pointer group">
+          <div class="w-12 h-12 rounded-2xl bg-[#f0ebe4] flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+            <svg class="w-6 h-6 text-[#8b6f50]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12h18M3 12a9 9 0 0 1 9-9M3 12a9 9 0 0 0 9 9"/></svg>
+          </div>
+          <h3 class="text-xl font-serif font-bold text-[#292524] mb-2">Woodworking</h3>
+          <p class="text-[#57534e] text-sm leading-relaxed font-light">Plans, techniques, and project inspiration for makers of all levels.</p>
+          <span class="inline-flex items-center gap-1 text-sm font-medium text-[#8b6f50] mt-4 group-hover:gap-2 transition-all">Explore <span>&rarr;</span></span>
+        </div>
+        <div class="card-lift p-6 sm:p-8 reveal reveal-delay-3 cursor-pointer group">
+          <div class="w-12 h-12 rounded-2xl bg-[#f0f0ee] flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+            <svg class="w-6 h-6 text-[#57534e]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          </div>
+          <h3 class="text-xl font-serif font-bold text-[#292524] mb-2">Crafts &amp; Trades</h3>
+          <p class="text-[#57534e] text-sm leading-relaxed font-light">Practical knowledge from electricians, plumbers, and homesteaders.</p>
+          <span class="inline-flex items-center gap-1 text-sm font-medium text-[#57534e] mt-4 group-hover:gap-2 transition-all">Explore <span>&rarr;</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== TOOLS ========== -->
+  <section class="px-4 sm:px-8 py-20 sm:py-28 bg-[#fafaf9]">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-12 reveal">
+        <span class="badge badge-sage mb-4 inline-block">Smart Tools</span>
+        <h2 class="text-3xl sm:text-4xl font-serif font-bold text-[#292524]">Built for the seasons</h2>
+        <p class="text-[#57534e] mt-3 max-w-lg mx-auto font-light">Practical calculators and planners tailored to your climate.</p>
+      </div>
+      <div class="grid sm:grid-cols-3 gap-5 sm:gap-6">
+        <div class="card-lift p-6 sm:p-8 reveal reveal-delay-1 cursor-pointer group">
+          <div class="w-10 h-10 rounded-xl bg-[#e8ece4] flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-[#4d6a41]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          </div>
+          <h3 class="text-lg font-serif font-bold text-[#292524]">Gardening Calendar</h3>
+          <p class="text-[#57534e] text-sm mt-2 leading-relaxed font-light">When to sow, transplant, and harvest — tuned to your zone.</p>
+        </div>
+        <div class="card-lift p-6 sm:p-8 reveal reveal-delay-2 cursor-pointer group">
+          <div class="w-10 h-10 rounded-xl bg-[#f0ebe4] flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-[#8b6f50]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3 class="text-lg font-serif font-bold text-[#292524]">Irrigation Calculator</h3>
+          <p class="text-[#57534e] text-sm mt-2 leading-relaxed font-light">Water needs based on crop, soil, and local rainfall.</p>
+        </div>
+        <div class="card-lift p-6 sm:p-8 reveal reveal-delay-3 cursor-pointer group">
+          <div class="w-10 h-10 rounded-xl bg-[#f0f0ee] flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-[#57534e]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/><path d="M9 14l2 2 4-4"/></svg>
+          </div>
+          <h3 class="text-lg font-serif font-bold text-[#292524]">Monthly Checklist</h3>
+          <p class="text-[#57534e] text-sm mt-2 leading-relaxed font-light">Seasonal tasks so you never miss a beat in the garden.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== COMPONENT SHOWCASE ========== -->
+  <section class="px-4 sm:px-8 py-20 sm:py-28">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-12 reveal">
+        <span class="badge badge-stone mb-4 inline-block backdrop-blur-sm bg-white/60">Design System</span>
+        <h2 class="text-3xl sm:text-4xl font-serif font-bold text-[#292524]">Component library</h2>
+      </div>
+
+      <!-- Color Palette -->
+      <div class="mb-16 reveal">
+        <h3 class="text-sm font-semibold text-[#57534e] uppercase tracking-wider mb-4">Color Palette</h3>
+        <div class="flex flex-wrap gap-4">
+          <div class="flex items-center gap-3"><div class="swatch" style="background:#f6f7f4"></div><span class="text-sm text-[#57534e]">sage-50</span></div>
+          <div class="flex items-center gap-3"><div class="swatch" style="background:#e8ece4"></div><span class="text-sm text-[#57534e]">sage-100</span></div>
+          <div class="flex items-center gap-3"><div class="swatch" style="background:#7a9a6c"></div><span class="text-sm text-[#57534e]">sage-500</span></div>
+          <div class="flex items-center gap-3"><div class="swatch" style="background:#4d6a41"></div><span class="text-sm text-white">sage-700</span></div>
+          <div class="flex items-center gap-3"><div class="swatch" style="background:#c4a882"></div><span class="text-sm text-[#57534e]">earth-400</span></div>
+          <div class="flex items-center gap-3"><div class="swatch" style="background:#8b6f50"></div><span class="text-sm text-white">earth-600</span></div>
+          <div class="flex items-center gap-3"><div class="swatch" style="background:#fafaf9"></div><span class="text-sm text-[#57534e]">stone-50</span></div>
+          <div class="flex items-center gap-3"><div class="swatch" style="background:#292524"></div><span class="text-sm text-white">stone-800</span></div>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="mb-16 reveal">
+        <h3 class="text-sm font-semibold text-[#57534e] uppercase tracking-wider mb-4">Buttons</h3>
+        <div class="flex flex-wrap gap-3 items-center">
+          <button class="btn-primary">Primary</button>
+          <button class="btn-secondary">Secondary</button>
+          <button class="btn-ghost">Ghost</button>
+          <button class="btn-primary" disabled style="opacity:0.5;cursor:not-allowed">Disabled</button>
+          <button class="btn-primary flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            With icon
+          </button>
+        </div>
+      </div>
+
+      <!-- Badges -->
+      <div class="mb-16 reveal">
+        <h3 class="text-sm font-semibold text-[#57534e] uppercase tracking-wider mb-4">Badges</h3>
+        <div class="flex flex-wrap gap-2">
+          <span class="badge badge-sage">Gardening</span>
+          <span class="badge badge-earth">Woodworking</span>
+          <span class="badge badge-green">Verified</span>
+          <span class="badge badge-stone">Beginner</span>
+          <span class="badge badge-sage flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#7a9a6c]"></span>Community
+          </span>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div class="mb-16 reveal">
+        <h3 class="text-sm font-semibold text-[#57534e] uppercase tracking-wider mb-4">Form Controls</h3>
+        <div class="max-w-sm space-y-3">
+          <input class="input-root" placeholder="Search plants, guides..." />
+          <div class="relative">
+            <input class="input-root pl-10" placeholder="Email address" />
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a8a29e]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <select class="input-root appearance-none bg-white">
+            <option>Select a category</option>
+            <option>Gardening</option>
+            <option>Woodworking</option>
+          </select>
+          <div class="flex items-center gap-3">
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" class="sr-only peer" checked />
+              <div class="w-10 h-6 rounded-full bg-[#d4d9ce] peer-checked:bg-[#7a9a6c] transition after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:rounded-full after:bg-white after:transition peer-checked:after:translate-x-4"></div>
+            </label>
+            <span class="text-sm text-[#57534e]">Toggle me</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cards -->
+      <div class="mb-10 reveal">
+        <h3 class="text-sm font-semibold text-[#57534e] uppercase tracking-wider mb-4">Card Variants</h3>
+        <div class="grid sm:grid-cols-3 gap-5">
+          <div class="card-base p-6">
+            <div class="w-8 h-8 rounded-lg bg-[#e8ece4] flex items-center justify-center mb-3">
+              <svg class="w-4 h-4 text-[#4d6a41]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v12m0 0-3-3m3 3 3-3M5 21h14"/></svg>
+            </div>
+            <h4 class="font-serif font-bold text-[#292524]">Default</h4>
+            <p class="text-[#57534e] text-sm mt-1 font-light">Soft border, subtle hover lift.</p>
+          </div>
+          <div class="card-lift p-6">
+            <div class="w-8 h-8 rounded-lg bg-[#f0ebe4] flex items-center justify-center mb-3">
+              <svg class="w-4 h-4 text-[#8b6f50]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12h18M3 12a9 9 0 0 1 9-9M3 12a9 9 0 0 0 9 9"/></svg>
+            </div>
+            <h4 class="font-serif font-bold text-[#292524]">Lift</h4>
+            <p class="text-[#57534e] text-sm mt-1 font-light">Stronger hover, elevated shadow.</p>
+          </div>
+          <div class="glass p-6 rounded-2xl">
+            <div class="w-8 h-8 rounded-lg bg-white/60 flex items-center justify-center mb-3">
+              <svg class="w-4 h-4 text-[#4d6a41]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <h4 class="font-serif font-bold text-[#292524]">Glass</h4>
+            <p class="text-[#57534e] text-sm mt-1 font-light">Blurred backdrop, ethereal feel.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== CONTENT CARD SAMPLE ========== -->
+  <section class="px-4 sm:px-8 py-20 sm:py-28 bg-[#fafaf9]">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-12 reveal">
+        <span class="badge badge-green mb-4 inline-block">Recently Indexed</span>
+        <h2 class="text-3xl sm:text-4xl font-serif font-bold text-[#292524]">From the community</h2>
+      </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="card-lift reveal reveal-delay-1 cursor-pointer overflow-hidden">
+          <div class="h-44 img-placeholder" style="background-image:url('https://images.unsplash.com/photo-1518531934787-5c67e6c0b11d?w=600&q=80')"></div>
+          <div class="p-5">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="badge badge-sage text-[11px]">Gardening</span>
+              <span class="badge badge-green text-[11px]">Verified</span>
+            </div>
+            <h3 class="font-serif font-bold text-[#292524] text-base leading-snug">Companion Planting for Small Spaces</h3>
+            <p class="text-[#57534e] text-sm mt-1.5 font-light leading-relaxed line-clamp-2">Maximize your garden yield with strategic plant partnerships.</p>
+            <div class="flex items-center justify-between mt-4 text-xs text-[#a8a29e]">
+              <span class="flex items-center gap-1.5">
+                <span class="w-5 h-5 rounded-full bg-[#e8ece4] flex items-center justify-center text-[10px] font-medium text-[#4d6a41]">MC</span>
+                Maria Costa
+              </span>
+              <span>2 days ago</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-lift reveal reveal-delay-2 cursor-pointer overflow-hidden">
+          <div class="h-44 img-placeholder" style="background-image:url('https://images.unsplash.com/photo-1581532361718-92cacf4deb05?w=600&q=80')"></div>
+          <div class="p-5">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="badge badge-earth text-[11px]">Woodworking</span>
+              <span class="badge badge-stone text-[11px]">Guide</span>
+            </div>
+            <h3 class="font-serif font-bold text-[#292524] text-base leading-snug">Building a Raised Bed: Full Plan</h3>
+            <p class="text-[#57534e] text-sm mt-1.5 font-light leading-relaxed line-clamp-2">Step-by-step from lumber selection to soil fill.</p>
+            <div class="flex items-center justify-between mt-4 text-xs text-[#a8a29e]">
+              <span class="flex items-center gap-1.5">
+                <span class="w-5 h-5 rounded-full bg-[#f0ebe4] flex items-center justify-center text-[10px] font-medium text-[#8b6f50]">JP</span>
+                João Pereira
+              </span>
+              <span>1 week ago</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-lift reveal reveal-delay-3 cursor-pointer overflow-hidden">
+          <div class="h-44 img-placeholder" style="background-image:url('https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&q=80')"></div>
+          <div class="p-5">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="badge badge-sage text-[11px]">Gardening</span>
+              <span class="badge badge-stone text-[11px]">Tool</span>
+            </div>
+            <h3 class="font-serif font-bold text-[#292524] text-base leading-snug">Drip Irrigation on a Budget</h3>
+            <p class="text-[#57534e] text-sm mt-1.5 font-light leading-relaxed line-clamp-2">Set up an efficient system for under $50.</p>
+            <div class="flex items-center justify-between mt-4 text-xs text-[#a8a29e]">
+              <span class="flex items-center gap-1.5">
+                <span class="w-5 h-5 rounded-full bg-[#e8ece4] flex items-center justify-center text-[10px] font-medium text-[#4d6a41]">AS</span>
+                Ana Santos
+              </span>
+              <span>3 days ago</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-lift reveal reveal-delay-4 cursor-pointer overflow-hidden">
+          <div class="h-44 img-placeholder" style="background-image:url('https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?w=600&q=80')"></div>
+          <div class="p-5">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="badge badge-earth text-[11px]">Crafts</span>
+              <span class="badge badge-stone text-[11px]">Tutorial</span>
+            </div>
+            <h3 class="font-serif font-bold text-[#292524] text-base leading-snug">Restoring Vintage Hand Tools</h3>
+            <p class="text-[#57534e] text-sm mt-1.5 font-light leading-relaxed line-clamp-2">Bring old chisels and planes back to life.</p>
+            <div class="flex items-center justify-between mt-4 text-xs text-[#a8a29e]">
+              <span class="flex items-center gap-1.5">
+                <span class="w-5 h-5 rounded-full bg-[#f0f0ee] flex items-center justify-center text-[10px] font-medium text-[#57534e]">PA</span>
+                Pedro Alves
+              </span>
+              <span>5 days ago</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== CALL TO ACTION ========== -->
+  <section class="px-4 sm:px-8 py-20 sm:py-28">
+    <div class="max-w-3xl mx-auto text-center reveal">
+      <span class="badge badge-sage mb-4 inline-block">Join the community</span>
+      <h2 class="text-3xl sm:text-4xl font-serif font-bold text-[#292524]">Ready to share what you know?</h2>
+      <p class="text-[#57534e] mt-4 max-w-md mx-auto font-light">Submit a guide, recommend a tool, or start a discussion. RootLink is built by people like you.</p>
+      <div class="flex flex-wrap justify-center gap-3 mt-8">
+        <button class="btn-primary px-8 py-3 text-base">Submit a Link</button>
+        <button class="btn-secondary px-8 py-3 text-base">Learn More</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FOOTER ========== -->
+  <footer class="px-4 sm:px-8 py-16 border-t border-[#e8ece4]">
+    <div class="max-w-6xl mx-auto grid sm:grid-cols-3 gap-10">
+      <div>
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-7 h-7 rounded-lg bg-[#7a9a6c] flex items-center justify-center">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 3v12m0 0-3-3m3 3 3-3M5 21h14"/></svg>
+          </div>
+          <span class="font-serif text-base font-bold text-[#4d6a41]">RootLink</span>
+        </div>
+        <p class="text-sm text-[#57534e] font-light leading-relaxed">A community-built knowledge base for gardeners, makers, and homesteaders.</p>
+      </div>
+      <div>
+        <h4 class="text-sm font-semibold text-[#292524] mb-4">Explore</h4>
+        <div class="space-y-2 text-sm text-[#57534e]">
+          <a href="#" class="block hover:text-[#4d6a41] transition">Search</a>
+          <a href="#" class="block hover:text-[#4d6a41] transition">Community</a>
+          <a href="#" class="block hover:text-[#4d6a41] transition">Tools</a>
+          <a href="#" class="block hover:text-[#4d6a41] transition">Learning</a>
+        </div>
+      </div>
+      <div>
+        <h4 class="text-sm font-semibold text-[#292524] mb-4">Connect</h4>
+        <div class="space-y-2 text-sm text-[#57534e]">
+          <a href="#" class="block hover:text-[#4d6a41] transition">GitHub</a>
+          <a href="#" class="block hover:text-[#4d6a41] transition">Discord</a>
+          <a href="#" class="block hover:text-[#4d6a41] transition">Contribute</a>
+        </div>
+      </div>
+    </div>
+    <div class="max-w-6xl mx-auto mt-10 pt-6 border-t border-[#e8ece4] text-center text-xs text-[#a8a29e] font-light">
+      &copy; 2026 RootLink. Open source &amp; community-built.
+    </div>
+  </footer>
+
+  <script>
+    function animateCounters() {
+      document.querySelectorAll('.stat-value[data-target]').forEach(el => {
+        const target = parseInt(el.dataset.target);
+        const duration = 2000;
+        const start = performance.now();
+        function update(now) {
+          const elapsed = now - start;
+          const progress = Math.min(elapsed / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          el.textContent = Math.floor(eased * target).toLocaleString();
+          if (progress < 1) requestAnimationFrame(update);
+          else el.textContent = target.toLocaleString();
+        }
+        requestAnimationFrame(update);
+      });
+    }
+
+    function revealOnScroll() {
+      const reveals = document.querySelectorAll('.reveal:not(.visible)');
+      reveals.forEach(el => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight - 60) {
+          el.classList.add('visible');
+        }
+      });
+    }
+
+    const counterObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          animateCounters();
+          counterObserver.disconnect();
+        }
+      });
+    }, { threshold: 0.3 });
+
+    const counterEl = document.querySelector('.stat-value');
+    if (counterEl) counterObserver.observe(counterEl.closest('.grid') || counterEl.parentElement);
+
+    window.addEventListener('load', revealOnScroll);
+    window.addEventListener('scroll', revealOnScroll);
+    revealOnScroll();
+  </script>
+</body>
+</html>

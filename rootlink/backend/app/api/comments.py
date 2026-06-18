@@ -10,6 +10,7 @@ from app.models.content import Content
 from app.models.comment import Comment
 from app.models.notification import Notification, NotificationType
 from app.schemas.comment import CommentResponse, CommentCreate
+from app.services.sse import sse_manager
 
 router = APIRouter(prefix="/api/comments", tags=["comments"])
 
@@ -86,6 +87,7 @@ async def create_comment(
         )
         db.add(notif)
         await db.commit()
+        await sse_manager.notify(notif.user_id, {"count": 0})
     elif not body.parent_id and content.source == "user" and content.created_by and content.created_by != current_user.id:
         notif = Notification(
             user_id=content.created_by,
@@ -96,6 +98,7 @@ async def create_comment(
         )
         db.add(notif)
         await db.commit()
+        await sse_manager.notify(notif.user_id, {"count": 0})
 
     return CommentResponse(
         id=comment.id,

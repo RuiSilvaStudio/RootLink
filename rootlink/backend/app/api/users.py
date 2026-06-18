@@ -87,6 +87,33 @@ async def nearby_users(
     return nearby
 
 
+@router.get("/stats/regions")
+async def user_regions(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User.location).where(User.visible_in_network == True, User.location.isnot(None)))
+    locations = [row[0] for row in result.all()]
+    regions: dict[str, int] = {}
+    for loc in locations:
+        parts = [p.strip() for p in loc.split(",")]
+        region = parts[0] if parts else loc
+        regions[region] = regions.get(region, 0) + 1
+    sorted_regions = sorted(regions.items(), key=lambda x: x[1], reverse=True)
+    return [{"region": r, "count": c} for r, c in sorted_regions]
+
+
+@router.get("/stats/skills")
+async def user_skills(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User.skills).where(User.visible_in_network == True, User.skills.isnot(None)))
+    skill_counts: dict[str, int] = {}
+    for row in result.all():
+        skills = row[0] or []
+        for skill in skills:
+            skill = skill.strip().lower()
+            if skill:
+                skill_counts[skill] = skill_counts.get(skill, 0) + 1
+    sorted_skills = sorted(skill_counts.items(), key=lambda x: x[1], reverse=True)
+    return [{"skill": s, "count": c} for s, c in sorted_skills]
+
+
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
     user = await db.get(User, user_id)

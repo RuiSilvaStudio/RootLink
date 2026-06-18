@@ -1,14 +1,43 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, ArrowRight, TrendingUp, Sparkles, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { CardSkeleton } from "@/components/ui/LoadingSkeleton";
+import { ArticleCard } from "@/components/search/ArticleCard";
+import { CourseCard } from "@/components/search/CourseCard";
+import { EventCard } from "@/components/search/EventCard";
+import { GroupCard } from "@/components/search/GroupCard";
+import { PlantCard } from "@/components/search/PlantCard";
+import { ExternalCard } from "@/components/search/ExternalCard";
+import { MoonWidget } from "@/components/search/MoonWidget";
+import { SunWidget } from "@/components/search/SunWidget";
+import { RelatedGroups } from "@/components/search/RelatedGroups";
+import { SpeciesWidget } from "@/components/search/SpeciesWidget";
+
+const PAGE_SIZE = 10;
+
+const ResultCard = ({ item }: { item: any }) => {
+  switch (item.content.content_type) {
+    case "course": return <CourseCard item={item} />;
+    case "event": return <EventCard item={item} />;
+    case "group": return <GroupCard item={item} />;
+    case "plant": return <PlantCard item={item} />;
+    case "video": return <ArticleCard item={item} />;
+    default: return <ArticleCard item={item} />;
+  }
+};
 
 function SearchContent() {
   const { t } = useLocale();
   const searchParams = useSearchParams();
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const [query, setQuery] = useState(searchParams.get("q") || "");
   const [category, setCategory] = useState(searchParams.get("category") || "");
   const [contentType, setContentType] = useState("");
@@ -16,6 +45,19 @@ function SearchContent() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [page, setPage] = useState(1);
+  const [popular, setPopular] = useState<any[]>([]);
+  const [trending, setTrending] = useState<{ query: string; count: number }[]>([]);
+  const [initLoading, setInitLoading] = useState(true);
+
+  // Autocomplete
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedSuggestion, setSelectedSuggestion] = useState(-1);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  // Recent searches (localStorage)
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   const categories = [
     { label: t("search.all"), value: "" },
@@ -31,33 +73,91 @@ function SearchContent() {
     { label: t("search.type_events"), value: "event" },
     { label: t("search.type_courses"), value: "course" },
     { label: t("search.type_videos"), value: "video" },
+    { label: t("search.type_groups") || "Groups", value: "group" },
+    { label: t("search.type_plants") || "Plants", value: "plant" },
   ];
 
+  // Load recent searches
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("rootlink_recent_searches");
+      if (stored) setRecentSearches(JSON.parse(stored));
+    } catch {}
+  }, []);
+
+  const saveRecentSearch = (q: string) => {
+    const updated = [q, ...recentSearches.filter((s) => s !== q)].slice(0, 10);
+    setRecentSearches(updated);
+    localStorage.setItem("rootlink_recent_searches", JSON.stringify(updated));
+  };
+
+  const removeRecentSearch = (q: string) => {
+    const updated = recentSearches.filter((s) => s !== q);
+    setRecentSearches(updated);
+    localStorage.setItem("rootlink_recent_searches", JSON.stringify(updated));
+  };
+
+  // Load initial data
   useEffect(() => {
     const q = searchParams.get("q");
     const cat = searchParams.get("category");
     if (q) {
       setQuery(q);
       doSearch(q, cat || "");
+    } else {
+      Promise.all([
+        api.content.popular(3).catch(() => []),
+        api.content.trendingSearches(8).catch(() => []),
+      ]).then(([pop, tr]) => {
+        setPopular(pop);
+        setTrending(tr);
+      }).finally(() => setInitLoading(false));
     }
   }, []);
 
-  const doSearch = async (
-    q: string,
-    cat?: string,
-    ct?: string
-  ) => {
+  // Autocomplete debounced
+  useEffect(() => {
+    if (!query || query.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      api.content.search({ q: query, limit: 5 })
+        .then((res) => setSuggestions(res.results.slice(0, 5)))
+        .catch(() => setSuggestions([]));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const doSearch = async (q: string, cat?: string, ct?: string, p?: number) => {
     if (!q.trim()) return;
     setLoading(true);
     setSearched(true);
+    setShowSuggestions(false);
+    const pg = p ?? page;
     try {
       const res = await api.content.search({
         q,
         category: cat || category,
         content_type: ct || contentType,
+        limit: PAGE_SIZE,
+        offset: (pg - 1) * PAGE_SIZE,
       });
       setResults(res.results);
       setTotal(res.total);
+      setPage(pg);
+      saveRecentSearch(q.trim());
     } catch {
       setResults([]);
     } finally {
@@ -67,144 +167,332 @@ function SearchContent() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    doSearch(query);
+    setPage(1);
+    doSearch(query, category, contentType, 1);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedSuggestion((prev) => Math.min(prev + 1, suggestions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedSuggestion((prev) => Math.max(prev - 1, -1));
+    } else if (e.key === "Enter" && selectedSuggestion >= 0) {
+      e.preventDefault();
+      const s = suggestions[selectedSuggestion];
+      setQuery(s.content.title);
+      setShowSuggestions(false);
+      setPage(1);
+      doSearch(s.content.title, category, contentType, 1);
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+    }
+  };
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <form onSubmit={handleSubmit} className="mb-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
+      {/* Search input */}
+      <div className="mb-6 relative" ref={suggestionsRef}>
+      <form onSubmit={handleSubmit}>
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 w-5 h-5" />
           <input
+            ref={inputRef}
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setShowSuggestions(true);
+              setSelectedSuggestion(-1);
+            }}
+            onFocus={() => { if (suggestions.length > 0 || recentSearches.length > 0) setShowSuggestions(true); }}
+            onKeyDown={handleKeyDown}
             placeholder={t("search.placeholder")}
-            className="w-full pl-12 pr-4 py-3 rounded-xl border border-stone-300 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-primary-200/60 bg-white/80 backdrop-blur-sm text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none transition-all font-serif shadow-sm"
           />
         </div>
-      </form>
 
-      <div className="flex gap-4 mb-6 flex-wrap">
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-stone-500" />
-          <select
-            value={category}
-            onChange={(e) => {
-              setCategory(e.target.value);
-              if (query) doSearch(query, e.target.value, contentType);
-            }}
-            className="text-sm border border-stone-300 rounded-lg px-3 py-1.5 bg-white"
-          >
-            {categories.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-          <select
-            value={contentType}
-            onChange={(e) => {
-              setContentType(e.target.value);
-              if (query) doSearch(query, category, e.target.value);
-            }}
-            className="text-sm border border-stone-300 rounded-lg px-3 py-1.5 bg-white"
-          >
-            {contentTypes.map((ct) => (
-              <option key={ct.value} value={ct.value}>
-                {ct.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Autocomplete dropdown */}
+        {showSuggestions && (suggestions.length > 0 || recentSearches.length > 0) && (
+          <div className="absolute z-50 top-full mt-1 w-full bg-white border border-primary-100/60 rounded-2xl shadow-lg overflow-hidden">
+            {/* Recent searches */}
+            {!searched && recentSearches.length > 0 && (
+              <div className="p-3 border-b border-stone-100">
+                <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-2">Recent searches</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {recentSearches.slice(0, 5).map((s) => (
+                    <div key={s} className="flex items-center gap-1 px-2.5 py-1 bg-stone-50 rounded-lg text-xs text-stone-600">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuery(s);
+                          setShowSuggestions(false);
+                          setPage(1);
+                          doSearch(s, category, contentType, 1);
+                        }}
+                        className="hover:text-primary-700 transition"
+                      >
+                        {s}
+                      </button>
+                      <button type="button" onClick={() => removeRecentSearch(s)} className="text-stone-400 hover:text-stone-600">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Suggestions */}
+            {suggestions.length > 0 && (
+              <div className="py-1">
+                {suggestions.map((s, i) => (
+                  <button
+                    key={s.content.id}
+                    type="button"
+                    onClick={() => {
+                      setQuery(s.content.title);
+                      setShowSuggestions(false);
+                      setPage(1);
+                      doSearch(s.content.title, category, contentType, 1);
+                    }}
+                    className={`w-full px-4 py-2.5 text-left flex items-center gap-3 transition ${
+                      i === selectedSuggestion ? "bg-primary-50" : "hover:bg-stone-50"
+                    }`}
+                  >
+                    <Search className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-stone-700 line-clamp-1">{s.content.title}</p>
+                    </div>
+                    <Badge variant="stone" className="text-[9px] shrink-0">{s.content.content_type}</Badge>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </form>
       </div>
 
-      {loading && <p className="text-stone-500">{t("search.searching")}</p>}
+      {/* Filters */}
+      <div className="flex gap-2 mb-8 flex-wrap items-center">
+        <Filter className="w-4 h-4 text-stone-400 shrink-0" />
+        {categories.map((c) => (
+          <button
+            key={c.value}
+            onClick={() => {
+              setCategory(c.value);
+              if (query) doSearch(query, c.value, contentType, 1);
+            }}
+            className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
+              category === c.value
+                ? "bg-primary-500 text-white border-primary-500 shadow-sm"
+                : "bg-white text-stone-600 border-primary-100 hover:border-primary-300"
+            }`}
+          >
+            {c.label}
+          </button>
+        ))}
+        <div className="w-px h-6 bg-primary-100 mx-1 self-center" />
+        {contentTypes.map((ct) => (
+          <button
+            key={ct.value}
+            onClick={() => {
+              setContentType(ct.value);
+              if (query) doSearch(query, category, ct.value, 1);
+            }}
+            className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
+              contentType === ct.value
+                ? "bg-stone-800 text-white border-stone-800 shadow-sm"
+                : "bg-white text-stone-600 border-primary-100 hover:border-stone-300"
+            }`}
+          >
+            {ct.label}
+          </button>
+        ))}
+      </div>
 
-      {searched && !loading && (
-        <>
-          <p className="text-sm text-stone-500 mb-4">
-            {t("search.results_for", { total, query })}
-          </p>
-          {results.length === 0 ? (
-            <p className="text-stone-500">{t("search.no_results")}</p>
-          ) : (
+      {/* Main layout: results + sidebar */}
+      <div className="flex gap-8">
+        {/* Results column */}
+        <div className="flex-1 min-w-0">
+          {loading && (
             <div className="space-y-4">
-              {results.map((r: any) => (
-                <a
-                  key={r.content.id}
-                  href={r.content.url || `/content/${r.content.id}`}
-                  target={r.content.url ? "_blank" : undefined}
-                  rel={r.content.url ? "noopener noreferrer" : undefined}
-                  className="block bg-white p-5 rounded-lg border border-stone-200 hover:shadow-md transition"
-                >
-                  <h3 className="font-semibold text-primary-800 text-lg">
-                    {r.content.title}
-                  </h3>
-                  <p className="text-stone-600 mt-1 text-sm">
-                    {r.content.summary?.slice(0, 300)}...
-                  </p>
-                  <div className="flex gap-2 mt-3 flex-wrap">
-                    {r.content.verification_status === "community_reviewed" && (
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded font-medium flex items-center gap-1">
-                        {t("search.community_reviewed")}
-                      </span>
-                    )}
-                    {r.content.verification_status === "cross_referenced" && (
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-medium flex items-center gap-1">
-                        {t("search.cross_referenced")}
-                      </span>
-                    )}
-                    <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded">
-                      {r.content.category}
-                    </span>
-                    <span className="text-xs bg-stone-100 text-stone-600 px-2 py-0.5 rounded">
-                      {r.content.content_type}
-                    </span>
-                    {r.content.source_url && (
-                      <span className="text-xs text-stone-400 truncate max-w-[200px]">
-                        {new URL(r.content.source_url).hostname}
-                      </span>
-                    )}
-                    <span className="text-xs text-stone-400 ml-auto">
-                      {Math.round(r.score * 100)}% relevance
-                    </span>
-                  </div>
-                </a>
+              {[1, 2, 3].map((i) => (
+                <CardSkeleton key={i} />
               ))}
             </div>
           )}
-        </>
-      )}
 
-      {!searched && (
-        <div className="text-center py-20 text-stone-400">
-          <Search className="w-16 h-16 mx-auto mb-4 opacity-50" />
-          <p>{t("search.enter_term")}</p>
+          {searched && !loading && (
+            <>
+              <p className="text-sm text-stone-500 mb-5 font-medium">
+                {total} {t("search.results_for", { total, query })}
+              </p>
+              {results.length === 0 ? (
+                <div className="py-16">
+                  <EmptyState
+                    icon={<Search className="w-7 h-7" />}
+                    title={t("search.no_results")}
+                    message={t("search.try_different")}
+                    action={{ label: t("search.submit_link"), onClick: () => window.location.href = "/submit" }}
+                  />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {results.map((r: any) => (
+                    <ResultCard key={`${r.content.content_type}-${r.content.id}`} item={r} />
+                  ))}
+                </div>
+              )}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-8">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => doSearch(query, category, contentType, page - 1)}
+                  >
+                    {t("search.prev")}
+                  </Button>
+                  {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                    const p = i + 1;
+                    return (
+                      <button
+                        key={p}
+                        onClick={() => doSearch(query, category, contentType, p)}
+                        className={`w-9 h-9 text-sm rounded-xl border transition-all ${
+                          p === page
+                            ? "bg-primary-500 text-white border-primary-500 shadow-sm"
+                            : "border-primary-100 text-stone-600 hover:border-primary-300 bg-white"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    );
+                  })}
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={page >= totalPages}
+                    onClick={() => doSearch(query, category, contentType, page + 1)}
+                  >
+                    {t("search.next")}
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Pre-search state */}
+          {!searched && !initLoading && (
+            <div className="space-y-8">
+              {popular.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Sparkles className="w-5 h-5 text-amber-500" />
+                    <h2 className="text-lg font-serif font-bold text-stone-800">{t("home.popular_content")}</h2>
+                  </div>
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    {popular.map((item: any) => (
+                      <a key={item.id} href={item.url || `/content/${item.id}`}
+                        target="_blank" rel="noopener noreferrer"
+                        className="rounded-2xl border border-primary-100/40 bg-white p-4 flex items-start gap-3 transition-all hover:shadow-md hover:border-primary-200/60"
+                      >
+                        <div className="w-12 h-12 rounded-xl bg-primary-50 shrink-0 flex items-center justify-center overflow-hidden">
+                          {item.image_url ? (
+                            <img src={item.image_url} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                          ) : (
+                            <Sparkles className="w-5 h-5 text-primary-400" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-medium text-sm text-stone-800 line-clamp-2">{item.title}</h3>
+                          <div className="flex gap-1 mt-1">
+                            <Badge variant="sage" className="text-[10px]">{item.category}</Badge>
+                          </div>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {trending.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <TrendingUp className="w-5 h-5 text-primary-500" />
+                    <h2 className="text-lg font-serif font-bold text-stone-800">{t("home.popular_searches")}</h2>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {trending.map((s) => (
+                      <button
+                        key={s.query}
+                        onClick={() => {
+                          setQuery(s.query);
+                          setPage(1);
+                          doSearch(s.query, category, contentType, 1);
+                        }}
+                        className="px-4 py-2 bg-white border border-primary-100 rounded-xl text-sm text-stone-700 hover:border-primary-300 hover:bg-primary-50 transition font-light"
+                      >
+                        {s.query}
+                        <span className="text-[10px] text-stone-400 ml-2">({s.count})</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {popular.length === 0 && trending.length === 0 && (
+                <EmptyState
+                  icon={<Search className="w-7 h-7" />}
+                  title={t("search.enter_term")}
+                  message={t("search.enter_term_desc")}
+                />
+              )}
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Sidebar — visible on desktop when searched */}
+        {searched && !loading && (
+          <div className="hidden lg:block w-72 shrink-0 space-y-4">
+            <MoonWidget />
+            <SunWidget />
+            <RelatedGroups query={query} />
+            <SpeciesWidget query={query} />
+          </div>
+        )}
+      </div>
+
+      {/* Submit CTA */}
+      <div className="max-w-6xl mx-auto mt-12">
+        <div className="bg-primary-50 border border-primary-100 rounded-2xl p-6 text-center">
+          <p className="text-stone-600 text-sm mb-3 font-medium">
+            {t("search.cant_find")}
+          </p>
+          <a
+            href="/submit"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-primary-500 hover:bg-primary-700 px-5 py-2.5 rounded-xl transition shadow-sm hover:shadow-md"
+          >
+            {t("search.submit_link")} <ArrowRight className="w-3.5 h-3.5" />
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
 
 export default function SearchPage() {
-  const { t } = useLocale();
   return (
-    <Suspense fallback={<div className="p-8">{t("search.loading")}</div>}>
+    <Suspense fallback={<div className="p-8"><div className="max-w-6xl mx-auto px-4 sm:px-8"><div className="h-12 bg-primary-100 rounded-2xl animate-pulse" /></div></div>}>
       <SearchContent />
-      <div className="max-w-5xl mx-auto px-4 pb-12 -mt-4">
-        <div className="bg-stone-50 border border-stone-200 rounded-xl p-5 text-center">
-          <p className="text-stone-600 text-sm mb-2">
-            {t("search.cant_find")}
-          </p>
-          <a
-            href="/submit"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-700 hover:text-primary-800 bg-primary-100 hover:bg-primary-200 px-4 py-2 rounded-lg transition"
-          >
-            {t("search.submit_link")}
-          </a>
-        </div>
-      </div>
     </Suspense>
   );
 }
