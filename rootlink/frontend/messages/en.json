@@ -22,7 +22,11 @@
     "footer": "RootLink — Growing knowledge, growing community.",
     "footer_description": "A community-built knowledge base for gardeners, makers, and homesteaders.",
     "explore": "Explore",
-    "connect": "Connect"
+    "connect": "Connect",
+    "discover": "Discover",
+    "community": "Community",
+    "sustainability": "Sustainability",
+    "learn": "Learn"
   },
   "home": {
     "hero_title": "Find what feeds your land",

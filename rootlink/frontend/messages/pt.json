@@ -22,7 +22,11 @@
     "footer": "RootLink — Cultivar conhecimento, cultivar comunidade.",
     "footer_description": "Uma base de conhecimento construída pela comunidade para jardineiros, artesãos e homesteaders.",
     "explore": "Explorar",
-    "connect": "Conectar"
+    "connect": "Conectar",
+    "discover": "Descobrir",
+    "community": "Comunidade",
+    "sustainability": "Sustentabilidade",
+    "learn": "Aprender"
   },
   "home": {
     "hero_title": "Encontre o que alimenta a sua terra",

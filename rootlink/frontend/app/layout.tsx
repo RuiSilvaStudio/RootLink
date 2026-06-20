@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bell, Rss, Menu, X, Search, Leaf, Users, BookOpen, ExternalLink, Moon, Sun, Building, RefreshCw, Sprout } from "lucide-react";
+import { Bell, Rss, Menu, X, Search, Leaf, Users, BookOpen, ExternalLink, Moon, Sun, Building, RefreshCw, Sprout, ChevronDown } from "lucide-react";
 import { api } from "@/lib/api";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { LocaleProvider, useLocale } from "@/lib/locale-context";
@@ -76,6 +76,7 @@ function NavBar() {
   const [scrolled, setScrolled] = useState(false);
   const [moon, setMoon] = useState<any>(null);
   const [showMoon, setShowMoon] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   useEffect(() => {
     api.external.moon().then(setMoon).catch(() => {});
@@ -174,6 +175,39 @@ function NavBar() {
 
   const closeMobile = () => setMobileOpen(false);
 
+  const navGroups = [
+    {
+      label: t("nav.discover"),
+      items: [
+        { href: "/search", label: t("nav.search"), icon: Search },
+        { href: "/marketplace", label: t("nav.marketplace"), icon: RefreshCw },
+      ],
+    },
+    {
+      label: t("nav.community"),
+      items: [
+        { href: "/groups", label: t("nav.groups"), icon: Users },
+        { href: "/events", label: t("nav.events"), icon: null },
+        { href: "/network", label: t("nav.network"), icon: null },
+      ],
+    },
+    {
+      label: t("nav.sustainability"),
+      items: [
+        { href: "/composting", label: t("nav.composting"), icon: Sprout },
+        { href: "/upcycling", label: t("nav.upcycling"), icon: RefreshCw },
+      ],
+    },
+    {
+      label: t("nav.learn"),
+      items: [
+        { href: "/tools", label: t("nav.tools"), icon: null },
+        { href: "/learning", label: t("nav.learning"), icon: BookOpen },
+        { href: "/entities", label: t("nav.entities"), icon: Building },
+      ],
+    },
+  ];
+
   const navLinks = [
     { href: "/search", label: t("nav.search"), icon: Search },
     { href: "/groups", label: t("nav.groups"), icon: Users },
@@ -200,14 +234,29 @@ function NavBar() {
         </Link>
 
         <div className="hidden md:flex items-center gap-1">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="px-3 py-1.5 text-sm text-stone-500 hover:text-primary-700 font-serif transition-colors"
-            >
-              {link.label}
-            </Link>
+          {navGroups.map((group) => (
+            <div key={group.label} className="relative"
+              onMouseEnter={() => setOpenDropdown(group.label)}
+              onMouseLeave={() => setOpenDropdown(null)}>
+              <button
+                className="flex items-center gap-1 px-3 py-1.5 text-sm text-stone-500 hover:text-primary-700 font-serif transition-colors"
+              >
+                {group.label}
+                <ChevronDown className={`w-3 h-3 transition-transform ${openDropdown === group.label ? "rotate-180" : ""}`} />
+              </button>
+              {openDropdown === group.label && (
+                <div className="absolute left-0 mt-1 w-52 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md rounded-xl2 shadow-lg border border-primary-200/40 dark:border-stone-700/40 z-50 py-1.5">
+                  {group.items.map((item) => (
+                    <Link key={item.href} href={item.href}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-stone-600 dark:text-stone-300 hover:bg-primary-50/40 dark:hover:bg-stone-800/40 hover:text-primary-700 dark:hover:text-primary-400 transition font-serif">
+                      {item.icon && <item.icon className="w-4 h-4 text-stone-400 dark:text-stone-500" />}
+                      {!item.icon && <span className="w-4" />}
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
           <div className="w-px h-4 bg-primary-200/40 mx-3" />
           <ThemeToggle />
