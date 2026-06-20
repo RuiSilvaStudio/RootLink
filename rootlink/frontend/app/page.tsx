@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Leaf, TreePine, Wrench, Users, BookOpen, Calendar, CheckSquare, Droplets, Sprout, ArrowRight, Sparkles } from "lucide-react";
+import { Search, Leaf, TreePine, Wrench, Users, BookOpen, Calendar, CheckSquare, Droplets, Sprout, Bird, Flower, Home as HomeIcon, ArrowRight, Sparkles, Building } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
 import { Button } from "@/components/ui/Button";
@@ -11,11 +12,9 @@ import { Badge } from "@/components/ui/Badge";
 import { StatCounter } from "@/components/ui/StatCounter";
 import { ContentCardSkeleton } from "@/components/ui/LoadingSkeleton";
 
-const categories = [
-  { tKey: "search.category_gardening", slug: "gardening", icon: Sprout, color: "bg-primary-100/50" },
-  { tKey: "search.category_woodworking", slug: "woodworking", icon: TreePine, color: "bg-earth-100/50" },
-  { tKey: "search.category_craft_trades", slug: "craft_trades", icon: Wrench, color: "bg-stone-200/50" },
-];
+const ICON_MAP: Record<string, any> = {
+  Sprout, Bird, Flower, TreePine, Wrench, HomeIcon, Leaf, Users, BookOpen, Calendar,
+};
 
 export default function Home() {
   const [query, setQuery] = useState("");
@@ -23,7 +22,8 @@ export default function Home() {
   const [stats, setStats] = useState<any>(null);
   const [statsError, setStatsError] = useState(false);
   const [loading, setLoading] = useState(true);
-  const { t } = useLocale();
+  const [families, setFamilies] = useState<any[]>([]);
+  const { t, locale } = useLocale();
   const router = useRouter();
 
   useEffect(() => {
@@ -34,9 +34,11 @@ export default function Home() {
         setStatsError(true);
         return null;
       }),
-    ]).then(([recentData, statsData]) => {
+      api.taxonomy.families().catch(() => []),
+    ]).then(([recentData, statsData, famData]) => {
       setRecent(recentData || []);
       setStats(statsData);
+      setFamilies(famData || []);
     }).finally(() => setLoading(false));
   }, []);
 
@@ -118,26 +120,34 @@ export default function Home() {
             </h2>
             <div className="mt-5 w-16 h-0.5 bg-primary-300/40 rounded-full" />
           </div>
-          <div className="grid sm:grid-cols-3 gap-6">
-            {categories.map((cat, i) => (
-              <a
-                key={cat.slug}
-                href={`/search?category=${cat.slug}`}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {families.length > 0 ? families.map((fam, i) => {
+              const Icon = ICON_MAP[fam.icon] || Leaf;
+              const colors = ["bg-primary-100/50", "bg-earth-100/50", "bg-stone-200/50", "bg-green-100/50", "bg-sky-100/50", "bg-amber-100/50"];
+              return (
+              <Link
+                key={fam.value}
+                href={`/search?family=${fam.value}`}
                 className="card-lift p-8 sm:p-10 group relative overflow-hidden"
                 style={{ animationDelay: `${i * 0.12}s` }}
               >
-                <div className={`w-14 h-14 rounded-2xl ${cat.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                  <cat.icon className="w-7 h-7 text-primary-600" />
+                <div className={`w-14 h-14 rounded-2xl ${colors[i % colors.length]} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                  <Icon className="w-7 h-7 text-primary-600" />
                 </div>
-                <h3 className="text-2xl font-display font-semibold text-stone-800 mb-3">{t(cat.tKey)}</h3>
+                <h3 className="text-2xl font-display font-semibold text-stone-800 mb-3">
+                  {locale === "pt" ? fam.label_pt : fam.label}
+                </h3>
                 <p className="text-stone-500 font-serif leading-relaxed">
-                  {t("home.discover_category", { category: t(cat.tKey).toLowerCase() })}
+                  {t("home.discover_category", { category: (locale === "pt" ? fam.label_pt : fam.label).toLowerCase() })}
                 </p>
                 <span className="inline-flex items-center gap-2 text-sm font-display font-medium text-primary-600 mt-6 group-hover:gap-3 transition-all">
                   {t("home.explore")} <ArrowRight className="w-3.5 h-3.5" />
                 </span>
-              </a>
-            ))}
+              </Link>
+              );
+            }) : (
+              <p className="col-span-3 text-center text-stone-400 py-8 font-serif">{t("home.no_categories") || "No categories available"}</p>
+            )}
           </div>
         </div>
       </section>
@@ -154,27 +164,27 @@ export default function Home() {
             <div className="mt-5 w-16 h-0.5 bg-primary-300/40 rounded-full" />
           </div>
           <div className="grid sm:grid-cols-3 gap-6">
-            <a href="/tools/gardening-calendar" className="card-lift p-8 sm:p-10 group">
+            <Link href="/tools/gardening-calendar" className="card-lift p-8 sm:p-10 group">
               <div className="w-12 h-12 rounded-xl bg-primary-100/60 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
                 <Calendar className="w-6 h-6 text-primary-600" />
               </div>
               <h3 className="text-xl font-display font-semibold text-stone-800">{t("home.gardening_calendar")}</h3>
               <p className="text-stone-500 mt-3 font-serif text-sm leading-relaxed">{t("home.gardening_calendar_desc")}</p>
-            </a>
-            <a href="/tools/monthly-checklist" className="card-lift p-8 sm:p-10 group">
+            </Link>
+            <Link href="/tools/monthly-checklist" className="card-lift p-8 sm:p-10 group">
               <div className="w-12 h-12 rounded-xl bg-earth-100/60 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
                 <CheckSquare className="w-6 h-6 text-earth-600" />
               </div>
               <h3 className="text-xl font-display font-semibold text-stone-800">{t("home.monthly_checklist")}</h3>
               <p className="text-stone-500 mt-3 font-serif text-sm leading-relaxed">{t("home.monthly_checklist_desc")}</p>
-            </a>
-            <a href="/tools/irrigation-calculator" className="card-lift p-8 sm:p-10 group">
+            </Link>
+            <Link href="/tools/irrigation-calculator" className="card-lift p-8 sm:p-10 group">
               <div className="w-12 h-12 rounded-xl bg-sky-100/60 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
                 <Droplets className="w-6 h-6 text-sky-600" />
               </div>
               <h3 className="text-xl font-display font-semibold text-stone-800">{t("home.irrigation_calculator")}</h3>
               <p className="text-stone-500 mt-3 font-serif text-sm leading-relaxed">{t("home.irrigation_calculator_desc")}</p>
-            </a>
+            </Link>
           </div>
         </div>
       </section>
@@ -187,8 +197,8 @@ export default function Home() {
             <h2 className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 leading-[1.05]">{t("home.learning")}</h2>
             <div className="mt-5 w-16 h-0.5 bg-primary-300/40 rounded-full" />
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            <a href="/groups" className="group border border-primary-200/30 rounded-2xl p-8 transition-all duration-200 hover:shadow-lg hover:shadow-primary-900/5 hover:-translate-y-0.5 hover:border-primary-300/50 bg-white">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Link href="/groups" className="group border border-primary-200/30 rounded-2xl p-8 transition-all duration-200 hover:shadow-lg hover:shadow-primary-900/5 hover:-translate-y-0.5 hover:border-primary-300/50 bg-white">
               <div className="w-12 h-12 rounded-xl bg-primary-100/50 flex items-center justify-center mb-5 group-hover:bg-primary-100 transition">
                 <Users className="w-6 h-6 text-primary-600" />
               </div>
@@ -197,8 +207,8 @@ export default function Home() {
               <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 group-hover:gap-2.5 transition-all">
                 {t("home.explore")} <span className="text-lg leading-none">→</span>
               </span>
-            </a>
-            <a href="/learning" className="group border border-primary-200/30 rounded-2xl p-8 transition-all duration-200 hover:shadow-lg hover:shadow-primary-900/5 hover:-translate-y-0.5 hover:border-primary-300/50 bg-white">
+            </Link>
+            <Link href="/learning" className="group border border-primary-200/30 rounded-2xl p-8 transition-all duration-200 hover:shadow-lg hover:shadow-primary-900/5 hover:-translate-y-0.5 hover:border-primary-300/50 bg-white">
               <div className="w-12 h-12 rounded-xl bg-primary-100/50 flex items-center justify-center mb-5 group-hover:bg-primary-100 transition">
                 <BookOpen className="w-6 h-6 text-primary-600" />
               </div>
@@ -207,8 +217,8 @@ export default function Home() {
               <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 group-hover:gap-2.5 transition-all">
                 {t("home.explore")} <span className="text-lg leading-none">→</span>
               </span>
-            </a>
-            <a href="/events" className="group border border-primary-200/30 rounded-2xl p-8 transition-all duration-200 hover:shadow-lg hover:shadow-primary-900/5 hover:-translate-y-0.5 hover:border-primary-300/50 bg-white">
+            </Link>
+            <Link href="/events" className="group border border-primary-200/30 rounded-2xl p-8 transition-all duration-200 hover:shadow-lg hover:shadow-primary-900/5 hover:-translate-y-0.5 hover:border-primary-300/50 bg-white">
               <div className="w-12 h-12 rounded-xl bg-primary-100/50 flex items-center justify-center mb-5 group-hover:bg-primary-100 transition">
                 <Calendar className="w-6 h-6 text-primary-600" />
               </div>
@@ -217,7 +227,17 @@ export default function Home() {
               <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 group-hover:gap-2.5 transition-all">
                 {t("home.explore")} <span className="text-lg leading-none">→</span>
               </span>
-            </a>
+            </Link>
+            <Link href="/entities" className="group border border-primary-200/30 rounded-2xl p-8 transition-all duration-200 hover:shadow-lg hover:shadow-primary-900/5 hover:-translate-y-0.5 hover:border-primary-300/50 bg-white">
+              <div className="w-12 h-12 rounded-xl bg-earth-100/50 flex items-center justify-center mb-5 group-hover:bg-earth-100 transition">
+                <Building className="w-6 h-6 text-earth-600" />
+              </div>
+              <h3 className="text-xl font-display font-semibold text-stone-800 mb-2 group-hover:text-primary-700 transition">{t("home.entities")}</h3>
+              <p className="text-stone-500 font-serif text-sm leading-relaxed mb-5">{t("home.entities_desc")}</p>
+              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 group-hover:gap-2.5 transition-all">
+                {t("home.explore")} <span className="text-lg leading-none">→</span>
+              </span>
+            </Link>
           </div>
         </div>
       </section>
@@ -281,14 +301,14 @@ export default function Home() {
           <Badge variant="sage" className="mb-5">{t("home.join_community")}</Badge>
           <h2 className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 leading-[1.05]">{t("home.ready_to_share")}</h2>
           <p className="text-stone-500 mt-5 max-w-md mx-auto font-serif text-lg leading-relaxed">{t("home.cta_subtitle")}</p>
-          <div className="flex flex-wrap justify-center gap-4 mt-10">
-            <Button variant="primary" size="lg" onClick={() => window.location.href = "/submit"}>
+            <div className="flex flex-wrap justify-center gap-4 mt-10">
+            <Button variant="primary" size="lg" onClick={() => router.push("/submit")}>
               {t("home.submit_link")}
             </Button>
-            <Button variant="secondary" size="lg" onClick={() => window.location.href = "/search"}>
+            <Button variant="secondary" size="lg" onClick={() => router.push("/search")}>
               {t("home.browse_all")}
             </Button>
-          </div>
+            </div>
           <div className="mt-10 w-12 h-px bg-primary-300/40 mx-auto" />
         </div>
       </section>

@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { Sprout, Sun, Droplets, Ruler, Calendar, MapPin, Bug, BookOpen, ExternalLink, ArrowLeft, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
+import { CommentSection } from "@/components/CommentSection";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 
@@ -286,6 +287,8 @@ export default function PlantDetailPage() {
           </Section>
         </div>
       )}
+
+      <CommentSection entityType="plant" entityId={Number(id)} className="mt-8" />
     </div>
   );
 }

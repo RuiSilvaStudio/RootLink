@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import String, Text, DateTime, ForeignKey, Enum as SAEnum, JSON, Boolean
+from sqlalchemy import String, Text, DateTime, ForeignKey, Enum as SAEnum, JSON
 from sqlalchemy.orm import Mapped, mapped_column
 import enum
 
@@ -41,7 +41,8 @@ class Content(TimestampMixin, Base):
     title: Mapped[str] = mapped_column(String(500))
     url: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     content_type: Mapped[ContentType] = mapped_column(SAEnum(ContentType))
-    category: Mapped[Category] = mapped_column(SAEnum(Category))
+    category: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    family: Mapped[str | None] = mapped_column(String(50), nullable=True)
     full_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     embedding: Mapped[list[float] | None] = mapped_column(JSON, nullable=True)
@@ -51,9 +52,7 @@ class Content(TimestampMixin, Base):
     created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     crawled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    verification_status: Mapped[VerificationStatus] = mapped_column(
-        SAEnum(VerificationStatus), default=VerificationStatus.unreviewed
-    )
+    verification_status: Mapped[str] = mapped_column(String(50), default="unreviewed")
     validated_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     cross_referenced_sources: Mapped[list[int] | None] = mapped_column(JSON, nullable=True)
 

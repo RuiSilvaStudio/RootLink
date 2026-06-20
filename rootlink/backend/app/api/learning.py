@@ -37,6 +37,7 @@ async def _course_to_response(course: Course, db: AsyncSession) -> CourseRespons
         title=course.title,
         description=course.description,
         category=course.category,
+        family=course.family,
         image_url=course.image_url,
         difficulty=course.difficulty,
         estimated_hours=course.estimated_hours,
@@ -52,14 +53,17 @@ async def _course_to_response(course: Course, db: AsyncSession) -> CourseRespons
 @router.get("/courses", response_model=list[CourseResponse])
 async def list_courses(
     category: str | None = None,
+    family: str | None = None,
     published: bool = True,
     db: AsyncSession = Depends(get_db),
 ):
     query = select(Course)
     if published:
-        query = query.where(Course.published == True)
+        query = query.where(Course.published.is_(True))
     if category:
         query = query.where(Course.category == category)
+    if family:
+        query = query.where(Course.family == family)
     query = query.order_by(Course.created_at.desc())
     result = await db.execute(query)
     courses = result.scalars().all()

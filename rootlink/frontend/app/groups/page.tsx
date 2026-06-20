@@ -21,17 +21,31 @@ export default function GroupsPage() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("gardening");
+  const [family, setFamily] = useState("");
+  const [category, setCategory] = useState("");
+  const [families, setFamilies] = useState<any[]>([]);
+  const [familyCategories, setFamilyCategories] = useState<any[]>([]);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [suggesting, setSuggesting] = useState(false);
   const dirty = !!(name || slug || description);
   useDirtyGuard(dirty);
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { addToast } = useToast();
 
   useEffect(() => {
     api.groups.list().then(setGroups).catch(() => {}).finally(() => setLoading(false));
+    api.taxonomy.families().then(setFamilies).catch(() => {});
   }, []);
+
+  const handleFamilyChange = (famValue: string) => {
+    setFamily(famValue);
+    setCategory("");
+    if (famValue) {
+      api.taxonomy.categories(famValue).then(setFamilyCategories).catch(() => setFamilyCategories([]));
+    } else {
+      setFamilyCategories([]);
+    }
+  };
 
   const suggestTimer = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => {
@@ -51,7 +65,7 @@ export default function GroupsPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const group = await api.groups.create({ name, slug, description, category });
+      const group = await api.groups.create({ name, slug, description, family: family || undefined, category: category || undefined });
       setGroups([group, ...groups]);
       setShowForm(false);
       setName("");
@@ -112,6 +126,7 @@ export default function GroupsPage() {
       {showForm && (
         <Card variant="plain" className="p-6 mb-8 space-y-4">
           <h3 className="font-serif font-bold text-stone-800">{t("groups.new_group")}</h3>
+          <form onSubmit={handleCreate} className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1">{t("groups.name_label")}</label>
@@ -122,15 +137,25 @@ export default function GroupsPage() {
               <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)} required className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t("groups.category_label")}</label>
-            <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
-              <option value="gardening">{t("groups.category_gardening")}</option>
-              <option value="woodworking">{t("groups.category_woodworking")}</option>
-              <option value="craft_trades">{t("groups.category_craft_trades")}</option>
-              <option value="homesteading">{t("groups.category_homesteading")}</option>
-              <option value="general">{t("groups.category_general")}</option>
-            </select>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">{t("groups.family_label") || "Family"}</label>
+              <select value={family} onChange={(e) => handleFamilyChange(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+                <option value="">{t("groups.family_none") || "Select a family..."}</option>
+                {families.map((fam) => (
+                  <option key={fam.value} value={fam.value}>{locale === "pt" ? fam.label_pt : fam.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">{t("groups.category_label")}</label>
+              <select value={category} onChange={(e) => setCategory(e.target.value)} disabled={!family} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15 disabled:opacity-50">
+                <option value="">{t("groups.category_none") || "All categories"}</option>
+                {familyCategories.map((cat) => (
+                  <option key={cat.value} value={cat.value}>{locale === "pt" ? cat.label_pt : cat.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1">{t("groups.description_label")}</label>
@@ -161,6 +186,7 @@ export default function GroupsPage() {
             <Button type="submit">{t("groups.create_group")}</Button>
             {suggesting && <span className="text-xs text-stone-400">{t("groups.searching")}</span>}
           </div>
+          </form>
         </Card>
       )}
 

@@ -13,6 +13,7 @@ class Course(TimestampMixin, Base):
     title: Mapped[str] = mapped_column(String(500))
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     category: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    family: Mapped[str | None] = mapped_column(String(50), nullable=True)
     image_url: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     difficulty: Mapped[str | None] = mapped_column(String(50), nullable=True)
     estimated_hours: Mapped[int | None] = mapped_column(nullable=True)

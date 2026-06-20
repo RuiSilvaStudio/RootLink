@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Users, UserPlus, UserMinus, Hash } from "lucide-react";
 import { api } from "@/lib/api";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { CommentSection } from "@/components/CommentSection";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -128,6 +129,8 @@ export default function GroupDetailPage() {
           </div>
         </div>
       </Card>
+
+      <CommentSection entityType="group" entityId={Number(params.id)} className="mt-8" />
     </div>
   );
 }

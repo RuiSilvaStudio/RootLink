@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -82,6 +83,10 @@ const config: Config = {
           "0%": { transform: "scaleX(0)" },
           "100%": { transform: "scaleX(1)" },
         },
+        "shimmer": {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
       },
       animation: {
         "fade-in": "fade-in 0.6s ease-out forwards",
@@ -91,6 +96,7 @@ const config: Config = {
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
         "count-up": "count-up 0.3s ease-out",
         "reveal-line": "reveal-line 1s ease-out 0.3s forwards",
+        "shimmer": "shimmer 1.8s ease-in-out infinite",
       },
     },
   },

@@ -69,6 +69,7 @@ async def _event_to_response(event: Event, db: AsyncSession) -> EventResponse:
         image_url=event.image_url,
         is_online=event.is_online,
         category=event.category,
+        family=event.family,
         max_attendees=event.max_attendees,
         attendee_count=count or 0,
         group_id=event.group_id,
@@ -138,6 +139,7 @@ async def _can_view_event(event: Event, user: User | None, db: AsyncSession) -> 
 async def list_events(
     upcoming: bool = True,
     category: str | None = None,
+    family: str | None = None,
     group_id: int | None = None,
     status: str | None = None,
     page: int = 1,
@@ -152,6 +154,8 @@ async def list_events(
         query = query.order_by(Event.date.desc())
     if category:
         query = query.where(Event.category == category)
+    if family:
+        query = query.where(Event.family == family)
     if group_id:
         query = query.where(Event.group_id == group_id)
     if status:

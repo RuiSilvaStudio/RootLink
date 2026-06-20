@@ -8,6 +8,7 @@ class CourseResponse(BaseModel):
     title: str
     description: str | None = None
     category: str | None = None
+    family: str | None = None
     image_url: str | None = None
     difficulty: str | None = None
     estimated_hours: int | None = None
@@ -24,6 +25,7 @@ class CourseCreate(BaseModel):
     title: str
     description: str | None = None
     category: str | None = None
+    family: str | None = None
     image_url: str | None = None
     difficulty: str | None = None
     estimated_hours: int | None = None
@@ -34,6 +36,7 @@ class CourseUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
     category: str | None = None
+    family: str | None = None
     image_url: str | None = None
     difficulty: str | None = None
     estimated_hours: int | None = None

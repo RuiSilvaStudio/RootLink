@@ -15,3 +15,4 @@ export { ContentCardSkeleton, CardSkeleton, ListSkeleton, ProfileSkeleton, TextS
 export { GrainOverlay } from "./GrainOverlay";
 export { OptimizedImage } from "./OptimizedImage";
 export { ImageUpload } from "./ImageUpload";
+export { ScrollReveal } from "./ScrollReveal";

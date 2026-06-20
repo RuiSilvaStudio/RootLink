@@ -5,8 +5,10 @@ from pydantic import BaseModel
 
 class CommentResponse(BaseModel):
     id: int
-    content_id: int
+    entity_type: str = "content"
+    entity_id: int
     user_id: int
+    user_name: str | None = None
     parent_id: int | None = None
     body: str
     created_at: datetime | None = None
@@ -16,6 +18,7 @@ class CommentResponse(BaseModel):
 
 
 class CommentCreate(BaseModel):
-    content_id: int
+    entity_type: str = "content"
+    entity_id: int
     parent_id: int | None = None
     body: str

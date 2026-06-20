@@ -1,5 +1,5 @@
 import httpx
-from datetime import datetime, date
+from datetime import date
 
 from app.services.external_cache import cache_get, cache_set
 

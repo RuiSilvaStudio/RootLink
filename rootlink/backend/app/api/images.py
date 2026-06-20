@@ -61,8 +61,31 @@ async def upload_image(
     )
     existing_asset = existing.scalar_one_or_none()
     if existing_asset:
+        existing_dict = {
+            "id": existing_asset.id,
+            "hash": existing_asset.hash,
+            "original_format": existing_asset.original_format,
+            "normalized_format": existing_asset.normalized_format,
+            "width": existing_asset.width,
+            "height": existing_asset.height,
+            "file_size_bytes": existing_asset.file_size_bytes,
+            "source_type": existing_asset.source_type,
+            "source_url": existing_asset.source_url,
+            "source_domain": existing_asset.source_domain,
+            "author": existing_asset.author,
+            "license": existing_asset.license,
+            "attribution_text": existing_asset.attribution_text,
+            "uploaded_by": existing_asset.uploaded_by,
+            "status": existing_asset.status,
+            "path_original": existing_asset.path_original,
+            "path_large": existing_asset.path_large,
+            "path_medium": existing_asset.path_medium,
+            "path_thumb": existing_asset.path_thumb,
+            "urls": _build_urls(existing_asset),
+            "created_at": existing_asset.created_at,
+        }
         return ImageUploadResponse(
-            asset=ImageAssetResponse.model_validate(existing_asset),
+            asset=ImageAssetResponse(**existing_dict),
             message="Image already exists (duplicate detected)",
         )
 
@@ -89,9 +112,30 @@ async def upload_image(
     await db.commit()
     await db.refresh(asset)
 
-    resp = ImageAssetResponse.model_validate(asset)
-    resp.urls = _build_urls(asset)
-    return ImageUploadResponse(asset=resp)
+    asset_dict = {
+        "id": asset.id,
+        "hash": asset.hash,
+        "original_format": asset.original_format,
+        "normalized_format": asset.normalized_format,
+        "width": asset.width,
+        "height": asset.height,
+        "file_size_bytes": asset.file_size_bytes,
+        "source_type": asset.source_type,
+        "source_url": asset.source_url,
+        "source_domain": asset.source_domain,
+        "author": asset.author,
+        "license": asset.license,
+        "attribution_text": asset.attribution_text,
+        "uploaded_by": asset.uploaded_by,
+        "status": asset.status,
+        "path_original": asset.path_original,
+        "path_large": asset.path_large,
+        "path_medium": asset.path_medium,
+        "path_thumb": asset.path_thumb,
+        "urls": _build_urls(asset),
+        "created_at": asset.created_at,
+    }
+    return ImageUploadResponse(asset=ImageAssetResponse(**asset_dict))
 
 
 @router.post("/from-url", response_model=ImageUploadResponse, status_code=201)
@@ -120,8 +164,31 @@ async def upload_image_from_url(
     )
     existing_asset = existing.scalar_one_or_none()
     if existing_asset:
+        existing_dict = {
+            "id": existing_asset.id,
+            "hash": existing_asset.hash,
+            "original_format": existing_asset.original_format,
+            "normalized_format": existing_asset.normalized_format,
+            "width": existing_asset.width,
+            "height": existing_asset.height,
+            "file_size_bytes": existing_asset.file_size_bytes,
+            "source_type": existing_asset.source_type,
+            "source_url": existing_asset.source_url,
+            "source_domain": existing_asset.source_domain,
+            "author": existing_asset.author,
+            "license": existing_asset.license,
+            "attribution_text": existing_asset.attribution_text,
+            "uploaded_by": existing_asset.uploaded_by,
+            "status": existing_asset.status,
+            "path_original": existing_asset.path_original,
+            "path_large": existing_asset.path_large,
+            "path_medium": existing_asset.path_medium,
+            "path_thumb": existing_asset.path_thumb,
+            "urls": _build_urls(existing_asset),
+            "created_at": existing_asset.created_at,
+        }
         return ImageUploadResponse(
-            asset=ImageAssetResponse.model_validate(existing_asset),
+            asset=ImageAssetResponse(**existing_dict),
             message="Image already exists (duplicate detected)",
         )
 
@@ -149,9 +216,30 @@ async def upload_image_from_url(
     await db.commit()
     await db.refresh(asset)
 
-    resp = ImageAssetResponse.model_validate(asset)
-    resp.urls = _build_urls(asset)
-    return ImageUploadResponse(asset=resp)
+    asset_dict = {
+        "id": asset.id,
+        "hash": asset.hash,
+        "original_format": asset.original_format,
+        "normalized_format": asset.normalized_format,
+        "width": asset.width,
+        "height": asset.height,
+        "file_size_bytes": asset.file_size_bytes,
+        "source_type": asset.source_type,
+        "source_url": asset.source_url,
+        "source_domain": asset.source_domain,
+        "author": asset.author,
+        "license": asset.license,
+        "attribution_text": asset.attribution_text,
+        "uploaded_by": asset.uploaded_by,
+        "status": asset.status,
+        "path_original": asset.path_original,
+        "path_large": asset.path_large,
+        "path_medium": asset.path_medium,
+        "path_thumb": asset.path_thumb,
+        "urls": _build_urls(asset),
+        "created_at": asset.created_at,
+    }
+    return ImageUploadResponse(asset=ImageAssetResponse(**asset_dict))
 
 
 @router.get("/{asset_id}/serve/{size}")

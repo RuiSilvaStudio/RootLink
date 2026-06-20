@@ -11,6 +11,13 @@ from app.models.notification import Notification
 from app.models.message import Conversation, ConversationParticipant, Message
 from app.models.plant import Plant
 from app.models.checklist import ChecklistItem
+from app.models.setting import Setting
+from app.models.taxonomy import TaxonomyFamily, TaxonomyCategory
+from app.models.marketplace import Listing, ListingOrder, SellerStripeAccount
+from app.models.waste import (
+    CompostingHub, CompostingMember, CompostingDeposit,
+    UpcyclingProject, WasteChallenge,
+)
 
 __all__ = [
     "User", "Content", "Bookmark", "SearchQueryLog", "VerificationStatus", "Group", "GroupMember", "Follow",
@@ -20,5 +27,9 @@ __all__ = [
     "Course", "Lesson", "LearningPath", "LearningPathCourse",
     "Enrollment", "LessonProgress",
     "Conversation", "ConversationParticipant", "Message",
-    "Plant", "ChecklistItem",
+    "Plant", "ChecklistItem", "Setting",
+    "TaxonomyFamily", "TaxonomyCategory",
+    "Listing", "ListingOrder", "SellerStripeAccount",
+    "CompostingHub", "CompostingMember", "CompostingDeposit",
+    "UpcyclingProject", "WasteChallenge",
 ]
