@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from app.models.content import ContentType, ContentSource, Category, VerificationStatus
+from app.models.content import ContentType, ContentSource, Category
 
 
 class ContentResponse(BaseModel):
@@ -10,7 +10,8 @@ class ContentResponse(BaseModel):
     title: str
     url: str | None = None
     content_type: ContentType
-    category: Category
+    category: str | None = None
+    family: str | None = None
     summary: str | None = None
     full_text: str | None = None
     image_url: str | None = None
@@ -20,7 +21,7 @@ class ContentResponse(BaseModel):
     published_at: datetime | None = None
     crawled_at: datetime | None = None
     created_at: datetime | None = None
-    verification_status: VerificationStatus = VerificationStatus.unreviewed
+    verification_status: str = "unreviewed"
     validated_by: int | None = None
     cross_referenced_sources: list[int] | None = None
 

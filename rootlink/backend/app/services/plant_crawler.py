@@ -4,7 +4,7 @@ import random
 from datetime import datetime
 import httpx
 from bs4 import BeautifulSoup
-from typing import Dict, Any
+from typing import Any
 
 UTAD_BASE = "https://jb.utad.pt"
 UTAD_SPECIES_URL = f"{UTAD_BASE}/especie"

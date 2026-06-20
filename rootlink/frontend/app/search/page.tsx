@@ -40,6 +40,7 @@ function SearchContent() {
 
   const [query, setQuery] = useState(searchParams.get("q") || "");
   const [category, setCategory] = useState(searchParams.get("category") || "");
+  const [family, setFamily] = useState(searchParams.get("family") || "");
   const [contentType, setContentType] = useState("");
   const [results, setResults] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
@@ -49,6 +50,8 @@ function SearchContent() {
   const [popular, setPopular] = useState<any[]>([]);
   const [trending, setTrending] = useState<{ query: string; count: number }[]>([]);
   const [initLoading, setInitLoading] = useState(true);
+  const [families, setFamilies] = useState<any[]>([]);
+  const [familyCategories, setFamilyCategories] = useState<any[]>([]);
 
   // Autocomplete
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -59,13 +62,7 @@ function SearchContent() {
   // Recent searches (localStorage)
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
-  const categories = [
-    { label: t("search.all"), value: "" },
-    { label: t("search.category_gardening"), value: "gardening" },
-    { label: t("search.category_woodworking"), value: "woodworking" },
-    { label: t("search.category_craft_trades"), value: "craft_trades" },
-    { label: t("search.category_homesteading"), value: "homesteading" },
-  ];
+  const { locale } = useLocale();
 
   const contentTypes = [
     { label: t("search.type_all"), value: "" },
@@ -99,11 +96,17 @@ function SearchContent() {
 
   // Load initial data
   useEffect(() => {
+    api.taxonomy.families().then(setFamilies).catch(() => {});
     const q = searchParams.get("q");
     const cat = searchParams.get("category");
+    const fam = searchParams.get("family");
+    if (fam) {
+      setFamily(fam);
+      api.taxonomy.categories(fam).then(setFamilyCategories).catch(() => {});
+    }
     if (q) {
       setQuery(q);
-      doSearch(q, cat || "");
+      doSearch(q, cat || "", fam || "");
     } else {
       Promise.all([
         api.content.popular(3).catch(() => []),
@@ -114,6 +117,17 @@ function SearchContent() {
       }).finally(() => setInitLoading(false));
     }
   }, []);
+
+  // When family changes, load its categories
+  const handleFamilyChange = (famValue: string) => {
+    setFamily(famValue);
+    setCategory("");
+    if (famValue) {
+      api.taxonomy.categories(famValue).then(setFamilyCategories).catch(() => setFamilyCategories([]));
+    } else {
+      setFamilyCategories([]);
+    }
+  };
 
   // Autocomplete debounced
   useEffect(() => {
@@ -140,7 +154,7 @@ function SearchContent() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const doSearch = async (q: string, cat?: string, ct?: string, p?: number) => {
+  const doSearch = async (q: string, cat?: string, ct?: string, p?: number, fam?: string) => {
     if (!q.trim()) return;
     setLoading(true);
     setSearched(true);
@@ -150,6 +164,7 @@ function SearchContent() {
       const res = await api.content.search({
         q,
         category: cat || category,
+        family: fam || family,
         content_type: ct || contentType,
         limit: PAGE_SIZE,
         offset: (pg - 1) * PAGE_SIZE,
@@ -168,7 +183,7 @@ function SearchContent() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
-    doSearch(query, category, contentType, 1);
+    doSearch(query, category, contentType, 1, family);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -185,7 +200,7 @@ function SearchContent() {
       setQuery(s.content.title);
       setShowSuggestions(false);
       setPage(1);
-      doSearch(s.content.title, category, contentType, 1);
+      doSearch(s.content.title, category, contentType, 1, family);
     } else if (e.key === "Escape") {
       setShowSuggestions(false);
     }
@@ -232,7 +247,7 @@ function SearchContent() {
                           setQuery(s);
                           setShowSuggestions(false);
                           setPage(1);
-                          doSearch(s, category, contentType, 1);
+                          doSearch(s, category, contentType, 1, family);
                         }}
                         className="hover:text-primary-700 transition"
                       >
@@ -258,7 +273,7 @@ function SearchContent() {
                       setQuery(s.content.title);
                       setShowSuggestions(false);
                       setPage(1);
-                      doSearch(s.content.title, category, contentType, 1);
+                      doSearch(s.content.title, category, contentType, 1, family);
                     }}
                     className={`w-full px-4 py-2.5 text-left flex items-center gap-3 transition ${
                       i === selectedSuggestion ? "bg-primary-50" : "hover:bg-stone-50"
@@ -281,29 +296,59 @@ function SearchContent() {
       {/* Filters */}
       <div className="flex gap-2 mb-8 flex-wrap items-center">
         <Filter className="w-4 h-4 text-stone-400 shrink-0" />
-        {categories.map((c) => (
+        {/* Family filter */}
+        <button
+          onClick={() => { handleFamilyChange(""); if (query) doSearch(query, "", contentType, 1, ""); }}
+          className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
+            !family ? "bg-primary-500 text-white border-primary-500 shadow-sm" : "bg-white text-stone-600 border-primary-100 hover:border-primary-300"
+          }`}
+        >
+          {t("search.all") || "All"}
+        </button>
+        {families.map((fam) => (
           <button
-            key={c.value}
+            key={fam.value}
             onClick={() => {
-              setCategory(c.value);
-              if (query) doSearch(query, c.value, contentType, 1);
+              handleFamilyChange(fam.value);
+              if (query) doSearch(query, "", contentType, 1, fam.value);
             }}
             className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
-              category === c.value
-                ? "bg-primary-500 text-white border-primary-500 shadow-sm"
-                : "bg-white text-stone-600 border-primary-100 hover:border-primary-300"
+              family === fam.value ? "bg-primary-500 text-white border-primary-500 shadow-sm" : "bg-white text-stone-600 border-primary-100 hover:border-primary-300"
             }`}
           >
-            {c.label}
+            {locale === "pt" ? fam.label_pt : fam.label}
           </button>
         ))}
+
+        {/* Category sub-filter (only when family selected) */}
+        {family && familyCategories.length > 0 && (
+          <>
+            <div className="w-px h-6 bg-primary-100 mx-1 self-center" />
+            <select
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                if (query) doSearch(query, e.target.value, contentType, 1, family);
+              }}
+              className="px-3 py-1.5 text-sm rounded-xl border border-primary-100 bg-white text-stone-600 focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15"
+            >
+              <option value="">{t("search.all_categories") || "All categories"}</option>
+              {familyCategories.map((cat) => (
+                <option key={cat.value} value={cat.value}>
+                  {locale === "pt" ? cat.label_pt : cat.label}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
+
         <div className="w-px h-6 bg-primary-100 mx-1 self-center" />
         {contentTypes.map((ct) => (
           <button
             key={ct.value}
             onClick={() => {
               setContentType(ct.value);
-              if (query) doSearch(query, category, ct.value, 1);
+              if (query) doSearch(query, category, ct.value, 1, family);
             }}
             className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
               contentType === ct.value
@@ -357,7 +402,7 @@ function SearchContent() {
                     variant="secondary"
                     size="sm"
                     disabled={page <= 1}
-                    onClick={() => doSearch(query, category, contentType, page - 1)}
+                    onClick={() => doSearch(query, category, contentType, page - 1, family)}
                   >
                     {t("search.prev")}
                   </Button>
@@ -366,7 +411,7 @@ function SearchContent() {
                     return (
                       <button
                         key={p}
-                        onClick={() => doSearch(query, category, contentType, p)}
+                        onClick={() => doSearch(query, category, contentType, p, family)}
                         className={`w-9 h-9 text-sm rounded-xl border transition-all ${
                           p === page
                             ? "bg-primary-500 text-white border-primary-500 shadow-sm"
@@ -381,7 +426,7 @@ function SearchContent() {
                     variant="secondary"
                     size="sm"
                     disabled={page >= totalPages}
-                    onClick={() => doSearch(query, category, contentType, page + 1)}
+                    onClick={() => doSearch(query, category, contentType, page + 1, family)}
                   >
                     {t("search.next")}
                   </Button>
@@ -437,7 +482,7 @@ function SearchContent() {
                         onClick={() => {
                           setQuery(s.query);
                           setPage(1);
-                          doSearch(s.query, category, contentType, 1);
+                          doSearch(s.query, category, contentType, 1, family);
                         }}
                         className="px-4 py-2 bg-white border border-primary-100 rounded-xl text-sm text-stone-700 hover:border-primary-300 hover:bg-primary-50 transition font-light"
                       >

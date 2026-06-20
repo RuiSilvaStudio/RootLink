@@ -1,4 +1,4 @@
-from sqlalchemy import String, Boolean, JSON, Text, Float, Enum as SAEnum
+from sqlalchemy import String, Boolean, JSON, Text, Float, DateTime, Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column
 import enum
 
@@ -10,6 +10,25 @@ class UserRole(str, enum.Enum):
     moderator = "moderator"
     contributor = "contributor"
     user = "user"
+
+
+class AccountType(str, enum.Enum):
+    individual = "individual"
+    organization = "organization"
+    practitioner = "practitioner"
+
+
+class EntityType(str, enum.Enum):
+    ipss = "ipss"
+    cooperative = "cooperative"
+    association = "association"
+    cer = "cer"
+    ministry = "ministry"
+    regulatory = "regulatory"
+    adr = "adr"
+    municipality = "municipality"
+    company = "company"
+    other = "other"
 
 
 class User(TimestampMixin, Base):
@@ -29,3 +48,14 @@ class User(TimestampMixin, Base):
     role: Mapped[UserRole] = mapped_column(SAEnum(UserRole), default=UserRole.user)
     visible_in_network: Mapped[bool] = mapped_column(Boolean, default=True)
     locale: Mapped[str | None] = mapped_column(String(10), nullable=True, default=None)
+
+    # Account type & entity fields
+    account_type: Mapped[str] = mapped_column(String(20), default="individual")
+    entity_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    registration_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    services: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    service_area: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    certifications: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    modality: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    verified_at: Mapped[str | None] = mapped_column(DateTime(timezone=True), nullable=True)

@@ -32,7 +32,7 @@ async function request<T>(
 
 export const api = {
   auth: {
-    register: (data: { email: string; name: string; password: string }) =>
+    register: (data: { email: string; name: string; password: string; account_type?: string; entity_type?: string; registration_number?: string; services?: string[]; service_area?: string; modality?: string; certifications?: string[] }) =>
       request<{ access_token: string; token_type: string }>("/api/auth/register", {
         method: "POST",
         body: JSON.stringify(data),
@@ -53,6 +53,7 @@ export const api = {
     search: (params: {
       q: string;
       category?: string;
+      family?: string;
       content_type?: string;
       limit?: number;
       offset?: number;
@@ -60,6 +61,7 @@ export const api = {
       const qs = new URLSearchParams();
       qs.set("q", params.q);
       if (params.category) qs.set("category", params.category);
+      if (params.family) qs.set("family", params.family);
       if (params.content_type) qs.set("content_type", params.content_type);
       if (params.limit) qs.set("limit", String(params.limit));
       if (params.offset) qs.set("offset", String(params.offset));
@@ -100,7 +102,16 @@ export const api = {
     },
   },
   groups: {
-    list: () => request<any[]>("/api/groups/"),
+    list: (limit?: number, offset?: number, family?: string, category?: string) => {
+      const qs = new URLSearchParams();
+      if (limit) qs.set("limit", String(limit));
+      if (offset) qs.set("offset", String(offset));
+      if (family) qs.set("family", family);
+      if (category) qs.set("category", category);
+      const params = qs.toString();
+      return request<any[]>(`/api/groups/${params ? `?${params}` : ""}`);
+    },
+    categories: () => request<any[]>("/api/taxonomy/families"),
     search: (q: string, limit = 5) => request<any[]>(`/api/groups/search?q=${encodeURIComponent(q)}&limit=${limit}`),
     get: (id: number) => request<any>(`/api/groups/${id}`),
     create: (data: any) =>
@@ -115,12 +126,13 @@ export const api = {
     members: (id: number) => request<any[]>(`/api/groups/${id}/members`),
   },
   events: {
-    list: (upcoming = true, category?: string, group_id?: number, status?: string) => {
+    list: (upcoming = true, category?: string, group_id?: number, status?: string, family?: string) => {
       const qs = new URLSearchParams();
       qs.set("upcoming", String(upcoming));
       if (category) qs.set("category", category);
       if (group_id) qs.set("group_id", String(group_id));
       if (status) qs.set("status", status);
+      if (family) qs.set("family", family);
       return request<any[]>(`/api/events/?${qs}`);
     },
     get: (id: number) => request<any>(`/api/events/${id}`),
@@ -228,9 +240,12 @@ export const api = {
   },
   learning: {
     courses: {
-      list: (category?: string) => {
-        const qs = category ? `?category=${category}` : "";
-        return request<any[]>(`/api/learning/courses${qs}`);
+      list: (category?: string, family?: string) => {
+        const qs = new URLSearchParams();
+        if (category) qs.set("category", category);
+        if (family) qs.set("family", family);
+        const params = qs.toString();
+        return request<any[]>(`/api/learning/courses${params ? `?${params}` : ""}`);
       },
       get: (id: number) => request<any>(`/api/learning/courses/${id}`),
       create: (data: any) =>
@@ -300,9 +315,9 @@ export const api = {
     myEnrollments: () => request<any[]>("/api/learning/my/enrollments"),
   },
   comments: {
-    list: (contentId: number) =>
-      request<any[]>(`/api/comments/${contentId}`),
-    create: (data: { content_id: number; parent_id?: number | undefined; body: string }) =>
+    list: (entityType: string, entityId: number) =>
+      request<any[]>(`/api/comments/?entity_type=${entityType}&entity_id=${entityId}`),
+    create: (data: { entity_type: string; entity_id: number; parent_id?: number | undefined; body: string }) =>
       request<any>("/api/comments/", {
         method: "POST",
         body: JSON.stringify(data),
@@ -322,6 +337,20 @@ export const api = {
     nearby: (lat: number, lng: number, radiusKm = 50) =>
       request<any[]>(`/api/users/nearby?lat=${lat}&lng=${lng}&radius_km=${radiusKm}`),
     get: (id: number) => request<any>(`/api/users/${id}`),
+    activity: (id: number) => request<any>(`/api/users/${id}/activity`),
+    entities: (params?: { q?: string; account_type?: string; entity_type?: string; family?: string; region?: string; verified_only?: boolean; limit?: number; offset?: number }) => {
+      const qs = new URLSearchParams();
+      if (params?.q) qs.set("q", params.q);
+      if (params?.account_type) qs.set("account_type", params.account_type);
+      if (params?.entity_type) qs.set("entity_type", params.entity_type);
+      if (params?.family) qs.set("family", params.family);
+      if (params?.region) qs.set("region", params.region);
+      if (params?.verified_only) qs.set("verified_only", "true");
+      if (params?.limit) qs.set("limit", String(params.limit));
+      if (params?.offset) qs.set("offset", String(params.offset));
+      return request<any[]>(`/api/users/entities?${qs}`);
+    },
+    entityStats: () => request<any>("/api/users/entities/stats"),
     stats: {
       regions: () => request<{ region: string; count: number }[]>("/api/users/stats/regions"),
       skills: () => request<{ skill: string; count: number }[]>("/api/users/stats/skills"),
@@ -344,8 +373,8 @@ export const api = {
       request<void>(`/api/social/follow/${userId}`, { method: "DELETE" }),
     followers: () => request<any[]>("/api/social/followers"),
     following: () => request<any[]>("/api/social/following"),
-    feed: (limit = 20, offset = 0) =>
-      request<any[]>(`/api/social/feed?limit=${limit}&offset=${offset}`),
+    feed: (limit = 30) =>
+      request<{ following: any[]; discover: any[] }>(`/api/social/feed?limit=${limit}`),
   },
   notifications: {
     list: (unreadOnly = false) =>
@@ -359,16 +388,21 @@ export const api = {
   },
   admin: {
     dashboard: () => request<any>("/api/admin/dashboard"),
-    listUsers: (params?: { q?: string; role?: string }) => {
+    listUsers: (params?: { q?: string; role?: string; account_type?: string }) => {
       const qs = new URLSearchParams();
       if (params?.q) qs.set("q", params.q);
       if (params?.role) qs.set("role", params.role);
+      if (params?.account_type) qs.set("account_type", params.account_type);
       return request<any[]>(`/api/admin/users?${qs}`);
     },
     updateUserRole: (userId: number, role: string) =>
       request<any>(`/api/admin/users/${userId}/role?role=${role}`, { method: "PATCH" }),
     resetPassword: (userId: number, password: string) =>
       request<any>(`/api/admin/users/${userId}/password?password=${encodeURIComponent(password)}`, { method: "PATCH" }),
+    verifyUser: (userId: number) =>
+      request<any>(`/api/admin/users/${userId}/verify`, { method: "POST" }),
+    unverifyUser: (userId: number) =>
+      request<any>(`/api/admin/users/${userId}/unverify`, { method: "POST" }),
     listContent: (params?: { q?: string; verification_status?: string; content_type?: string }) => {
       const qs = new URLSearchParams();
       if (params?.q) qs.set("q", params.q);
@@ -407,7 +441,12 @@ export const api = {
     },
     deleteGroup: (id: number) =>
       request<void>(`/api/admin/groups/${id}`, { method: "DELETE" }),
-    listComments: () => request<any[]>("/api/admin/comments"),
+    listComments: (params?: { entity_type?: string }) => {
+      const qs = new URLSearchParams();
+      if (params?.entity_type) qs.set("entity_type", params.entity_type);
+      const query = qs.toString();
+      return request<any[]>(`/api/admin/comments${query ? `?${query}` : ""}`);
+    },
     deleteComment: (id: number) =>
       request<void>(`/api/admin/comments/${id}`, { method: "DELETE" }),
     broadcast: (message: string) =>
@@ -468,6 +507,91 @@ export const api = {
       request<any>(`/api/admin/vendors/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
     deleteVendor: (id: number) =>
       request<void>(`/api/admin/vendors/${id}`, { method: "DELETE" }),
+    // Settings / Config
+    listSettings: (category?: string) => {
+      const qs = new URLSearchParams();
+      if (category) qs.set("category", category);
+      const query = qs.toString();
+      return request<any[]>(`/api/admin/settings${query ? `?${query}` : ""}`);
+    },
+    getSetting: (key: string) => request<any>(`/api/admin/settings/${key}`),
+    updateSetting: (key: string, value: any, description?: string) =>
+      request<any>(`/api/admin/settings/${key}`, {
+        method: "PUT",
+        body: JSON.stringify({ value, description }),
+      }),
+  },
+  // Taxonomy
+  taxonomy: {
+    tree: () => request<any[]>("/api/taxonomy/"),
+    families: () => request<any[]>("/api/taxonomy/families"),
+    categories: (familyValue: string) => request<any[]>(`/api/taxonomy/families/${familyValue}/categories`),
+    // Admin
+    adminListFamilies: () => request<any[]>("/api/taxonomy/admin/families"),
+    adminCreateFamily: (data: any) => request<any>("/api/taxonomy/admin/families", { method: "POST", body: JSON.stringify(data) }),
+    adminUpdateFamily: (id: number, data: any) => request<any>(`/api/taxonomy/admin/families/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    adminDeleteFamily: (id: number) => request<void>(`/api/taxonomy/admin/families/${id}`, { method: "DELETE" }),
+    adminCreateCategory: (familyId: number, data: any) => request<any>(`/api/taxonomy/admin/families/${familyId}/categories`, { method: "POST", body: JSON.stringify(data) }),
+    adminUpdateCategory: (id: number, data: any) => request<any>(`/api/taxonomy/admin/categories/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    adminDeleteCategory: (id: number) => request<void>(`/api/taxonomy/admin/categories/${id}`, { method: "DELETE" }),
+  },
+  // Marketplace
+  marketplace: {
+    list: (params?: { listing_type?: string; family?: string; category?: string; condition?: string; min_price?: number; max_price?: number; q?: string; sort?: string; limit?: number; offset?: number }) => {
+      const qs = new URLSearchParams();
+      if (params?.listing_type) qs.set("listing_type", params.listing_type);
+      if (params?.family) qs.set("family", params.family);
+      if (params?.category) qs.set("category", params.category);
+      if (params?.condition) qs.set("condition", params.condition);
+      if (params?.min_price !== undefined) qs.set("min_price", String(params.min_price));
+      if (params?.max_price !== undefined) qs.set("max_price", String(params.max_price));
+      if (params?.q) qs.set("q", params.q);
+      if (params?.sort) qs.set("sort", params.sort);
+      if (params?.limit) qs.set("limit", String(params.limit));
+      if (params?.offset) qs.set("offset", String(params.offset));
+      return request<any[]>(`/api/marketplace/listings?${qs}`);
+    },
+    get: (id: number) => request<any>(`/api/marketplace/listings/${id}`),
+    create: (data: any) => request<any>("/api/marketplace/listings", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: number, data: any) => request<any>(`/api/marketplace/listings/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    delete: (id: number) => request<void>(`/api/marketplace/listings/${id}`, { method: "DELETE" }),
+    my: () => request<any[]>("/api/marketplace/my/listings"),
+    myOrders: () => request<any[]>("/api/marketplace/my/orders"),
+    mySales: () => request<any[]>("/api/marketplace/my/sales"),
+    purchase: (id: number) => request<any>(`/api/marketplace/listings/${id}/purchase`, { method: "POST" }),
+    claim: (id: number) => request<any>(`/api/marketplace/listings/${id}/claim`, { method: "POST" }),
+    completeOrder: (id: number) => request<any>(`/api/marketplace/orders/${id}/complete`, { method: "POST" }),
+    cancelOrder: (id: number) => request<any>(`/api/marketplace/orders/${id}/cancel`, { method: "POST" }),
+    sellerStatus: () => request<any>("/api/marketplace/seller/status"),
+    sellerOnboard: () => request<any>("/api/marketplace/seller/onboard", { method: "POST" }),
+    sellerDashboard: () => request<any>("/api/marketplace/seller/dashboard-link", { method: "POST" }),
+  },
+  // Waste Management
+  waste: {
+    hubs: (params?: { q?: string; region?: string; limit?: number }) => {
+      const qs = new URLSearchParams();
+      if (params?.q) qs.set("q", params.q);
+      if (params?.region) qs.set("region", params.region);
+      if (params?.limit) qs.set("limit", String(params.limit));
+      return request<any[]>(`/api/waste/hubs?${qs}`);
+    },
+    hub: (id: number) => request<any>(`/api/waste/hubs/${id}`),
+    createHub: (data: any) => request<any>("/api/waste/hubs", { method: "POST", body: JSON.stringify(data) }),
+    joinHub: (id: number) => request<any>(`/api/waste/hubs/${id}/join`, { method: "POST" }),
+    leaveHub: (id: number) => request<void>(`/api/waste/hubs/${id}/leave`, { method: "DELETE" }),
+    deposit: (hubId: number, data: any) => request<any>(`/api/waste/hubs/${hubId}/deposit`, { method: "POST", body: JSON.stringify(data) }),
+    deposits: (hubId: number) => request<any[]>(`/api/waste/hubs/${hubId}/deposits`),
+    upcycling: (params?: { q?: string; family?: string; difficulty?: string }) => {
+      const qs = new URLSearchParams();
+      if (params?.q) qs.set("q", params.q);
+      if (params?.family) qs.set("family", params.family);
+      if (params?.difficulty) qs.set("difficulty", params.difficulty);
+      return request<any[]>(`/api/waste/upcycling?${qs}`);
+    },
+    upcyclingGet: (id: number) => request<any>(`/api/waste/upcycling/${id}`),
+    upcyclingCreate: (data: any) => request<any>("/api/waste/upcycling", { method: "POST", body: JSON.stringify(data) }),
+    challenges: () => request<any[]>("/api/waste/challenges"),
+    createChallenge: (data: any) => request<any>("/api/waste/challenges", { method: "POST", body: JSON.stringify(data) }),
   },
   plants: {
     search: (params: { q?: string; plant_type?: string; genus?: string; family?: string; has_kc?: boolean; limit?: number }) => {

@@ -5,14 +5,6 @@ import enum
 from app.models.base import Base, TimestampMixin
 
 
-class GroupCategory(str, enum.Enum):
-    gardening = "gardening"
-    woodworking = "woodworking"
-    building = "building"
-    homesteading = "homesteading"
-    general = "general"
-
-
 class MemberRole(str, enum.Enum):
     member = "member"
     moderator = "moderator"
@@ -26,7 +18,8 @@ class Group(TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(255))
     slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    category: Mapped[GroupCategory] = mapped_column(SAEnum(GroupCategory))
+    category: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    family: Mapped[str | None] = mapped_column(String(50), nullable=True)
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
 

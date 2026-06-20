@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, func, delete, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,8 +13,10 @@ from app.models.comment import Comment
 from app.models.event import Event, EventTicket, EventDonation, EventSponsor, EventVendor
 from app.models.learning import Course, Enrollment
 from app.models.notification import Notification, NotificationType
+from app.models.setting import Setting
 from app.schemas.content import ContentResponse
 from app.schemas.event import SponsorUpdate, VendorUpdate
+from app.schemas.setting import SettingResponse, SettingUpdate
 from app.schemas.group import GroupResponse
 from app.schemas.comment import CommentResponse
 
@@ -70,6 +74,7 @@ async def dashboard(
 async def list_users(
     q: str | None = Query(None),
     role: str | None = Query(None),
+    account_type: str | None = Query(None),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
@@ -82,6 +87,8 @@ async def list_users(
         )
     if role:
         stmt = stmt.where(User.role == role)
+    if account_type:
+        stmt = stmt.where(User.account_type == account_type)
     stmt = stmt.offset(offset).limit(limit)
     result = await db.execute(stmt)
     return result.scalars().all()
@@ -121,6 +128,40 @@ async def reset_user_password(
     user.password_hash = hash_password(password)
     await db.commit()
     return {"ok": True}
+
+
+@router.post("/users/{user_id}/verify")
+async def verify_user(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    _=require_admin,
+):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.account_type == "individual":
+        raise HTTPException(status_code=400, detail="Only organizations and practitioners can be verified")
+    user.is_verified = True
+    user.verified_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"ok": True, "is_verified": True}
+
+
+@router.post("/users/{user_id}/unverify")
+async def unverify_user(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    _=require_admin,
+):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.is_verified = False
+    user.verified_at = None
+    await db.commit()
+    return {"ok": True, "is_verified": False}
 
 
 # ── Content ──
@@ -296,15 +337,26 @@ async def delete_group(
 
 @router.get("/comments", response_model=list[CommentResponse])
 async def list_comments(
+    entity_type: str | None = None,
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     _=require_mod,
 ):
-    result = await db.execute(
-        select(Comment).order_by(Comment.created_at.desc()).offset(offset).limit(limit)
-    )
-    return result.scalars().all()
+    stmt = select(Comment, User.name).join(User, Comment.user_id == User.id, isouter=True)
+    if entity_type:
+        stmt = stmt.where(Comment.entity_type == entity_type)
+    stmt = stmt.order_by(Comment.created_at.desc()).offset(offset).limit(limit)
+    result = await db.execute(stmt)
+    rows = result.all()
+    return [
+        CommentResponse(
+            id=c.id, entity_type=c.entity_type, entity_id=c.entity_id,
+            user_id=c.user_id, user_name=name, parent_id=c.parent_id,
+            body=c.body, created_at=c.created_at, replies=[],
+        )
+        for c, name in rows
+    ]
 
 
 @router.delete("/comments/{comment_id}", status_code=204)
@@ -615,3 +667,59 @@ async def admin_delete_vendor(
 ):
     await db.execute(delete(EventVendor).where(EventVendor.id == vendor_id))
     await db.commit()
+
+
+# ── Configuration / Settings (admin-only) ──────────────────────────────
+
+@router.get("/settings", response_model=list[SettingResponse])
+async def list_settings(
+    category: str | None = None,
+    db: AsyncSession = Depends(get_db),
+    _=require_admin,
+):
+    stmt = select(Setting).order_by(Setting.category, Setting.key)
+    if category:
+        stmt = stmt.where(Setting.category == category)
+    result = await db.execute(stmt)
+    return result.scalars().all()
+
+
+@router.get("/settings/{key}", response_model=SettingResponse)
+async def get_setting(
+    key: str,
+    db: AsyncSession = Depends(get_db),
+    _=require_admin,
+):
+    result = await db.execute(select(Setting).where(Setting.key == key))
+    setting = result.scalar_one_or_none()
+    if not setting:
+        raise HTTPException(status_code=404, detail="Setting not found")
+    return setting
+
+
+@router.put("/settings/{key}", response_model=SettingResponse)
+async def update_setting(
+    key: str,
+    body: SettingUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    _=require_admin,
+):
+    result = await db.execute(select(Setting).where(Setting.key == key))
+    setting = result.scalar_one_or_none()
+    if setting:
+        setting.value = body.value
+        if body.description is not None:
+            setting.description = body.description
+        setting.updated_by = current_user.id
+    else:
+        setting = Setting(
+            key=key,
+            value=body.value,
+            description=body.description,
+            updated_by=current_user.id,
+        )
+        db.add(setting)
+    await db.commit()
+    await db.refresh(setting)
+    return setting

@@ -49,12 +49,14 @@ export default function EventsPage() {
   const [token, setToken] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [category, setCategory] = useState("");
+  const [family, setFamily] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
   const [location, setLocation] = useState("");
   const [isOnline, setIsOnline] = useState(false);
   const [eventCategory, setEventCategory] = useState("");
+  const [eventFamily, setEventFamily] = useState("");
   const [maxAttendees, setMaxAttendees] = useState("");
   const [visibility, setVisibility] = useState("all");
   const [ticketType, setTicketType] = useState("free");
@@ -63,17 +65,43 @@ export default function EventsPage() {
   const [recurrenceType, setRecurrenceType] = useState("none");
   const [recurrenceConfig, setRecurrenceConfig] = useState<any>({});
   const [descriptionLong, setDescriptionLong] = useState("");
+  const [families, setFamilies] = useState<any[]>([]);
+  const [familyCategories, setFamilyCategories] = useState<any[]>([]);
+  const [formFamilyCategories, setFormFamilyCategories] = useState<any[]>([]);
   const dirty = !!(title || description || date || location || maxAttendees || eventCategory || isOnline || descriptionLong);
   useDirtyGuard(dirty);
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { addToast } = useToast();
 
   useEffect(() => { setToken(localStorage.getItem("token")); }, []);
-  useEffect(() => { loadEvents(); }, [category]);
+  useEffect(() => {
+    api.taxonomy.families().then(setFamilies).catch(() => {});
+    loadEvents();
+  }, [category, family]);
 
   const loadEvents = () => {
     setLoading(true);
-    api.events.list(true, category || undefined).then(setEvents).catch(() => {}).finally(() => setLoading(false));
+    api.events.list(true, category || undefined, undefined, undefined, family || undefined).then(setEvents).catch(() => {}).finally(() => setLoading(false));
+  };
+
+  const handleFormFamilyChange = (famValue: string) => {
+    setEventFamily(famValue);
+    setEventCategory("");
+    if (famValue) {
+      api.taxonomy.categories(famValue).then(setFormFamilyCategories).catch(() => setFormFamilyCategories([]));
+    } else {
+      setFormFamilyCategories([]);
+    }
+  };
+
+  const handleFilterFamilyChange = (famValue: string) => {
+    setFamily(famValue);
+    setCategory("");
+    if (famValue) {
+      api.taxonomy.categories(famValue).then(setFamilyCategories).catch(() => setFamilyCategories([]));
+    } else {
+      setFamilyCategories([]);
+    }
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -87,6 +115,7 @@ export default function EventsPage() {
         location: location || undefined,
         is_online: isOnline,
         category: eventCategory || undefined,
+        family: eventFamily || undefined,
         max_attendees: maxAttendees ? Number(maxAttendees) : undefined,
         visibility,
         ticket_type: ticketType,
@@ -98,21 +127,13 @@ export default function EventsPage() {
       setEvents([event, ...events]);
       setShowForm(false);
       setTitle(""); setDescription(""); setDate(""); setLocation("");
-      setIsOnline(false); setEventCategory(""); setMaxAttendees("");
+      setIsOnline(false); setEventCategory(""); setEventFamily(""); setMaxAttendees("");
       setVisibility("all"); setTicketType("free"); setTicketPrice(""); setTicketTiers([]);
       setRecurrenceType("none"); setRecurrenceConfig({}); setDescriptionLong("");
     } catch (err: any) {
       addToast("error", err.message);
     }
   };
-
-  const categories = [
-    ["", t("events.all")],
-    ["gardening", t("events.category_gardening")],
-    ["woodworking", t("events.category_woodworking")],
-    ["craft_trades", t("events.category_craft_trades")],
-    ["homesteading", t("events.category_homesteading")],
-  ];
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-8 py-12">
@@ -127,20 +148,38 @@ export default function EventsPage() {
         )}
       />
 
-      <div className="flex gap-2 mb-8 flex-wrap mt-8">
-        {categories.map(([val, label]) => (
+      <div className="flex gap-2 mb-8 flex-wrap mt-8 items-center">
+        <button
+          onClick={() => handleFilterFamilyChange("")}
+          className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
+            !family ? "bg-primary-500 text-white border-primary-500 shadow-sm" : "bg-white text-stone-600 border-primary-100 hover:border-primary-300"
+          }`}
+        >
+          {t("events.all")}
+        </button>
+        {families.map((fam) => (
           <button
-            key={val}
-            onClick={() => setCategory(val)}
+            key={fam.value}
+            onClick={() => handleFilterFamilyChange(fam.value)}
             className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
-              category === val
-                ? "bg-primary-500 text-white border-primary-500 shadow-sm"
-                : "bg-white text-stone-600 border-primary-100 hover:border-primary-300"
+              family === fam.value ? "bg-primary-500 text-white border-primary-500 shadow-sm" : "bg-white text-stone-600 border-primary-100 hover:border-primary-300"
             }`}
           >
-            {label}
+            {locale === "pt" ? fam.label_pt : fam.label}
           </button>
         ))}
+        {family && familyCategories.length > 0 && (
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="px-3 py-1.5 text-sm rounded-xl border border-primary-100 bg-white text-stone-600 focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15"
+          >
+            <option value="">{t("search.all_categories") || "All categories"}</option>
+            {familyCategories.map((cat) => (
+              <option key={cat.value} value={cat.value}>{locale === "pt" ? cat.label_pt : cat.label}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {showForm && (
@@ -162,13 +201,21 @@ export default function EventsPage() {
           </div>
           <div className="grid md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.category_label")}</label>
-              <select value={eventCategory} onChange={(e) => setEventCategory(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+              <label className="block text-sm font-medium text-stone-700 mb-1">{t("groups.family_label") || "Family"}</label>
+              <select value={eventFamily} onChange={(e) => handleFormFamilyChange(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
                 <option value="">{t("events.category_none")}</option>
-                <option value="gardening">{t("events.category_gardening")}</option>
-                <option value="woodworking">{t("events.category_woodworking")}</option>
-                <option value="craft_trades">{t("events.category_craft_trades")}</option>
-                <option value="homesteading">{t("events.category_homesteading")}</option>
+                {families.map((fam) => (
+                  <option key={fam.value} value={fam.value}>{locale === "pt" ? fam.label_pt : fam.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.category_label")}</label>
+              <select value={eventCategory} onChange={(e) => setEventCategory(e.target.value)} disabled={!eventFamily} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15 disabled:opacity-50">
+                <option value="">{t("events.category_none")}</option>
+                {formFamilyCategories.map((cat) => (
+                  <option key={cat.value} value={cat.value}>{locale === "pt" ? cat.label_pt : cat.label}</option>
+                ))}
               </select>
             </div>
             <div>

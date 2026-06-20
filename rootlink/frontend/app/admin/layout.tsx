@@ -7,11 +7,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useLocale } from "@/lib/locale-context";
 import { GrainOverlay } from "@/components/ui/GrainOverlay";
-import { Menu, X, LayoutDashboard, Search, Leaf, FileText, Users, MessageSquare, Megaphone, Globe, Ticket, Heart, Award, Store, ChevronLeft, ChevronRight } from "lucide-react";
+import { Menu, X, LayoutDashboard, Search, Leaf, FileText, Users, MessageSquare, Megaphone, Globe, Ticket, Heart, Award, Store, Settings, ChevronLeft, ChevronRight } from "lucide-react";
 
 const SPRING = { type: "spring" as const, stiffness: 500, damping: 35 };
 
-const navItems = (t: (key: string, vars?: any) => string) => [
+const navItems = (t: (key: string, vars?: any) => string, isAdmin?: boolean) => [
   { href: "/admin", label: t("admin.dashboard"), icon: LayoutDashboard },
   { href: "/admin/review-queue", label: t("admin.review_queue"), icon: Search },
   { href: "/admin/plants", label: t("admin.plants"), icon: Leaf },
@@ -25,6 +25,7 @@ const navItems = (t: (key: string, vars?: any) => string) => [
   { href: "/admin/vendors", label: t("admin.vendors"), icon: Store },
   { href: "/admin/notifications", label: t("admin.broadcast"), icon: Megaphone },
   { href: "/admin/submit", label: t("admin.submit_url"), icon: Globe },
+  ...(isAdmin ? [{ href: "/admin/config", label: t("admin.config"), icon: Settings }] : []),
 ];
 
 /* ─── Desktop NavItem (liquid glass hover expand) ─── */
@@ -191,7 +192,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   const closeMobile = () => setMobileOpen(false);
-  const items = navItems(t);
+  const isAdmin = user?.role === "admin";
+  const items = navItems(t, isAdmin);
   const sidebarWidth = pinned ? 256 : 56;
 
   return (

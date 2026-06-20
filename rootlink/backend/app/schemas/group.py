@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from app.models.group import GroupCategory, MemberRole
+from app.models.group import MemberRole
 
 
 class GroupResponse(BaseModel):
@@ -10,7 +10,8 @@ class GroupResponse(BaseModel):
     name: str
     slug: str
     description: str | None = None
-    category: GroupCategory
+    category: str | None = None
+    family: str | None = None
     image_url: str | None = None
     created_by: int
     created_at: datetime | None = None
@@ -22,7 +23,8 @@ class GroupCreate(BaseModel):
     name: str
     slug: str
     description: str | None = None
-    category: GroupCategory
+    category: str | None = None
+    family: str | None = None
     image_url: str | None = None
 
 

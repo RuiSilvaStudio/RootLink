@@ -8,17 +8,21 @@ import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
 
 function CoursesContent() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const searchParams = useSearchParams();
   const [courses, setCourses] = useState<any[]>([]);
   const [category, setCategory] = useState("");
+  const [family, setFamily] = useState("");
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [mine, setMine] = useState(searchParams.get("mine") === "1");
+  const [families, setFamilies] = useState<any[]>([]);
+  const [familyCategories, setFamilyCategories] = useState<any[]>([]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) api.auth.me().then(setUser).catch(() => {});
+    api.taxonomy.families().then(setFamilies).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -29,9 +33,19 @@ function CoursesContent() {
     setLoading(true);
     const fetch = mine && user
       ? api.learning.courses.my()
-      : api.learning.courses.list(category || undefined);
+      : api.learning.courses.list(category || undefined, family || undefined);
     fetch.then(setCourses).finally(() => setLoading(false));
-  }, [category, mine, user]);
+  }, [category, family, mine, user]);
+
+  const handleFamilyChange = (famValue: string) => {
+    setFamily(famValue);
+    setCategory("");
+    if (famValue) {
+      api.taxonomy.categories(famValue).then(setFamilyCategories).catch(() => setFamilyCategories([]));
+    } else {
+      setFamilyCategories([]);
+    }
+  };
 
   const isStaff = user && (user.role === "admin" || user.role === "moderator" || user.role === "contributor");
 
@@ -60,17 +74,33 @@ function CoursesContent() {
             >{t("learning.my_courses_tab")}</Link>
           </>
         )}
-        {!mine && [
-          ["", "learning.all"],
-          ["gardening", "learning.category_gardening"],
-          ["woodworking", "learning.category_woodworking"],
-          ["craft_trades", "learning.category_craft_trades"],
-          ["homesteading", "learning.category_homesteading"],
-        ].map(([val, key]) => (
-          <button key={val} onClick={() => setCategory(val)}
-            className={`px-3 py-1.5 rounded-lg text-sm border transition ${category === val ? "bg-primary-600 text-white border-primary-600" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`}
-          >{t(key)}</button>
-        ))}
+        {!mine && (
+          <>
+            <button
+              onClick={() => handleFamilyChange("")}
+              className={`px-3 py-1.5 rounded-lg text-sm border transition ${!family ? "bg-primary-600 text-white border-primary-600" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`}
+            >{t("learning.all") || "All"}</button>
+            {families.map((fam) => (
+              <button
+                key={fam.value}
+                onClick={() => handleFamilyChange(fam.value)}
+                className={`px-3 py-1.5 rounded-lg text-sm border transition ${family === fam.value ? "bg-primary-600 text-white border-primary-600" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`}
+              >{locale === "pt" ? fam.label_pt : fam.label}</button>
+            ))}
+            {family && familyCategories.length > 0 && (
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="px-3 py-1.5 text-sm rounded-lg border border-stone-300 bg-white text-stone-600 focus:outline-none focus:ring-1 focus:ring-primary-400"
+              >
+                <option value="">{t("search.all_categories") || "All categories"}</option>
+                {familyCategories.map((cat) => (
+                  <option key={cat.value} value={cat.value}>{locale === "pt" ? cat.label_pt : cat.label}</option>
+                ))}
+              </select>
+            )}
+          </>
+        )}
       </div>
 
       {loading ? (
@@ -103,7 +133,8 @@ function CoursesContent() {
                         {course.published ? t("learning.published") : t("learning.draft")}
                       </span>
                     )}
-                    {course.category && <span className="bg-primary-100 text-primary-700 px-2 py-0.5 rounded">{t("learning.category_" + course.category)}</span>}
+                    {course.category && <span className="bg-primary-100 text-primary-700 px-2 py-0.5 rounded">{course.category}</span>}
+                    {course.family && <span className="bg-earth-100 text-earth-700 px-2 py-0.5 rounded">{course.family}</span>}
                     {course.difficulty && <span className="bg-stone-100 text-stone-600 px-2 py-0.5 rounded">{t("learning.option_" + course.difficulty)}</span>}
                     {course.estimated_hours && <span className="flex items-center gap-1 text-stone-500"><Clock className="w-3 h-3" />{t("learning.hours", { hours: course.estimated_hours })}</span>}
                     <span className="flex items-center gap-1 text-stone-500"><BookOpen className="w-3 h-3" />{t("learning.lessons_count", { count: course.lesson_count })}</span>

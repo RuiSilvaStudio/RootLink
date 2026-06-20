@@ -18,8 +18,17 @@ class Settings(BaseSettings):
     max_upload_size_mb: int = 10
     image_quality: int = 85
 
+    # Stripe
+    stripe_secret_key: str = ""
+    stripe_publishable_key: str = ""
+    stripe_webhook_secret: str = ""
+
+    # Marketplace
+    marketplace_fee_percent: float = 0.0  # Platform fee per transaction (0 = free for now)
+
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 
 settings = Settings()

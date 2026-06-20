@@ -3,10 +3,10 @@ import json
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select, update
+from sqlalchemy import select, update, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
+from app.core.database import get_db, async_session_factory
 from app.core.security import get_current_user
 from app.models.user import User
 from app.models.notification import Notification
@@ -21,12 +21,13 @@ async def list_notifications(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     limit: int = 50,
+    offset: int = 0,
     unread_only: bool = False,
 ):
     stmt = select(Notification).where(Notification.user_id == current_user.id)
     if unread_only:
-        stmt = stmt.where(Notification.read == False)
-    stmt = stmt.order_by(Notification.created_at.desc()).limit(limit)
+        stmt = stmt.where(Notification.read.is_(False))
+    stmt = stmt.order_by(Notification.created_at.desc()).offset(offset).limit(limit)
     result = await db.execute(stmt)
     return result.scalars().all()
 
@@ -36,41 +37,41 @@ async def unread_count(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(Notification).where(
+    count = await db.scalar(
+        select(func.count(Notification.id)).where(
             Notification.user_id == current_user.id,
-            Notification.read == False,
+            Notification.read.is_(False),
         )
     )
-    return {"count": len(result.scalars().all())}
+    return {"count": count or 0}
 
 
-async def _unread_count_for_user(user_id: int, db: AsyncSession) -> int:
-    result = await db.execute(
-        select(Notification).where(
-            Notification.user_id == user_id,
-            Notification.read == False,
+async def _unread_count_for_user(user_id: int) -> int:
+    async with async_session_factory() as db:
+        count = await db.scalar(
+            select(func.count(Notification.id)).where(
+                Notification.user_id == user_id,
+                Notification.read.is_(False),
+            )
         )
-    )
-    return len(result.scalars().all())
+        return count or 0
 
 
 @router.get("/stream")
 async def notification_stream(
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
 ):
     async def event_generator():
         q = sse_manager.subscribe(current_user.id)
         try:
-            count = await _unread_count_for_user(current_user.id, db)
+            count = await _unread_count_for_user(current_user.id)
             yield f"data: {json.dumps({'count': count})}\n\n"
             while True:
                 try:
                     data = await asyncio.wait_for(q.get(), timeout=30)
                     yield f"data: {json.dumps({'count': data.get('count', count)} )}\n\n"
                 except asyncio.TimeoutError:
-                    count = await _unread_count_for_user(current_user.id, db)
+                    count = await _unread_count_for_user(current_user.id)
                     yield f"data: {json.dumps({'count': count})}\n\n"
         finally:
             sse_manager.unsubscribe(current_user.id, q)
@@ -85,7 +86,7 @@ async def mark_all_read(
 ):
     await db.execute(
         update(Notification)
-        .where(Notification.user_id == current_user.id, Notification.read == False)
+        .where(Notification.user_id == current_user.id, Notification.read.is_(False))
         .values(read=True)
     )
     await db.commit()

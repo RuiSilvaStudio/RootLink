@@ -7,9 +7,8 @@ from app.core.security import get_current_user, get_optional_user
 from app.models.user import User
 from app.models.content import Content, Bookmark, SearchQueryLog
 from app.models.group import Group
-from app.models.comment import Comment
 from app.models.event import Event
-from app.models.learning import Course, Enrollment
+from app.models.learning import Course
 from app.schemas.content import ContentResponse, SearchResponse, BookmarkResponse, BookmarkCreate, IndexRequest
 from app.services.search import hybrid_search
 from app.services.embeddings import embed_text
@@ -22,13 +21,14 @@ router = APIRouter(prefix="/api/content", tags=["content"])
 async def search(
     q: str = Query(..., min_length=1),
     category: str | None = Query(None),
+    family: str | None = Query(None),
     content_type: str | None = Query(None),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(get_optional_user),
 ):
-    result = await hybrid_search(db, q, category, content_type, limit, offset)
+    result = await hybrid_search(db, q, category, content_type, family, limit, offset)
     db.add(SearchQueryLog(query=q, result_count=result.total, user_id=current_user.id if current_user else None))
     await db.commit()
     return result

@@ -26,8 +26,19 @@ async def search_groups(
 
 
 @router.get("/", response_model=list[GroupResponse])
-async def list_groups(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Group).order_by(Group.created_at.desc()))
+async def list_groups(
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    family: str | None = Query(None),
+    category: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = select(Group).order_by(Group.created_at.desc())
+    if family:
+        stmt = stmt.where(Group.family == family)
+    if category:
+        stmt = stmt.where(Group.category == category)
+    result = await db.execute(stmt.offset(offset).limit(limit))
     return result.scalars().all()
 
 

@@ -8,13 +8,6 @@ import { Collapsible } from "@/components/Collapsible";
 import { Badge } from "@/components/ui/Badge";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 
-const CATEGORIES = [
-  { value: "gardening", label: "Gardening" },
-  { value: "woodworking", label: "Woodworking" },
-  { value: "craft_trades", label: "Craft & Trades" },
-  { value: "homesteading", label: "Homesteading" },
-];
-
 const CATEGORY_TEMPLATES: Record<string, string[]> = {
   gardening: ["/images/templates/gardening.svg"],
   woodworking: ["/images/templates/woodworking.svg"],
@@ -23,12 +16,14 @@ const CATEGORY_TEMPLATES: Record<string, string[]> = {
 };
 
 export default function ReviewQueue() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const [pendingCategory, setPendingCategory] = useState<Record<number, string>>({});
   const [selectedImage, setSelectedImage] = useState<Record<number, string>>({});
+  const [families, setFamilies] = useState<any[]>([]);
+  const [familyCategoriesMap, setFamilyCategoriesMap] = useState<Record<string, any[]>>({});
 
   const fetchQueue = async () => {
     setLoading(true);
@@ -42,7 +37,18 @@ export default function ReviewQueue() {
     }
   };
 
-  useEffect(() => { fetchQueue(); }, []);
+  useEffect(() => {
+    fetchQueue();
+    api.taxonomy.families().then(setFamilies).catch(() => {});
+  }, []);
+
+  const loadFamilyCategories = async (familyValue: string) => {
+    if (familyCategoriesMap[familyValue]) return;
+    try {
+      const cats = await api.taxonomy.categories(familyValue);
+      setFamilyCategoriesMap((prev) => ({ ...prev, [familyValue]: cats }));
+    } catch {}
+  };
 
   const handleApprove = async (id: number) => {
     await api.admin.approveContent(id);
@@ -135,13 +141,28 @@ export default function ReviewQueue() {
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
                     <span className="text-stone-400 text-xs font-serif">{t("admin.category")}</span>
                     <select
-                      value={pendingCategory[c.id] || c.category}
-                      onChange={(e) => handleCategoryChange(c.id, e.target.value)}
+                      value={pendingCategory[c.id] || c.category || ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        handleCategoryChange(c.id, val);
+                        if (val) loadFamilyCategories(val);
+                      }}
                       className="text-xs border border-stone-200 rounded-lg px-2 py-1 bg-stone-50 text-stone-600 font-serif focus:outline-none focus:ring-1 focus:ring-primary-400"
                     >
-                      {CATEGORIES.map((cat) => (
-                        <option key={cat.value} value={cat.value}>{cat.label}</option>
-                      ))}
+                      <option value="">—</option>
+                      {families.flatMap((fam) => {
+                        const famCats = familyCategoriesMap[fam.value] || [];
+                        return [
+                          <option key={fam.value} value={fam.value} disabled>
+                            {locale === "pt" ? fam.label_pt : fam.label}
+                          </option>,
+                          ...famCats.map((cat) => (
+                            <option key={cat.value} value={cat.value}>
+                              {"  "}{locale === "pt" ? cat.label_pt : cat.label}
+                            </option>
+                          )),
+                        ];
+                      })}
                     </select>
                     <Badge variant="stone" className="text-[10px]">{c.source}</Badge>
                     {c.source_url && (

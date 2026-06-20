@@ -19,6 +19,7 @@ class Event(TimestampMixin, Base):
     image_url: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     is_online: Mapped[bool] = mapped_column(Boolean, default=False)
     category: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    family: Mapped[str | None] = mapped_column(String(50), nullable=True)
     max_attendees: Mapped[int | None] = mapped_column(nullable=True)
     group_id: Mapped[int | None] = mapped_column(ForeignKey("groups.id"), nullable=True)
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))

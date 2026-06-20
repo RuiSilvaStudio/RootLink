@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { CommentSection } from "@/components/CommentSection";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -17,7 +18,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useLocale } from "@/lib/locale-context";
 import { useToast } from "@/lib/toast-context";
 
-const TABS = ["about", "schedule", "venue", "sponsors", "donations", "tickets", "attendees", "vendors"] as const;
+const TABS = ["about", "schedule", "venue", "sponsors", "donations", "tickets", "attendees", "vendors", "discussion"] as const;
 type Tab = (typeof TABS)[number];
 
 const VISIBILITY_OPTIONS = [
@@ -1017,6 +1018,11 @@ export default function EventDetailPage() {
               </div>
             )}
           </div>
+        )}
+
+        {/* ── DISCUSSION ────────────────────────────────────── */}
+        {activeTab === "discussion" && (
+          <CommentSection entityType="event" entityId={event.id} />
         )}
       </div>
 

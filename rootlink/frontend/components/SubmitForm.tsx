@@ -1,30 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { Globe, Search } from "lucide-react";
 import { useLocale } from "@/lib/locale-context";
 import { useDirtyGuard } from "@/lib/use-dirty-guard";
 
 export function SubmitForm() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [url, setUrl] = useState("");
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("gardening");
+  const [category, setCategory] = useState("");
+  const [family, setFamily] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [results, setResults] = useState<any[]>([]);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"url" | "search">("url");
+  const [families, setFamilies] = useState<any[]>([]);
+  const [familyCategories, setFamilyCategories] = useState<any[]>([]);
   const dirty = !!(url || query);
   useDirtyGuard(dirty);
 
-  const CATEGORIES = [
-    { value: "gardening", label: t("submit.category_gardening") },
-    { value: "woodworking", label: t("submit.category_woodworking") },
-    { value: "craft_trades", label: t("submit.category_craft_trades") },
-    { value: "homesteading", label: t("submit.category_homesteading") },
-  ];
+  useEffect(() => {
+    api.taxonomy.families().then(setFamilies).catch(() => {});
+  }, []);
+
+  const handleFamilyChange = (famValue: string) => {
+    setFamily(famValue);
+    setCategory("");
+    if (famValue) {
+      api.taxonomy.categories(famValue).then(setFamilyCategories).catch(() => setFamilyCategories([]));
+    } else {
+      setFamilyCategories([]);
+    }
+  };
 
   const handleSubmitUrl = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +42,7 @@ export function SubmitForm() {
     setResult(null);
     setLoading(true);
     try {
-      const res = await api.crawl.submitUrl({ url, category });
+      const res = await api.crawl.submitUrl({ url, category: category || family });
       setResult(res);
     } catch (err: any) {
       setError(err?.detail || err?.message || "Failed to submit URL. Check the link and try again.");
@@ -48,7 +58,7 @@ export function SubmitForm() {
     setResults([]);
     setLoading(true);
     try {
-      const res = await api.crawl.searchAndCrawl({ query: query.trim(), category });
+      const res = await api.crawl.searchAndCrawl({ query: query.trim(), category: category || family });
       setResults(res);
     } catch (err: any) {
       setError(err?.detail || err?.message || "Search failed. Try again.");
@@ -93,17 +103,34 @@ export function SubmitForm() {
               className="w-full border border-stone-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t("submit.category_label")}</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full border border-stone-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c.value} value={c.value}>{c.label}</option>
-              ))}
-            </select>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">{t("groups.family_label") || "Family"}</label>
+              <select
+                value={family}
+                onChange={(e) => handleFamilyChange(e.target.value)}
+                className="w-full border border-stone-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="">—</option>
+                {families.map((fam) => (
+                  <option key={fam.value} value={fam.value}>{locale === "pt" ? fam.label_pt : fam.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">{t("submit.category_label")}</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                disabled={!family}
+                className="w-full border border-stone-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+              >
+                <option value="">—</option>
+                {familyCategories.map((cat) => (
+                  <option key={cat.value} value={cat.value}>{locale === "pt" ? cat.label_pt : cat.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <button
             type="submit"
@@ -129,17 +156,34 @@ export function SubmitForm() {
             />
             <p className="text-xs text-stone-400 mt-1">{t("submit.search_hint")}</p>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t("submit.category_label")}</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full border border-stone-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c.value} value={c.value}>{c.label}</option>
-              ))}
-            </select>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">{t("groups.family_label") || "Family"}</label>
+              <select
+                value={family}
+                onChange={(e) => handleFamilyChange(e.target.value)}
+                className="w-full border border-stone-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="">—</option>
+                {families.map((fam) => (
+                  <option key={fam.value} value={fam.value}>{locale === "pt" ? fam.label_pt : fam.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">{t("submit.category_label")}</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                disabled={!family}
+                className="w-full border border-stone-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+              >
+                <option value="">—</option>
+                {familyCategories.map((cat) => (
+                  <option key={cat.value} value={cat.value}>{locale === "pt" ? cat.label_pt : cat.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <button
             type="submit"

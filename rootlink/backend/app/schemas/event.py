@@ -59,9 +59,11 @@ class EventCreate(BaseModel):
     image_url: str | None = None
     is_online: bool = False
     category: str | None = None
+    family: str | None = None
     max_attendees: int | None = None
     group_id: int | None = None
 
+    # Visibility & access
     visibility: str = "all"
     visibility_roles: list[str] | None = None
     status: str = "published"
@@ -93,6 +95,7 @@ class EventUpdate(BaseModel):
     image_url: str | None = None
     is_online: bool | None = None
     category: str | None = None
+    family: str | None = None
     max_attendees: int | None = None
     group_id: int | None = None
 

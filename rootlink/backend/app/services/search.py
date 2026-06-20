@@ -1,5 +1,5 @@
 import math
-from sqlalchemy import select, text
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.content import Content
@@ -9,7 +9,6 @@ from app.models.group import Group
 from app.models.plant import Plant
 from app.schemas.content import SearchContentResponse, SearchResult, SearchResponse
 from app.services.embeddings import embed_text
-from app.core.config import settings
 
 
 def cosine_similarity(a: list[float], b: list[float]) -> float:
@@ -45,6 +44,7 @@ async def hybrid_search(
     query: str,
     category: str | None = None,
     content_type: str | None = None,
+    family: str | None = None,
     limit: int = 20,
     offset: int = 0,
 ) -> SearchResponse:
@@ -57,6 +57,8 @@ async def hybrid_search(
         stmt = select(Content)
         if category:
             stmt = stmt.where(Content.category == category)
+        if family:
+            stmt = stmt.where(Content.family == family)
         result = await db.execute(stmt)
         for c in result.scalars().all():
             semantic_score = 0.0
@@ -88,6 +90,8 @@ async def hybrid_search(
         stmt = select(Event)
         if category:
             stmt = stmt.where(Event.category == category)
+        if family:
+            stmt = stmt.where(Event.family == family)
         result = await db.execute(stmt)
         for e in result.scalars().all():
             kw = keyword_score(query, e.title, e.description, e.location)
@@ -115,6 +119,8 @@ async def hybrid_search(
         stmt = select(Course)
         if category:
             stmt = stmt.where(Course.category == category)
+        if family:
+            stmt = stmt.where(Course.family == family)
         result = await db.execute(stmt)
         for co in result.scalars().all():
             kw = keyword_score(query, co.title, co.description)
@@ -167,6 +173,8 @@ async def hybrid_search(
         stmt = select(Group)
         if category:
             stmt = stmt.where(Group.category == category)
+        if family:
+            stmt = stmt.where(Group.family == family)
         result = await db.execute(stmt)
         for g in result.scalars().all():
             kw = keyword_score(query, g.name, g.description)
