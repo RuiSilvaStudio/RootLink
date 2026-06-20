@@ -11,6 +11,11 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "rootlink.ruisilvastudio.com",
+        pathname: "/media/**",
+      },
+      {
+        protocol: "https",
         hostname: "api.inaturalist.org",
         pathname: "/**",
       },

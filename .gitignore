@@ -52,3 +52,4 @@ docker-compose.override.yml
 graphify-out/
 images/
 rootlink/backend/media/
+.vercel
