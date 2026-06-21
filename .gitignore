@@ -36,6 +36,7 @@ out/
 # --- IDE ---
 .vscode/
 .idea/
+.obsidian/
 *.swp
 *.swo
 *~
@@ -47,6 +48,9 @@ Thumbs.db
 
 # --- Docker ---
 docker-compose.override.yml
+
+# --- Accidental files ---
+=8.0.0
 
 # --- Generated / Large assets ---
 graphify-out/
