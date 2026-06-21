@@ -31,7 +31,7 @@ const nextConfig = {
       },
     ],
   },
-  distDir: process.env.NODE_ENV === 'production' ? '.next-build' : '.next',
+  distDir: '.next',
 };
 
 module.exports = nextConfig;
