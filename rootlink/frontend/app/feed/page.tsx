@@ -70,7 +70,7 @@ function FeedItem({ item }: { item: any }) {
           )}
         </p>
         {item.body_preview && (
-          <p className="text-xs text-stone-400 mt-1 italic line-clamp-1">"{item.body_preview}"</p>
+          <p className="text-xs text-stone-400 mt-1 italic line-clamp-1">&quot;{item.body_preview}&quot;</p>
         )}
         <p className="text-xs text-stone-400 mt-1.5">
           {item.created_at ? new Date(item.created_at).toLocaleString() : ""}

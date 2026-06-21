@@ -794,7 +794,7 @@ function ProfilePage() {
                       <Badge variant="stone" className="text-[9px] capitalize">{cm.entity_type}</Badge>
                       <span className="text-xs text-stone-400">{cm.created_at ? new Date(cm.created_at).toLocaleDateString() : ""}</span>
                     </div>
-                    <p className="text-sm text-stone-600 dark:text-stone-400 font-serif italic line-clamp-2">"{cm.body}"</p>
+                    <p className="text-sm text-stone-600 dark:text-stone-400 font-serif italic line-clamp-2">&quot;{cm.body}&quot;</p>
                   </Link>
                 );
               })

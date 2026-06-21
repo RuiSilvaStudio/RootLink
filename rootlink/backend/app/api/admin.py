@@ -1,24 +1,24 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, func, delete, or_
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user, hash_password
-from app.models.user import User, UserRole
-from app.models.content import Content, SearchQueryLog, VerificationStatus
-from app.models.group import Group, GroupMember
 from app.models.comment import Comment
-from app.models.event import Event, EventTicket, EventDonation, EventSponsor, EventVendor
+from app.models.content import Content, SearchQueryLog, VerificationStatus
+from app.models.event import Event, EventDonation, EventSponsor, EventTicket, EventVendor
+from app.models.group import Group, GroupMember
 from app.models.learning import Course, Enrollment
 from app.models.notification import Notification, NotificationType
 from app.models.setting import Setting
+from app.models.user import User, UserRole
+from app.schemas.comment import CommentResponse
 from app.schemas.content import ContentResponse
 from app.schemas.event import SponsorUpdate, VendorUpdate
-from app.schemas.setting import SettingResponse, SettingUpdate
 from app.schemas.group import GroupResponse
-from app.schemas.comment import CommentResponse
+from app.schemas.setting import SettingResponse, SettingUpdate
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -143,7 +143,7 @@ async def verify_user(
     if user.account_type == "individual":
         raise HTTPException(status_code=400, detail="Only organizations and practitioners can be verified")
     user.is_verified = True
-    user.verified_at = datetime.now(timezone.utc)
+    user.verified_at = datetime.now(UTC)
     await db.commit()
     return {"ok": True, "is_verified": True}
 

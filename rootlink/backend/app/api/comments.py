@@ -1,18 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, delete, func
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.models.user import User
+from app.models.comment import Comment
 from app.models.content import Content
 from app.models.event import Event
 from app.models.group import Group
-from app.models.plant import Plant
 from app.models.learning import Course, Lesson
-from app.models.comment import Comment
 from app.models.notification import Notification, NotificationType
-from app.schemas.comment import CommentResponse, CommentCreate
+from app.models.plant import Plant
+from app.models.user import User
+from app.schemas.comment import CommentCreate, CommentResponse
 from app.services.sse import sse_manager
 
 router = APIRouter(prefix="/api/comments", tags=["comments"])

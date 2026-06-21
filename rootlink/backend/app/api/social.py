@@ -1,17 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, delete
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.models.user import User
-from app.models.group import Follow, Group
-from app.models.content import Content
-from app.models.event import Event, EventRSVP, EventDonation
-from app.models.learning import Course
 from app.models.comment import Comment
+from app.models.content import Content
+from app.models.event import Event, EventDonation, EventRSVP
+from app.models.group import Follow, Group
+from app.models.learning import Course
 from app.models.marketplace import Listing
 from app.models.notification import Notification, NotificationType
+from app.models.user import User
 from app.schemas.auth import UserResponse
 from app.services.sse import sse_manager
 

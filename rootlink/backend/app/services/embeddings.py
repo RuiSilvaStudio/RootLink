@@ -10,6 +10,7 @@ _model_available = False
 
 try:
     from sentence_transformers import SentenceTransformer
+
     from app.core.config import settings
     _model_available = True
 except ImportError:

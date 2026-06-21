@@ -4,12 +4,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user
+from app.models.content import Category, Content, ContentSource, ContentType, VerificationStatus
 from app.models.user import User
-from app.models.content import Content, ContentType, Category, ContentSource, VerificationStatus
 from app.schemas.content import ContentResponse
 from app.services.crawler import crawl_url, search_web
-from app.services.embeddings import embed_text, embed_batch
 from app.services.cross_reference import auto_cross_reference
+from app.services.embeddings import embed_batch, embed_text
 
 router = APIRouter(prefix="/api/crawl", tags=["crawl"])
 
@@ -115,7 +115,7 @@ async def search_and_crawl(
     await db.flush()
 
     embeddings = await embed_batch(texts)
-    for content, emb in zip(indexed, embeddings):
+    for content, emb in zip(indexed, embeddings, strict=False):
         content.embedding = emb
 
     await db.commit()

@@ -141,7 +141,7 @@ export function CommandPalette() {
         <div ref={listRef} id="command-list" role="listbox" className="max-h-[50vh] overflow-y-auto py-2">
           {flatList.length === 0 ? (
             <p className="px-4 py-8 text-center text-sm text-stone-400 font-serif">
-              No results for "{query}"
+              No results for &quot;{query}&quot;
             </p>
           ) : (
             Object.entries(grouped).map(([section, items]) => (

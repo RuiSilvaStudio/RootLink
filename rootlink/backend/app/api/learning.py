@@ -1,19 +1,31 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, func, delete
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.models.user import User, UserRole
 from app.models.learning import (
-    Course, Lesson, LearningPath, LearningPathCourse,
-    Enrollment, LessonProgress,
+    Course,
+    Enrollment,
+    LearningPath,
+    LearningPathCourse,
+    Lesson,
+    LessonProgress,
 )
+from app.models.user import User, UserRole
 from app.schemas.learning import (
-    CourseResponse, CourseCreate, CourseUpdate,
-    LessonResponse, LessonCreate, LessonUpdate,
-    LearningPathResponse, LearningPathCreate, LearningPathUpdate, LearningPathCourseCreate,
-    EnrollmentResponse, LessonProgressResponse,
+    CourseCreate,
+    CourseResponse,
+    CourseUpdate,
+    EnrollmentResponse,
+    LearningPathCourseCreate,
+    LearningPathCreate,
+    LearningPathResponse,
+    LearningPathUpdate,
+    LessonCreate,
+    LessonProgressResponse,
+    LessonResponse,
+    LessonUpdate,
 )
 
 router = APIRouter(prefix="/api/learning", tags=["learning"])

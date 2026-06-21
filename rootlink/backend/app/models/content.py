@@ -1,13 +1,14 @@
+import enum
 from datetime import datetime
 
-from sqlalchemy import String, Text, DateTime, ForeignKey, Enum as SAEnum, JSON
+from sqlalchemy import JSON, DateTime, ForeignKey, String, Text
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column
-import enum
 
 from app.models.base import Base, TimestampMixin
 
 
-class ContentType(str, enum.Enum):
+class ContentType(enum.StrEnum):
     article = "article"
     event = "event"
     course = "course"
@@ -15,20 +16,20 @@ class ContentType(str, enum.Enum):
     video = "video"
 
 
-class ContentSource(str, enum.Enum):
+class ContentSource(enum.StrEnum):
     crawled = "crawled"
     user = "user"
     curated = "curated"
 
 
-class Category(str, enum.Enum):
+class Category(enum.StrEnum):
     gardening = "gardening"
     woodworking = "woodworking"
     craft_trades = "craft_trades"
     homesteading = "homesteading"
 
 
-class VerificationStatus(str, enum.Enum):
+class VerificationStatus(enum.StrEnum):
     unreviewed = "unreviewed"
     cross_referenced = "cross_referenced"
     community_reviewed = "community_reviewed"

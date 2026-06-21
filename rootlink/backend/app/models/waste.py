@@ -1,4 +1,4 @@
-from sqlalchemy import String, Text, Integer, Float, ForeignKey, Boolean, JSON
+from sqlalchemy import JSON, Boolean, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin

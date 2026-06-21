@@ -35,7 +35,13 @@ from app.core.logging import setup_logging
 from app.core.rate_limit import RateLimitMiddleware
 from app.models.base import Base
 from app.models.image_asset import ImageAsset  # noqa: F401 - ensure table creation
-from app.models.taxonomy import TaxonomyFamily, TaxonomyCategory, SEED_FAMILIES, SEED_CATEGORIES, CATEGORY_TO_FAMILY_MAP  # noqa: F401
+from app.models.taxonomy import (  # noqa: F401
+    CATEGORY_TO_FAMILY_MAP,
+    SEED_CATEGORIES,
+    SEED_FAMILIES,
+    TaxonomyCategory,
+    TaxonomyFamily,
+)
 
 
 @asynccontextmanager

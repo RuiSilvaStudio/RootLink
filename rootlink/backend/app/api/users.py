@@ -1,18 +1,18 @@
-from math import radians, sin, cos, sqrt, atan2
+from math import atan2, cos, radians, sin, sqrt
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, or_, func
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user, get_optional_user
-from app.models.user import User
-from app.models.content import Content, Bookmark
-from app.models.event import Event, EventRSVP, EventTicket, EventDonation
-from app.models.group import Group, GroupMember, Follow
-from app.models.learning import Course, Enrollment
 from app.models.comment import Comment
+from app.models.content import Bookmark, Content
+from app.models.event import Event, EventDonation, EventRSVP, EventTicket
+from app.models.group import Follow, Group, GroupMember
+from app.models.learning import Course, Enrollment
 from app.models.notification import Notification
+from app.models.user import User
 from app.schemas.auth import UserResponse
 
 router = APIRouter(prefix="/api/users", tags=["users"])

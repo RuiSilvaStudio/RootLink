@@ -1,11 +1,13 @@
-from sqlalchemy import String, ForeignKey, Boolean, Enum as SAEnum
-from sqlalchemy.orm import Mapped, mapped_column
 import enum
+
+from sqlalchemy import Boolean, ForeignKey, String
+from sqlalchemy import Enum as SAEnum
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin
 
 
-class NotificationType(str, enum.Enum):
+class NotificationType(enum.StrEnum):
     follow = "follow"
     comment = "comment"
     reply = "reply"
