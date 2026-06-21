@@ -1,5 +1,6 @@
 import json
 import os
+
 from fastapi import APIRouter, Query
 
 router = APIRouter(prefix="/api/farmers-guide", tags=["farmers_guide"])

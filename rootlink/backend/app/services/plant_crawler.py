@@ -1,10 +1,11 @@
-import re
 import asyncio
 import random
+import re
 from datetime import datetime
+from typing import Any
+
 import httpx
 from bs4 import BeautifulSoup
-from typing import Any
 
 UTAD_BASE = "https://jb.utad.pt"
 UTAD_SPECIES_URL = f"{UTAD_BASE}/especie"
@@ -78,7 +79,7 @@ def _parse_utad_page(html: str, url: str) -> dict[str, Any]:
     parteesq = soup.find("div", class_="parteesq")
     if parteesq:
         for row in parteesq.find_all("div", class_="row"):
-            cols = row.find_all("div", recursive=True)
+            row.find_all("div", recursive=True)
             label_div = row.find("div", class_="col-md-4")
             val_div = row.find("div", class_="col-md-8")
             if not label_div or not val_div:

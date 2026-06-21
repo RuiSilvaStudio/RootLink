@@ -1,22 +1,22 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_
 
 from app.core.database import get_db
 from app.core.security import get_current_user, get_optional_user
 from app.models.plant import Plant
 from app.models.user import User
 from app.schemas.plant import (
-    PlantResponse,
+    CalendarPlantItem,
     PlantCreate,
-    PlantUpdate,
     PlantIrrigationRequest,
     PlantIrrigationResponse,
-    CalendarPlantItem,
+    PlantResponse,
+    PlantUpdate,
 )
-from app.services.plant_crawler import crawl_utad_species, normalize_name, merge_plant_data
-from app.services.inaturalist import search_taxa, get_portugal_observations
-from app.services.gbif import search_species, get_portugal_occurrences
+from app.services.gbif import get_portugal_occurrences, search_species
+from app.services.inaturalist import get_portugal_observations, search_taxa
+from app.services.plant_crawler import crawl_utad_species, merge_plant_data, normalize_name
 
 ZONE_OFFSETS = {"cool": 1, "moderate": 0, "warm": -1, "hot": -2}
 

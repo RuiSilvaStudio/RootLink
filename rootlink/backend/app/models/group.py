@@ -1,11 +1,13 @@
-from sqlalchemy import String, Text, ForeignKey, Enum as SAEnum
-from sqlalchemy.orm import Mapped, mapped_column
 import enum
+
+from sqlalchemy import Enum as SAEnum
+from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin
 
 
-class MemberRole(str, enum.Enum):
+class MemberRole(enum.StrEnum):
     member = "member"
     moderator = "moderator"
     admin = "admin"

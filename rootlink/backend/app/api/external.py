@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Query
 
+from app.services.gbif import get_portugal_occurrences, search_species
+from app.services.inaturalist import autocomplete_taxa, get_portugal_observations, search_taxa
 from app.services.moon_phase import get_moon_phase
 from app.services.sun_data import get_sun_data
-from app.services.inaturalist import search_taxa, autocomplete_taxa, get_portugal_observations
-from app.services.gbif import search_species, get_portugal_occurrences
 
 router = APIRouter(prefix="/api/external", tags=["external"])
 

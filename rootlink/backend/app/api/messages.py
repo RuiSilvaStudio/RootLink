@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, desc
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.models.user import User
 from app.models.message import Conversation, ConversationParticipant, Message
 from app.models.notification import Notification, NotificationType
-from app.schemas.message import ConversationResponse, MessageResponse, MessageCreate
+from app.models.user import User
+from app.schemas.message import ConversationResponse, MessageCreate, MessageResponse
 from app.services.sse import sse_manager
 
 router = APIRouter(prefix="/api/messages", tags=["messages"])

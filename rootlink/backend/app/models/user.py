@@ -1,24 +1,26 @@
-from sqlalchemy import String, Boolean, JSON, Text, Float, DateTime, Enum as SAEnum
-from sqlalchemy.orm import Mapped, mapped_column
 import enum
+
+from sqlalchemy import JSON, Boolean, DateTime, Float, String, Text
+from sqlalchemy import Enum as SAEnum
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin
 
 
-class UserRole(str, enum.Enum):
+class UserRole(enum.StrEnum):
     admin = "admin"
     moderator = "moderator"
     contributor = "contributor"
     user = "user"
 
 
-class AccountType(str, enum.Enum):
+class AccountType(enum.StrEnum):
     individual = "individual"
     organization = "organization"
     practitioner = "practitioner"
 
 
-class EntityType(str, enum.Enum):
+class EntityType(enum.StrEnum):
     ipss = "ipss"
     cooperative = "cooperative"
     association = "association"

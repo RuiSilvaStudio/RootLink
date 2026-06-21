@@ -3,13 +3,13 @@ import json
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select, update, func
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db, async_session_factory
+from app.core.database import async_session_factory, get_db
 from app.core.security import get_current_user
-from app.models.user import User
 from app.models.notification import Notification
+from app.models.user import User
 from app.schemas.notification import NotificationResponse
 from app.services.sse import sse_manager
 
@@ -70,7 +70,7 @@ async def notification_stream(
                 try:
                     data = await asyncio.wait_for(q.get(), timeout=30)
                     yield f"data: {json.dumps({'count': data.get('count', count)} )}\n\n"
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     count = await _unread_count_for_user(current_user.id)
                     yield f"data: {json.dumps({'count': count})}\n\n"
         finally:

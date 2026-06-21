@@ -37,7 +37,7 @@ async def process_content(title: str, text: str, url: str, source: str, category
     embeddings = await embed_batch(chunks)
 
     records = []
-    for i, (chunk, emb) in enumerate(zip(chunks, embeddings)):
+    for i, (chunk, emb) in enumerate(zip(chunks, embeddings, strict=False)):
         records.append({
             "title": f"{title} (part {i+1})" if len(chunks) > 1 else title,
             "full_text": chunk,

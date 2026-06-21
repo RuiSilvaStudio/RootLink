@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from app.models.content import ContentType, ContentSource, Category
+from app.models.content import Category, ContentSource, ContentType
 
 
 class ContentResponse(BaseModel):

@@ -1,18 +1,24 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, func, delete
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user, get_optional_user
-from app.models.user import User
-from app.models.content import Content, Bookmark, SearchQueryLog
-from app.models.group import Group
+from app.models.content import Bookmark, Content, SearchQueryLog
 from app.models.event import Event
+from app.models.group import Group
 from app.models.learning import Course
-from app.schemas.content import ContentResponse, SearchResponse, BookmarkResponse, BookmarkCreate, IndexRequest
-from app.services.search import hybrid_search
-from app.services.embeddings import embed_text
+from app.models.user import User
+from app.schemas.content import (
+    BookmarkCreate,
+    BookmarkResponse,
+    ContentResponse,
+    IndexRequest,
+    SearchResponse,
+)
 from app.services.cross_reference import auto_cross_reference
+from app.services.embeddings import embed_text
+from app.services.search import hybrid_search
 
 router = APIRouter(prefix="/api/content", tags=["content"])
 

@@ -1,22 +1,39 @@
-from app.models.user import User
-from app.models.content import Content, Bookmark, SearchQueryLog, VerificationStatus
-from app.models.group import Group, GroupMember, Follow
-from app.models.event import (
-    Event, EventRSVP, EventVenue, EventAmenity, EventSchedule,
-    EventSponsor, EventVendor, EventDonation, EventTicket,
-)
-from app.models.learning import Course, Lesson, LearningPath, LearningPathCourse, Enrollment, LessonProgress
-from app.models.comment import Comment
-from app.models.notification import Notification
-from app.models.message import Conversation, ConversationParticipant, Message
-from app.models.plant import Plant
 from app.models.checklist import ChecklistItem
-from app.models.setting import Setting
-from app.models.taxonomy import TaxonomyFamily, TaxonomyCategory
+from app.models.comment import Comment
+from app.models.content import Bookmark, Content, SearchQueryLog, VerificationStatus
+from app.models.event import (
+    Event,
+    EventAmenity,
+    EventDonation,
+    EventRSVP,
+    EventSchedule,
+    EventSponsor,
+    EventTicket,
+    EventVendor,
+    EventVenue,
+)
+from app.models.group import Follow, Group, GroupMember
+from app.models.learning import (
+    Course,
+    Enrollment,
+    LearningPath,
+    LearningPathCourse,
+    Lesson,
+    LessonProgress,
+)
 from app.models.marketplace import Listing, ListingOrder, SellerStripeAccount
+from app.models.message import Conversation, ConversationParticipant, Message
+from app.models.notification import Notification
+from app.models.plant import Plant
+from app.models.setting import Setting
+from app.models.taxonomy import TaxonomyCategory, TaxonomyFamily
+from app.models.user import User
 from app.models.waste import (
-    CompostingHub, CompostingMember, CompostingDeposit,
-    UpcyclingProject, WasteChallenge,
+    CompostingDeposit,
+    CompostingHub,
+    CompostingMember,
+    UpcyclingProject,
+    WasteChallenge,
 )
 
 __all__ = [
