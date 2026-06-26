@@ -91,7 +91,7 @@ export function ImageUpload({
       setUploading(true);
 
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
         const token = localStorage.getItem("token");
 
         const formData = new FormData();

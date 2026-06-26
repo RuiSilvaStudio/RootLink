@@ -44,11 +44,11 @@ export function ProgressBar({ value, max = 100, label, showPercent = true, size 
     <div ref={ref} className={`space-y-2 ${className}`}>
       {(label || showPercent) && (
         <div className="flex justify-between items-center">
-          {label && <span className="text-sm font-serif text-stone-600">{label}</span>}
-          {showPercent && <span className="text-sm font-display text-stone-400">{pct}%</span>}
+          {label && <span className="text-sm font-serif text-stone-600 dark:text-stone-300">{label}</span>}
+          {showPercent && <span className="text-sm font-display text-stone-400 dark:text-stone-500">{pct}%</span>}
         </div>
       )}
-      <div className={`w-full bg-primary-100/50 rounded-full overflow-hidden ${size === "sm" ? "h-1.5" : "h-2.5"}`}>
+      <div className={`w-full bg-primary-100/50 dark:bg-primary-900/30 rounded-full overflow-hidden ${size === "sm" ? "h-1.5" : "h-2.5"}`}>
         <div
           className={`${barColor} h-full rounded-full transition-all duration-1000 ease-out`}
           style={{ width: `${width}%` }}

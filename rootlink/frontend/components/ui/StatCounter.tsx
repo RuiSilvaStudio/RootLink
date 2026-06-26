@@ -33,8 +33,8 @@ export function StatCounter({ value, label, duration = 1200 }: Props) {
 
   return (
     <div ref={ref} className="text-center">
-      <div className="number-lg text-4xl sm:text-5xl">{display}</div>
-      <p className="text-sm text-stone-500 mt-2 font-serif tracking-wide">{label}</p>
+      <div className="number-lg text-4xl sm:text-5xl text-stone-800 dark:text-stone-100">{display}</div>
+      <p className="text-sm text-stone-500 dark:text-stone-400 mt-2 font-serif tracking-wide">{label}</p>
     </div>
   );
 }

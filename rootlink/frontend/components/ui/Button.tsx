@@ -6,11 +6,11 @@ const variants = {
   primary:
     "bg-primary-600 text-cream hover:bg-primary-700 active:bg-primary-800 shadow-sm hover:shadow-md",
   secondary:
-    "border border-primary-300/60 text-primary-700 hover:border-primary-400 hover:bg-primary-50",
+    "border border-primary-300/60 text-primary-700 hover:border-primary-400 hover:bg-primary-50 dark:border-primary-600/60 dark:text-primary-300 dark:hover:border-primary-500 dark:hover:bg-primary-900/30",
   ghost:
-    "text-stone-500 hover:text-primary-700 hover:bg-primary-50/50",
+    "text-stone-500 hover:text-primary-700 hover:bg-primary-50/50 dark:text-stone-400 dark:hover:text-primary-300 dark:hover:bg-primary-900/20",
   danger:
-    "bg-rust-50 text-rust-700 border border-rust-200 hover:bg-rust-100",
+    "bg-rust-50 text-rust-700 border border-rust-200 hover:bg-rust-100 dark:bg-rust-900/30 dark:text-rust-300 dark:border-rust-700 dark:hover:bg-rust-900/50",
 };
 
 const sizes = {

@@ -26,13 +26,13 @@ export function Avatar({ src, name, fallback, size = "md", className = "" }: Pro
       <img
         src={src}
         alt={label}
-        className={`${sizeMap[size]} rounded-full object-cover ring-2 ring-white ${className}`}
+        className={`${sizeMap[size]} rounded-full object-cover ring-2 ring-white dark:ring-stone-800 ${className}`}
       />
     );
   }
 
   return (
-    <div className={`${sizeMap[size]} rounded-full bg-primary-100 text-primary-600 font-display font-medium flex items-center justify-center ring-2 ring-white ${className}`}>
+    <div className={`${sizeMap[size]} rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400 font-display font-medium flex items-center justify-center ring-2 ring-white dark:ring-stone-800 ${className}`}>
       {initials || "?"}
     </div>
   );
