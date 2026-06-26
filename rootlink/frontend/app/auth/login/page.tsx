@@ -35,7 +35,7 @@ export default function LoginPage() {
 
   return (
     <div className="max-w-md mx-auto mt-20 px-4">
-      <h1 className="text-3xl font-bold text-stone-800 font-serif mb-6">
+      <h1 className="text-3xl font-bold text-stone-800 dark:text-stone-100 font-serif mb-6">
         {t("auth.sign_in_title")}
       </h1>
       {error && (

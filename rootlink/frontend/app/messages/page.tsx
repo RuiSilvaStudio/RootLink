@@ -82,7 +82,7 @@ function MessagesContent() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-stone-800 font-serif mb-8">{t("messages.title")}</h1>
+      <h1 className="text-3xl font-bold text-stone-800 dark:text-stone-100 font-serif mb-8">{t("messages.title")}</h1>
 
       {showNew && recipient && (
         <div className="bg-white p-4 rounded-xl border border-stone-200 mb-6">
@@ -105,7 +105,7 @@ function MessagesContent() {
       {loading ? (
         <p className="text-stone-500">{t("messages.loading")}</p>
       ) : conversations.length === 0 ? (
-        <div className="text-center py-20 text-stone-400">
+        <div className="text-center py-20 text-stone-00 dark:text-stone-500">
           <MessageCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
           <p>{t("messages.no_conversations")}</p>
         </div>
@@ -123,12 +123,12 @@ function MessagesContent() {
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 text-xs font-medium shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center text-primary-700 text-xs font-medium shrink-0">
                     {conv.other_user?.name?.[0]?.toUpperCase() || "?"}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-stone-800 truncate">{conv.other_user?.name || "Unknown"}</p>
-                    {conv.last_message && <p className="text-xs text-stone-400 truncate">{conv.last_message}</p>}
+                    <p className="text-sm font-medium text-stone-800 dark:text-stone-100 truncate">{conv.other_user?.name || "Unknown"}</p>
+                    {conv.last_message && <p className="text-xs text-stone-00 dark:text-stone-500 truncate">{conv.last_message}</p>}
                   </div>
                 </div>
               </button>
@@ -168,7 +168,7 @@ function MessagesContent() {
                 </div>
               </div>
             ) : (
-              <div className="bg-white rounded-xl border border-stone-200 min-h-[400px] flex items-center justify-center text-stone-400">
+              <div className="bg-white rounded-xl border border-stone-200 min-h-[400px] flex items-center justify-center text-stone-00 dark:text-stone-500">
                 <p>{t("messages.select_conversation")}</p>
               </div>
             )}

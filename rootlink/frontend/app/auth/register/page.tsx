@@ -82,7 +82,7 @@ export default function RegisterPage() {
 
   return (
     <div className="max-w-md mx-auto mt-12 px-4">
-      <h1 className="text-3xl font-display font-bold text-stone-800 mb-2">
+      <h1 className="text-3xl font-display font-bold text-stone-800 dark:text-stone-100 mb-2">
         {t("auth.register_title")}
       </h1>
 

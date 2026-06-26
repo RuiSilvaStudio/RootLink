@@ -53,7 +53,7 @@ export default function ConversationPage() {
         { label: conversation?.other_user?.name || "Conversation" }
       ]} />
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-medium">
+        <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center text-primary-700 font-medium">
           {other?.name?.[0]?.toUpperCase() || "?"}
         </div>
         <div>
@@ -64,7 +64,7 @@ export default function ConversationPage() {
       <div className="bg-white rounded-xl border border-stone-200 min-h-[500px] flex flex-col">
         <div className="flex-1 p-4 space-y-3 overflow-y-auto max-h-[600px]">
           {messages.length === 0 ? (
-            <p className="text-stone-400 text-center py-10">No messages yet. Say hello!</p>
+            <p className="text-stone-00 dark:text-stone-500 text-center py-10">No messages yet. Say hello!</p>
           ) : (
             messages.map((msg: any) => (
               <div key={msg.id} className={`flex ${msg.sender_id === other?.id ? "justify-start" : "justify-end"}`}>

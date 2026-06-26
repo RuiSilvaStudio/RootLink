@@ -35,11 +35,11 @@ export default function ContentDetailPage() {
   if (loading) {
     return (
       <div className="max-w-3xl mx-auto px-4 sm:px-8 py-12 space-y-6">
-        <div className="h-6 w-48 bg-primary-100 rounded-lg animate-pulse" />
+        <div className="h-6 w-48 bg-primary-100 dark:bg-primary-950/20 rounded-lg animate-pulse" />
         <div className="space-y-3">
-          <div className="h-10 w-3/4 bg-primary-100 rounded-lg animate-pulse" />
-          <div className="h-4 w-full bg-primary-100 rounded animate-pulse" />
-          <div className="h-4 w-5/6 bg-primary-100 rounded animate-pulse" />
+          <div className="h-10 w-3/4 bg-primary-100 dark:bg-primary-950/20 rounded-lg animate-pulse" />
+          <div className="h-4 w-full bg-primary-100 dark:bg-primary-950/20 rounded animate-pulse" />
+          <div className="h-4 w-5/6 bg-primary-100 dark:bg-primary-950/20 rounded animate-pulse" />
         </div>
       </div>
     );
@@ -73,20 +73,20 @@ export default function ContentDetailPage() {
           <Badge variant="stone">{content.content_type}</Badge>
         </div>
 
-        <h1 className="text-3xl sm:text-4xl font-serif font-bold text-stone-800 leading-tight mb-5">
+        <h1 className="text-3xl sm:text-4xl font-serif font-bold text-stone-800 dark:text-stone-100 leading-tight mb-5">
           {content.title}
         </h1>
 
         <div className="flex items-center gap-4 text-sm text-stone-500 mb-8 flex-wrap">
           {content.published_at && (
             <span className="flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-stone-400" />
+              <Calendar className="w-4 h-4 text-stone-00 dark:text-stone-500" />
               {new Date(content.published_at).toLocaleDateString()}
             </span>
           )}
           {content.source_url && (
             <span className="flex items-center gap-1.5">
-              <Globe className="w-4 h-4 text-stone-400" />
+              <Globe className="w-4 h-4 text-stone-00 dark:text-stone-500" />
               {new URL(content.source_url).hostname}
             </span>
           )}

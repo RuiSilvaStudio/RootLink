@@ -37,7 +37,7 @@ export default function SubmitPage() {
         {t("submit.back_to_search")}
       </a>
       <div className="flex items-center gap-3 mb-2">
-        <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center">
           <Leaf className="w-5 h-5 text-primary-500" />
         </div>
         <div>

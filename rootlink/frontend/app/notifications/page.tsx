@@ -69,7 +69,7 @@ export default function NotificationsPage() {
                   n.read ? "bg-transparent" : "bg-primary-500"
                 }`} />
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm ${n.read ? "text-stone-600" : "text-stone-800 font-medium"}`}>
+                  <p className={`text-sm ${n.read ? "text-stone-600" : "text-stone-800 dark:text-stone-100 font-medium"}`}>
                     {n.message}
                   </p>
                   <p className="text-xs text-stone-400 mt-1">

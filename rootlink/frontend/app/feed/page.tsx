@@ -24,15 +24,15 @@ const typeIcons: Record<string, any> = {
 };
 
 const typeColors: Record<string, string> = {
-  content: "bg-primary-100 text-primary-600",
+  content: "bg-primary-100 dark:bg-primary-950/20 text-primary-600",
   event: "bg-earth-100 text-earth-600",
   group: "bg-blue-100 text-blue-600",
   course: "bg-green-100 text-green-600",
-  comment: "bg-stone-100 text-stone-600",
+  comment: "bg-stone-100 text-stone-600 dark:text-stone-300",
   rsvp: "bg-amber-100 text-amber-600",
   donation: "bg-rust-100 text-rust-600",
   ticket: "bg-sky-100 text-sky-600",
-  listing: "bg-primary-100 text-primary-600",
+  listing: "bg-primary-100 dark:bg-primary-950/20 text-primary-600",
 };
 
 const typeLabels: Record<string, string> = {
@@ -49,7 +49,7 @@ const typeLabels: Record<string, string> = {
 
 function FeedItem({ item }: { item: any }) {
   const Icon = typeIcons[item.type] || Rss;
-  const colorClass = typeColors[item.type] || "bg-primary-100 text-primary-600";
+  const colorClass = typeColors[item.type] || "bg-primary-100 dark:bg-primary-950/20 text-primary-600";
   const link = item.link || "#";
 
   return (
@@ -62,7 +62,7 @@ function FeedItem({ item }: { item: any }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-stone-700 dark:text-stone-300 text-sm">
-          <span className="font-medium text-stone-800 dark:text-stone-200">{item.actor_name}</span>{" "}
+          <span className="font-medium text-stone-800 dark:text-stone-100 dark:text-stone-200">{item.actor_name}</span>{" "}
           <span className="text-stone-500">{item.action}</span>{" "}
           <span className="font-medium text-primary-700 dark:text-primary-400 group-hover:text-primary-600 transition">{item.target.title}</span>
           {item.type === "donation" && item.amount && (
@@ -70,9 +70,9 @@ function FeedItem({ item }: { item: any }) {
           )}
         </p>
         {item.body_preview && (
-          <p className="text-xs text-stone-400 mt-1 italic line-clamp-1">&quot;{item.body_preview}&quot;</p>
+          <p className="text-xs text-stone-00 dark:text-stone-500 mt-1 italic line-clamp-1">&quot;{item.body_preview}&quot;</p>
         )}
-        <p className="text-xs text-stone-400 mt-1.5">
+        <p className="text-xs text-stone-00 dark:text-stone-500 mt-1.5">
           {item.created_at ? new Date(item.created_at).toLocaleString() : ""}
         </p>
       </div>
@@ -107,11 +107,11 @@ export default function FeedPage() {
       {loading ? (
         <div className="space-y-8">
           <div>
-            <div className="h-5 w-32 bg-primary-100/60 rounded animate-pulse mb-4" />
+            <div className="h-5 w-32 bg-primary-100 dark:bg-primary-950/20/60 rounded animate-pulse mb-4" />
             <ListSkeleton count={3} />
           </div>
           <div>
-            <div className="h-5 w-32 bg-primary-100/60 rounded animate-pulse mb-4" />
+            <div className="h-5 w-32 bg-primary-100 dark:bg-primary-950/20/60 rounded animate-pulse mb-4" />
             <ListSkeleton count={4} />
           </div>
         </div>
@@ -120,16 +120,16 @@ export default function FeedPage() {
           {/* Following section */}
           <section>
             <div className="flex items-center gap-2 mb-4">
-              <h2 className="text-lg font-display font-semibold text-stone-800 dark:text-stone-200">
+              <h2 className="text-lg font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200">
                 {t("feed.following")}
               </h2>
-              <div className="flex-1 h-px bg-primary-100 dark:bg-primary-800/30" />
-              <span className="text-xs text-stone-400">{feed.following.length}</span>
+              <div className="flex-1 h-px bg-primary-100 dark:bg-primary-950/20 dark:bg-primary-800/30" />
+              <span className="text-xs text-stone-00 dark:text-stone-500">{feed.following.length}</span>
             </div>
 
             {feed.following.length === 0 ? (
               <div className="bg-primary-50/40 dark:bg-primary-900/10 rounded-2xl p-6 text-center border border-primary-100/40 dark:border-primary-800/20">
-                <p className="text-sm text-stone-500 dark:text-stone-400 font-serif mb-4">
+                <p className="text-sm text-stone-500 dark:text-stone-00 dark:text-stone-500 font-serif mb-4">
                   {t("feed.following_empty")}
                 </p>
                 <Link
@@ -151,11 +151,11 @@ export default function FeedPage() {
           {/* Discover section */}
           <section>
             <div className="flex items-center gap-2 mb-4">
-              <h2 className="text-lg font-display font-semibold text-stone-800 dark:text-stone-200">
+              <h2 className="text-lg font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200">
                 {t("feed.discover")}
               </h2>
-              <div className="flex-1 h-px bg-primary-100 dark:bg-primary-800/30" />
-              <span className="text-xs text-stone-400">{feed.discover.length}</span>
+              <div className="flex-1 h-px bg-primary-100 dark:bg-primary-950/20 dark:bg-primary-800/30" />
+              <span className="text-xs text-stone-00 dark:text-stone-500">{feed.discover.length}</span>
             </div>
 
             {feed.discover.length === 0 ? (

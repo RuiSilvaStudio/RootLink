@@ -214,7 +214,7 @@ function SearchContent() {
       <div className="mb-6 relative" ref={suggestionsRef}>
       <form onSubmit={handleSubmit}>
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 w-5 h-5" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-600 dark:text-stone-500 w-5 h-5" />
           <input
             ref={inputRef}
             type="text"
@@ -227,20 +227,20 @@ function SearchContent() {
             onFocus={() => { if (suggestions.length > 0 || recentSearches.length > 0) setShowSuggestions(true); }}
             onKeyDown={handleKeyDown}
             placeholder={t("search.placeholder")}
-            className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-primary-200/60 bg-white/80 backdrop-blur-sm text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none transition-all font-serif shadow-sm"
+            className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-primary-200/60 dark:border-stone-700 bg-white/80 dark:bg-stone-900/80 backdrop-blur-sm text-sm text-stone-800 dark:text-stone-100 focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none transition-all font-serif shadow-sm"
           />
         </div>
 
         {/* Autocomplete dropdown */}
         {showSuggestions && (suggestions.length > 0 || recentSearches.length > 0) && (
-          <div className="absolute z-50 top-full mt-1 w-full bg-white border border-primary-100/60 rounded-2xl shadow-lg overflow-hidden">
+          <div className="absolute z-50 top-full mt-1 w-full bg-white dark:bg-stone-900 border border-primary-100/60 dark:border-stone-700 rounded-2xl shadow-lg overflow-hidden">
             {/* Recent searches */}
             {!searched && recentSearches.length > 0 && (
-              <div className="p-3 border-b border-stone-100">
-                <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-2">Recent searches</p>
+              <div className="p-3 border-b border-stone-100 dark:border-stone-800">
+                <p className="text-[10px] text-stone-600 dark:text-stone-400 uppercase tracking-wider mb-2">Recent searches</p>
                 <div className="flex flex-wrap gap-1.5">
                   {recentSearches.slice(0, 5).map((s) => (
-                    <div key={s} className="flex items-center gap-1 px-2.5 py-1 bg-stone-50 rounded-lg text-xs text-stone-600">
+                    <div key={s} className="flex items-center gap-1 px-2.5 py-1 bg-stone-50 dark:bg-stone-800 rounded-lg text-xs text-stone-600 dark:text-stone-300">
                       <button
                         type="button"
                         onClick={() => {
@@ -249,11 +249,11 @@ function SearchContent() {
                           setPage(1);
                           doSearch(s, category, contentType, 1, family);
                         }}
-                        className="hover:text-primary-700 transition"
+                        className="hover:text-primary-700 dark:hover:text-primary-300 transition"
                       >
                         {s}
                       </button>
-                      <button type="button" onClick={() => removeRecentSearch(s)} className="text-stone-400 hover:text-stone-600">
+                      <button type="button" onClick={() => removeRecentSearch(s)} className="text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300">
                         <X className="w-3 h-3" />
                       </button>
                     </div>
@@ -276,10 +276,10 @@ function SearchContent() {
                       doSearch(s.content.title, category, contentType, 1, family);
                     }}
                     className={`w-full px-4 py-2.5 text-left flex items-center gap-3 transition ${
-                      i === selectedSuggestion ? "bg-primary-50" : "hover:bg-stone-50"
+                      i === selectedSuggestion ? "bg-primary-50 dark:bg-primary-900/30" : "hover:bg-stone-50 dark:hover:bg-stone-800"
                     }`}
                   >
-                    <Search className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                    <Search className="w-3.5 h-3.5 text-stone-600 dark:text-stone-500 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-stone-700 line-clamp-1">{s.content.title}</p>
                     </div>
@@ -295,12 +295,12 @@ function SearchContent() {
 
       {/* Filters */}
       <div className="flex gap-2 mb-8 flex-wrap items-center">
-        <Filter className="w-4 h-4 text-stone-400 shrink-0" />
+        <Filter className="w-4 h-4 text-stone-600 dark:text-stone-500 shrink-0" />
         {/* Family filter */}
         <button
           onClick={() => { handleFamilyChange(""); if (query) doSearch(query, "", contentType, 1, ""); }}
           className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
-            !family ? "bg-primary-500 text-white border-primary-500 shadow-sm" : "bg-white text-stone-600 border-primary-100 hover:border-primary-300"
+            !family ? "bg-primary-500 text-white border-primary-500 shadow-sm" : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border-primary-100 dark:border-stone-700 hover:border-primary-300 dark:hover:border-primary-600"
           }`}
         >
           {t("search.all") || "All"}
@@ -313,7 +313,7 @@ function SearchContent() {
               if (query) doSearch(query, "", contentType, 1, fam.value);
             }}
             className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
-              family === fam.value ? "bg-primary-500 text-white border-primary-500 shadow-sm" : "bg-white text-stone-600 border-primary-100 hover:border-primary-300"
+              family === fam.value ? "bg-primary-500 text-white border-primary-500 shadow-sm" : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border-primary-100 dark:border-stone-700 hover:border-primary-300 dark:hover:border-primary-600"
             }`}
           >
             {locale === "pt" ? fam.label_pt : fam.label}
@@ -323,14 +323,14 @@ function SearchContent() {
         {/* Category sub-filter (only when family selected) */}
         {family && familyCategories.length > 0 && (
           <>
-            <div className="w-px h-6 bg-primary-100 mx-1 self-center" />
+            <div className="w-px h-6 bg-primary-100 dark:bg-primary-950/20 mx-1 self-center" />
             <select
               value={category}
               onChange={(e) => {
                 setCategory(e.target.value);
                 if (query) doSearch(query, e.target.value, contentType, 1, family);
               }}
-              className="px-3 py-1.5 text-sm rounded-xl border border-primary-100 bg-white text-stone-600 focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15"
+              className="px-3 py-1.5 text-sm rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15"
             >
               <option value="">{t("search.all_categories") || "All categories"}</option>
               {familyCategories.map((cat) => (
@@ -342,7 +342,7 @@ function SearchContent() {
           </>
         )}
 
-        <div className="w-px h-6 bg-primary-100 mx-1 self-center" />
+        <div className="w-px h-6 bg-primary-100 dark:bg-primary-950/20 mx-1 self-center" />
         {contentTypes.map((ct) => (
           <button
             key={ct.value}
@@ -352,8 +352,8 @@ function SearchContent() {
             }}
             className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
               contentType === ct.value
-                ? "bg-stone-800 text-white border-stone-800 shadow-sm"
-                : "bg-white text-stone-600 border-primary-100 hover:border-stone-300"
+                ? "bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900 border-stone-800 dark:border-stone-200 shadow-sm"
+                : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border-primary-100 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-500"
             }`}
           >
             {ct.label}
@@ -415,7 +415,7 @@ function SearchContent() {
                         className={`w-9 h-9 text-sm rounded-xl border transition-all ${
                           p === page
                             ? "bg-primary-500 text-white border-primary-500 shadow-sm"
-                            : "border-primary-100 text-stone-600 hover:border-primary-300 bg-white"
+                            : "border-primary-100 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:border-primary-300 dark:hover:border-primary-600 bg-white dark:bg-stone-900"
                         }`}
                       >
                         {p}
@@ -448,9 +448,9 @@ function SearchContent() {
                     {popular.map((item: any) => (
                       <a key={item.id} href={item.url || `/content/${item.id}`}
                         target="_blank" rel="noopener noreferrer"
-                        className="rounded-2xl border border-primary-100/40 bg-white p-4 flex items-start gap-3 transition-all hover:shadow-md hover:border-primary-200/60"
+                        className="rounded-2xl border border-primary-100/40 dark:border-stone-700 bg-white dark:bg-stone-900 p-4 flex items-start gap-3 transition-all hover:shadow-md hover:border-primary-200/60 dark:hover:border-primary-700"
                       >
-                        <div className="w-12 h-12 rounded-xl bg-primary-50 shrink-0 flex items-center justify-center overflow-hidden">
+                        <div className="w-12 h-12 rounded-xl bg-primary-50 dark:bg-primary-900/30 shrink-0 flex items-center justify-center overflow-hidden">
                           {item.image_url ? (
                             <img src={item.image_url} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                           ) : (
@@ -458,7 +458,7 @@ function SearchContent() {
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h3 className="font-medium text-sm text-stone-800 line-clamp-2">{item.title}</h3>
+                          <h3 className="font-medium text-sm text-stone-800 dark:text-stone-100 line-clamp-2">{item.title}</h3>
                           <div className="flex gap-1 mt-1">
                             <Badge variant="sage" className="text-[10px]">{item.category}</Badge>
                           </div>
@@ -484,10 +484,10 @@ function SearchContent() {
                           setPage(1);
                           doSearch(s.query, category, contentType, 1, family);
                         }}
-                        className="px-4 py-2 bg-white border border-primary-100 rounded-xl text-sm text-stone-700 hover:border-primary-300 hover:bg-primary-50 transition font-light"
+                        className="px-4 py-2 bg-white dark:bg-stone-900 border border-primary-100 dark:border-stone-700 rounded-xl text-sm text-stone-700 dark:text-stone-200 hover:border-primary-300 dark:hover:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition font-light"
                       >
                         {s.query}
-                        <span className="text-[10px] text-stone-400 ml-2">({s.count})</span>
+                        <span className="text-[10px] text-stone-600 dark:text-stone-500 ml-2">({s.count})</span>
                       </button>
                     ))}
                   </div>
@@ -518,8 +518,8 @@ function SearchContent() {
 
       {/* Submit CTA */}
       <div className="max-w-6xl mx-auto mt-12">
-        <div className="bg-primary-50 border border-primary-100 rounded-2xl p-6 text-center">
-          <p className="text-stone-600 text-sm mb-3 font-medium">
+        <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800 rounded-2xl p-6 text-center">
+          <p className="text-stone-600 dark:text-stone-300 text-sm mb-3 font-medium">
             {t("search.cant_find")}
           </p>
           <a
@@ -536,7 +536,7 @@ function SearchContent() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<div className="p-8"><div className="max-w-6xl mx-auto px-4 sm:px-8"><div className="h-12 bg-primary-100 rounded-2xl animate-pulse" /></div></div>}>
+    <Suspense fallback={<div className="p-8"><div className="max-w-6xl mx-auto px-4 sm:px-8"><div className="h-12 bg-primary-100 dark:bg-primary-950/20 rounded-2xl animate-pulse" /></div></div>}>
       <SearchContent />
     </Suspense>
   );
