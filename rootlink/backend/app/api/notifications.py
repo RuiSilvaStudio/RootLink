@@ -1,11 +1,13 @@
 import asyncio
 import json
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
+from jose import JWTError, jwt
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.database import async_session_factory, get_db
 from app.core.security import get_current_user
 from app.models.notification import Notification
@@ -59,8 +61,23 @@ async def _unread_count_for_user(user_id: int) -> int:
 
 @router.get("/stream")
 async def notification_stream(
-    current_user: User = Depends(get_current_user),
+    token: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
 ):
+    current_user = None
+    if token:
+        try:
+            payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+            user_id: str | None = payload.get("sub")
+            if user_id is not None:
+                result = await db.execute(select(User).where(User.id == int(user_id)))
+                current_user = result.scalar_one_or_none()
+        except JWTError:
+            pass
+    if current_user is None:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=401, detail="Could not validate credentials")
+
     async def event_generator():
         q = sse_manager.subscribe(current_user.id)
         try:

@@ -22,7 +22,7 @@ logger = logging.getLogger("app.marketplace")
 
 router = APIRouter(prefix="/api/marketplace", tags=["marketplace"])
 
-FRONTEND_URL = "http://localhost:3000"
+FRONTEND_URL = "http://localhost:3001"
 
 
 def _listing_to_response(listing: Listing, seller_name: str | None = None, seller_verified: bool = False) -> ListingResponse:

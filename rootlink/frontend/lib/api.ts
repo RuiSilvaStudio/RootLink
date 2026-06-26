@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
 
 async function request<T>(
   path: string,
@@ -704,7 +704,7 @@ export const api = {
       if (opts?.license) formData.append("license", opts.license);
       if (opts?.attribution_text) formData.append("attribution_text", opts.attribution_text);
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
       const res = await fetch(`${API_URL}/api/images/upload`, {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -726,11 +726,11 @@ export const api = {
     delete: (id: number) =>
       request<void>(`/api/images/${id}`, { method: "DELETE" }),
     serveUrl: (id: number, size: "original" | "large" | "medium" | "thumb") => {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
       return `${API_URL}/api/images/${id}/serve/${size}`;
     },
     serveByHash: (hash: string, size: "original" | "large" | "medium" | "thumb") => {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
       return `${API_URL}/api/images/by-hash/${hash}/${size}`;
     },
   },
