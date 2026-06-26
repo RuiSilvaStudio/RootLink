@@ -24,6 +24,16 @@ class ContentResponse(BaseModel):
     verification_status: str = "unreviewed"
     validated_by: int | None = None
     cross_referenced_sources: list[int] | None = None
+    slug: str | None = None
+    status: str = "draft"
+    edited_at: datetime | None = None
+    canonical_url: str | None = None
+    feed_source_id: int | None = None
+    rating_up: int = 0
+    rating_down: int = 0
+    view_count: int = 0
+    comment_count: int = 0
+    bookmark_count: int = 0
 
     model_config = {"from_attributes": True}
 

@@ -8,8 +8,10 @@ from app.models.event import Event
 from app.models.group import Group
 from app.models.learning import Course, Lesson
 from app.models.plant import Plant
+from app.models.points import PointBalance
 from app.schemas.content import SearchContentResponse, SearchResponse, SearchResult
 from app.services.embeddings import embed_text
+from app.services.ranking import compute_rank
 
 
 def cosine_similarity(a: list[float], b: list[float]) -> float:
@@ -40,6 +42,18 @@ def _normalize_category(cat, enum_cls=None) -> str:
     return str(cat)
 
 
+async def _get_boosted_user_ids(db: AsyncSession, user_ids: set[int]) -> set[int]:
+    if not user_ids:
+        return set()
+    result = await db.execute(
+        select(PointBalance.user_id).where(
+            PointBalance.user_id.in_(user_ids),
+            PointBalance.balance > 0,
+        )
+    )
+    return {r[0] for r in result.all()}
+
+
 async def hybrid_search(
     db: AsyncSession,
     query: str,
@@ -61,13 +75,31 @@ async def hybrid_search(
         if family:
             stmt = stmt.where(Content.family == family)
         result = await db.execute(stmt)
-        for c in result.scalars().all():
+        articles = result.scalars().all()
+
+        creator_ids = {c.created_by for c in articles if c.created_by}
+        boosted_ids = await _get_boosted_user_ids(db, creator_ids)
+
+        for c in articles:
             semantic_score = 0.0
             if c.embedding:
                 semantic_score = cosine_similarity(query_embedding, c.embedding)
             kw = keyword_score(query, c.title, c.full_text)
-            combined = semantic_score * 0.5 + kw * 0.5
-            scored.append((combined, {
+            relevance = semantic_score * 0.5 + kw * 0.5
+
+            is_boosted = c.created_by in boosted_ids
+            rank = compute_rank(
+                relevance=relevance,
+                rating_up=c.rating_up or 0,
+                rating_down=c.rating_down or 0,
+                published_at=c.published_at or c.crawled_at,
+                comments=c.comment_count or 0,
+                bookmarks=c.bookmark_count or 0,
+                views=c.view_count or 0,
+                is_boosted=is_boosted,
+            )
+
+            scored.append((rank, {
                 "id": c.id,
                 "title": c.title,
                 "url": c.url,

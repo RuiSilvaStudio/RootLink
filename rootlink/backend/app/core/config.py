@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     stripe_publishable_key: str = ""
     stripe_webhook_secret: str = ""
 
+    # Liberapay
+    liberapay_webhook_secret: str = ""
+
     # Marketplace
     marketplace_fee_percent: float = 0.0  # Platform fee per transaction (0 = free for now)
 

@@ -734,4 +734,70 @@ export const api = {
       return `${API_URL}/api/images/by-hash/${hash}/${size}`;
     },
   },
+
+  articles: {
+    create: (data: { title: string; summary?: string; body?: any; category?: string; family?: string; image_url?: string }) =>
+      request<any>("/api/articles/", { method: "POST", body: JSON.stringify(data) }),
+    get: (slug: string) => request<any>(`/api/articles/${slug}`),
+    update: (id: number, data: { title?: string; summary?: string; body?: any; category?: string; family?: string; image_url?: string }) =>
+      request<any>(`/api/articles/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    publish: (id: number) => request<any>(`/api/articles/${id}/publish`, { method: "POST" }),
+    delete: (id: number) => request<void>(`/api/articles/${id}`, { method: "DELETE" }),
+    my: (opts?: { status?: string; limit?: number; offset?: number }) => {
+      const params = new URLSearchParams();
+      if (opts?.status) params.set("status", opts.status);
+      if (opts?.limit) params.set("limit", String(opts.limit));
+      if (opts?.offset) params.set("offset", String(opts.offset));
+      const qs = params.toString();
+      return request<any[]>(`/api/articles/my${qs ? `?${qs}` : ""}`);
+    },
+    feed: (opts?: { category?: string; family?: string; limit?: number; offset?: number }) => {
+      const params = new URLSearchParams();
+      if (opts?.category) params.set("category", opts.category);
+      if (opts?.family) params.set("family", opts.family);
+      if (opts?.limit) params.set("limit", String(opts.limit));
+      if (opts?.offset) params.set("offset", String(opts.offset));
+      const qs = params.toString();
+      return request<{ articles: any[]; total: number; boosted_count: number }>(`/api/articles/feed${qs ? `?${qs}` : ""}`);
+    },
+    rankingTransparency: () => request<any>("/api/articles/ranking/transparency"),
+  },
+
+  ratings: {
+    rate: (contentId: number, data: { reaction: string; tags?: string[] }) =>
+      request<any>(`/api/content/${contentId}/rate`, { method: "POST", body: JSON.stringify(data) }),
+    remove: (contentId: number) =>
+      request<void>(`/api/content/${contentId}/rate`, { method: "DELETE" }),
+    get: (contentId: number) =>
+      request<{ content_id: number; up_count: number; down_count: number; top_tags: { tag: string; count: number }[]; user_reaction: string | null }>(`/api/content/${contentId}/ratings`),
+  },
+
+  points: {
+    balance: () => request<{ balance: number; total_donated: number; boost_active: boolean; boost_expires_at: string | null }>(`/api/points/balance`),
+    transactions: (opts?: { limit?: number; offset?: number }) => {
+      const params = new URLSearchParams();
+      if (opts?.limit) params.set("limit", String(opts.limit));
+      if (opts?.offset) params.set("offset", String(opts.offset));
+      const qs = params.toString();
+      return request<any[]>(`/api/points/transactions${qs ? `?${qs}` : ""}`);
+    },
+    donate: (data: { amount_euros: number; tier_name?: string }) =>
+      request<{ checkout_url: string; session_id: string }>("/api/points/donate", { method: "POST", body: JSON.stringify(data) }),
+    leaderboard: (limit?: number) => {
+      const params = limit ? `?limit=${limit}` : "";
+      return request<{ user_id: number; name: string; avatar_url: string | null; total_donated: number }[]>(`/api/points/leaderboard${params}`);
+    },
+    tiers: () => request<any>("/api/points/tiers"),
+  },
+
+  feeds: {
+    connect: (data: { feed_url: string; site_url?: string; auto_sync?: boolean }) =>
+      request<any>("/api/feeds/connect", { method: "POST", body: JSON.stringify(data) }),
+    verify: (feedId: number) =>
+      request<any>(`/api/feeds/${feedId}/verify`, { method: "POST" }),
+    list: () => request<any[]>("/api/feeds/"),
+    status: (feedId: number) => request<any>(`/api/feeds/${feedId}/status`),
+    refresh: (feedId: number) => request<{ new_items: number; total_parsed: number }>(`/api/feeds/${feedId}/refresh`, { method: "POST" }),
+    disconnect: (feedId: number) => request<void>(`/api/feeds/${feedId}`, { method: "DELETE" }),
+  },
 };

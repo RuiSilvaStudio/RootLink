@@ -27,7 +27,16 @@
     "grow": "Grow",
     "exchange": "Exchange",
     "plants": "Plants",
-    "home": "Home"
+    "home": "Home",
+    "my_articles": "My Articles",
+    "new_article": "New Article",
+    "articles": "Articles",
+    "feed": "Feed",
+    "messages": "Messages",
+    "donate": "Donate",
+    "leaderboard": "Leaderboard",
+    "ranking": "Ranking",
+    "settings": "Settings"
   },
   "home": {
     "hero_title": "Find what feeds your land",

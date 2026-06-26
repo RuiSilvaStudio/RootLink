@@ -8,6 +8,7 @@ from app.models.content import Bookmark, Content, SearchQueryLog
 from app.models.event import Event
 from app.models.group import Group
 from app.models.learning import Course
+from app.models.points import PointBalance
 from app.models.user import User
 from app.schemas.content import (
     BookmarkCreate,
@@ -18,6 +19,7 @@ from app.schemas.content import (
 )
 from app.services.cross_reference import auto_cross_reference
 from app.services.embeddings import embed_text
+from app.services.ranking import compute_rank
 from app.services.search import hybrid_search
 
 router = APIRouter(prefix="/api/content", tags=["content"])
@@ -40,15 +42,46 @@ async def search(
     return result
 
 
+async def _get_boosted_user_ids(db: AsyncSession, user_ids: set[int]) -> set[int]:
+    if not user_ids:
+        return set()
+    result = await db.execute(
+        select(PointBalance.user_id).where(
+            PointBalance.user_id.in_(user_ids),
+            PointBalance.balance > 0,
+        )
+    )
+    return {r[0] for r in result.all()}
+
+
 @router.get("/recent", response_model=list[ContentResponse])
 async def recent(
     limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(Content).order_by(Content.crawled_at.desc()).limit(limit)
-    )
-    return result.scalars().all()
+    result = await db.execute(select(Content))
+    items = result.scalars().all()
+
+    creator_ids = {c.created_by for c in items if c.created_by}
+    boosted_ids = await _get_boosted_user_ids(db, creator_ids)
+
+    scored = []
+    for c in items:
+        is_boosted = c.created_by in boosted_ids
+        rank = compute_rank(
+            relevance=1.0,
+            rating_up=c.rating_up or 0,
+            rating_down=c.rating_down or 0,
+            published_at=c.published_at or c.crawled_at,
+            comments=c.comment_count or 0,
+            bookmarks=c.bookmark_count or 0,
+            views=c.view_count or 0,
+            is_boosted=is_boosted,
+        )
+        scored.append((rank, c))
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [c for _, c in scored[:limit]]
 
 
 @router.get("/popular", response_model=list[ContentResponse])
@@ -57,12 +90,32 @@ async def popular(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(Content)
-        .where(Content.verification_status.in_(["community_reviewed", "cross_referenced"]))
-        .order_by(Content.published_at.desc(), Content.crawled_at.desc())
-        .limit(limit)
+        select(Content).where(
+            Content.verification_status.in_(["community_reviewed", "cross_referenced"])
+        )
     )
-    return result.scalars().all()
+    items = result.scalars().all()
+
+    creator_ids = {c.created_by for c in items if c.created_by}
+    boosted_ids = await _get_boosted_user_ids(db, creator_ids)
+
+    scored = []
+    for c in items:
+        is_boosted = c.created_by in boosted_ids
+        rank = compute_rank(
+            relevance=1.0,
+            rating_up=c.rating_up or 0,
+            rating_down=c.rating_down or 0,
+            published_at=c.published_at or c.crawled_at,
+            comments=c.comment_count or 0,
+            bookmarks=c.bookmark_count or 0,
+            views=c.view_count or 0,
+            is_boosted=is_boosted,
+        )
+        scored.append((rank, c))
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [c for _, c in scored[:limit]]
 
 
 @router.get("/by-category/{category}", response_model=list[ContentResponse])

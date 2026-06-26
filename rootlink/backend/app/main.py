@@ -8,6 +8,7 @@ from sqlalchemy import text
 
 from app.api import (
     admin,
+    articles,
     auth,
     checklist,
     comments,
@@ -16,6 +17,7 @@ from app.api import (
     events,
     external,
     farmers_guide,
+    feeds,
     groups,
     images,
     learning,
@@ -24,6 +26,8 @@ from app.api import (
     notifications,
     payments,
     plants,
+    points,
+    ratings,
     social,
     taxonomy,
     users,
@@ -306,6 +310,10 @@ app.include_router(taxonomy.router)
 app.include_router(marketplace.router)
 app.include_router(payments.router)
 app.include_router(waste.router)
+app.include_router(articles.router)
+app.include_router(ratings.router)
+app.include_router(points.router)
+app.include_router(feeds.router)
 
 # Serve uploaded media files
 media_path = Path(settings.media_dir)

@@ -51,6 +51,11 @@ class UserResponse(BaseModel):
     modality: str | None = None
     is_verified: bool = False
     verified_at: datetime | None = None
+    feed_url: str | None = None
+    feed_verified: bool = False
+    feed_priority: int = 3
+    boost_active: bool = False
+    boost_expires_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -70,3 +75,4 @@ class UserUpdate(BaseModel):
     service_area: str | None = None
     certifications: list[str] | None = None
     modality: str | None = None
+    feed_url: str | None = None

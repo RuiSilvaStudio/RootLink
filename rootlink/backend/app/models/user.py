@@ -1,6 +1,7 @@
 import enum
+from datetime import datetime
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Float, Integer, String, Text
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -61,3 +62,12 @@ class User(TimestampMixin, Base):
     modality: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     verified_at: Mapped[str | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    feed_url: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    feed_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    feed_verification_token: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    feed_last_crawled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    feed_priority: Mapped[int] = mapped_column(Integer, default=3)
+
+    boost_active: Mapped[bool] = mapped_column(Boolean, default=False)
+    boost_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

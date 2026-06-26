@@ -11,6 +11,7 @@ import {
   Wrench,
   ShoppingBag,
   MessageCircle,
+  FileText,
   type LucideIcon,
 } from "lucide-react";
 
@@ -64,4 +65,9 @@ export const mobileBottomTabs: NavItem[] = [
   { href: "/marketplace", labelKey: "nav.exchange", icon: ShoppingBag },
   { href: "/learning", labelKey: "nav.grow", icon: BookOpen },
   { href: "/profile", labelKey: "nav.profile", icon: MessageCircle },
+];
+
+export const articleNavItems: NavItem[] = [
+  { href: "/articles/my", labelKey: "nav.my_articles", icon: FileText, authRequired: true },
+  { href: "/articles/new", labelKey: "nav.new_article", icon: FileText, authRequired: true },
 ];

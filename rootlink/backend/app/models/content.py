@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, ForeignKey, String, Text
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -35,6 +35,12 @@ class VerificationStatus(enum.StrEnum):
     community_reviewed = "community_reviewed"
 
 
+class ContentStatus(enum.StrEnum):
+    draft = "draft"
+    published = "published"
+    archived = "archived"
+
+
 class Content(TimestampMixin, Base):
     __tablename__ = "content"
 
@@ -56,6 +62,19 @@ class Content(TimestampMixin, Base):
     verification_status: Mapped[str] = mapped_column(String(50), default="unreviewed")
     validated_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     cross_referenced_sources: Mapped[list[int] | None] = mapped_column(JSON, nullable=True)
+
+    slug: Mapped[str | None] = mapped_column(String(500), unique=True, nullable=True)
+    body: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="draft")
+    edited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    canonical_url: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    feed_source_id: Mapped[int | None] = mapped_column(ForeignKey("feed_sources.id"), nullable=True)
+
+    rating_up: Mapped[int] = mapped_column(Integer, default=0)
+    rating_down: Mapped[int] = mapped_column(Integer, default=0)
+    view_count: Mapped[int] = mapped_column(Integer, default=0)
+    comment_count: Mapped[int] = mapped_column(Integer, default=0)
+    bookmark_count: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class Bookmark(TimestampMixin, Base):

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Bell, Rss, Search, Leaf, Moon, Sun, Menu, X } from "lucide-react";
+import { Bell, Rss, Search, Leaf, Moon, Sun, Menu, X, FileText, Heart } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -225,6 +225,12 @@ export function NavBar() {
           )}
           {token && (
             <>
+              <Link href="/articles/my" className="p-1.5 text-stone-400 dark:text-stone-300 hover:text-primary-600 dark:hover:text-primary-400 transition" aria-label={t("nav.my_articles")}>
+                <FileText className="w-3.5 h-3.5" />
+              </Link>
+              <Link href="/donate" className="p-1.5 text-stone-400 dark:text-stone-300 hover:text-primary-600 dark:hover:text-primary-400 transition" aria-label={t("nav.donate")}>
+                <Heart className="w-3.5 h-3.5" />
+              </Link>
               <Link href="/feed" className="p-1.5 text-stone-400 dark:text-stone-300 hover:text-primary-600 dark:hover:text-primary-400 transition" aria-label={t("nav.feed")}>
                 <Rss className="w-3.5 h-3.5" />
               </Link>
@@ -397,6 +403,15 @@ export function NavBar() {
           <hr className="border-primary-200/30 dark:border-primary-800/30" />
           {token ? (
             <div className="space-y-0.5">
+              <Link href="/articles/my" onClick={closeMobile} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-stone-600 dark:text-stone-200 hover:bg-primary-50/40 dark:hover:bg-primary-900/20 transition font-serif">
+                <FileText className="w-4 h-4 text-stone-400 dark:text-stone-400" />{t("nav.my_articles")}
+              </Link>
+              <Link href="/articles/new" onClick={closeMobile} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-stone-600 dark:text-stone-200 hover:bg-primary-50/40 dark:hover:bg-primary-900/20 transition font-serif">
+                <FileText className="w-4 h-4 text-stone-400 dark:text-stone-400" />{t("nav.new_article")}
+              </Link>
+              <Link href="/donate" onClick={closeMobile} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-stone-600 dark:text-stone-200 hover:bg-primary-50/40 dark:hover:bg-primary-900/20 transition font-serif">
+                <Heart className="w-4 h-4 text-stone-400 dark:text-stone-400" />{t("nav.donate")}
+              </Link>
               <Link href="/feed" onClick={closeMobile} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-stone-600 dark:text-stone-200 hover:bg-primary-50/40 dark:hover:bg-primary-900/20 transition font-serif">
                 <Rss className="w-4 h-4 text-stone-400 dark:text-stone-400" />{t("nav.feed")}
               </Link>

@@ -27,7 +27,16 @@
     "grow": "Crescer",
     "exchange": "Trocar",
     "plants": "Plantas",
-    "home": "Início"
+    "home": "Início",
+    "my_articles": "Os Meus Artigos",
+    "new_article": "Novo Artigo",
+    "articles": "Artigos",
+    "feed": "Feed",
+    "messages": "Mensagens",
+    "donate": "Doar",
+    "leaderboard": "Classificação",
+    "ranking": "Classificação",
+    "settings": "Definições"
   },
   "home": {
     "hero_title": "Encontre o que alimenta a sua terra",
