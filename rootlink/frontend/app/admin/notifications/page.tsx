@@ -31,7 +31,7 @@ export default function AdminBroadcast() {
     <div>
       <div className="mb-6">
         <Badge variant="sage" className="mb-3">{t("admin.broadcast")}</Badge>
-        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 leading-[1.08]">
+        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.08]">
           {t("admin.broadcast_title")}
         </h1>
         <p className="text-stone-500 text-sm mt-2 font-serif max-w-lg">

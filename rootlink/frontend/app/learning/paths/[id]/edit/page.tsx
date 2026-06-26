@@ -44,7 +44,7 @@ export default function EditPathPage() {
       <button onClick={() => router.back()} className="flex items-center gap-1 text-sm text-stone-500 hover:text-primary-700 mb-6">
         <ArrowLeft className="w-4 h-4" /> {t("common.back")}
       </button>
-      <h1 className="text-2xl font-bold text-stone-800 font-serif mb-6">{t("learning.edit_path")}</h1>
+      <h1 className="text-2xl font-bold text-stone-800 dark:text-stone-100 font-serif mb-6">{t("learning.edit_path")}</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-stone-700 mb-1">{t("learning.title_asterisk")}</label>

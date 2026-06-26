@@ -35,7 +35,7 @@ export default function AdminGroups() {
     <div>
       <div className="mb-6">
         <Badge variant="sage" className="mb-3">{t("admin.groups")}</Badge>
-        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 leading-[1.08]">
+        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.08]">
           {t("admin.group_management")}
         </h1>
       </div>
@@ -75,12 +75,12 @@ export default function AdminGroups() {
                       {g.image_url ? (
                         <img src={g.image_url} alt="" loading="lazy" className="w-8 h-8 rounded-lg object-cover shrink-0" />
                       ) : (
-                        <div className="w-8 h-8 rounded-lg bg-primary-100/60 text-primary-600 flex items-center justify-center shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-950/20/60 text-primary-600 flex items-center justify-center shrink-0">
                           <span className="text-sm">🏠</span>
                         </div>
                       )}
                       <div className="min-w-0">
-                        <p className="font-medium text-stone-800 font-serif truncate">{g.name}</p>
+                        <p className="font-medium text-stone-800 dark:text-stone-100 font-serif truncate">{g.name}</p>
                         <p className="text-xs text-stone-400 font-serif sm:hidden">{g.slug}</p>
                       </div>
                     </div>

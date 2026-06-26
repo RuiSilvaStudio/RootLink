@@ -64,27 +64,27 @@ export default function EditCoursePage() {
       <button onClick={() => router.back()} className="flex items-center gap-1 text-sm text-stone-500 hover:text-primary-700 mb-6">
         <ArrowLeft className="w-4 h-4" /> {t("common.back")}
       </button>
-      <h1 className="text-2xl font-bold text-stone-800 font-serif mb-6">{t("learning.edit_course")}</h1>
+      <h1 className="text-2xl font-bold text-stone-800 dark:text-stone-100 font-serif mb-6">{t("learning.edit_course")}</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1">{t("learning.title_required")}</label>
-          <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("learning.title_required")}</label>
+          <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 rounded-lg px-3 py-2 text-sm" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1">{t("learning.description")}</label>
-          <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={4} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm resize-none" />
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("learning.description")}</label>
+          <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={4} className="w-full border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 rounded-lg px-3 py-2 text-sm resize-none" />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t("learning.category")}</label>
-            <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm">
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("learning.category")}</label>
+            <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="w-full border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 rounded-lg px-3 py-2 text-sm">
               <option value="">{t("learning.select")}</option>
               {CATEGORIES.map((c) => <option key={c} value={c}>{t("learning.category_" + c)}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t("learning.difficulty_label")}</label>
-            <select value={form.difficulty} onChange={(e) => setForm({ ...form, difficulty: e.target.value })} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm">
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("learning.difficulty_label")}</label>
+            <select value={form.difficulty} onChange={(e) => setForm({ ...form, difficulty: e.target.value })} className="w-full border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 rounded-lg px-3 py-2 text-sm">
               <option value="">{t("learning.select")}</option>
               {DIFFICULTIES.map((d) => <option key={d} value={d}>{t("learning.option_" + d)}</option>)}
             </select>
@@ -92,16 +92,16 @@ export default function EditCoursePage() {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t("learning.estimated_hours")}</label>
-            <input type="number" min={0} value={form.estimated_hours} onChange={(e) => setForm({ ...form, estimated_hours: parseInt(e.target.value) || 0 })} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("learning.estimated_hours")}</label>
+            <input type="number" min={0} value={form.estimated_hours} onChange={(e) => setForm({ ...form, estimated_hours: parseInt(e.target.value) || 0 })} className="w-full border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 rounded-lg px-3 py-2 text-sm" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t("learning.image_url")}</label>
-            <input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("learning.image_url")}</label>
+            <input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} className="w-full border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 rounded-lg px-3 py-2 text-sm" />
           </div>
         </div>
-        <label className="flex items-center gap-2 text-sm text-stone-700">
-          <input type="checkbox" checked={form.published} onChange={(e) => setForm({ ...form, published: e.target.checked })} className="rounded" />
+        <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
+          <input type="checkbox" checked={form.published} onChange={(e) => setForm({ ...form, published: e.target.checked })} className="rounded border-stone-300 dark:border-stone-700" />
           {t("learning.published_checkbox")}
         </label>
         <button type="submit" disabled={saving} className="bg-primary-600 text-white px-6 py-2.5 rounded-lg hover:bg-primary-700 transition text-sm font-medium disabled:opacity-50">

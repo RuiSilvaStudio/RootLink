@@ -110,7 +110,7 @@ export default function CourseDetailPage() {
   };
 
   if (loading) return <div className="text-center py-20 text-stone-500">{t("common.loading")}</div>;
-  if (!course) return <div className="text-center py-20 text-stone-400">{t("learning.course_not_found")}</div>;
+  if (!course) return <div className="text-center py-20 text-stone-500 dark:text-stone-400">{t("learning.course_not_found")}</div>;
 
   const lessonProgress = enrollment?.lesson_progress || [];
   const doneCount = lessonProgress.filter((p: any) => p.completed).length;
@@ -130,45 +130,45 @@ export default function CourseDetailPage() {
         <div className="lg:col-span-2">
           {course.image_url && <img src={course.image_url} alt="" loading="lazy" className="w-full h-48 object-cover rounded-xl mb-6" />}
           <div className="flex items-start justify-between gap-4">
-            <h1 className="text-3xl font-bold text-stone-800 font-serif">{course.title}</h1>
+            <h1 className="text-3xl font-bold text-stone-800 dark:text-stone-100 font-serif">{course.title}</h1>
             {canEdit && (
-              <Link href={`/learning/courses/${course.id}/edit`} className="flex items-center gap-1 text-sm bg-stone-100 text-stone-600 px-3 py-1.5 rounded-lg hover:bg-stone-200 shrink-0">
+              <Link href={`/learning/courses/${course.id}/edit`} className="flex items-center gap-1 text-sm bg-stone-100 text-stone-600 dark:text-stone-300 px-3 py-1.5 rounded-lg hover:bg-stone-200 shrink-0">
                 <Edit className="w-4 h-4" /> {t("learning.edit")}
               </Link>
             )}
           </div>
           <div className="flex flex-wrap gap-2 mt-2 text-sm">
-            {course.category && <span className="bg-primary-100 text-primary-700 px-2 py-0.5 rounded">{t("learning.category_" + course.category)}</span>}
-            {course.difficulty && <span className="bg-stone-100 text-stone-600 px-2 py-0.5 rounded">{t("learning.option_" + course.difficulty)}</span>}
+            {course.category && <span className="bg-primary-100 dark:bg-primary-950/20 text-primary-700 px-2 py-0.5 rounded">{t("learning.category_" + course.category)}</span>}
+            {course.difficulty && <span className="bg-stone-100 text-stone-600 dark:text-stone-300 px-2 py-0.5 rounded">{t("learning.option_" + course.difficulty)}</span>}
             {course.estimated_hours && <span className="flex items-center gap-1 text-stone-500"><Clock className="w-4 h-4" />{t("learning.hours", { hours: course.estimated_hours })}</span>}
             <span className="flex items-center gap-1 text-stone-500"><BookOpen className="w-4 h-4" />{t("learning.lessons_count", { count: totalLessons })}</span>
-            <span className={`px-2 py-0.5 rounded ${course.published ? "bg-green-100 text-green-700" : "bg-stone-100 text-stone-400"}`}>
+            <span className={`px-2 py-0.5 rounded ${course.published ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300" : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300"}`}>
               {course.published ? t("learning.published") : t("learning.draft")}
             </span>
           </div>
-          <p className="mt-4 text-stone-700 whitespace-pre-wrap">{course.description}</p>
+          <p className="mt-4 text-stone-700 dark:text-stone-300 whitespace-pre-wrap">{course.description}</p>
         </div>
 
         <div>
           {!user && (
-            <div className="bg-white p-5 rounded-xl border border-stone-200 mb-4">
-              <p className="text-sm text-stone-500 text-center">
-                <a href="/auth/login" className="text-primary-600 hover:underline font-medium">{t("learning.sign_in_to_enroll")}</a>
+            <div className="bg-white dark:bg-stone-900 p-5 rounded-xl border border-stone-200 dark:border-stone-700 mb-4">
+              <p className="text-sm text-stone-500 dark:text-stone-400 text-center">
+                <a href="/auth/login" className="text-primary-600 dark:text-primary-400 hover:underline font-medium">{t("learning.sign_in_to_enroll")}</a>
               </p>
             </div>
           )}
           {enrollment && (
-            <div className="bg-white p-5 rounded-xl border border-stone-200 mb-4">
-              <h3 className="font-semibold text-stone-700 mb-2">{t("learning.your_progress")}</h3>
-              <div className="flex justify-between text-sm text-stone-500 mb-1">
+            <div className="bg-white dark:bg-stone-900 p-5 rounded-xl border border-stone-200 dark:border-stone-700 mb-4">
+              <h3 className="font-semibold text-stone-700 dark:text-stone-300 mb-2">{t("learning.your_progress")}</h3>
+              <div className="flex justify-between text-sm text-stone-500 dark:text-stone-400 mb-1">
                 <span>{t("learning.lessons_progress", { done: doneCount, total: totalLessons })}</span>
                 <span>{t("learning.percent", { pct: progressPct })}</span>
               </div>
-              <div className="w-full bg-stone-200 rounded-full h-2.5">
+              <div className="w-full bg-stone-200 dark:bg-stone-700 rounded-full h-2.5">
                 <div className="bg-primary-600 h-2.5 rounded-full" style={{ width: `${progressPct}%` }} />
               </div>
               {enrollment.completed && (
-                <p className="flex items-center gap-1 text-sm text-green-600 mt-2"><CheckCircle className="w-4 h-4" /> {t("learning.completed_bang")}</p>
+                <p className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400 mt-2"><CheckCircle className="w-4 h-4" /> {t("learning.completed_bang")}</p>
               )}
             </div>
           )}
@@ -188,7 +188,7 @@ export default function CourseDetailPage() {
 
       <div className="mt-10">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-stone-800 font-serif">{t("learning.lessons")}</h2>
+          <h2 className="text-xl font-bold text-stone-800 dark:text-stone-100 font-serif">{t("learning.lessons")}</h2>
           {canEdit && (
             <button onClick={() => { setShowNewLesson(!showNewLesson); setEditLessonId(null); resetLessonForm(); }} className="flex items-center gap-1 text-sm bg-primary-600 text-white px-3 py-1.5 rounded-lg hover:bg-primary-700">
               <Plus className="w-4 h-4" /> {t("learning.add_lesson")}
@@ -197,13 +197,13 @@ export default function CourseDetailPage() {
         </div>
 
         {showNewLesson && (
-          <form onSubmit={handleCreateLesson} className="bg-primary-50 rounded-xl p-4 mb-4 border border-primary-200 space-y-3">
-            <h3 className="font-semibold text-sm text-primary-800">{t("learning.new_lesson")}</h3>
-            <input required placeholder={t("learning.lesson_title_placeholder")} value={lessonForm.title} onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })} className="w-full border border-primary-300 rounded-lg px-3 py-2 text-sm" />
-            <textarea placeholder={t("learning.lesson_content_placeholder")} value={lessonForm.body} onChange={(e) => setLessonForm({ ...lessonForm, body: e.target.value })} rows={3} className="w-full border border-primary-300 rounded-lg px-3 py-2 text-sm resize-none" />
+          <form onSubmit={handleCreateLesson} className="bg-primary-50 dark:bg-primary-900/20 rounded-xl p-4 mb-4 border border-primary-200 dark:border-primary-800 space-y-3">
+            <h3 className="font-semibold text-sm text-primary-800 dark:text-primary-300">{t("learning.new_lesson")}</h3>
+            <input required placeholder={t("learning.lesson_title_placeholder")} value={lessonForm.title} onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })} className="w-full border border-primary-300 dark:border-primary-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 rounded-lg px-3 py-2 text-sm" />
+            <textarea placeholder={t("learning.lesson_content_placeholder")} value={lessonForm.body} onChange={(e) => setLessonForm({ ...lessonForm, body: e.target.value })} rows={3} className="w-full border border-primary-300 dark:border-primary-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 rounded-lg px-3 py-2 text-sm resize-none" />
             <div className="flex gap-3">
-              <input placeholder={t("learning.video_url_placeholder")} value={lessonForm.video_url} onChange={(e) => setLessonForm({ ...lessonForm, video_url: e.target.value })} className="flex-1 border border-primary-300 rounded-lg px-3 py-2 text-sm" />
-              <input type="number" placeholder={t("learning.order_placeholder")} value={lessonForm.order} onChange={(e) => setLessonForm({ ...lessonForm, order: parseInt(e.target.value) || 1 })} className="w-20 border border-primary-300 rounded-lg px-3 py-2 text-sm" />
+              <input placeholder={t("learning.video_url_placeholder")} value={lessonForm.video_url} onChange={(e) => setLessonForm({ ...lessonForm, video_url: e.target.value })} className="flex-1 border border-primary-300 dark:border-primary-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 rounded-lg px-3 py-2 text-sm" />
+              <input type="number" placeholder={t("learning.order_placeholder")} value={lessonForm.order} onChange={(e) => setLessonForm({ ...lessonForm, order: parseInt(e.target.value) || 1 })} className="w-20 border border-primary-300 dark:border-primary-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 rounded-lg px-3 py-2 text-sm" />
             </div>
             <div className="flex gap-2">
               <button type="submit" disabled={savingLesson} className="bg-primary-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-primary-700 disabled:opacity-50">{savingLesson ? t("common.saving") : t("common.create")}</button>
@@ -213,13 +213,13 @@ export default function CourseDetailPage() {
         )}
 
         {editLessonId !== null && (
-          <form onSubmit={handleEditLesson} className="bg-amber-50 rounded-xl p-4 mb-4 border border-amber-200 space-y-3">
-            <h3 className="font-semibold text-sm text-amber-800">{t("learning.edit_lesson")}</h3>
-            <input required placeholder={t("learning.lesson_title_placeholder")} value={lessonForm.title} onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })} className="w-full border border-amber-300 rounded-lg px-3 py-2 text-sm" />
-            <textarea placeholder={t("learning.lesson_content_edit_placeholder")} value={lessonForm.body} onChange={(e) => setLessonForm({ ...lessonForm, body: e.target.value })} rows={3} className="w-full border border-amber-300 rounded-lg px-3 py-2 text-sm resize-none" />
+          <form onSubmit={handleEditLesson} className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 mb-4 border border-amber-200 dark:border-amber-800 space-y-3">
+            <h3 className="font-semibold text-sm text-amber-800 dark:text-amber-300">{t("learning.edit_lesson")}</h3>
+            <input required placeholder={t("learning.lesson_title_placeholder")} value={lessonForm.title} onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })} className="w-full border border-amber-300 dark:border-amber-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 rounded-lg px-3 py-2 text-sm" />
+            <textarea placeholder={t("learning.lesson_content_edit_placeholder")} value={lessonForm.body} onChange={(e) => setLessonForm({ ...lessonForm, body: e.target.value })} rows={3} className="w-full border border-amber-300 dark:border-amber-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 rounded-lg px-3 py-2 text-sm resize-none" />
             <div className="flex gap-3">
-              <input placeholder={t("learning.video_url_edit_placeholder")} value={lessonForm.video_url} onChange={(e) => setLessonForm({ ...lessonForm, video_url: e.target.value })} className="flex-1 border border-amber-300 rounded-lg px-3 py-2 text-sm" />
-              <input type="number" placeholder={t("learning.order_placeholder")} value={lessonForm.order} onChange={(e) => setLessonForm({ ...lessonForm, order: parseInt(e.target.value) || 1 })} className="w-20 border border-amber-300 rounded-lg px-3 py-2 text-sm" />
+              <input placeholder={t("learning.video_url_edit_placeholder")} value={lessonForm.video_url} onChange={(e) => setLessonForm({ ...lessonForm, video_url: e.target.value })} className="flex-1 border border-amber-300 dark:border-amber-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 rounded-lg px-3 py-2 text-sm" />
+              <input type="number" placeholder={t("learning.order_placeholder")} value={lessonForm.order} onChange={(e) => setLessonForm({ ...lessonForm, order: parseInt(e.target.value) || 1 })} className="w-20 border border-amber-300 dark:border-amber-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 rounded-lg px-3 py-2 text-sm" />
             </div>
             <div className="flex gap-2">
               <button type="submit" disabled={savingLesson} className="bg-amber-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-amber-700 disabled:opacity-50">{savingLesson ? t("common.saving") : t("common.save")}</button>
@@ -230,45 +230,45 @@ export default function CourseDetailPage() {
 
         <div className="space-y-2">
           {lessons.length === 0 ? (
-            <p className="text-stone-400 py-4">{t("learning.no_lessons")}</p>
+            <p className="text-stone-500 dark:text-stone-400 py-4">{t("learning.no_lessons")}</p>
           ) : (
             lessons.map((lesson, idx) => {
               const completed = lessonProgress.find((p: any) => p.lesson_id === lesson.id)?.completed;
               const isActive = activeLesson === lesson.id;
               return (
-                <div key={lesson.id} className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+                <div key={lesson.id} className="bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-700 overflow-hidden">
                   <div className="flex items-start">
                     <button
                       onClick={() => setActiveLesson(isActive ? null : lesson.id)}
-                      className="flex-1 flex items-center gap-3 p-4 text-left hover:bg-stone-50 transition"
+                      className="flex-1 flex items-center gap-3 p-4 text-left hover:bg-stone-50 dark:hover:bg-stone-800 transition"
                     >
-                      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium shrink-0 ${completed ? "bg-green-100 text-green-700" : "bg-stone-100 text-stone-500"}`}>
+                      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium shrink-0 ${completed ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300" : "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400"}`}>
                         {completed ? <CheckCircle className="w-4 h-4" /> : idx + 1}
                       </span>
                       <div className="flex-1">
-                        <span className="font-medium text-stone-800">{lesson.title}</span>
-                        {lesson.video_url && <PlayCircle className="w-4 h-4 inline ml-2 text-primary-600" />}
+                        <span className="font-medium text-stone-800 dark:text-stone-100">{lesson.title}</span>
+                        {lesson.video_url && <PlayCircle className="w-4 h-4 inline ml-2 text-primary-600 dark:text-primary-400" />}
                       </div>
-                      {isActive ? <ChevronUp className="w-4 h-4 text-stone-400" /> : <ChevronDown className="w-4 h-4 text-stone-400" />}
+                      {isActive ? <ChevronUp className="w-4 h-4 text-stone-400 dark:text-stone-500" /> : <ChevronDown className="w-4 h-4 text-stone-400 dark:text-stone-500" />}
                     </button>
                     {canEdit && (
                       <div className="flex gap-1 p-2 shrink-0">
-                        <button onClick={() => openEditLesson(lesson)} className="p-1.5 text-stone-400 hover:text-primary-600 hover:bg-primary-50 rounded transition" title={t("learning.edit_lesson_btn")}>
+                        <button onClick={() => openEditLesson(lesson)} className="p-1.5 text-stone-400 dark:text-stone-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded transition" title={t("learning.edit_lesson_btn")}>
                           <Edit className="w-3.5 h-3.5" />
                         </button>
-                        <button onClick={() => handleDeleteLesson(lesson.id)} className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded transition" title={t("learning.delete_lesson")}>
+                        <button onClick={() => handleDeleteLesson(lesson.id)} className="p-1.5 text-stone-400 dark:text-stone-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition" title={t("learning.delete_lesson")}>
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     )}
                   </div>
                   {isActive && (
-                    <div className="px-4 pb-4 border-t border-stone-100 pt-3">
+                    <div className="px-4 pb-4 border-t border-stone-100 dark:border-stone-800 pt-3">
                       {user ? (
                         <>
-                          <div className="prose prose-sm max-w-none text-stone-700 whitespace-pre-wrap">{lesson.body}</div>
+                          <div className="prose prose-sm max-w-none text-stone-700 dark:text-stone-300 whitespace-pre-wrap">{lesson.body}</div>
                           {lesson.video_url && (
-                            <a href={lesson.video_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 mt-3 text-primary-600 hover:underline text-sm">
+                            <a href={lesson.video_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 mt-3 text-primary-600 dark:text-primary-400 hover:underline text-sm">
                               <PlayCircle className="w-4 h-4" /> {t("learning.watch_video")}
                             </a>
                           )}
@@ -278,11 +278,11 @@ export default function CourseDetailPage() {
                             </button>
                           )}
                           {completed && (
-                            <span className="inline-flex items-center gap-1 mt-3 text-sm text-green-600"><CheckCircle className="w-4 h-4" /> {t("learning.lesson_completed")}</span>
+                            <span className="inline-flex items-center gap-1 mt-3 text-sm text-green-600 dark:text-green-400"><CheckCircle className="w-4 h-4" /> {t("learning.lesson_completed")}</span>
                           )}
                         </>
                       ) : (
-                        <div className="text-center py-6 text-stone-500">
+                        <div className="text-center py-6 text-stone-500 dark:text-stone-400">
                           <p className="font-medium">{t("learning.lesson_locked")}</p>
                           <p className="mt-1 text-sm">
                             {t("learning.sign_in_to_access")}

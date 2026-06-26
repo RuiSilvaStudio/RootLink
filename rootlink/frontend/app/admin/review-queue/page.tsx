@@ -105,7 +105,7 @@ export default function ReviewQueue() {
     <div>
       <div className="mb-6">
         <Badge variant="sage" className="mb-3">{t("admin.review_queue")}</Badge>
-        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 leading-[1.08]">
+        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.08]">
           {t("admin.review_queue_title")}
         </h1>
         <p className="text-stone-500 text-sm mt-2 font-serif">{t("admin.review_queue_desc")}</p>
@@ -134,7 +134,7 @@ export default function ReviewQueue() {
               <div className="p-4 sm:p-5 flex items-start gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <h3 className="font-display font-semibold text-stone-800 text-base">{c.title}</h3>
+                    <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 text-base">{c.title}</h3>
                     <Badge variant="stone" className="text-[10px]">{c.content_type}</Badge>
                   </div>
                   <p className="text-sm text-stone-500 font-serif line-clamp-2">{c.summary || t("admin.no_summary")}</p>

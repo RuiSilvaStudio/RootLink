@@ -55,7 +55,7 @@ export default function AdminTickets() {
     <div>
       <div className="mb-6">
         <Badge variant="sage" className="mb-3">{t("admin.tickets")}</Badge>
-        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 leading-[1.08]">
+        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.08]">
           {t("admin.tickets_management")}
         </h1>
       </div>
@@ -137,10 +137,10 @@ export default function AdminTickets() {
               {tickets.map((tk: any) => (
                 <tr key={tk.id} className="border-b border-stone-50 last:border-0 hover:bg-stone-50/50 transition">
                   <td className="px-4 py-3">
-                    <p className="font-medium text-stone-800 font-serif truncate max-w-[160px]">{tk.event_title || `#${tk.event_id}`}</p>
+                    <p className="font-medium text-stone-800 dark:text-stone-100 font-serif truncate max-w-[160px]">{tk.event_title || `#${tk.event_id}`}</p>
                   </td>
                   <td className="px-4 py-3">
-                    <p className="font-medium text-stone-800 font-serif truncate">{tk.user_name}</p>
+                    <p className="font-medium text-stone-800 dark:text-stone-100 font-serif truncate">{tk.user_name}</p>
                     <p className="text-xs text-stone-400 font-serif truncate">{tk.user_email}</p>
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">{typeBadge(tk.ticket_type)}</td>

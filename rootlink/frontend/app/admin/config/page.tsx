@@ -150,7 +150,7 @@ export default function AdminConfigPage() {
           <Settings className="w-3 h-3 mr-1" />
           {t("admin.config")}
         </Badge>
-        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 leading-[1.08]">
+        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.08]">
           {t("admin.config_title")}
         </h1>
         <p className="mt-3 text-stone-500 font-serif text-sm max-w-lg">
@@ -170,7 +170,7 @@ export default function AdminConfigPage() {
         {loading ? (
           <div className="space-y-3 animate-pulse">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-12 bg-primary-100/40 rounded-xl" />
+              <div key={i} className="h-12 bg-primary-100 dark:bg-primary-950/20/40 rounded-xl" />
             ))}
           </div>
         ) : (

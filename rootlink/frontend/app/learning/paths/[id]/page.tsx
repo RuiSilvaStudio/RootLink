@@ -75,7 +75,7 @@ export default function LearningPathDetailPage() {
   };
 
   if (loading) return <div className="text-center py-20 text-stone-500">{t("common.loading")}</div>;
-  if (!path) return <div className="text-center py-20 text-stone-400">{t("learning.path_not_found")}</div>;
+  if (!path) return <div className="text-center py-20 text-stone-00 dark:text-stone-500">{t("learning.path_not_found")}</div>;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -89,13 +89,13 @@ export default function LearningPathDetailPage() {
         <div className="flex items-start gap-4">
           <Library className="w-12 h-12 text-primary-600 shrink-0" />
           <div>
-            <h1 className="text-3xl font-bold text-stone-800 font-serif">{path.title}</h1>
+            <h1 className="text-3xl font-bold text-stone-800 dark:text-stone-100 font-serif">{path.title}</h1>
             <p className="text-stone-500 mt-1">{path.description}</p>
           </div>
         </div>
         {canEdit && (
           <div className="flex gap-2 shrink-0">
-            <Link href={`/learning/paths/${path.id}/edit`} className="flex items-center gap-1 text-sm bg-stone-100 text-stone-600 px-3 py-1.5 rounded-lg hover:bg-stone-200">
+            <Link href={`/learning/paths/${path.id}/edit`} className="flex items-center gap-1 text-sm bg-stone-100 text-stone-600 dark:text-stone-300 px-3 py-1.5 rounded-lg hover:bg-stone-200">
               <Edit className="w-4 h-4" /> {t("common.edit")}
             </Link>
             <button onClick={handleDeletePath} className="flex items-center gap-1 text-sm bg-red-100 text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-200">
@@ -126,22 +126,22 @@ export default function LearningPathDetailPage() {
         </form>
       )}
 
-      <h2 className="text-xl font-bold text-stone-800 font-serif mb-4">{t("learning.courses_in_path", { count: courses.length })}</h2>
+      <h2 className="text-xl font-bold text-stone-800 dark:text-stone-100 font-serif mb-4">{t("learning.courses_in_path", { count: courses.length })}</h2>
 
       <div className="space-y-3">
         {courses.length === 0 ? (
-          <p className="text-stone-400 py-8 text-center">{t("learning.no_courses_in_path")}</p>
+          <p className="text-stone-00 dark:text-stone-500 py-8 text-center">{t("learning.no_courses_in_path")}</p>
         ) : (
           courses.map((course, idx) => (
             <div key={course.id} className="flex items-center gap-4 bg-white p-4 rounded-xl border border-stone-200 hover:shadow-md transition group">
-              <span className="w-8 h-8 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center text-sm font-medium shrink-0">
+              <span className="w-8 h-8 bg-primary-100 dark:bg-primary-950/20 text-primary-700 rounded-full flex items-center justify-center text-sm font-medium shrink-0">
                 {idx + 1}
               </span>
               <Link href={`/learning/courses/${course.id}`} className="flex-1 min-w-0">
                 <h3 className="font-semibold text-stone-800">{course.title}</h3>
                 <p className="text-sm text-stone-500 line-clamp-1">{course.description}</p>
               </Link>
-              <span className="text-xs text-stone-400 flex items-center gap-1 shrink-0"><BookOpen className="w-3 h-3" />{course.lesson_count}</span>
+              <span className="text-xs text-stone-00 dark:text-stone-500 flex items-center gap-1 shrink-0"><BookOpen className="w-3 h-3" />{course.lesson_count}</span>
               {canEdit && (
                 <button onClick={() => handleRemoveCourse(course.id)} className="p-1 text-stone-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition" title={t("learning.remove_tooltip")}>
                   <X className="w-4 h-4" />

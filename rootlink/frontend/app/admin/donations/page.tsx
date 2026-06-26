@@ -55,7 +55,7 @@ export default function AdminDonations() {
     <div>
       <div className="mb-6">
         <Badge variant="sage" className="mb-3">{t("admin.donations")}</Badge>
-        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 leading-[1.08]">
+        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.08]">
           {t("admin.donations_title")}
         </h1>
       </div>
@@ -135,13 +135,13 @@ export default function AdminDonations() {
               {donations.map((d: any) => (
                 <tr key={d.id} className="border-b border-stone-50 last:border-0 hover:bg-stone-50/50 transition">
                   <td className="px-4 py-3">
-                    <p className="font-medium text-stone-800 font-serif truncate max-w-[140px]">{d.event_title || `#${d.event_id}`}</p>
+                    <p className="font-medium text-stone-800 dark:text-stone-100 font-serif truncate max-w-[140px]">{d.event_title || `#${d.event_id}`}</p>
                   </td>
                   <td className="px-4 py-3">
                     {d.is_anonymous ? (
                       <em className="text-stone-400 font-serif">{t("admin.anonymous")}</em>
                     ) : (
-                      <p className="font-medium text-stone-800 font-serif truncate max-w-[160px]">{d.donor_name || d.donor_email || "—"}</p>
+                      <p className="font-medium text-stone-800 dark:text-stone-100 font-serif truncate max-w-[160px]">{d.donor_name || d.donor_email || "—"}</p>
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">

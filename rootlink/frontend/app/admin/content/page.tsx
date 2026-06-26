@@ -189,7 +189,7 @@ export default function AdminContent() {
     <div>
       <div className="mb-6">
         <Badge variant="sage" className="mb-3">{t("admin.content")}</Badge>
-        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 leading-[1.08]">
+        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.08]">
           {t("admin.content_management")}
         </h1>
       </div>
@@ -232,7 +232,7 @@ export default function AdminContent() {
                   <InlineInput
                     value={c.title}
                     onSave={(v) => handleUpdate(c.id, "title", v)}
-                    className="font-display font-semibold text-stone-800 text-base"
+                    className="font-display font-semibold text-stone-800 dark:text-stone-100 text-base"
                     t={t}
                   />
                   {statusBadge(c.verification_status)}

@@ -237,7 +237,7 @@ function PlantCard({ plant, expanded, onToggle, onEdit, onDelete }: {
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-stone-800 text-sm">{cn(plant.common_names_pt?.[0], plant.scientific_name)}</span>
+            <span className="font-semibold text-stone-800 dark:text-stone-100 text-sm">{cn(plant.common_names_pt?.[0], plant.scientific_name)}</span>
             {plant.plant_type && (
               <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-medium">{plant.plant_type}</span>
             )}
@@ -355,7 +355,7 @@ function PlantFormModal({ plant, onSave, onClose, saving, t }: {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-start justify-center z-50 pt-10" onClick={onClose}>
       <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[85vh] overflow-y-auto shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-lg font-bold text-stone-800 mb-5">
+        <h2 className="text-lg font-bold text-stone-800 dark:text-stone-100 mb-5">
           {plant ? t("admin.plant_edit") : t("admin.plant_add")}
         </h2>
 

@@ -25,7 +25,7 @@ export default function AdminSubmitPage() {
     <div className="max-w-2xl">
       <div className="mb-6">
         <Badge variant="sage" className="mb-3">{t("admin.submit_url")}</Badge>
-        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 leading-[1.08]">
+        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.08]">
           {t("submit.title")}
         </h1>
         <p className="text-stone-500 text-sm mt-2 font-serif">{t("submit.subtitle")}</p>

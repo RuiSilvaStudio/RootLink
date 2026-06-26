@@ -52,7 +52,7 @@ export default function LearningPage() {
 
   const isStaff = user && (user.role === "admin" || user.role === "moderator" || user.role === "contributor");
 
-  if (loading) return <div className="flex items-center justify-center py-32 text-stone-400 font-light"><BookOpen className="w-5 h-5 animate-pulse mr-2" /> {t("common.loading")}</div>;
+  if (loading) return <div className="flex items-center justify-center py-32 text-stone-00 dark:text-stone-500 font-light"><BookOpen className="w-5 h-5 animate-pulse mr-2" /> {t("common.loading")}</div>;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
@@ -60,10 +60,10 @@ export default function LearningPage() {
       <div className="flex flex-wrap justify-between items-start gap-4 mb-8">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center">
               <BookOpen className="w-5 h-5 text-primary-600" />
             </div>
-            <h1 className="text-3xl font-bold text-stone-800 font-serif">{t("learning.title")}</h1>
+            <h1 className="text-3xl font-bold text-stone-800 dark:text-stone-100 font-serif">{t("learning.title")}</h1>
           </div>
           <p className="text-stone-500 mt-1 font-light">{t("learning.subtitle")}</p>
         </div>
@@ -112,13 +112,13 @@ export default function LearningPage() {
       {isStaff && (
         <section className="mb-12">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-stone-800 font-serif flex items-center gap-2">
+            <h2 className="text-xl font-bold text-stone-800 dark:text-stone-100 font-serif flex items-center gap-2">
               <Edit className="w-5 h-5 text-primary-600" /> {t("learning.my_courses")}
             </h2>
             <Link href="/learning/courses?mine=1" className="text-sm text-primary-600 hover:underline font-medium">{t("learning.view_all")}</Link>
           </div>
           {myCourses.length === 0 ? (
-            <p className="text-stone-400 text-sm font-light">{t("learning.no_courses_created")}</p>
+            <p className="text-stone-00 dark:text-stone-500 text-sm font-light">{t("learning.no_courses_created")}</p>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {myCourses.map((course) => (
@@ -129,7 +129,7 @@ export default function LearningPage() {
                     <Badge variant={course.published ? "green" : "earth"}>
                       {course.published ? t("learning.published") : t("learning.draft")}
                     </Badge>
-                    {course.lesson_count > 0 && <span className="text-stone-400 font-light">{t("learning.lessons_count", { count: course.lesson_count })}</span>}
+                    {course.lesson_count > 0 && <span className="text-stone-00 dark:text-stone-500 font-light">{t("learning.lessons_count", { count: course.lesson_count })}</span>}
                   </div>
                 </Link>
               ))}
@@ -141,7 +141,7 @@ export default function LearningPage() {
       {/* My Enrollments */}
       {enrollments.length > 0 && (
         <section className="mb-12">
-          <h2 className="text-xl font-bold text-stone-800 font-serif mb-4 flex items-center gap-2">
+          <h2 className="text-xl font-bold text-stone-800 dark:text-stone-100 font-serif mb-4 flex items-center gap-2">
             <GraduationCap className="w-5 h-5 text-primary-600" /> {t("learning.my_learning")}
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -177,7 +177,7 @@ export default function LearningPage() {
 
       {/* All Courses */}
       <section className="mb-12">
-        <h2 className="text-xl font-bold text-stone-800 font-serif mb-4">{t("learning.all_courses")}</h2>
+        <h2 className="text-xl font-bold text-stone-800 dark:text-stone-100 font-serif mb-4">{t("learning.all_courses")}</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {courses.slice(0, 6).map((course) => (
             <Link key={course.id} href={`/learning/courses/${course.id}`} className="card-lift p-5 group">
@@ -195,14 +195,14 @@ export default function LearningPage() {
             </Link>
           ))}
           {courses.length === 0 && (
-            <p className="text-stone-400 col-span-3 text-center py-8 font-light">{t("learning.no_courses")}</p>
+            <p className="text-stone-00 dark:text-stone-500 col-span-3 text-center py-8 font-light">{t("learning.no_courses")}</p>
           )}
         </div>
       </section>
 
       {/* Learning Paths */}
       <section>
-        <h2 className="text-xl font-bold text-stone-800 font-serif mb-4">{t("learning.learning_paths")}</h2>
+        <h2 className="text-xl font-bold text-stone-800 dark:text-stone-100 font-serif mb-4">{t("learning.learning_paths")}</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {paths.map((path) => (
             <Link key={path.id} href={`/learning/paths/${path.id}`} className="card-lift p-5 group">
@@ -215,7 +215,7 @@ export default function LearningPage() {
             </Link>
           ))}
           {paths.length === 0 && (
-            <p className="text-stone-400 col-span-3 text-center py-8 font-light">{t("learning.no_paths")}</p>
+            <p className="text-stone-00 dark:text-stone-500 col-span-3 text-center py-8 font-light">{t("learning.no_paths")}</p>
           )}
         </div>
       </section>

@@ -72,7 +72,7 @@ export default function AdminUsers() {
     <div>
       <div className="mb-6">
         <Badge variant="sage" className="mb-3">{t("admin.users")}</Badge>
-        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 leading-[1.08]">
+        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.08]">
           {t("admin.user_management")}
         </h1>
       </div>
@@ -135,12 +135,12 @@ export default function AdminUsers() {
                   <tr key={u.id} className="border-b border-stone-50 last:border-0 hover:bg-stone-50/50 transition">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary-100/60 text-primary-700 flex items-center justify-center text-sm font-display font-semibold shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-950/20/60 text-primary-700 flex items-center justify-center text-sm font-display font-semibold shrink-0">
                           {u.name.charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="font-medium text-stone-800 font-serif truncate">{u.name}</p>
+                            <p className="font-medium text-stone-800 dark:text-stone-100 font-serif truncate">{u.name}</p>
                             {u.is_verified && <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />}
                           </div>
                           <p className="text-xs text-stone-400 sm:hidden font-serif">{u.email}</p>

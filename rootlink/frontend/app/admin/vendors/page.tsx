@@ -100,7 +100,7 @@ export default function AdminVendors() {
     <div>
       <div className="mb-6">
         <Badge variant="sage" className="mb-3">{t("admin.vendors")}</Badge>
-        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 leading-[1.08]">
+        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.08]">
           {t("admin.vendors_title")}
         </h1>
       </div>
@@ -185,7 +185,7 @@ export default function AdminVendors() {
                     <span className="text-stone-600 font-serif text-xs">#{v.event_id}</span>
                   </td>
                   <td className="px-4 py-3">
-                    <p className="font-medium text-stone-800 font-serif truncate max-w-[200px]">{v.name}</p>
+                    <p className="font-medium text-stone-800 dark:text-stone-100 font-serif truncate max-w-[200px]">{v.name}</p>
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
                     <Badge variant="sage" className="text-[10px]">{v.service_type}</Badge>

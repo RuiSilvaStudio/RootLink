@@ -94,7 +94,7 @@ export default function AdminSponsors() {
     <div>
       <div className="mb-6">
         <Badge variant="sage" className="mb-3">{t("admin.sponsors")}</Badge>
-        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 leading-[1.08]">
+        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.08]">
           {t("admin.sponsors_title")}
         </h1>
       </div>
@@ -176,7 +176,7 @@ export default function AdminSponsors() {
                     <span className="text-stone-600 font-serif">#{s.event_id}</span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="font-medium text-stone-800 font-serif">{s.name}</span>
+                    <span className="font-medium text-stone-800 dark:text-stone-100 font-serif">{s.name}</span>
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
                     {editId === s.id ? (
@@ -208,7 +208,7 @@ export default function AdminSponsors() {
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
                     <div className="min-w-0">
-                      <p className="font-serif text-stone-800 truncate">{s.contact_name ?? "—"}</p>
+                      <p className="font-serif text-stone-800 dark:text-stone-100 truncate">{s.contact_name ?? "—"}</p>
                       <p className="text-xs text-stone-400 font-serif truncate">{s.contact_email ?? ""}</p>
                     </div>
                   </td>

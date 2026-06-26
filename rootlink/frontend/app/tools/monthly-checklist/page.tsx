@@ -224,8 +224,8 @@ function MonthlyChecklistContent() {
         <ShareButton url={typeof window !== "undefined" ? window.location.href : ""} title="Monthly Checklist" />
       </div>
 
-      <div className="bg-stone-100/50 border border-stone-200/40 rounded-2xl px-4 py-2.5 mb-8 text-xs text-stone-400 flex items-center justify-end gap-2">
-        <span className="text-[10px]">🇵🇹</span>
+      <div className="bg-stone-100/50 dark:bg-stone-800/50 border border-stone-200/40 dark:border-stone-700/40 rounded-2xl px-4 py-2.5 mb-8 text-xs text-stone-500 dark:text-stone-400 flex items-center justify-end gap-2">
+        <span className="text-[10px]">🇹</span>
         <span className="font-light">{t("calc.portugal_disclaimer")}</span>
       </div>
 
@@ -235,7 +235,7 @@ function MonthlyChecklistContent() {
           {MONTHS.map(m => (
             <button key={m} onClick={() => setCurrentMonth(m)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition ${
-                m === currentMonth ? "bg-primary-500 text-white shadow-sm" : "hover:bg-primary-50 text-stone-600"
+                m === currentMonth ? "bg-primary-500 text-white shadow-sm" : "hover:bg-primary-50 dark:hover:bg-primary-900/20 text-stone-600 dark:text-stone-300"
               }`}
             >
               {t(`month.${m}`)}
@@ -243,9 +243,9 @@ function MonthlyChecklistContent() {
           ))}
         </Card>
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-medium text-stone-400 uppercase tracking-wider px-1">{t("calc.zone")}</label>
+          <label className="text-[10px] font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider px-1">{t("calc.zone")}</label>
           <select value={zone} onChange={(e) => setZone(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+            className="px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
             {ZONES.map(z => <option key={z.value} value={z.value}>{z.label}</option>)}
           </select>
         </div>
@@ -271,7 +271,7 @@ function MonthlyChecklistContent() {
         {guideExpanded && (
           <div className="mt-3">
             {guideLoading && (
-              <div className="text-center text-stone-400 py-12 flex items-center justify-center gap-2 font-light">
+              <div className="text-center text-stone-500 dark:text-stone-400 py-12 flex items-center justify-center gap-2 font-light">
                 <Loader2 className="w-5 h-5 animate-spin" /> {t("tools.farmers_guide_loading")}
               </div>
             )}
@@ -280,8 +280,8 @@ function MonthlyChecklistContent() {
               <div>
                 {categoryEntries.length === 0 && (
                   <Card variant="plain" className="p-8 text-center">
-                    <BookOpen className="w-10 h-10 mx-auto mb-2 text-stone-300" />
-                    <p className="text-sm text-stone-400 font-light">{t("tools.farmers_guide_empty")}</p>
+                    <BookOpen className="w-10 h-10 mx-auto mb-2 text-stone-300 dark:text-stone-600" />
+                    <p className="text-sm text-stone-500 dark:text-stone-400 font-light">{t("tools.farmers_guide_empty")}</p>
                   </Card>
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -297,7 +297,7 @@ function MonthlyChecklistContent() {
                           <span className="text-base">{icon}</span>
                           <span className="flex-1 text-sm font-medium text-stone-700">{label}</span>
                           <Badge variant="stone" className="text-[11px]">{tasks.length}</Badge>
-                          <span className={`text-stone-400 text-xs transition-transform ${isOpen ? "rotate-180" : ""}`}>▼</span>
+                          <span className={`text-stone-500 dark:text-stone-400 text-xs transition-transform ${isOpen ? "rotate-180" : ""}`}>▼</span>
                         </button>
                         {isOpen && (
                           <div className="border-t border-primary-50 divide-y divide-primary-50">
@@ -305,7 +305,7 @@ function MonthlyChecklistContent() {
                               const isAdded = addedTasks.has(task.key);
                               return (
                                 <div key={task.key || idx}
-                                  className="flex items-start gap-2 px-4 py-2 text-xs text-stone-600 font-light leading-relaxed"
+                                  className="flex items-start gap-2 px-4 py-2 text-xs text-stone-600 dark:text-stone-300 font-light leading-relaxed"
                                 >
                                   <span className="mt-1 w-1.5 h-1.5 rounded-full bg-primary-300 shrink-0" />
                                   <span className="flex-1">{task.text}</span>
@@ -345,7 +345,7 @@ function MonthlyChecklistContent() {
       <div className="border-t border-primary-50 pt-8">
         <div className="flex items-center gap-2 mb-1">
           <Notebook className="w-5 h-5 text-stone-500" />
-          <h2 className="text-xl font-bold text-stone-800 font-serif">{t("tools.farmers_guide_personal")}</h2>
+          <h2 className="text-xl font-bold text-stone-800 dark:text-stone-100 font-serif">{t("tools.farmers_guide_personal")}</h2>
         </div>
         <p className="text-xs text-stone-500 mb-4 font-light">{t("tools.farmers_guide_personal_desc")}</p>
 
@@ -367,13 +367,13 @@ function MonthlyChecklistContent() {
 
             {/* New task input */}
             <form onSubmit={handleAdd} className="flex gap-2 mb-4">
-              <input
-                type="text"
-                value={newTask}
-                onChange={(e) => setNewTask(e.target.value)}
-                placeholder={t("tools.checklist_placeholder")}
-                className="flex-1 px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15"
-              />
+                <input
+                  type="text"
+                  value={newTask}
+                  onChange={(e) => setNewTask(e.target.value)}
+                  placeholder={t("tools.checklist_placeholder")}
+                  className="flex-1 px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15"
+                />
               <Button type="submit" disabled={submitting || !newTask.trim()} loading={submitting}>
                 <Plus className="w-4 h-4" />
                 {t("tools.checklist_add")}
@@ -382,7 +382,7 @@ function MonthlyChecklistContent() {
 
             {/* Checklist items */}
             {loading && (
-              <div className="text-center text-stone-400 py-12 flex items-center justify-center gap-2 font-light">
+              <div className="text-center text-stone-500 dark:text-stone-400 py-12 flex items-center justify-center gap-2 font-light">
                 <Loader2 className="w-5 h-5 animate-spin" /> {t("common.loading")}
               </div>
             )}
@@ -391,14 +391,14 @@ function MonthlyChecklistContent() {
               <div className="space-y-1.5">
                 {items.length === 0 && (
                   <Card variant="plain" className="p-12 text-center">
-                    <Notebook className="w-12 h-12 mx-auto mb-3 text-stone-300" />
-                    <p className="text-stone-400 font-light">{t("tools.checklist_no_tasks")}</p>
+                    <Notebook className="w-12 h-12 mx-auto mb-3 text-stone-300 dark:text-stone-600" />
+                    <p className="text-stone-500 dark:text-stone-400 font-light">{t("tools.checklist_no_tasks")}</p>
                   </Card>
                 )}
                 {items.map(item => (
                   <Card key={item.id} variant="plain"
                     className={`flex items-center gap-3 px-4 py-3 transition ${
-                      item.is_completed ? "border-green-200 bg-green-50" : "hover:border-primary-100"
+                      item.is_completed ? "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20" : "hover:border-primary-100 dark:hover:border-primary-800"
                     }`}
                   >
                     <button onClick={() => handleToggle(item)}
@@ -421,7 +421,7 @@ function MonthlyChecklistContent() {
                             if (e.key === "Enter") handleSaveEdit(item.id);
                             if (e.key === "Escape") handleCancelEdit();
                           }}
-                          className="flex-1 px-2 py-1 rounded-lg border border-primary-300 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15"
+                          className="flex-1 px-2 py-1 rounded-lg border border-primary-300 dark:border-primary-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15"
                           autoFocus
                         />
                         <button onClick={() => handleSaveEdit(item.id)}
@@ -429,21 +429,21 @@ function MonthlyChecklistContent() {
                           <Save className="w-4 h-4" />
                         </button>
                         <button onClick={handleCancelEdit}
-                          className="p-1 text-stone-400 hover:text-stone-600 transition">
+                          className="p-1 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition">
                           <X className="w-4 h-4" />
                         </button>
                       </div>
                     ) : (
                       <>
-                        <span className={`flex-1 text-sm ${item.is_completed ? "line-through text-stone-400" : "text-stone-700"}`}>
+                        <span className={`flex-1 text-sm ${item.is_completed ? "line-through text-stone-500 dark:text-stone-400" : "text-stone-700 dark:text-stone-300"}`}>
                           {item.task}
                         </span>
                         <button onClick={() => handleStartEdit(item)}
-                          className="p-1 text-stone-400 hover:text-primary-600 transition shrink-0">
+                          className="p-1 text-stone-400 dark:text-stone-500 hover:text-primary-600 dark:hover:text-primary-400 transition shrink-0">
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button onClick={() => handleDelete(item.id)}
-                          className="p-1 text-stone-400 hover:text-red-600 transition shrink-0"
+                          className="p-1 text-stone-400 dark:text-stone-500 hover:text-red-600 dark:hover:text-red-400 transition shrink-0"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -462,7 +462,7 @@ function MonthlyChecklistContent() {
 
 export default function MonthlyChecklistPage() {
   return (
-    <Suspense fallback={<div className="max-w-4xl mx-auto px-4 sm:px-8 py-12 space-y-4"><div className="h-8 bg-primary-100 rounded w-96 animate-pulse" /><div className="h-4 bg-primary-100 rounded w-64 animate-pulse" /><div className="h-64 bg-primary-100 rounded-xl animate-pulse" /></div>}>
+    <Suspense fallback={<div className="max-w-4xl mx-auto px-4 sm:px-8 py-12 space-y-4"><div className="h-8 bg-primary-100 dark:bg-primary-950/20 rounded w-96 animate-pulse" /><div className="h-4 bg-primary-100 dark:bg-primary-950/20 rounded w-64 animate-pulse" /><div className="h-64 bg-primary-100 dark:bg-primary-950/20 rounded-xl animate-pulse" /></div>}>
       <MonthlyChecklistContent />
     </Suspense>
   );

@@ -44,7 +44,7 @@ export default function AdminDashboard() {
     <div>
       <div className="mb-8">
         <Badge variant="sage" className="mb-3">{t("admin.dashboard")}</Badge>
-        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 leading-[1.08]">
+        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.08]">
           {t("admin.dashboard_title")}
         </h1>
       </div>
