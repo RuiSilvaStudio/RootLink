@@ -22,17 +22,22 @@ export function CommandPalette() {
   const { t } = useLocale();
 
   const commands: CommandItem[] = [
-    { label: t("nav.search"), href: "/search", section: t("nav.explore"), shortcut: "S" },
-    { label: t("nav.groups"), href: "/groups", section: t("nav.explore") },
-    { label: t("nav.events"), href: "/events", section: t("nav.explore") },
-    { label: t("nav.tools"), href: "/tools", section: t("nav.explore") },
-    { label: t("nav.learning"), href: "/learning", section: t("nav.explore") },
-    { label: t("nav.network"), href: "/network", section: t("nav.connect") },
+    { label: t("nav.search"), href: "/search", section: t("nav.discover"), shortcut: "S" },
+    { label: t("nav.groups"), href: "/groups", section: t("nav.discover") },
+    { label: t("nav.events"), href: "/events", section: t("nav.discover") },
+    { label: t("nav.network"), href: "/network", section: t("nav.discover") },
+    { label: t("nav.entities"), href: "/entities", section: t("nav.discover") },
+    { label: t("nav.plants"), href: "/plants", section: t("nav.grow") },
+    { label: t("nav.learning"), href: "/learning", section: t("nav.grow") },
+    { label: t("nav.tools"), href: "/tools", section: t("nav.grow") },
+    { label: t("nav.marketplace"), href: "/marketplace", section: t("nav.exchange") },
+    { label: t("nav.composting"), href: "/composting", section: t("nav.exchange") },
+    { label: t("nav.upcycling"), href: "/upcycling", section: t("nav.exchange") },
     { label: t("nav.feed"), href: "/feed", section: t("nav.connect") },
     { label: t("nav.messages"), href: "/messages", section: t("nav.connect") },
-    { label: t("nav.profile"), href: "/profile", section: "Account" },
-    { label: t("nav.notifications"), href: "/notifications", section: "Account" },
-    { label: t("nav.submit"), href: "/submit", section: "Account" },
+    { label: t("nav.profile"), href: "/profile", section: t("nav.connect") },
+    { label: t("nav.notifications"), href: "/notifications", section: t("nav.connect") },
+    { label: t("nav.submit"), href: "/submit", section: t("nav.connect") },
     { label: t("nav.admin"), href: "/admin", section: "Account" },
   ];
 

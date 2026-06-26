@@ -22,7 +22,12 @@
     "footer": "RootLink — Cultivar conhecimento, cultivar comunidade.",
     "footer_description": "Uma base de conhecimento construída pela comunidade para jardineiros, artesãos e homesteaders.",
     "explore": "Explorar",
-    "connect": "Conectar"
+    "connect": "Conectar",
+    "discover": "Descobrir",
+    "grow": "Crescer",
+    "exchange": "Trocar",
+    "plants": "Plantas",
+    "home": "Início"
   },
   "home": {
     "hero_title": "Encontre o que alimenta a sua terra",
@@ -714,6 +719,11 @@
     "no_access": "Não tem acesso ao painel de administração.",
     "back_home": "Voltar ao início",
     "loading": "A carregar...",
+    "section_overview": "Visão Geral",
+    "section_content": "Conteúdo",
+    "section_people": "Pessoas",
+    "section_events_commerce": "Eventos & Comércio",
+    "section_system": "Sistema",
     "dashboard_title": "Painel",
     "stat_users": "Utilizadores",
     "stat_content": "Conteúdo",

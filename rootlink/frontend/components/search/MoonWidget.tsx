@@ -23,7 +23,7 @@ export function MoonWidget() {
         <span className="text-3xl">{moon.icon}</span>
         <div>
           <p className="text-sm font-display font-semibold text-stone-700">{moon.phase}</p>
-          <p className="text-[10px] text-stone-400">{moon.illumination}% illuminated</p>
+          <p className="text-[10px] text-stone-600">{moon.illumination}% illuminated</p>
         </div>
       </div>
       <p className="text-xs text-stone-500 mt-3 leading-relaxed font-serif">

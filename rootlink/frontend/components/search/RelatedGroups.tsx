@@ -33,7 +33,7 @@ export function RelatedGroups({ query }: { query: string }) {
           >
             <p className="text-sm font-display font-semibold text-stone-700 line-clamp-1">{g.name}</p>
             {g.description && (
-              <p className="text-[10px] text-stone-400 line-clamp-1 mt-0.5">{g.description.slice(0, 60)}</p>
+              <p className="text-[10px] text-stone-600 line-clamp-1 mt-0.5">{g.description.slice(0, 60)}</p>
             )}
             {g.category && <Badge variant="sage" className="text-[9px] mt-1">{g.category}</Badge>}
           </a>

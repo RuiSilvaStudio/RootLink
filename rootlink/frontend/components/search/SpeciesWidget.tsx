@@ -27,19 +27,19 @@ export function SpeciesWidget({ query }: { query: string }) {
 
       {species.inaturalist?.length > 0 && (
         <div className="mb-3">
-          <p className="text-[10px] text-stone-400 mb-1.5">iNaturalist</p>
+          <p className="text-[10px] text-stone-600 mb-1.5">iNaturalist</p>
           {species.inaturalist.map((t: any) => (
-            <div key={t.id} className="flex items-center gap-2 py-1.5">
-              {t.image_url && <img src={t.image_url} alt="" className="w-6 h-6 rounded object-cover" />}
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-stone-700 italic line-clamp-1">{t.name}</p>
-                {t.common_name && <p className="text-[10px] text-stone-400 line-clamp-1">{t.common_name}</p>}
-              </div>
-              {t.wikipedia_url && (
-                <a href={t.wikipedia_url} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-3 h-3 text-stone-400" />
-                </a>
-              )}
+          <div key={t.id} className="flex items-center gap-2 py-1.5">
+            {t.image_url && <img src={t.image_url} alt="" className="w-6 h-6 rounded object-cover" />}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-stone-700 italic line-clamp-1">{t.name}</p>
+              {t.common_name && <p className="text-[10px] text-stone-600 line-clamp-1">{t.common_name}</p>}
+            </div>
+            {t.wikipedia_url && (
+              <a href={t.wikipedia_url} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="w-3 h-3 text-stone-600" />
+              </a>
+            )}
             </div>
           ))}
         </div>
@@ -47,11 +47,11 @@ export function SpeciesWidget({ query }: { query: string }) {
 
       {species.gbif?.length > 0 && (
         <div>
-          <p className="text-[10px] text-stone-400 mb-1.5">GBIF</p>
+          <p className="text-[10px] text-stone-600 mb-1.5">GBIF</p>
           {species.gbif.slice(0, 2).map((s: any) => (
             <div key={s.key} className="py-1.5">
               <p className="text-xs text-stone-700 italic line-clamp-1">{s.scientific_name}</p>
-              {s.common_name && <p className="text-[10px] text-stone-400">{s.common_name}</p>}
+              {s.common_name && <p className="text-[10px] text-stone-600">{s.common_name}</p>}
             </div>
           ))}
         </div>

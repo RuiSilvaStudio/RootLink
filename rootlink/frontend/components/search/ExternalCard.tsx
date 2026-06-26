@@ -10,7 +10,7 @@ export function ExternalCard({ item }: { item: any }) {
     <div className="rounded-2xl border border-stone-200/60 bg-stone-50/50 p-4">
       <div className="flex items-center gap-2 mb-2">
         <Badge variant="stone" className="text-[10px]">External Data</Badge>
-        <span className="text-[10px] text-stone-400">iNaturalist</span>
+        <span className="text-[10px] text-stone-600">iNaturalist</span>
       </div>
       <h4 className="text-sm font-display font-semibold text-stone-700 italic">{c.title}</h4>
       {c.summary && (

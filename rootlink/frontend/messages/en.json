@@ -22,7 +22,12 @@
     "footer": "RootLink — Growing knowledge, growing community.",
     "footer_description": "A community-built knowledge base for gardeners, makers, and homesteaders.",
     "explore": "Explore",
-    "connect": "Connect"
+    "connect": "Connect",
+    "discover": "Discover",
+    "grow": "Grow",
+    "exchange": "Exchange",
+    "plants": "Plants",
+    "home": "Home"
   },
   "home": {
     "hero_title": "Find what feeds your land",
@@ -714,6 +719,11 @@
     "no_access": "You do not have access to the administration panel.",
     "back_home": "Back to home",
     "loading": "Loading...",
+    "section_overview": "Overview",
+    "section_content": "Content",
+    "section_people": "People",
+    "section_events_commerce": "Events & Commerce",
+    "section_system": "System",
     "dashboard_title": "Dashboard",
     "stat_users": "Users",
     "stat_content": "Content",
