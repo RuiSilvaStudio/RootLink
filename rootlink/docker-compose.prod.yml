@@ -8,12 +8,66 @@ services:
     environment:
       - DATABASE_URL=sqlite+aiosqlite:////app/data/rootlink.db
       - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:3001}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:3001,https://rootlink.ruisilvastudio.com}
       - MEDIA_DIR=/app/data/media
-      - MEDIA_URL=${MEDIA_URL:-http://localhost:8001}
+      - MEDIA_URL=${MEDIA_URL:-https://api.ruisilvastudio.com}
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - LIBERAPAY_WEBHOOK_SECRET=${LIBERAPAY_WEBHOOK_SECRET}
     volumes:
       - ./backend-data:/app/data
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    command: celery -A app.tasks.celery_app worker --loglevel=info
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:////app/data/rootlink.db
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:3001,https://rootlink.ruisilvastudio.com}
+      - MEDIA_DIR=/app/data/media
+      - MEDIA_URL=${MEDIA_URL:-https://api.ruisilvastudio.com}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - LIBERAPAY_WEBHOOK_SECRET=${LIBERAPAY_WEBHOOK_SECRET}
+    volumes:
+      - ./backend-data:/app/data
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  celery-beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    command: celery -A app.tasks.celery_app beat --loglevel=info
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:////app/data/rootlink.db
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:3001,https://rootlink.ruisilvastudio.com}
+      - MEDIA_DIR=/app/data/media
+      - MEDIA_URL=${MEDIA_URL:-https://api.ruisilvastudio.com}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - LIBERAPAY_WEBHOOK_SECRET=${LIBERAPAY_WEBHOOK_SECRET}
+    volumes:
+      - ./backend-data:/app/data
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis-data:/data
+    command: redis-server --appendonly yes
     restart: unless-stopped
