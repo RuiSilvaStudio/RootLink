@@ -114,13 +114,13 @@ export default function MarketplacePage() {
         {/* Filter sidebar */}
         <aside className="lg:w-60 shrink-0 space-y-5">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("marketplace.search_placeholder")}
-              className="w-full pl-9 pr-3 py-2 rounded-xl border border-primary-200/60 bg-white text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15"
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-primary-200/60 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15"
             />
           </div>
 
@@ -135,7 +135,7 @@ export default function MarketplacePage() {
                     key={lt.value}
                     onClick={() => setListingType(lt.value)}
                     className={`px-2.5 py-1.5 text-xs rounded-lg border transition flex items-center gap-1 ${
-                      listingType === lt.value ? "bg-primary-600 text-white border-primary-600" : "bg-white text-stone-600 border-primary-100 hover:border-primary-300"
+                      listingType === lt.value ? "bg-primary-600 text-white border-primary-600" : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border-primary-100 dark:border-stone-700 hover:border-primary-300 dark:hover:border-primary-600"
                     }`}
                   >
                     <Icon className="w-3 h-3" /> {t(lt.labelKey)}
@@ -149,7 +149,7 @@ export default function MarketplacePage() {
           <div>
             <p className="text-xs font-display font-semibold text-stone-500 uppercase tracking-wider mb-2">{t("marketplace.filter_family")}</p>
             <select value={family} onChange={(e) => handleFamilyChange(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-primary-100 bg-white text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15">
+              className="w-full px-3 py-2 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15">
               <option value="">{t("marketplace.all_families")}</option>
               {families.map((f) => <option key={f.value} value={f.value}>{locale === "pt" ? f.label_pt : f.label}</option>)}
             </select>
@@ -158,9 +158,9 @@ export default function MarketplacePage() {
           {/* Category */}
           {family && familyCategories.length > 0 && (
             <div>
-              <p className="text-xs font-display font-semibold text-stone-500 uppercase tracking-wider mb-2">{t("marketplace.filter_category")}</p>
+              <p className="text-xs font-display font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2">{t("marketplace.filter_category")}</p>
               <select value={category} onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-primary-100 bg-white text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15">
+                className="w-full px-3 py-2 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15">
                 <option value="">{t("marketplace.all_categories")}</option>
                 {familyCategories.map((c) => <option key={c.value} value={c.value}>{locale === "pt" ? c.label_pt : c.label}</option>)}
               </select>
@@ -169,18 +169,18 @@ export default function MarketplacePage() {
 
           {/* Condition */}
           <div>
-            <p className="text-xs font-display font-semibold text-stone-500 uppercase tracking-wider mb-2">{t("marketplace.filter_condition")}</p>
+            <p className="text-xs font-display font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2">{t("marketplace.filter_condition")}</p>
             <select value={condition} onChange={(e) => setCondition(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-primary-100 bg-white text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15">
+              className="w-full px-3 py-2 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15">
               {CONDITIONS.map((c) => <option key={c} value={c}>{c ? t(`marketplace.condition_${c}`) : t("marketplace.all_conditions")}</option>)}
             </select>
           </div>
 
           {/* Sort */}
           <div>
-            <p className="text-xs font-display font-semibold text-stone-500 uppercase tracking-wider mb-2">{t("marketplace.sort_by")}</p>
+            <p className="text-xs font-display font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2">{t("marketplace.sort_by")}</p>
             <select value={sort} onChange={(e) => setSort(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-primary-100 bg-white text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15">
+              className="w-full px-3 py-2 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15">
               <option value="newest">{t("marketplace.sort_newest")}</option>
               <option value="price_low">{t("marketplace.sort_price_low")}</option>
               <option value="price_high">{t("marketplace.sort_price_high")}</option>
@@ -209,12 +209,12 @@ export default function MarketplacePage() {
                   className="card-lift overflow-hidden group"
                 >
                   {/* Image */}
-                  <div className="h-40 bg-primary-100/40 overflow-hidden">
+                  <div className="h-40 bg-primary-100 dark:bg-primary-900/30 overflow-hidden">
                     {listing.images?.length > 0 ? (
                       <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <Package className="w-10 h-10 text-primary-300" />
+                        <Package className="w-10 h-10 text-primary-300 dark:text-primary-600" />
                       </div>
                     )}
                   </div>
@@ -228,29 +228,29 @@ export default function MarketplacePage() {
                         <Badge variant="stone" className="text-[9px]">{t(`marketplace.condition_${listing.condition}`)}</Badge>
                       )}
                     </div>
-                    <h3 className="font-display font-semibold text-stone-800 text-sm group-hover:text-primary-700 transition line-clamp-2">{listing.title}</h3>
+                    <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 text-sm group-hover:text-primary-700 transition line-clamp-2">{listing.title}</h3>
                     <div className="flex items-center justify-between mt-3">
                       <span className="text-lg font-display font-bold text-primary-700">{formatPrice(listing)}</span>
                       <div className="flex items-center gap-2">
                         {listing.quantity > 0 && listing.listing_type !== "want" && (
-                          <span className={`text-xs ${listing.quantity <= 3 ? "text-amber-600" : "text-stone-400"}`}>
+                          <span className={`text-xs ${listing.quantity <= 3 ? "text-amber-600 dark:text-amber-400" : "text-stone-500 dark:text-stone-400"}`}>
                             {listing.quantity} {t("marketplace.available")}
                           </span>
                         )}
                         {listing.location && (
-                          <span className="text-xs text-stone-400 flex items-center gap-0.5">
+                          <span className="text-xs text-stone-500 dark:text-stone-400 flex items-center gap-0.5">
                             <MapPin className="w-3 h-3" /> {listing.location}
                           </span>
                         )}
                       </div>
                     </div>
                     {/* Seller */}
-                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-primary-50">
-                      <div className="w-6 h-6 rounded-full bg-primary-100 flex items-center justify-center text-[10px] font-display font-semibold text-primary-600 shrink-0">
+                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-primary-50 dark:border-stone-800">
+                      <div className="w-6 h-6 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-[10px] font-display font-semibold text-primary-600 dark:text-primary-400 shrink-0">
                         {listing.seller_name?.[0]?.toUpperCase() || "?"}
                       </div>
-                      <span className="text-xs text-stone-500 truncate">{listing.seller_name}</span>
-                      {listing.seller_verified && <CheckCircle className="w-3 h-3 text-green-500 shrink-0" />}
+                      <span className="text-xs text-stone-500 dark:text-stone-400 truncate">{listing.seller_name}</span>
+                      {listing.seller_verified && <CheckCircle className="w-3 h-3 text-green-500 dark:text-green-400 shrink-0" />}
                     </div>
                   </div>
                 </Link>

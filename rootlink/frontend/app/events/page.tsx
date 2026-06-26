@@ -152,7 +152,7 @@ export default function EventsPage() {
         <button
           onClick={() => handleFilterFamilyChange("")}
           className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
-            !family ? "bg-primary-500 text-white border-primary-500 shadow-sm" : "bg-white text-stone-600 border-primary-100 hover:border-primary-300"
+            !family ? "bg-primary-500 text-white border-primary-500 shadow-sm" : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border-primary-100 dark:border-stone-700 hover:border-primary-300 dark:hover:border-primary-600"
           }`}
         >
           {t("events.all")}
@@ -162,7 +162,7 @@ export default function EventsPage() {
             key={fam.value}
             onClick={() => handleFilterFamilyChange(fam.value)}
             className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
-              family === fam.value ? "bg-primary-500 text-white border-primary-500 shadow-sm" : "bg-white text-stone-600 border-primary-100 hover:border-primary-300"
+              family === fam.value ? "bg-primary-500 text-white border-primary-500 shadow-sm" : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border-primary-100 dark:border-stone-700 hover:border-primary-300 dark:hover:border-primary-600"
             }`}
           >
             {locale === "pt" ? fam.label_pt : fam.label}
@@ -172,7 +172,7 @@ export default function EventsPage() {
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="px-3 py-1.5 text-sm rounded-xl border border-primary-100 bg-white text-stone-600 focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15"
+            className="px-3 py-1.5 text-sm rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15"
           >
             <option value="">{t("search.all_categories") || "All categories"}</option>
             {familyCategories.map((cat) => (
@@ -184,25 +184,25 @@ export default function EventsPage() {
 
       {showForm && (
         <Card variant="plain" className="p-6 mb-8 space-y-4">
-          <h3 className="font-serif font-bold text-stone-800">{t("events.new_event")}</h3>
+          <h3 className="font-serif font-bold text-stone-800 dark:text-stone-100">{t("events.new_event")}</h3>
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.title_label")}</label>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.title_label")}</label>
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.date_label")}</label>
-              <input type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} required className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.date_label")}</label>
+              <input type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} required className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.location_label")}</label>
-              <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.location_label")}</label>
+              <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
             </div>
           </div>
           <div className="grid md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("groups.family_label") || "Family"}</label>
-              <select value={eventFamily} onChange={(e) => handleFormFamilyChange(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("groups.family_label") || "Family"}</label>
+              <select value={eventFamily} onChange={(e) => handleFormFamilyChange(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
                 <option value="">{t("events.category_none")}</option>
                 {families.map((fam) => (
                   <option key={fam.value} value={fam.value}>{locale === "pt" ? fam.label_pt : fam.label}</option>
@@ -210,8 +210,8 @@ export default function EventsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.category_label")}</label>
-              <select value={eventCategory} onChange={(e) => setEventCategory(e.target.value)} disabled={!eventFamily} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15 disabled:opacity-50">
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.category_label")}</label>
+              <select value={eventCategory} onChange={(e) => setEventCategory(e.target.value)} disabled={!eventFamily} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15 disabled:opacity-50">
                 <option value="">{t("events.category_none")}</option>
                 {formFamilyCategories.map((cat) => (
                   <option key={cat.value} value={cat.value}>{locale === "pt" ? cat.label_pt : cat.label}</option>
@@ -219,59 +219,59 @@ export default function EventsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.max_attendees")}</label>
-              <input type="number" value={maxAttendees} onChange={(e) => setMaxAttendees(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.max_attendees")}</label>
+              <input type="number" value={maxAttendees} onChange={(e) => setMaxAttendees(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
             </div>
             <div className="flex items-end pb-2">
-              <label className="flex items-center gap-2 text-sm text-stone-700">
-                <input type="checkbox" checked={isOnline} onChange={(e) => setIsOnline(e.target.checked)} className="rounded border-primary-200 text-primary-500 focus:ring-primary-500" />
+              <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
+                <input type="checkbox" checked={isOnline} onChange={(e) => setIsOnline(e.target.checked)} className="rounded border-primary-200 dark:border-stone-600 text-primary-500 focus:ring-primary-500" />
                 {t("events.online_event")}
               </label>
             </div>
           </div>
           <div className="grid md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.visibility")}</label>
-              <select value={visibility} onChange={(e) => setVisibility(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.visibility")}</label>
+              <select value={visibility} onChange={(e) => setVisibility(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
                 {VISIBILITY_OPTIONS.map((v) => <option key={v.value} value={v.value}>{t(`events.${v.labelKey}`)}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.ticket_type")}</label>
-              <select value={ticketType} onChange={(e) => setTicketType(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.ticket_type")}</label>
+              <select value={ticketType} onChange={(e) => setTicketType(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
                 {TICKET_TYPES.map((tt) => <option key={tt.value} value={tt.value}>{t(`events.${tt.labelKey}`)}</option>)}
               </select>
             </div>
             {ticketType === "paid" && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.ticket_price")} (cents)</label>
-                  <input type="number" value={ticketPrice} onChange={(e) => setTicketPrice(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.ticket_price")} (cents)</label>
+                  <input type="number" value={ticketPrice} onChange={(e) => setTicketPrice(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.ticket_tiers")}</label>
-                  <p className="text-xs text-stone-400 mb-2">{t("events.ticket_tiers_hint")}</p>
+                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.ticket_tiers")}</label>
+                  <p className="text-xs text-stone-600 dark:text-stone-400 mb-2">{t("events.ticket_tiers_hint")}</p>
                   <div className="space-y-2">
                     {ticketTiers.map((tier, i) => (
                       <div key={i} className="flex gap-2 items-center">
                         <input placeholder={t("events.tier_name")} value={tier.name} onChange={(e) => { const t2 = [...ticketTiers]; t2[i] = { ...t2[i], name: e.target.value }; setTicketTiers(t2); }}
-                          className="flex-1 px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                          className="flex-1 px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                         <select value={tier.type} onChange={(e) => { const t2 = [...ticketTiers]; t2[i] = { ...t2[i], type: e.target.value }; setTicketTiers(t2); }}
-                          className="px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+                          className="px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
                           <option value="regular">{t("events.ticket_type_regular")}</option>
                           <option value="early_bird">{t("events.ticket_type_early_bird")}</option>
                           <option value="vip">{t("events.ticket_type_vip")}</option>
                           <option value="student">{t("events.ticket_type_student")}</option>
                         </select>
                         <input type="number" placeholder={t("events.tier_price")} value={tier.price || ""} onChange={(e) => { const t2 = [...ticketTiers]; t2[i] = { ...t2[i], price: Number(e.target.value) }; setTicketTiers(t2); }}
-                          className="w-28 px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
-                        <button type="button" onClick={() => setTicketTiers(ticketTiers.filter((_, j) => j !== i))} className="text-stone-400 hover:text-red-500 transition">
+                          className="w-28 px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                        <button type="button" onClick={() => setTicketTiers(ticketTiers.filter((_, j) => j !== i))} className="text-stone-400 dark:text-stone-500 hover:text-red-500 dark:hover:text-red-400 transition">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     ))}
                     <button type="button" onClick={() => setTicketTiers([...ticketTiers, { name: "", type: "regular", price: 0 }])}
-                      className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-medium">
+                      className="flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium">
                       <Plus className="w-3 h-3" /> {t("events.add_tier")}
                     </button>
                   </div>
@@ -280,45 +280,45 @@ export default function EventsPage() {
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.recurrence")}</label>
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.recurrence")}</label>
             <select value={recurrenceType} onChange={(e) => { setRecurrenceType(e.target.value); if (e.target.value === "open_door") setRecurrenceConfig({ weekly_hours: defaultWeeklyHours() }); else setRecurrenceConfig({}); }}
-              className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+              className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
               {RECURRENCE_TYPES.map((r) => <option key={r.value} value={r.value}>{t(`events.${r.labelKey}`)}</option>)}
             </select>
             {recurrenceType !== "none" && recurrenceType !== "open_door" && (
               <div className="mt-2">
-                <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.recurrence_end")}</label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.recurrence_end")}</label>
                 <input type="datetime-local" value={recurrenceConfig.recurrence_end ? new Date(recurrenceConfig.recurrence_end).toISOString().slice(0, 16) : ""}
                   onChange={(e) => setRecurrenceConfig({ ...recurrenceConfig, recurrence_end: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                  className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                  className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
               </div>
             )}
             {recurrenceType === "open_door" && (
               <div className="mt-3 space-y-2">
-                <p className="text-xs text-stone-400">{t("events.weekly_hours_hint")}</p>
+                <p className="text-xs text-stone-600 dark:text-stone-400">{t("events.weekly_hours_hint")}</p>
                 {DAYS_OF_WEEK.map((day) => {
                   const hours = recurrenceConfig.weekly_hours?.[day];
                   return (
                     <div key={day} className="flex items-center gap-2">
-                      <label className="w-10 text-sm font-medium text-stone-600">{t(`events.day_${day}`)}</label>
+                      <label className="w-10 text-sm font-medium text-stone-600 dark:text-stone-300">{t(`events.day_${day}`)}</label>
                       <input type="checkbox" checked={!!hours} onChange={(e) => {
                         const wh = { ...(recurrenceConfig.weekly_hours || defaultWeeklyHours()) };
                         wh[day] = e.target.checked ? { open: "09:00", close: "18:00" } : null;
                         setRecurrenceConfig({ ...recurrenceConfig, weekly_hours: wh });
-                      }} className="rounded border-primary-200 text-primary-500" />
+                      }} className="rounded border-primary-200 dark:border-stone-600 text-primary-500" />
                       {hours && (
                         <>
                           <input type="time" value={hours.open} onChange={(e) => {
                             const wh = { ...(recurrenceConfig.weekly_hours || {}) };
                             wh[day] = { ...wh[day], open: e.target.value };
                             setRecurrenceConfig({ ...recurrenceConfig, weekly_hours: wh });
-                          }} className="px-2 py-1 rounded-lg border border-primary-100 bg-white text-sm" />
-                          <span className="text-stone-400">—</span>
+                          }} className="px-2 py-1 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm" />
+                          <span className="text-stone-400 dark:text-stone-500">—</span>
                           <input type="time" value={hours.close} onChange={(e) => {
                             const wh = { ...(recurrenceConfig.weekly_hours || {}) };
                             wh[day] = { ...wh[day], close: e.target.value };
                             setRecurrenceConfig({ ...recurrenceConfig, weekly_hours: wh });
-                          }} className="px-2 py-1 rounded-lg border border-primary-100 bg-white text-sm" />
+                          }} className="px-2 py-1 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm" />
                         </>
                       )}
                     </div>
@@ -328,8 +328,8 @@ export default function EventsPage() {
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.description_label")}</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.description_label")}</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
           </div>
           <Button type="submit" onClick={handleCreate}>{t("events.create_event")}</Button>
         </Card>
@@ -356,13 +356,13 @@ export default function EventsPage() {
               <Link
                 key={event.id}
                 href={`/events/${event.id}`}
-                className={`group rounded-2xl border border-primary-100/40 bg-white overflow-hidden transition-all duration-200 hover:shadow-lg hover:shadow-primary-900/5 hover:-translate-y-0.5 animate-fade-in-up ${
-                  isUpcoming ? "ring-2 ring-primary-200/60" : ""
+                className={`group rounded-2xl border border-primary-100/40 dark:border-stone-700 bg-white dark:bg-stone-900 overflow-hidden transition-all duration-200 hover:shadow-lg hover:shadow-primary-900/5 dark:hover:shadow-black/20 hover:-translate-y-0.5 animate-fade-in-up ${
+                  isUpcoming ? "ring-2 ring-primary-200/60 dark:ring-primary-800/40" : ""
                 }`}
                 style={{ animationDelay: `${idx * 50}ms`, animationFillMode: "backwards" }}
               >
                 {/* Image */}
-                <div className="relative h-40 bg-gradient-to-br from-primary-100 to-primary-50 overflow-hidden">
+                <div className="relative h-40 bg-gradient-to-br from-primary-100 to-primary-50 dark:from-primary-900/30 dark:to-primary-950/20 overflow-hidden">
                   {event.image_url ? (
                     <img
                       src={event.image_url}
@@ -372,14 +372,14 @@ export default function EventsPage() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Calendar className="w-10 h-10 text-primary-200" />
+                      <Calendar className="w-10 h-10 text-primary-200 dark:text-primary-700" />
                     </div>
                   )}
                   {/* Date badge */}
-                  <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-xl px-3 py-1.5 shadow-sm">
+                  <div className="absolute top-3 left-3 bg-white/90 dark:bg-stone-800/90 backdrop-blur-sm rounded-xl px-3 py-1.5 shadow-sm">
                     <div className="text-center">
-                      <div className="text-lg font-bold text-stone-800 leading-none">{eventDate.getDate()}</div>
-                      <div className="text-[10px] font-medium text-stone-500 uppercase mt-0.5">
+                      <div className="text-lg font-bold text-stone-800 dark:text-stone-100 leading-none">{eventDate.getDate()}</div>
+                      <div className="text-[10px] font-medium text-stone-500 dark:text-stone-400 uppercase mt-0.5">
                         {eventDate.toLocaleDateString("en-US", { month: "short" })}
                       </div>
                     </div>
@@ -393,26 +393,26 @@ export default function EventsPage() {
                   {/* Category badge */}
                   {event.category && (
                     <div className="absolute bottom-3 right-3">
-                      <Badge variant="sage" className="bg-white/90 backdrop-blur-sm shadow-sm">{event.category}</Badge>
+                      <Badge variant="sage" className="bg-white/90 dark:bg-stone-800/90 backdrop-blur-sm shadow-sm">{event.category}</Badge>
                     </div>
                   )}
                   {/* Status badge */}
                   {event.status === "draft" && (
                     <div className="absolute bottom-3 left-3">
-                      <Badge variant="stone" className="bg-white/90 backdrop-blur-sm shadow-sm">Draft</Badge>
+                      <Badge variant="stone" className="bg-white/90 dark:bg-stone-800/90 backdrop-blur-sm shadow-sm">Draft</Badge>
                     </div>
                   )}
                 </div>
 
                 {/* Content */}
                 <div className="p-4">
-                  <h3 className="font-semibold text-stone-800 group-hover:text-primary-700 transition line-clamp-1 font-display">
+                  <h3 className="font-semibold text-stone-800 dark:text-stone-100 group-hover:text-primary-700 dark:group-hover:text-primary-400 transition line-clamp-1 font-display">
                     {event.title}
                   </h3>
                   {event.description && (
-                    <p className="text-sm text-stone-500 mt-1 line-clamp-2 font-light leading-relaxed">{event.description}</p>
+                    <p className="text-sm text-stone-500 dark:text-stone-400 mt-1 line-clamp-2 font-light leading-relaxed">{event.description}</p>
                   )}
-                  <div className="flex items-center gap-3 mt-3 text-xs text-stone-400 flex-wrap">
+                  <div className="flex items-center gap-3 mt-3 text-xs text-stone-600 dark:text-stone-400 flex-wrap">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5" />
                       {eventDate.toLocaleDateString("en-US", {
@@ -431,7 +431,7 @@ export default function EventsPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <span className="flex items-center gap-1 text-xs text-stone-400">
+                    <span className="flex items-center gap-1 text-xs text-stone-600 dark:text-stone-400">
                       <Users className="w-3.5 h-3.5" />
                       {event.attendee_count}{event.max_attendees ? `/${event.max_attendees}` : ""}
                     </span>

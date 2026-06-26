@@ -13,10 +13,10 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 
 function Section({ icon: Icon, title, children }: { icon: any; title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-primary-100/40 bg-white p-5">
+    <div className="rounded-2xl border border-primary-100/40 dark:border-stone-700 bg-white dark:bg-stone-900 p-5">
       <div className="flex items-center gap-2 mb-3">
-        <Icon className="w-4 h-4 text-primary-500" />
-        <h3 className="text-sm font-display font-semibold text-stone-700 uppercase tracking-wider">{title}</h3>
+        <Icon className="w-4 h-4 text-primary-500 dark:text-primary-400" />
+        <h3 className="text-sm font-display font-semibold text-stone-700 dark:text-stone-200 uppercase tracking-wider">{title}</h3>
       </div>
       {children}
     </div>
@@ -26,9 +26,9 @@ function Section({ icon: Icon, title, children }: { icon: any; title: string; ch
 function DataRow({ label, value }: { label: string; value: React.ReactNode }) {
   if (!value) return null;
   return (
-    <div className="flex justify-between py-1.5 border-b border-stone-100 last:border-0">
-      <span className="text-xs text-stone-500">{label}</span>
-      <span className="text-sm text-stone-700 font-medium text-right">{value}</span>
+    <div className="flex justify-between py-1.5 border-b border-stone-100 dark:border-stone-800 last:border-0">
+      <span className="text-xs text-stone-500 dark:text-stone-400">{label}</span>
+      <span className="text-sm text-stone-700 dark:text-stone-200 font-medium text-right">{value}</span>
     </div>
   );
 }
@@ -37,7 +37,7 @@ function MonthBar({ start, end, label, color }: { start?: number | null; end?: n
   if (!start || !end) return null;
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[10px] text-stone-400 w-16 shrink-0">{label}</span>
+      <span className="text-[10px] text-stone-600 dark:text-stone-400 w-16 shrink-0">{label}</span>
       <div className="flex gap-0.5 flex-1">
         {MONTHS.map((_, i) => {
           const month = i + 1;
@@ -50,7 +50,7 @@ function MonthBar({ start, end, label, color }: { start?: number | null; end?: n
           return (
             <div
               key={i}
-              className={`h-4 flex-1 rounded-sm transition-colors ${active ? color : "bg-stone-100"}`}
+              className={`h-4 flex-1 rounded-sm transition-colors ${active ? color : "bg-stone-100 dark:bg-stone-800"}`}
               title={MONTHS[i]}
             />
           );
@@ -108,17 +108,17 @@ export default function PlantDetailPage() {
 
       {/* Hero */}
       <div className="flex flex-col sm:flex-row gap-6 mb-8">
-        <div className="w-full sm:w-48 h-48 rounded-2xl bg-primary-50 flex items-center justify-center overflow-hidden shrink-0">
+        <div className="w-full sm:w-48 h-48 rounded-2xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center overflow-hidden shrink-0">
           {p.image_url ? (
             <img src={p.image_url} alt={p.scientific_name} className="w-full h-full object-cover" />
           ) : (
-            <Sprout className="w-12 h-12 text-primary-300" />
+            <Sprout className="w-12 h-12 text-primary-300 dark:text-primary-600" />
           )}
         </div>
         <div className="flex-1">
-          <h1 className="text-3xl font-display font-bold text-stone-800 italic">{p.scientific_name}</h1>
+          <h1 className="text-3xl font-display font-bold text-stone-800 dark:text-stone-100 italic">{p.scientific_name}</h1>
           {p.scientific_name_full && p.scientific_name_full !== p.scientific_name && (
-            <p className="text-sm text-stone-400 italic mt-1">{p.scientific_name_full}</p>
+            <p className="text-sm text-stone-600 dark:text-stone-400 italic mt-1">{p.scientific_name_full}</p>
           )}
           <div className="flex flex-wrap gap-2 mt-3">
             {p.common_names_en && p.common_names_en.map((n: string) => (
@@ -220,7 +220,7 @@ export default function PlantDetailPage() {
       {p.notes && (
         <div className="mt-4">
           <Section icon={BookOpen} title={t("plants.notes") || "Notes"}>
-            <p className="text-sm text-stone-600 leading-relaxed whitespace-pre-line">{p.notes}</p>
+            <p className="text-sm text-stone-600 dark:text-stone-300 leading-relaxed whitespace-pre-line">{p.notes}</p>
           </Section>
         </div>
       )}
@@ -232,17 +232,17 @@ export default function PlantDetailPage() {
             {/* iNaturalist */}
             {external.inaturalist?.taxa?.length > 0 && (
               <div className="mb-4">
-                <p className="text-xs text-stone-400 uppercase tracking-wider mb-2">iNaturalist</p>
+                <p className="text-xs text-stone-600 dark:text-stone-400 uppercase tracking-wider mb-2">iNaturalist</p>
                 {external.inaturalist.taxa.map((taxon: any) => (
-                  <div key={taxon.id} className="flex items-center gap-3 py-2 border-b border-stone-100 last:border-0">
+                  <div key={taxon.id} className="flex items-center gap-3 py-2 border-b border-stone-100 dark:border-stone-800 last:border-0">
                     {taxon.image_url && (
                       <img src={taxon.image_url} alt="" className="w-8 h-8 rounded-lg object-cover" />
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-stone-700 italic">{taxon.name}</p>
-                      {taxon.common_name && <p className="text-xs text-stone-500">{taxon.common_name}</p>}
+                      <p className="text-sm text-stone-700 dark:text-stone-200 italic">{taxon.name}</p>
+                      {taxon.common_name && <p className="text-xs text-stone-500 dark:text-stone-400">{taxon.common_name}</p>}
                     </div>
-                    <span className="text-[10px] text-stone-400">{taxon.observations_count?.toLocaleString()} obs</span>
+                    <span className="text-[10px] text-stone-600 dark:text-stone-400">{taxon.observations_count?.toLocaleString()} obs</span>
                   </div>
                 ))}
               </div>
@@ -251,13 +251,13 @@ export default function PlantDetailPage() {
             {/* GBIF */}
             {external.gbif?.occurrences_pt?.occurrences?.length > 0 && (
               <div>
-                <p className="text-xs text-stone-400 uppercase tracking-wider mb-2">
+                <p className="text-xs text-stone-600 dark:text-stone-400 uppercase tracking-wider mb-2">
                   GBIF Portugal — {external.gbif.occurrences_pt.total.toLocaleString()} occurrences
                 </p>
                 {external.gbif.occurrences_pt.occurrences.slice(0, 5).map((occ: any) => (
-                  <div key={occ.key} className="py-2 border-b border-stone-100 last:border-0">
-                    <p className="text-sm text-stone-700">{occ.locality || occ.county || occ.state_province || "Portugal"}</p>
-                    <p className="text-[10px] text-stone-400">{occ.date || "Unknown date"} — {occ.basis_of_record}</p>
+                  <div key={occ.key} className="py-2 border-b border-stone-100 dark:border-stone-800 last:border-0">
+                    <p className="text-sm text-stone-700 dark:text-stone-200">{occ.locality || occ.county || occ.state_province || "Portugal"}</p>
+                    <p className="text-[10px] text-stone-600 dark:text-stone-400">{occ.date || "Unknown date"} — {occ.basis_of_record}</p>
                   </div>
                 ))}
               </div>

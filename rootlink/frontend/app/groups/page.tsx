@@ -91,33 +91,33 @@ export default function GroupsPage() {
       />
 
       {/* Hero description */}
-      <Card variant="plain" className="p-6 mb-8 bg-gradient-to-br from-primary-50 to-white border-primary-100">
+      <Card variant="plain" className="p-6 mb-8 bg-gradient-to-br from-primary-50 to-white dark:from-primary-900/20 dark:to-stone-900 border-primary-100 dark:border-stone-700">
         <div className="grid md:grid-cols-3 gap-6">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center shrink-0">
-              <MessageCircle className="w-5 h-5 text-primary-600" />
+            <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center shrink-0">
+              <MessageCircle className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-stone-800 text-sm">{t("groups.hero_discuss") || "Discuss & Share"}</h3>
-              <p className="text-xs text-stone-500 mt-1 font-light leading-relaxed">{t("groups.hero_discuss_desc") || "Exchange tips, ask questions, and share your projects with like-minded people."}</p>
+              <h3 className="font-semibold text-stone-800 dark:text-stone-100 text-sm">{t("groups.hero_discuss") || "Discuss & Share"}</h3>
+              <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-light leading-relaxed">{t("groups.hero_discuss_desc") || "Exchange tips, ask questions, and share your projects with like-minded people."}</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-earth-100 flex items-center justify-center shrink-0">
-              <Calendar className="w-5 h-5 text-earth-600" />
+            <div className="w-10 h-10 rounded-xl bg-earth-100 dark:bg-earth-900/30 flex items-center justify-center shrink-0">
+              <Calendar className="w-5 h-5 text-earth-600 dark:text-earth-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-stone-800 text-sm">{t("groups.hero_events") || "Group Events"}</h3>
-              <p className="text-xs text-stone-500 mt-1 font-light leading-relaxed">{t("groups.hero_events_desc") || "Organise workshops, meetups, and gatherings for your community."}</p>
+              <h3 className="font-semibold text-stone-800 dark:text-stone-100 text-sm">{t("groups.hero_events") || "Group Events"}</h3>
+              <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-light leading-relaxed">{t("groups.hero_events_desc") || "Organise workshops, meetups, and gatherings for your community."}</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
-              <Users className="w-5 h-5 text-green-600" />
+            <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
+              <Users className="w-5 h-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-stone-800 text-sm">{t("groups.hero_network") || "Grow Together"}</h3>
-              <p className="text-xs text-stone-500 mt-1 font-light leading-relaxed">{t("groups.hero_network_desc") || "Connect with fellow gardeners, woodworkers, and homesteaders in your region."}</p>
+              <h3 className="font-semibold text-stone-800 dark:text-stone-100 text-sm">{t("groups.hero_network") || "Grow Together"}</h3>
+              <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-light leading-relaxed">{t("groups.hero_network_desc") || "Connect with fellow gardeners, woodworkers, and homesteaders in your region."}</p>
             </div>
           </div>
         </div>
@@ -129,18 +129,18 @@ export default function GroupsPage() {
           <form onSubmit={handleCreate} className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("groups.name_label")}</label>
-              <input type="text" value={name} onChange={(e) => { setName(e.target.value); setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")); }} required className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("groups.name_label")}</label>
+              <input type="text" value={name} onChange={(e) => { setName(e.target.value); setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")); }} required className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("groups.slug_label")}</label>
-              <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)} required className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("groups.slug_label")}</label>
+              <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)} required className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
             </div>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("groups.family_label") || "Family"}</label>
-              <select value={family} onChange={(e) => handleFamilyChange(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("groups.family_label") || "Family"}</label>
+              <select value={family} onChange={(e) => handleFamilyChange(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
                 <option value="">{t("groups.family_none") || "Select a family..."}</option>
                 {families.map((fam) => (
                   <option key={fam.value} value={fam.value}>{locale === "pt" ? fam.label_pt : fam.label}</option>
@@ -148,8 +148,8 @@ export default function GroupsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("groups.category_label")}</label>
-              <select value={category} onChange={(e) => setCategory(e.target.value)} disabled={!family} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15 disabled:opacity-50">
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("groups.category_label")}</label>
+              <select value={category} onChange={(e) => setCategory(e.target.value)} disabled={!family} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15 disabled:opacity-50">
                 <option value="">{t("groups.category_none") || "All categories"}</option>
                 {familyCategories.map((cat) => (
                   <option key={cat.value} value={cat.value}>{locale === "pt" ? cat.label_pt : cat.label}</option>
@@ -158,24 +158,24 @@ export default function GroupsPage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t("groups.description_label")}</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("groups.description_label")}</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
           </div>
 
           {suggestions.length > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
-              <div className="flex items-center gap-1.5 text-sm font-medium text-blue-800 mb-2">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-4">
+              <div className="flex items-center gap-1.5 text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
                 <Search className="w-4 h-4" /> {t("groups.similar_groups")}
               </div>
               <div className="space-y-2">
                 {suggestions.map((sg) => (
                   <Link key={sg.id} href={`/groups/${sg.id}`}
-                    className="flex items-center justify-between bg-white rounded-xl px-4 py-2.5 border border-blue-100 hover:border-blue-300 transition text-sm">
+                    className="flex items-center justify-between bg-white dark:bg-stone-900 rounded-xl px-4 py-2.5 border border-blue-100 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-600 transition text-sm">
                     <div>
-                      <span className="font-medium text-stone-800">{sg.name}</span>
-                      {sg.description && <span className="text-stone-500 ml-2 font-light">— {sg.description}</span>}
+                      <span className="font-medium text-stone-800 dark:text-stone-100">{sg.name}</span>
+                      {sg.description && <span className="text-stone-500 dark:text-stone-400 ml-2 font-light">— {sg.description}</span>}
                     </div>
-                    <ExternalLink className="w-3.5 h-3.5 text-blue-500 shrink-0 ml-2" />
+                    <ExternalLink className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 shrink-0 ml-2" />
                   </Link>
                 ))}
               </div>
@@ -203,10 +203,10 @@ export default function GroupsPage() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {groups.map((group) => (
             <a key={group.id} href={`/groups/${group.id}`} className="card-lift p-5 group">
-              <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+              <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                 <Hash className="w-5 h-5 text-primary-500" />
               </div>
-              <h3 className="font-semibold text-stone-800 group-hover:text-primary-700 transition">{group.name}</h3>
+              <h3 className="font-semibold text-stone-800 dark:text-stone-100 group-hover:text-primary-700 transition">{group.name}</h3>
               <p className="text-sm text-stone-500 mt-1 line-clamp-2 font-light">
                 {group.description || t("groups.no_description")}
               </p>

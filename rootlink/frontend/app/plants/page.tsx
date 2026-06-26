@@ -54,7 +54,7 @@ export default function PlantsPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
       <div className="flex items-center gap-3 mb-2">
-        <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center">
           <Sprout className="w-5 h-5 text-primary-500" />
         </div>
         <div>
@@ -65,13 +65,13 @@ export default function PlantsPage() {
 
       <form onSubmit={handleSearch} className="mt-6 flex gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("plants.search_placeholder") || "Search by name, genus, or family..."}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-primary-200/60 bg-white/80 backdrop-blur-sm text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none transition-all font-serif"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-primary-200/60 dark:border-stone-700 bg-white/80 dark:bg-stone-900/80 backdrop-blur-sm text-stone-800 dark:text-stone-100 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none transition-all font-serif"
           />
         </div>
         <Button type="submit" size="md">{t("plants.search") || "Search"}</Button>
@@ -85,7 +85,7 @@ export default function PlantsPage() {
             className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
               plantType === pt.value
                 ? "bg-primary-500 text-white border-primary-500 shadow-sm"
-                : "bg-white text-stone-600 border-primary-100 hover:border-primary-300"
+                : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border-primary-100 dark:border-stone-700 hover:border-primary-300 dark:hover:border-primary-600"
             }`}
           >
             {pt.label}
@@ -112,20 +112,20 @@ export default function PlantsPage() {
               <a
                 key={p.id}
                 href={`/plants/${p.id}`}
-                className="group rounded-2xl border border-primary-100/40 bg-white p-4 transition-all hover:shadow-md hover:border-primary-200/60"
+                className="group rounded-2xl border border-primary-100/40 dark:border-stone-700 bg-white dark:bg-stone-900 p-4 transition-all hover:shadow-md hover:border-primary-200/60 dark:hover:border-primary-700"
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-14 h-14 rounded-xl bg-primary-50 shrink-0 flex items-center justify-center overflow-hidden">
+                  <div className="w-14 h-14 rounded-xl bg-primary-50 dark:bg-primary-900/30 shrink-0 flex items-center justify-center overflow-hidden">
                     {p.image_url ? (
                       <img src={p.image_url} alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
                     ) : (
-                      <Sprout className="w-6 h-6 text-primary-400" />
+                      <Sprout className="w-6 h-6 text-primary-400 dark:text-primary-500" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-display font-semibold text-stone-800 group-hover:text-primary-700 transition italic truncate">{p.scientific_name}</h3>
+                    <h3 className="text-sm font-display font-semibold text-stone-800 dark:text-stone-100 group-hover:text-primary-700 dark:group-hover:text-primary-400 transition italic truncate">{p.scientific_name}</h3>
                     {p.common_names_en && p.common_names_en.length > 0 && (
-                      <p className="text-xs text-stone-500 mt-0.5 truncate">{p.common_names_en.slice(0, 2).join(", ")}</p>
+                      <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5 truncate">{p.common_names_en.slice(0, 2).join(", ")}</p>
                     )}
                     <div className="flex gap-1.5 mt-2 flex-wrap">
                       {p.plant_type && <Badge variant="sage" className="text-[10px]">{p.plant_type}</Badge>}

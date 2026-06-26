@@ -85,11 +85,11 @@ export default function ListingDetailPage() {
 
   if (loading) return (
     <div className="max-w-4xl mx-auto px-4 sm:px-8 py-12 space-y-6">
-      <div className="h-8 bg-primary-100 rounded w-3/4 animate-pulse" />
-      <div className="h-80 bg-primary-100 rounded-2xl animate-pulse" />
+      <div className="h-8 bg-primary-100 dark:bg-primary-950/20 rounded w-3/4 animate-pulse" />
+      <div className="h-80 bg-primary-100 dark:bg-primary-950/20 rounded-2xl animate-pulse" />
     </div>
   );
-  if (!listing) return <div className="text-center py-20 text-stone-400">{t("marketplace.not_found")}</div>;
+  if (!listing) return <div className="text-center py-20 text-stone-500 dark:text-stone-400">{t("marketplace.not_found")}</div>;
 
   const Icon = typeIcons[listing.listing_type] || Package;
   const images = listing.images || [];
@@ -124,14 +124,14 @@ export default function ListingDetailPage() {
         <div>
           {images.length > 0 ? (
             <>
-              <div className="rounded-2xl overflow-hidden bg-primary-100/40 mb-3">
+              <div className="rounded-2xl overflow-hidden bg-primary-100 dark:bg-primary-900/30 mb-3">
                 <img src={images[activeImage]} alt={listing.title} className="w-full h-80 object-cover" />
               </div>
               {images.length > 1 && (
                 <div className="flex gap-2">
                   {images.map((img: string, i: number) => (
                     <button key={i} onClick={() => setActiveImage(i)}
-                      className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition ${activeImage === i ? "border-primary-500" : "border-stone-200 hover:border-primary-300"}`}>
+                      className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition ${activeImage === i ? "border-primary-500" : "border-stone-200 dark:border-stone-700 hover:border-primary-300 dark:hover:border-primary-600"}`}>
                       <img src={img} alt="" className="w-full h-full object-cover" />
                     </button>
                   ))}
@@ -139,8 +139,8 @@ export default function ListingDetailPage() {
               )}
             </>
           ) : (
-            <div className="rounded-2xl bg-primary-100/40 h-80 flex items-center justify-center">
-              <Package className="w-16 h-16 text-primary-300" />
+            <div className="rounded-2xl bg-primary-100 dark:bg-primary-900/30 h-80 flex items-center justify-center">
+              <Package className="w-16 h-16 text-primary-300 dark:text-primary-600" />
             </div>
           )}
         </div>
@@ -157,7 +157,7 @@ export default function ListingDetailPage() {
             {listing.status === "sold" && <Badge variant="red">{t("marketplace.sold")}</Badge>}
           </div>
 
-          <h1 className="text-2xl font-display font-bold text-stone-800 mb-3">{listing.title}</h1>
+          <h1 className="text-2xl font-display font-bold text-stone-800 dark:text-stone-100 mb-3">{listing.title}</h1>
 
           <p className="text-3xl font-display font-bold text-primary-700 mb-2">{formatPrice()}</p>
 
@@ -178,13 +178,13 @@ export default function ListingDetailPage() {
           )}
 
           {listing.description && (
-            <p className="text-stone-600 font-serif leading-relaxed mb-4">{listing.description}</p>
+            <p className="text-stone-600 dark:text-stone-300 font-serif leading-relaxed mb-4">{listing.description}</p>
           )}
 
           {listing.swap_preferences && (
-            <div className="bg-blue-50 rounded-xl p-4 mb-4">
-              <p className="text-sm font-display font-semibold text-blue-800 mb-1">{t("marketplace.swap_preferences")}</p>
-              <p className="text-sm text-blue-600 font-serif">{listing.swap_preferences}</p>
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 mb-4">
+              <p className="text-sm font-display font-semibold text-blue-800 dark:text-blue-300 mb-1">{t("marketplace.swap_preferences")}</p>
+              <p className="text-sm text-blue-600 dark:text-blue-400 font-serif">{listing.swap_preferences}</p>
             </div>
           )}
 
@@ -201,16 +201,16 @@ export default function ListingDetailPage() {
           )}
 
           {/* Seller card */}
-          <Link href={`/profile?id=${listing.seller_id}`} className="flex items-center gap-3 bg-primary-50/40 rounded-xl p-3 mb-4 hover:bg-primary-50 transition">
-            <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-sm font-display font-semibold text-primary-600">
+          <Link href={`/profile?id=${listing.seller_id}`} className="flex items-center gap-3 bg-primary-50/40 dark:bg-primary-900/20 rounded-xl p-3 mb-4 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition">
+            <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-sm font-display font-semibold text-primary-600 dark:text-primary-400">
               {listing.seller_name?.[0]?.toUpperCase() || "?"}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-sm font-medium text-stone-700 truncate">{listing.seller_name}</span>
-                {listing.seller_verified && <CheckCircle className="w-3.5 h-3.5 text-green-500" />}
+                <span className="text-sm font-medium text-stone-700 dark:text-stone-200 truncate">{listing.seller_name}</span>
+                {listing.seller_verified && <CheckCircle className="w-3.5 h-3.5 text-green-500 dark:text-green-400" />}
               </div>
-              <span className="text-xs text-stone-400">{t("marketplace.view_seller")}</span>
+              <span className="text-xs text-stone-500 dark:text-stone-400">{t("marketplace.view_seller")}</span>
             </div>
           </Link>
 
@@ -230,13 +230,13 @@ export default function ListingDetailPage() {
             </>
           )}
           {!isOwner && listing.status === "active" && listing.quantity <= 0 && (
-            <Card variant="plain" className="p-4 bg-stone-50 text-center">
-              <p className="text-sm text-stone-500 font-serif">{t("marketplace.no_longer_available")}</p>
+            <Card variant="plain" className="p-4 bg-stone-50 dark:bg-stone-800/50 text-center">
+              <p className="text-sm text-stone-500 dark:text-stone-400 font-serif">{t("marketplace.no_longer_available")}</p>
             </Card>
           )}
           {isOwner && (
-            <Card variant="plain" className="p-4 bg-primary-50/30">
-              <p className="text-sm text-stone-500 font-serif">{t("marketplace.your_listing")}</p>
+            <Card variant="plain" className="p-4 bg-primary-50/30 dark:bg-primary-900/20">
+              <p className="text-sm text-stone-500 dark:text-stone-400 font-serif">{t("marketplace.your_listing")}</p>
               <div className="flex gap-2 mt-2">
                 <Button variant="secondary" size="sm" onClick={() => router.push(`/marketplace/edit/${listing.id}`)}>
                   {t("marketplace.edit")}
@@ -254,7 +254,7 @@ export default function ListingDetailPage() {
           )}
 
           {/* Meta */}
-          <div className="flex items-center gap-3 mt-4 text-xs text-stone-400">
+          <div className="flex items-center gap-3 mt-4 text-xs text-stone-500 dark:text-stone-400">
             <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {listing.created_at ? new Date(listing.created_at).toLocaleDateString() : ""}</span>
             <span>·</span>
             <span>{listing.view_count} {t("marketplace.views")}</span>

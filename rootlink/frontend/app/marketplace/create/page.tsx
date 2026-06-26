@@ -119,12 +119,12 @@ export default function CreateListingPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-8 py-12">
-      <h1 className="text-2xl font-display font-bold text-stone-800 mb-6">{t("marketplace.create_title")}</h1>
+      <h1 className="text-2xl font-display font-bold text-stone-800 dark:text-stone-100 mb-6">{t("marketplace.create_title")}</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Listing type selector */}
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-3">{t("marketplace.listing_type")}</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-3">{t("marketplace.listing_type")}</label>
           <div className="grid grid-cols-5 gap-2">
             {LISTING_TYPES.map((lt) => {
               const Icon = lt.icon;
@@ -134,50 +134,50 @@ export default function CreateListingPage() {
                   type="button"
                   onClick={() => setListingType(lt.value)}
                   className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition ${
-                    listingType === lt.value ? "border-primary-500 bg-primary-50/40" : "border-stone-200 hover:border-primary-300"
+                    listingType === lt.value ? "border-primary-500 bg-primary-50/40 dark:bg-primary-900/20" : "border-stone-200 dark:border-stone-700 hover:border-primary-300 dark:hover:border-primary-600"
                   }`}
                 >
-                  <Icon className={`w-5 h-5 ${listingType === lt.value ? "text-primary-600" : "text-stone-400"}`} />
-                  <span className={`text-[10px] font-medium ${listingType === lt.value ? "text-primary-700" : "text-stone-500"}`}>
+                  <Icon className={`w-5 h-5 ${listingType === lt.value ? "text-primary-600 dark:text-primary-400" : "text-stone-400 dark:text-stone-500"}`} />
+                  <span className={`text-[10px] font-medium ${listingType === lt.value ? "text-primary-700 dark:text-primary-300" : "text-stone-500 dark:text-stone-400"}`}>
                     {t(lt.labelKey)}
                   </span>
                 </button>
               );
             })}
           </div>
-          <p className="text-xs text-stone-400 mt-2 font-serif">{t(LISTING_TYPES.find(lt => lt.value === listingType)?.descKey || "")}</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-2 font-serif">{t(LISTING_TYPES.find(lt => lt.value === listingType)?.descKey || "")}</p>
         </div>
 
         {/* Title */}
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1">{t("marketplace.title_label")}</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("marketplace.title_label")}</label>
           <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required
             placeholder={t("marketplace.title_placeholder")}
-            className="w-full px-4 py-2.5 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
+            className="w-full px-4 py-2.5 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
         </div>
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1">{t("marketplace.description_label")}</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("marketplace.description_label")}</label>
           <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4}
             placeholder={t("marketplace.description_placeholder")}
-            className="w-full px-4 py-2.5 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
+            className="w-full px-4 py-2.5 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
         </div>
 
         {/* Family + Category */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t("marketplace.family_label")}</label>
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("marketplace.family_label")}</label>
             <select value={family} onChange={(e) => handleFamilyChange(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15">
+              className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15">
               <option value="">—</option>
               {families.map((f) => <option key={f.value} value={f.value}>{locale === "pt" ? f.label_pt : f.label}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t("marketplace.category_label")}</label>
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("marketplace.category_label")}</label>
             <select value={category} onChange={(e) => setCategory(e.target.value)} disabled={!family}
-              className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 disabled:opacity-50">
+              className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 disabled:opacity-50">
               <option value="">—</option>
               {familyCategories.map((c) => <option key={c.value} value={c.value}>{locale === "pt" ? c.label_pt : c.label}</option>)}
             </select>
@@ -187,55 +187,55 @@ export default function CreateListingPage() {
         {/* Condition + Price + Quantity */}
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t("marketplace.condition_label")}</label>
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("marketplace.condition_label")}</label>
             <select value={condition} onChange={(e) => setCondition(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15">
+              className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15">
               {CONDITIONS.map((c) => <option key={c.value} value={c.value}>{t(c.labelKey)}</option>)}
             </select>
           </div>
           {showPrice && (
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("marketplace.price_label")} (€)</label>
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("marketplace.price_label")} (€)</label>
               <input type="number" step="0.01" min="0" value={priceCents} onChange={(e) => setPriceCents(e.target.value)}
                 placeholder="0.00"
-                className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
+                className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
             </div>
           )}
           {showPrice && (
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("marketplace.quantity_label")}</label>
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("marketplace.quantity_label")}</label>
               <input type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
+                className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
             </div>
           )}
         </div>
 
         {/* Location */}
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1">
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
             <MapPin className="w-3 h-3 inline mr-1" /> {t("marketplace.location_label")}
           </label>
           <input type="text" value={location} onChange={(e) => setLocation(e.target.value)}
             placeholder={t("marketplace.location_placeholder")}
-            className="w-full px-4 py-2.5 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
+            className="w-full px-4 py-2.5 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
         </div>
 
         {/* Swap preferences */}
         {listingType === "swap" && (
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t("marketplace.swap_preferences")}</label>
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("marketplace.swap_preferences")}</label>
             <input type="text" value={swapPreferences} onChange={(e) => setSwapPreferences(e.target.value)}
               placeholder={t("marketplace.swap_preferences_placeholder")}
-              className="w-full px-4 py-2.5 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
+              className="w-full px-4 py-2.5 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
           </div>
         )}
 
         {/* Waste diverted */}
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1">{t("marketplace.waste_diverted_label")} (kg)</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("marketplace.waste_diverted_label")} (kg)</label>
           <input type="number" step="0.1" min="0" value={wasteDiverted} onChange={(e) => setWasteDiverted(e.target.value)}
             placeholder={t("marketplace.waste_diverted_placeholder")}
-            className="w-full px-4 py-2.5 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
+            className="w-full px-4 py-2.5 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
         </div>
 
         {/* Images */}

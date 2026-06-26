@@ -107,35 +107,35 @@ export default function EntitiesPage() {
         <aside className="lg:w-64 shrink-0 space-y-5">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("entities.search_placeholder")}
-              className="w-full pl-9 pr-3 py-2 rounded-xl border border-primary-200/60 bg-white text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15"
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-primary-200/60 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15"
             />
           </div>
 
           {/* Account type toggle */}
           <div>
-            <p className="text-xs font-display font-semibold text-stone-500 uppercase tracking-wider mb-2">{t("entities.filter_type")}</p>
+            <p className="text-xs font-display font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2">{t("entities.filter_type")}</p>
             <div className="flex gap-1.5 flex-wrap">
               <button
                 onClick={() => setAccountType("")}
-                className={`px-3 py-1.5 text-xs rounded-lg border transition ${!accountType ? "bg-primary-600 text-white border-primary-600" : "bg-white text-stone-600 border-primary-100 hover:border-primary-300"}`}
+                className={`px-3 py-1.5 text-xs rounded-lg border transition ${!accountType ? "bg-primary-600 text-white border-primary-600" : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border-primary-100 dark:border-stone-700 hover:border-primary-300 dark:hover:border-primary-600"}`}
               >
                 {t("entities.all")}
               </button>
               <button
                 onClick={() => setAccountType("organization")}
-                className={`px-3 py-1.5 text-xs rounded-lg border transition ${accountType === "organization" ? "bg-primary-600 text-white border-primary-600" : "bg-white text-stone-600 border-primary-100 hover:border-primary-300"}`}
+                className={`px-3 py-1.5 text-xs rounded-lg border transition ${accountType === "organization" ? "bg-primary-600 text-white border-primary-600" : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border-primary-100 dark:border-stone-700 hover:border-primary-300 dark:hover:border-primary-600"}`}
               >
                 <Building className="w-3 h-3 inline mr-0.5" /> {t("auth.type_organization")}
               </button>
               <button
                 onClick={() => setAccountType("practitioner")}
-                className={`px-3 py-1.5 text-xs rounded-lg border transition ${accountType === "practitioner" ? "bg-primary-600 text-white border-primary-600" : "bg-white text-stone-600 border-primary-100 hover:border-primary-300"}`}
+                className={`px-3 py-1.5 text-xs rounded-lg border transition ${accountType === "practitioner" ? "bg-primary-600 text-white border-primary-600" : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border-primary-100 dark:border-stone-700 hover:border-primary-300 dark:hover:border-primary-600"}`}
               >
                 <Stethoscope className="w-3 h-3 inline mr-0.5" /> {t("auth.type_practitioner")}
               </button>
@@ -145,11 +145,11 @@ export default function EntitiesPage() {
           {/* Entity type (organizations only) */}
           {(!accountType || accountType === "organization") && (
             <div>
-              <p className="text-xs font-display font-semibold text-stone-500 uppercase tracking-wider mb-2">{t("entities.entity_type")}</p>
+              <p className="text-xs font-display font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2">{t("entities.entity_type")}</p>
               <select
                 value={entityType}
                 onChange={(e) => setEntityType(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-primary-100 bg-white text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15"
+                className="w-full px-3 py-2 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15"
               >
                 {ENTITY_TYPES.map((et) => (
                   <option key={et.value} value={et.value}>{t(et.labelKey)}</option>
@@ -160,11 +160,11 @@ export default function EntitiesPage() {
 
           {/* Region */}
           <div>
-            <p className="text-xs font-display font-semibold text-stone-500 uppercase tracking-wider mb-2">{t("entities.filter_region")}</p>
+            <p className="text-xs font-display font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2">{t("entities.filter_region")}</p>
             <select
               value={region}
               onChange={(e) => setRegion(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-primary-100 bg-white text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15"
+              className="w-full px-3 py-2 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15"
             >
               {REGIONS.map((r) => (
                 <option key={r} value={r}>{r || t("entities.all_regions")}</option>
@@ -174,11 +174,11 @@ export default function EntitiesPage() {
 
           {/* Taxonomy family */}
           <div>
-            <p className="text-xs font-display font-semibold text-stone-500 uppercase tracking-wider mb-2">{t("entities.filter_family")}</p>
+            <p className="text-xs font-display font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2">{t("entities.filter_family")}</p>
             <select
               value={family}
               onChange={(e) => setFamily(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-primary-100 bg-white text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15"
+              className="w-full px-3 py-2 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15"
             >
               <option value="">{t("entities.all_families")}</option>
               {families.map((f) => (
@@ -221,7 +221,7 @@ export default function EntitiesPage() {
                   className="card-lift p-5 group"
                 >
                   <div className="flex items-start gap-4 mb-3">
-                    <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center overflow-hidden shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center overflow-hidden shrink-0">
                       {e.avatar_url ? (
                         <img src={e.avatar_url} alt={e.name} className="w-full h-full object-cover" />
                       ) : e.account_type === "practitioner" ? (
@@ -232,7 +232,7 @@ export default function EntitiesPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-display font-semibold text-stone-800 group-hover:text-primary-700 transition truncate">{e.name}</h3>
+                        <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 group-hover:text-primary-700 transition truncate">{e.name}</h3>
                         {e.is_verified && <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />}
                       </div>
                       <div className="flex gap-1.5 mt-1 flex-wrap">
@@ -251,37 +251,37 @@ export default function EntitiesPage() {
                   {e.services && e.services.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-3">
                       {e.services.slice(0, 3).map((s: string) => (
-                        <span key={s} className="text-[10px] bg-primary-50 text-primary-600 px-2 py-0.5 rounded-full">{s}</span>
+                        <span key={s} className="text-[10px] bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 px-2 py-0.5 rounded-full">{s}</span>
                       ))}
-                      {e.services.length > 3 && <span className="text-[10px] text-stone-400">+{e.services.length - 3}</span>}
+                      {e.services.length > 3 && <span className="text-[10px] text-stone-400 dark:text-stone-500">+{e.services.length - 3}</span>}
                     </div>
                   )}
 
                   {e.modality && (
-                    <p className="text-xs text-stone-500 mb-3 flex items-center gap-1">
-                      <Stethoscope className="w-3 h-3 text-stone-400" /> {e.modality}
+                    <p className="text-xs text-stone-500 dark:text-stone-400 mb-3 flex items-center gap-1">
+                      <Stethoscope className="w-3 h-3 text-stone-400 dark:text-stone-500" /> {e.modality}
                     </p>
                   )}
 
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-primary-50">
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-primary-50 dark:border-stone-800">
                     {(e.location || e.service_area) && (
-                      <p className="text-xs text-stone-400 flex items-center gap-1">
+                      <p className="text-xs text-stone-400 dark:text-stone-500 flex items-center gap-1">
                         <MapPin className="w-3 h-3" /> {e.service_area || e.location}
                       </p>
                     )}
                     <div className="flex gap-2 ml-auto">
                       {e.content_count > 0 && (
-                        <span className="text-[10px] text-stone-400 flex items-center gap-0.5">
+                        <span className="text-[10px] text-stone-400 dark:text-stone-500 flex items-center gap-0.5">
                           <FileText className="w-3 h-3" /> {e.content_count}
                         </span>
                       )}
                       {e.event_count > 0 && (
-                        <span className="text-[10px] text-stone-400 flex items-center gap-0.5">
+                        <span className="text-[10px] text-stone-400 dark:text-stone-500 flex items-center gap-0.5">
                           <Calendar className="w-3 h-3" /> {e.event_count}
                         </span>
                       )}
                       {e.group_count > 0 && (
-                        <span className="text-[10px] text-stone-400 flex items-center gap-0.5">
+                        <span className="text-[10px] text-stone-400 dark:text-stone-500 flex items-center gap-0.5">
                           <Users className="w-3 h-3" /> {e.group_count}
                         </span>
                       )}

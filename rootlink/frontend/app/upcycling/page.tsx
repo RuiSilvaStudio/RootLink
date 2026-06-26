@@ -116,17 +116,17 @@ export default function UpcyclingPage() {
       {/* Filters */}
       <div className="flex gap-3 mt-6 mb-6 items-center flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("waste.search_projects")}
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-primary-200/60 bg-white text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15"
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-primary-200/60 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15"
           />
         </div>
         <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}
-          className="px-3 py-2 rounded-xl border border-primary-200/60 bg-white text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15">
+          className="px-3 py-2 rounded-xl border border-primary-200/60 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm font-serif focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15">
           {DIFFICULTIES.map((d) => <option key={d.value} value={d.value}>{t(d.labelKey)}</option>)}
         </select>
       </div>
@@ -134,44 +134,44 @@ export default function UpcyclingPage() {
       {/* Create form */}
       {showForm && (
         <Card variant="plain" className="p-6 mb-6 space-y-4">
-          <h3 className="font-display font-bold text-stone-800">{t("waste.share_project")}</h3>
+          <h3 className="font-display font-bold text-stone-800 dark:text-stone-100">{t("waste.share_project")}</h3>
           <form onSubmit={handleCreate} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("waste.project_title")}</label>
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("waste.project_title")}</label>
               <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required
-                className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
+                className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("waste.project_description")}</label>
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("waste.project_description")}</label>
               <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4}
-                className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
+                className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
             </div>
             <div className="grid md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">{t("waste.materials_used")}</label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("waste.materials_used")}</label>
                 <input type="text" value={materials} onChange={(e) => setMaterials(e.target.value)}
                   placeholder="pallets, tires, bottles..."
-                  className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
+                  className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">{t("waste.difficulty")}</label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("waste.difficulty")}</label>
                 <select value={difficultyForm} onChange={(e) => setDifficultyForm(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15">
+                  className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15">
                   <option value="easy">{t("waste.difficulty_easy")}</option>
                   <option value="intermediate">{t("waste.difficulty_intermediate")}</option>
                   <option value="advanced">{t("waste.difficulty_advanced")}</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">{t("waste.time_spent")} (h)</label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("waste.time_spent")} (h)</label>
                 <input type="number" step="0.5" value={hours} onChange={(e) => setHours(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
+                  className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("waste.waste_diverted")} (kg)</label>
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("waste.waste_diverted")} (kg)</label>
               <input type="number" step="0.1" value={wasteKg} onChange={(e) => setWasteKg(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
+                className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15" />
             </div>
             {/* Before/After images */}
             <div className="grid grid-cols-2 gap-4">
@@ -222,12 +222,12 @@ export default function UpcyclingPage() {
           {projects.map((p) => (
             <Card key={p.id} variant="default" className="overflow-hidden group">
               {/* After image (result) */}
-              <div className="h-40 bg-primary-100/40 overflow-hidden">
+              <div className="h-40 bg-primary-100 dark:bg-primary-900/30 overflow-hidden">
                 {p.after_images?.length > 0 ? (
                   <img src={p.after_images[0]} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Wrench className="w-10 h-10 text-primary-300" />
+                    <Wrench className="w-10 h-10 text-primary-300 dark:text-primary-600" />
                   </div>
                 )}
               </div>
@@ -238,19 +238,19 @@ export default function UpcyclingPage() {
                     <Badge variant="green" className="text-[9px]">{p.estimated_waste_diverted_kg}kg {t("waste.diverted")}</Badge>
                   )}
                 </div>
-                <h3 className="font-display font-semibold text-stone-800 text-sm group-hover:text-primary-700 transition line-clamp-2">{p.title}</h3>
+                <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 text-sm group-hover:text-primary-700 transition line-clamp-2">{p.title}</h3>
                 {p.description && <p className="text-xs text-stone-500 font-serif mt-1 line-clamp-2">{p.description}</p>}
-                {p.materials_used?.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {p.materials_used.slice(0, 3).map((m: string) => (
-                      <span key={m} className="text-[10px] bg-stone-100 text-stone-600 px-2 py-0.5 rounded-full">{m}</span>
-                    ))}
-                  </div>
-                )}
-                <div className="flex items-center justify-between mt-3 pt-3 border-t border-primary-50">
-                  <span className="text-xs text-stone-400 truncate">{p.creator_name}</span>
-                  {p.creator_verified && <CheckCircle className="w-3 h-3 text-green-500" />}
-                </div>
+                    {p.materials_used?.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {p.materials_used.slice(0, 3).map((m: string) => (
+                          <span key={m} className="text-[10px] bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 px-2 py-0.5 rounded-full">{m}</span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-primary-50 dark:border-stone-800">
+                      <span className="text-xs text-stone-400 dark:text-stone-500 truncate">{p.creator_name}</span>
+                      {p.creator_verified && <CheckCircle className="w-3 h-3 text-green-500 dark:text-green-400" />}
+                    </div>
               </div>
             </Card>
           ))}

@@ -306,12 +306,12 @@ export default function EventDetailPage() {
 
   if (loading) return (
     <div className="max-w-4xl mx-auto px-4 sm:px-8 py-12 space-y-6">
-      <div className="h-8 bg-primary-100 rounded w-3/4 animate-pulse" />
-      <div className="h-4 bg-primary-100 rounded w-1/2 animate-pulse" />
-      <div className="h-64 bg-primary-100 rounded-2xl animate-pulse" />
+      <div className="h-8 bg-primary-100 dark:bg-primary-950/20 rounded w-3/4 animate-pulse" />
+      <div className="h-4 bg-primary-100 dark:bg-primary-950/20 rounded w-1/2 animate-pulse" />
+      <div className="h-64 bg-primary-100 dark:bg-primary-950/20 rounded-2xl animate-pulse" />
     </div>
   );
-  if (error) return <div className="text-center py-20 text-stone-400">{error}</div>;
+  if (error) return <div className="text-center py-20 text-stone-500 dark:text-stone-400">{error}</div>;
   if (!event) return null;
 
   const full = event.max_attendees && attendees.length >= event.max_attendees;
@@ -363,25 +363,25 @@ export default function EventDetailPage() {
       </div>
 
       {/* Meta row */}
-      <div className="flex flex-wrap gap-4 mt-4 text-sm text-stone-500">
+      <div className="flex flex-wrap gap-4 mt-4 text-sm text-stone-500 dark:text-stone-400">
         {event.recurrence_type && event.recurrence_type !== "none" ? (
-          <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-stone-400" />
+          <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-stone-500 dark:text-stone-400" />
             {event.recurrence_type === "open_door"
               ? t("events.recurrence_open_door")
               : `${t("events.recurrence")} — ${t(`events.recurrence_${event.recurrence_type}`)}`}
           </span>
         ) : (
-          <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-stone-400" />
+          <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-stone-500 dark:text-stone-400" />
             {new Date(event.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}
           </span>
         )}
         {event.end_date && event.recurrence_type !== "open_door" && (
-          <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-stone-400" />
+          <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-stone-500 dark:text-stone-400" />
             {new Date(event.end_date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
           </span>
         )}
         {event.recurrence_type === "open_door" && event.recurrence_config?.weekly_hours && (
-          <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-stone-400" />
+          <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-stone-500 dark:text-stone-400" />
             {(() => {
               const days = Object.entries(event.recurrence_config.weekly_hours).filter(([, v]) => v);
               return `${days.length} ${t("events.days_open")}`;
@@ -389,13 +389,13 @@ export default function EventDetailPage() {
           </span>
         )}
         {event.location && (
-          <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-stone-400" />{event.location}</span>
+          <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-stone-500 dark:text-stone-400" />{event.location}</span>
         )}
         {event.is_online && (
-          <span className="flex items-center gap-1.5"><Globe className="w-4 h-4 text-stone-400" />{t("events.online")}</span>
+          <span className="flex items-center gap-1.5"><Globe className="w-4 h-4 text-stone-500 dark:text-stone-400" />{t("events.online")}</span>
         )}
-        <button onClick={() => setActiveTab("attendees")} className="flex items-center gap-1.5 hover:text-primary-700 transition font-medium">
-          <Users className="w-4 h-4 text-stone-400" />{attendees.length}{event.max_attendees ? ` / ${event.max_attendees}` : ""}
+        <button onClick={() => setActiveTab("attendees")} className="flex items-center gap-1.5 hover:text-primary-700 dark:hover:text-primary-400 transition font-medium">
+          <Users className="w-4 h-4 text-stone-500 dark:text-stone-400" />{attendees.length}{event.max_attendees ? ` / ${event.max_attendees}` : ""}
         </button>
       </div>
 
@@ -434,7 +434,7 @@ export default function EventDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mt-8 border-b border-primary-100 overflow-x-auto pb-px">
+      <div className="flex gap-1 mt-8 border-b border-primary-100 dark:border-stone-800 overflow-x-auto pb-px">
         {TABS.filter((tab) => {
           if (tab === "donations" && event.ticket_type !== "donation_based") return false;
           if (tab === "tickets" && event.ticket_type !== "paid") return false;
@@ -445,8 +445,8 @@ export default function EventDetailPage() {
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
               activeTab === tab
-                ? "border-primary-500 text-primary-700"
-                : "border-transparent text-stone-400 hover:text-stone-600"
+                ? "border-primary-500 text-primary-700 dark:text-primary-400"
+                : "border-transparent text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200"
             }`}
           >
             {t(`events.tab_${tab}`)}
@@ -463,7 +463,7 @@ export default function EventDetailPage() {
             {/* Recurrence info */}
             {event.recurrence_type && event.recurrence_type !== "none" && (
               <Card variant="plain" className="p-6">
-                <h3 className="font-display font-bold text-stone-800 mb-3">{t("events.recurrence")}</h3>
+                <h3 className="font-display font-bold text-stone-800 dark:text-stone-100 mb-3">{t("events.recurrence")}</h3>
                 <div className="flex items-center gap-2 mb-3">
                   <Badge variant={event.recurrence_type === "open_door" ? "green" : "sage"}>
                     {t(`events.recurrence_${event.recurrence_type}`)}
@@ -476,12 +476,12 @@ export default function EventDetailPage() {
                 </div>
                 {event.recurrence_type === "open_door" && event.recurrence_config?.weekly_hours && (
                   <div className="mt-3 space-y-1">
-                    <p className="text-sm font-medium text-stone-600 mb-2">{t("events.weekly_hours")}</p>
+                    <p className="text-sm font-medium text-stone-600 dark:text-stone-300 mb-2">{t("events.weekly_hours")}</p>
                     <div className="grid grid-cols-7 gap-1 text-center text-xs">
                       {DAYS_OF_WEEK.map((day) => {
                         const hours = event.recurrence_config.weekly_hours[day];
                         return (
-                          <div key={day} className={`rounded-lg p-2 ${hours ? "bg-green-50 text-green-800" : "bg-stone-50 text-stone-400"}`}>
+                          <div key={day} className={`rounded-lg p-2 ${hours ? "bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300" : "bg-stone-50 dark:bg-stone-800 text-stone-400 dark:text-stone-500"}`}>
                             <div className="font-medium">{t(`events.day_${day}`)}</div>
                             <div className="mt-0.5">{hours ? `${hours.open}–${hours.close}` : t("events.closed")}</div>
                           </div>
@@ -494,27 +494,27 @@ export default function EventDetailPage() {
             )}
             {(event.description || event.description_long) && (
               <Card variant="plain" className="p-6">
-                <h3 className="font-display font-bold text-stone-800 mb-3">{t("events.tab_about")}</h3>
+                <h3 className="font-display font-bold text-stone-800 dark:text-stone-100 mb-3">{t("events.tab_about")}</h3>
                 {event.description && (
-                  <p className="text-stone-700 whitespace-pre-wrap font-light leading-relaxed">{event.description}</p>
+                  <p className="text-stone-700 dark:text-stone-300 whitespace-pre-wrap font-light leading-relaxed">{event.description}</p>
                 )}
                 {event.description_long && (
-                  <div className="mt-4 pt-4 border-t border-primary-100">
-                    <p className="text-stone-600 whitespace-pre-wrap leading-relaxed">{event.description_long}</p>
+                  <div className="mt-4 pt-4 border-t border-primary-100 dark:border-stone-800">
+                    <p className="text-stone-600 dark:text-stone-300 whitespace-pre-wrap leading-relaxed">{event.description_long}</p>
                   </div>
                 )}
               </Card>
             )}
             {(event.contact_email || event.contact_phone || event.requirements) && (
               <Card variant="plain" className="p-6">
-                <h3 className="font-display font-bold text-stone-800 mb-3">Details</h3>
-                <div className="space-y-2 text-sm text-stone-600">
+                <h3 className="font-display font-bold text-stone-800 dark:text-stone-100 mb-3">Details</h3>
+                <div className="space-y-2 text-sm text-stone-600 dark:text-stone-300">
                   {event.contact_email && <p>Contact: {event.contact_email}</p>}
                   {event.contact_phone && <p>Phone: {event.contact_phone}</p>}
                   {event.requirements && (
-                    <div className="mt-3 p-3 bg-primary-50 rounded-xl">
-                      <p className="font-medium text-stone-700 mb-1">{t("events.requirements")}</p>
-                      <p className="text-stone-600 whitespace-pre-wrap">{event.requirements}</p>
+                    <div className="mt-3 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-xl">
+                      <p className="font-medium text-stone-700 dark:text-stone-200 mb-1">{t("events.requirements")}</p>
+                      <p className="text-stone-600 dark:text-stone-300 whitespace-pre-wrap">{event.requirements}</p>
                     </div>
                   )}
                 </div>
@@ -531,17 +531,17 @@ export default function EventDetailPage() {
           <div className="space-y-4">
             {event.recurrence_type === "open_door" && event.recurrence_config?.weekly_hours ? (
               <Card variant="plain" className="p-6">
-                <h3 className="font-display font-bold text-stone-800 mb-4">{t("events.weekly_hours")}</h3>
+                <h3 className="font-display font-bold text-stone-800 dark:text-stone-100 mb-4">{t("events.weekly_hours")}</h3>
                 <div className="space-y-2">
                   {DAYS_OF_WEEK.map((day) => {
                     const hours = event.recurrence_config.weekly_hours[day];
                     return (
                       <div key={day} className="flex items-center gap-3 py-2 border-b border-stone-100 last:border-0">
-                        <span className="w-10 font-medium text-stone-600 text-sm">{t(`events.day_${day}`)}</span>
+                        <span className="w-10 font-medium text-stone-600 dark:text-stone-300 text-sm">{t(`events.day_${day}`)}</span>
                         {hours ? (
-                          <span className="text-stone-800 font-serif">{hours.open} — {hours.close}</span>
+                          <span className="text-stone-800 dark:text-stone-100 font-serif">{hours.open} — {hours.close}</span>
                         ) : (
-                          <span className="text-stone-400 italic">{t("events.closed")}</span>
+                          <span className="text-stone-00 dark:text-stone-500 italic">{t("events.closed")}</span>
                         )}
                       </div>
                     );
@@ -561,22 +561,22 @@ export default function EventDetailPage() {
               <Card variant="plain" className="p-4 space-y-3">
                 <div className="grid md:grid-cols-2 gap-3">
                   <input placeholder={t("events.schedule_item_title")} value={scheduleForm.title || ""} onChange={(e) => setScheduleForm({ ...scheduleForm, title: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                   <select value={scheduleForm.type || "talk"} onChange={(e) => setScheduleForm({ ...scheduleForm, type: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
                     {SCHEDULE_TYPES.map((st) => <option key={st.value} value={st.value}>{t(`events.${st.labelKey}`)}</option>)}
                   </select>
                   <input placeholder={t("events.schedule_speaker")} value={scheduleForm.speaker_name || ""} onChange={(e) => setScheduleForm({ ...scheduleForm, speaker_name: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                   <input placeholder={t("events.schedule_location")} value={scheduleForm.location || ""} onChange={(e) => setScheduleForm({ ...scheduleForm, location: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                   <input type="datetime-local" value={scheduleForm.start_time ? new Date(scheduleForm.start_time).toISOString().slice(0, 16) : ""} onChange={(e) => setScheduleForm({ ...scheduleForm, start_time: new Date(e.target.value).toISOString() })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                   <input type="datetime-local" value={scheduleForm.end_time ? new Date(scheduleForm.end_time).toISOString().slice(0, 16) : ""} onChange={(e) => setScheduleForm({ ...scheduleForm, end_time: new Date(e.target.value).toISOString() })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                 </div>
                 <textarea placeholder={t("events.schedule_description")} value={scheduleForm.description || ""} onChange={(e) => setScheduleForm({ ...scheduleForm, description: e.target.value })} rows={2}
-                  className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                  className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                 <div className="flex gap-2">
                   <Button size="sm" onClick={handleScheduleCreate}>{t("events.save")}</Button>
                   <Button variant="ghost" size="sm" onClick={() => setShowScheduleForm(false)}>{t("events.cancel")}</Button>
@@ -591,26 +591,26 @@ export default function EventDetailPage() {
                   const start = new Date(item.start_time);
                   const end = item.end_time ? new Date(item.end_time) : null;
                   const typeColors: Record<string, string> = {
-                    talk: "bg-primary-50 border-primary-200",
-                    workshop: "bg-earth-50 border-earth-200",
-                    break: "bg-stone-50 border-stone-200",
-                    meal: "bg-amber-50 border-amber-200",
-                    networking: "bg-blue-50 border-blue-200",
-                    activity: "bg-green-50 border-green-200",
+                    talk: "bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800",
+                    workshop: "bg-earth-50 dark:bg-earth-900/20 border-earth-200 dark:border-earth-800",
+                    break: "bg-stone-50 dark:bg-stone-800/50 border-stone-200 dark:border-stone-700",
+                    meal: "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800",
+                    networking: "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
+                    activity: "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800",
                   };
                   return (
-                    <div key={item.id} className={`rounded-xl border p-4 ${typeColors[item.type] || "bg-primary-50 border-primary-200"}`}>
+                    <div key={item.id} className={`rounded-xl border p-4 ${typeColors[item.type] || "bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800"}`}>
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <Badge variant="sage">{t(`events.schedule_type_${item.type}`)}</Badge>
-                            {item.location && <span className="text-xs text-stone-400">{item.location}</span>}
+                            {item.location && <span className="text-xs text-stone-500 dark:text-stone-400">{item.location}</span>}
                           </div>
-                          <h4 className="font-semibold text-stone-800 mt-1">{item.title}</h4>
-                          {item.speaker_name && <p className="text-sm text-stone-500">{item.speaker_name}</p>}
-                          {item.description && <p className="text-sm text-stone-500 mt-1">{item.description}</p>}
+                          <h4 className="font-semibold text-stone-800 dark:text-stone-100 mt-1">{item.title}</h4>
+                          {item.speaker_name && <p className="text-sm text-stone-500 dark:text-stone-400">{item.speaker_name}</p>}
+                          {item.description && <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">{item.description}</p>}
                         </div>
-                        <div className="text-right text-sm text-stone-400 shrink-0 ml-4">
+                        <div className="text-right text-sm text-stone-500 dark:text-stone-400 shrink-0 ml-4">
                           <p>{start.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</p>
                           {end && <p>— {end.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</p>}
                         </div>
@@ -633,54 +633,54 @@ export default function EventDetailPage() {
           <div className="space-y-6">
             {isOwner && (
               <Card variant="plain" className="p-4 space-y-3">
-                <h3 className="font-display font-bold text-stone-800">{t("events.venue_title")}</h3>
+                <h3 className="font-display font-bold text-stone-800 dark:text-stone-100">{t("events.venue_title")}</h3>
                 <div className="grid md:grid-cols-2 gap-3">
                   <input placeholder={t("events.venue_name")} value={venueForm.venue_name || venue?.venue_name || ""} onChange={(e) => setVenueForm({ ...venueForm, venue_name: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                   <input placeholder={t("events.venue_address")} value={venueForm.address || venue?.address || ""} onChange={(e) => setVenueForm({ ...venueForm, address: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                   <input placeholder={t("events.venue_city")} value={venueForm.city || venue?.city || ""} onChange={(e) => setVenueForm({ ...venueForm, city: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                   <input placeholder={t("events.venue_country")} value={venueForm.country || venue?.country || ""} onChange={(e) => setVenueForm({ ...venueForm, country: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                   <input type="number" placeholder={t("events.venue_capacity")} value={venueForm.capacity || venue?.capacity || ""} onChange={(e) => setVenueForm({ ...venueForm, capacity: e.target.value ? Number(e.target.value) : null })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                   <select value={venueForm.indoor_outdoor || venue?.indoor_outdoor || ""} onChange={(e) => setVenueForm({ ...venueForm, indoor_outdoor: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
                     <option value="">{t("events.venue_indoor_outdoor")}</option>
                     {VENUE_TYPES.map((vt) => <option key={vt.value} value={vt.value}>{t(`events.${vt.labelKey}`)}</option>)}
                   </select>
                 </div>
                 <div className="flex gap-4">
-                  <label className="flex items-center gap-2 text-sm text-stone-700">
-                    <input type="checkbox" checked={venueForm.parking ?? venue?.parking ?? false} onChange={(e) => setVenueForm({ ...venueForm, parking: e.target.checked })} className="rounded border-primary-200 text-primary-500" />
+                  <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
+                    <input type="checkbox" checked={venueForm.parking ?? venue?.parking ?? false} onChange={(e) => setVenueForm({ ...venueForm, parking: e.target.checked })} className="rounded border-primary-200 dark:border-stone-600 text-primary-500" />
                     {t("events.venue_parking")}
                   </label>
-                  <label className="flex items-center gap-2 text-sm text-stone-700">
-                    <input type="checkbox" checked={venueForm.wheelchair_accessible ?? venue?.wheelchair_accessible ?? false} onChange={(e) => setVenueForm({ ...venueForm, wheelchair_accessible: e.target.checked })} className="rounded border-primary-200 text-primary-500" />
+                  <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
+                    <input type="checkbox" checked={venueForm.wheelchair_accessible ?? venue?.wheelchair_accessible ?? false} onChange={(e) => setVenueForm({ ...venueForm, wheelchair_accessible: e.target.checked })} className="rounded border-primary-200 dark:border-stone-600 text-primary-500" />
                     {t("events.venue_accessible")}
                   </label>
                 </div>
                 <input placeholder={t("events.venue_transport")} value={venueForm.public_transport || venue?.public_transport || ""} onChange={(e) => setVenueForm({ ...venueForm, public_transport: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                  className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                 <textarea placeholder={t("events.venue_notes")} value={venueForm.notes || venue?.notes || ""} onChange={(e) => setVenueForm({ ...venueForm, notes: e.target.value })} rows={2}
-                  className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                  className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                 <Button size="sm" onClick={handleVenueSave}>{t("events.save")}</Button>
               </Card>
             )}
             {venue && !isOwner && (
               <Card variant="plain" className="p-6">
-                <h3 className="font-display font-bold text-stone-800 mb-3">{venue.venue_name || t("events.venue_title")}</h3>
-                <div className="space-y-2 text-sm text-stone-600">
-                  {venue.address && <p className="flex items-center gap-2"><MapPin className="w-4 h-4 text-stone-400" />{venue.address}{venue.city ? `, ${venue.city}` : ""}</p>}
-                  {venue.capacity && <p className="flex items-center gap-2"><Users className="w-4 h-4 text-stone-400" />Capacity: {venue.capacity}</p>}
-                  {venue.indoor_outdoor && <p className="flex items-center gap-2"><Building className="w-4 h-4 text-stone-400" />{t(`events.venue_${venue.indoor_outdoor}`)}</p>}
+                <h3 className="font-display font-bold text-stone-800 dark:text-stone-100 mb-3">{venue.venue_name || t("events.venue_title")}</h3>
+                <div className="space-y-2 text-sm text-stone-600 dark:text-stone-300">
+                  {venue.address && <p className="flex items-center gap-2"><MapPin className="w-4 h-4 text-stone-500 dark:text-stone-400" />{venue.address}{venue.city ? `, ${venue.city}` : ""}</p>}
+                  {venue.capacity && <p className="flex items-center gap-2"><Users className="w-4 h-4 text-stone-500 dark:text-stone-400" />Capacity: {venue.capacity}</p>}
+                  {venue.indoor_outdoor && <p className="flex items-center gap-2"><Building className="w-4 h-4 text-stone-500 dark:text-stone-400" />{t(`events.venue_${venue.indoor_outdoor}`)}</p>}
                   <div className="flex gap-4 mt-2">
                     {venue.parking && <Badge variant="sage"><ParkingCircle className="w-3 h-3 mr-1" />Parking</Badge>}
                     {venue.wheelchair_accessible && <Badge variant="sage"><Accessibility className="w-3 h-3 mr-1" />Accessible</Badge>}
                   </div>
-                  {venue.public_transport && <p className="text-stone-500 mt-2">{venue.public_transport}</p>}
-                  {venue.notes && <p className="text-stone-500 mt-2 italic">{venue.notes}</p>}
+                  {venue.public_transport && <p className="text-stone-500 dark:text-stone-400 mt-2">{venue.public_transport}</p>}
+                  {venue.notes && <p className="text-stone-500 dark:text-stone-400 mt-2 italic">{venue.notes}</p>}
                 </div>
               </Card>
             )}
@@ -690,19 +690,19 @@ export default function EventDetailPage() {
             {/* Amenities */}
             {amenities.length > 0 && (
               <div>
-                <h4 className="font-display font-bold text-stone-800 mb-3">{t("events.tab_amenities")}</h4>
+                <h4 className="font-display font-bold text-stone-800 dark:text-stone-100 mb-3">{t("events.tab_amenities")}</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {amenities.map((a) => (
-                    <div key={a.id} className="flex items-center gap-3 bg-primary-50 rounded-xl p-3">
-                      <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                        <Coffee className="w-4 h-4 text-primary-600" />
+                    <div key={a.id} className="flex items-center gap-3 bg-primary-50 dark:bg-primary-900/20 rounded-xl p-3">
+                      <div className="w-8 h-8 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
+                        <Coffee className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-stone-700 truncate">{a.name}</p>
-                        {a.time_start && <p className="text-xs text-stone-400">{a.time_start}{a.time_end ? ` — ${a.time_end}` : ""}</p>}
+                        <p className="text-sm font-medium text-stone-700 dark:text-stone-200 truncate">{a.name}</p>
+                        {a.time_start && <p className="text-xs text-stone-500 dark:text-stone-400">{a.time_start}{a.time_end ? ` — ${a.time_end}` : ""}</p>}
                       </div>
                       {isOwner && (
-                        <button onClick={() => handleAmenityDelete(a.id)} className="text-stone-300 hover:text-red-500"><X className="w-3 h-3" /></button>
+                        <button onClick={() => handleAmenityDelete(a.id)} className="text-stone-300 dark:text-stone-600 hover:text-red-500 dark:hover:text-red-400"><X className="w-3 h-3" /></button>
                       )}
                     </div>
                   ))}
@@ -719,9 +719,9 @@ export default function EventDetailPage() {
                   <Card variant="plain" className="p-4 space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                       <input placeholder={t("events.amenity_name")} value={amenityForm.name || ""} onChange={(e) => setAmenityForm({ ...amenityForm, name: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                        className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                       <input placeholder={t("events.amenity_time")} value={amenityForm.time_start || ""} onChange={(e) => setAmenityForm({ ...amenityForm, time_start: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                        className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                     </div>
                     <div className="flex gap-2">
                       <Button size="sm" onClick={handleAmenityCreate}>{t("events.save")}</Button>
@@ -748,18 +748,18 @@ export default function EventDetailPage() {
               <Card variant="plain" className="p-4 space-y-3">
                 <div className="grid md:grid-cols-2 gap-3">
                   <input placeholder={t("events.sponsor_name")} value={sponsorForm.name || ""} onChange={(e) => setSponsorForm({ ...sponsorForm, name: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                   <select value={sponsorForm.tier || "community"} onChange={(e) => setSponsorForm({ ...sponsorForm, tier: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
                     {SPONSOR_TIERS.map((st) => <option key={st.value} value={st.value}>{t(`events.${st.labelKey}`)}</option>)}
                   </select>
                   <input placeholder={t("events.sponsor_logo")} value={sponsorForm.logo_url || ""} onChange={(e) => setSponsorForm({ ...sponsorForm, logo_url: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                   <input placeholder={t("events.sponsor_website")} value={sponsorForm.website_url || ""} onChange={(e) => setSponsorForm({ ...sponsorForm, website_url: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                 </div>
-                <label className="flex items-center gap-2 text-sm text-stone-700">
-                  <input type="checkbox" checked={sponsorForm.visible_to_attendees ?? true} onChange={(e) => setSponsorForm({ ...sponsorForm, visible_to_attendees: e.target.checked })} className="rounded border-primary-200 text-primary-500" />
+                <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
+                  <input type="checkbox" checked={sponsorForm.visible_to_attendees ?? true} onChange={(e) => setSponsorForm({ ...sponsorForm, visible_to_attendees: e.target.checked })} className="rounded border-primary-200 dark:border-stone-600 text-primary-500" />
                   {t("events.sponsor_visible")}
                 </label>
                 <div className="flex gap-2">
@@ -776,25 +776,25 @@ export default function EventDetailPage() {
                   const tierSponsors = sponsors.filter((s) => s.tier === tier && (s.visible_to_attendees || isOwner));
                   if (tierSponsors.length === 0) return null;
                   const tierColors: Record<string, string> = {
-                    platinum: "from-slate-100 to-slate-50 border-slate-200",
-                    gold: "from-amber-50 to-yellow-50 border-amber-200",
-                    silver: "from-gray-50 to-slate-50 border-gray-200",
-                    bronze: "from-orange-50 to-amber-50 border-orange-200",
-                    media: "from-blue-50 to-indigo-50 border-blue-200",
-                    community: "from-primary-50 to-earth-50 border-primary-200",
+                    platinum: "from-slate-100 dark:from-slate-900/40 to-slate-50 dark:to-slate-800/40 border-slate-200 dark:border-slate-700",
+                    gold: "from-amber-50 dark:from-amber-900/20 to-yellow-50 dark:to-yellow-900/20 border-amber-200 dark:border-amber-800",
+                    silver: "from-gray-50 dark:from-gray-900/40 to-slate-50 dark:to-slate-800/40 border-gray-200 dark:border-gray-700",
+                    bronze: "from-orange-50 dark:from-orange-900/20 to-amber-50 dark:to-amber-900/20 border-orange-200 dark:border-orange-800",
+                    media: "from-blue-50 dark:from-blue-900/20 to-indigo-50 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800",
+                    community: "from-primary-50 dark:from-primary-900/20 to-earth-50 dark:to-earth-900/20 border-primary-200 dark:border-primary-800",
                   };
                   return (
                     <div key={tier}>
-                      <h4 className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-2">{t(`events.sponsor_tier_${tier}`)}</h4>
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 mb-2">{t(`events.sponsor_tier_${tier}`)}</h4>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         {tierSponsors.map((s) => (
                           <div key={s.id} className={`bg-gradient-to-br ${tierColors[tier]} border rounded-xl p-4 text-center`}>
                             {s.logo_url ? (
                               <img src={s.logo_url} alt={s.name} className="h-12 mx-auto mb-2 object-contain" />
                             ) : (
-                              <div className="h-12 flex items-center justify-center text-stone-300"><Building className="w-6 h-6" /></div>
+                              <div className="h-12 flex items-center justify-center text-stone-300 dark:text-stone-600"><Building className="w-6 h-6" /></div>
                             )}
-                            <p className="font-medium text-stone-700 text-sm">{s.name}</p>
+                            <p className="font-medium text-stone-700 dark:text-stone-200 text-sm">{s.name}</p>
                             {isOwner && (
                               <button onClick={() => handleSponsorDelete(s.id)} className="text-xs text-red-400 hover:text-red-600 mt-1">Remove</button>
                             )}
@@ -815,29 +815,29 @@ export default function EventDetailPage() {
             {donationStats && donationStats.goal > 0 && (
               <Card variant="plain" className="p-6">
                 <div className="flex justify-between items-end mb-2">
-                  <span className="text-2xl font-display font-bold text-stone-800">€{(donationStats.total_raised / 100).toFixed(0)}</span>
-                  <span className="text-sm text-stone-400">{t("events.donation_count", { count: donationStats.donation_count })}</span>
+                  <span className="text-2xl font-display font-bold text-stone-800 dark:text-stone-100">€{(donationStats.total_raised / 100).toFixed(0)}</span>
+                  <span className="text-sm text-stone-500 dark:text-stone-400">{t("events.donation_count", { count: donationStats.donation_count })}</span>
                 </div>
-                <div className="w-full bg-primary-100 rounded-full h-3">
+                <div className="w-full bg-primary-100 dark:bg-primary-900/30 rounded-full h-3">
                   <div className="bg-primary-500 h-3 rounded-full transition-all" style={{ width: `${Math.min(donationStats.progress_pct, 100)}%` }} />
                 </div>
-                <p className="text-xs text-stone-400 mt-1">{t("events.donation_progress", { goal: `€${(donationStats.goal / 100).toFixed(0)}` })}</p>
+                <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">{t("events.donation_progress", { goal: `€${(donationStats.goal / 100).toFixed(0)}` })}</p>
               </Card>
             )}
             {event.ticket_type === "donation_based" && (
               <Card variant="plain" className="p-6">
-                <h3 className="font-display font-bold text-stone-800 mb-4">{t("events.donate_now")}</h3>
+                <h3 className="font-display font-bold text-stone-800 dark:text-stone-100 mb-4">{t("events.donate_now")}</h3>
                 <div className="space-y-3">
                   <input type="number" placeholder={t("events.donation_amount")} value={donation.amount ? donation.amount / 100 : ""} onChange={(e) => setDonation({ ...donation, amount: Number(e.target.value) * 100 })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                   <input placeholder={t("events.donation_donor_name")} value={donation.donor_name} onChange={(e) => setDonation({ ...donation, donor_name: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                   <input placeholder={t("events.donation_donor_email")} value={donation.donor_email} onChange={(e) => setDonation({ ...donation, donor_email: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                   <textarea placeholder={t("events.donation_message")} value={donation.message} onChange={(e) => setDonation({ ...donation, message: e.target.value })} rows={2}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
-                  <label className="flex items-center gap-2 text-sm text-stone-700">
-                    <input type="checkbox" checked={donation.is_anonymous} onChange={(e) => setDonation({ ...donation, is_anonymous: e.target.checked })} className="rounded border-primary-200 text-primary-500" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                  <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
+                    <input type="checkbox" checked={donation.is_anonymous} onChange={(e) => setDonation({ ...donation, is_anonymous: e.target.checked })} className="rounded border-primary-200 dark:border-stone-600 text-primary-500" />
                     {t("events.donation_anonymous")}
                   </label>
                   <Button onClick={handleDonate} disabled={!donation.amount}><Heart className="w-4 h-4" /> {t("events.do")}</Button>
@@ -849,15 +849,15 @@ export default function EventDetailPage() {
             ) : (
               <div className="space-y-2">
                 {donations.map((d) => (
-                  <div key={d.id} className="flex items-center gap-3 bg-primary-50 rounded-xl p-3">
-                    <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center text-primary-700 text-xs font-bold">
+                  <div key={d.id} className="flex items-center gap-3 bg-primary-50 dark:bg-primary-900/20 rounded-xl p-3">
+                    <div className="w-8 h-8 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center text-primary-700 dark:text-primary-400 text-xs font-bold">
                       {d.is_anonymous ? "?" : (d.donor_name?.[0]?.toUpperCase() || "?")}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-stone-700">{d.is_anonymous ? "Anonymous" : d.donor_name}</p>
-                      {d.message && <p className="text-xs text-stone-400 truncate">{d.message}</p>}
+                      <p className="text-sm font-medium text-stone-700 dark:text-stone-200">{d.is_anonymous ? "Anonymous" : d.donor_name}</p>
+                      {d.message && <p className="text-xs text-stone-500 dark:text-stone-400 truncate">{d.message}</p>}
                     </div>
-                    <span className="text-sm font-bold text-primary-700">€{(d.amount / 100).toFixed(0)}</span>
+                    <span className="text-sm font-bold text-primary-700 dark:text-primary-400">€{(d.amount / 100).toFixed(0)}</span>
                   </div>
                 ))}
               </div>
@@ -870,16 +870,16 @@ export default function EventDetailPage() {
           <div className="space-y-6">
             {event.ticket_type === "paid" && (
               <Card variant="plain" className="p-6">
-                <h3 className="font-display font-bold text-stone-800 mb-4">{t("events.ticket_purchase")}</h3>
+                <h3 className="font-display font-bold text-stone-800 dark:text-stone-100 mb-4">{t("events.ticket_purchase")}</h3>
                 {myTicket ? (
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3 bg-primary-50 rounded-xl p-4">
-                      <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center border border-primary-100">
-                        <QrCode className="w-10 h-10 text-stone-400" />
+                    <div className="flex items-center gap-3 bg-primary-50 dark:bg-primary-900/20 rounded-xl p-4">
+                      <div className="w-16 h-16 bg-white dark:bg-stone-900 rounded-xl flex items-center justify-center border border-primary-100 dark:border-stone-700">
+                        <QrCode className="w-10 h-10 text-stone-500 dark:text-stone-400" />
                       </div>
                       <div>
-                        <p className="font-medium text-stone-700">{t(`events.ticket_type_${myTicket.ticket_type}`)} × {myTicket.quantity}</p>
-                        <p className="text-sm text-stone-400">{t("events.ticket_total")}: €{(myTicket.total_paid / 100).toFixed(0)}</p>
+                        <p className="font-medium text-stone-700 dark:text-stone-200">{t(`events.ticket_type_${myTicket.ticket_type}`)} × {myTicket.quantity}</p>
+                        <p className="text-sm text-stone-500 dark:text-stone-400">{t("events.ticket_total")}: €{(myTicket.total_paid / 100).toFixed(0)}</p>
                         {myTicket.checked_in && <Badge variant="green">{t("events.ticket_checked_in")}</Badge>}
                       </div>
                     </div>
@@ -892,17 +892,17 @@ export default function EventDetailPage() {
                 ) : (
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.ticket_type_label")}</label>
+                      <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.ticket_type_label")}</label>
                       {hasTiers ? (
                         <select value={ticket.ticket_type} onChange={(e) => setTicket({ ...ticket, ticket_type: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+                          className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
                           {visibleTiers.map((tier: any) => (
                             <option key={tier.type} value={tier.type}>{tier.name || tier.type} — €{(tier.price / 100).toFixed(0)}</option>
                           ))}
                         </select>
                       ) : (
                         <select value={ticket.ticket_type} onChange={(e) => setTicket({ ...ticket, ticket_type: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+                          className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
                           <option value="regular">{t("events.ticket_type_regular")}</option>
                           <option value="early_bird">{t("events.ticket_type_early_bird")}</option>
                           <option value="vip">{t("events.ticket_type_vip")}</option>
@@ -911,11 +911,11 @@ export default function EventDetailPage() {
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.ticket_quantity")}</label>
+                      <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.ticket_quantity")}</label>
                       <input type="number" min={1} value={ticket.quantity} onChange={(e) => setTicket({ ...ticket, quantity: Number(e.target.value) })}
-                        className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                        className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                     </div>
-                    <p className="text-sm text-stone-500">{t("events.ticket_total")}: €{(selectedTierPrice * ticket.quantity / 100).toFixed(0)}</p>
+                    <p className="text-sm text-stone-500 dark:text-stone-400">{t("events.ticket_total")}: €{(selectedTierPrice * ticket.quantity / 100).toFixed(0)}</p>
                     <Button onClick={handlePurchaseTicket} disabled={full}>{t("events.ticket_purchase")}</Button>
                   </div>
                 )}
@@ -923,7 +923,7 @@ export default function EventDetailPage() {
             )}
             {event.ticket_type === "free" && (
               <Card variant="plain" className="p-6">
-                <p className="text-stone-500 text-sm">This is a free event. Use RSVP to register your attendance.</p>
+                <p className="text-stone-500 dark:text-stone-400 text-sm">This is a free event. Use RSVP to register your attendance.</p>
               </Card>
             )}
           </div>
@@ -937,8 +937,8 @@ export default function EventDetailPage() {
             ) : (
               <div className="flex flex-wrap gap-2">
                 {attendees.map((a: any) => (
-                  <div key={a.id} className="flex items-center gap-2 bg-primary-50 px-3 py-1.5 rounded-full text-sm text-stone-600">
-                    <div className="w-6 h-6 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center text-xs font-medium">
+                  <div key={a.id} className="flex items-center gap-2 bg-primary-50 dark:bg-primary-900/20 px-3 py-1.5 rounded-full text-sm text-stone-600 dark:text-stone-300">
+                    <div className="w-6 h-6 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded-full flex items-center justify-center text-xs font-medium">
                       {a.name?.[0]?.toUpperCase() || "?"}
                     </div>
                     {a.name}
@@ -963,20 +963,20 @@ export default function EventDetailPage() {
               <Card variant="plain" className="p-4 space-y-3">
                 <div className="grid md:grid-cols-2 gap-3">
                   <input placeholder={t("events.vendor_name")} value={vendorForm.name || ""} onChange={(e) => setVendorForm({ ...vendorForm, name: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                   <input placeholder={t("events.vendor_service_type")} value={vendorForm.service_type || ""} onChange={(e) => setVendorForm({ ...vendorForm, service_type: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                   <input placeholder={t("events.vendor_contact_name")} value={vendorForm.contact_name || ""} onChange={(e) => setVendorForm({ ...vendorForm, contact_name: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                   <input placeholder={t("events.vendor_contact_email")} value={vendorForm.contact_email || ""} onChange={(e) => setVendorForm({ ...vendorForm, contact_email: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                 </div>
                 <select value={vendorForm.status || "pending"} onChange={(e) => setVendorForm({ ...vendorForm, status: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+                  className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
                   {VENDOR_STATUSES.map((vs) => <option key={vs.value} value={vs.value}>{t(`events.${vs.labelKey}`)}</option>)}
                 </select>
-                <label className="flex items-center gap-2 text-sm text-stone-700">
-                  <input type="checkbox" checked={vendorForm.visible_to_attendees ?? false} onChange={(e) => setVendorForm({ ...vendorForm, visible_to_attendees: e.target.checked })} className="rounded border-primary-200 text-primary-500" />
+                <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
+                  <input type="checkbox" checked={vendorForm.visible_to_attendees ?? false} onChange={(e) => setVendorForm({ ...vendorForm, visible_to_attendees: e.target.checked })} className="rounded border-primary-200 dark:border-stone-600 text-primary-500" />
                   {t("events.vendor_visible")}
                 </label>
                 <div className="flex gap-2">
@@ -991,26 +991,26 @@ export default function EventDetailPage() {
               <div className="space-y-2">
                 {vendors.map((v) => {
                   const statusColors: Record<string, string> = {
-                    pending: "bg-amber-100 text-amber-700",
-                    confirmed: "bg-green-100 text-green-700",
-                    cancelled: "bg-red-100 text-red-700",
+                    pending: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
+                    confirmed: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
+                    cancelled: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300",
                   };
                   return (
-                    <div key={v.id} className="flex items-center gap-3 bg-primary-50 rounded-xl p-3">
-                      <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                        <Building className="w-4 h-4 text-primary-600" />
+                    <div key={v.id} className="flex items-center gap-3 bg-primary-50 dark:bg-primary-900/20 rounded-xl p-3">
+                      <div className="w-8 h-8 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
+                        <Building className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-stone-700">{v.name}</p>
+                          <p className="text-sm font-medium text-stone-700 dark:text-stone-200">{v.name}</p>
                           <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[v.status] || ""}`}>{t(`events.vendor_status_${v.status}`)}</span>
-                          {v.visible_to_attendees && <Eye className="w-3 h-3 text-stone-400" />}
-                          {!v.visible_to_attendees && <EyeOff className="w-3 h-3 text-stone-300" />}
+                          {v.visible_to_attendees && <Eye className="w-3 h-3 text-stone-500 dark:text-stone-400" />}
+                          {!v.visible_to_attendees && <EyeOff className="w-3 h-3 text-stone-300 dark:text-stone-600" />}
                         </div>
-                        {v.service_type && <p className="text-xs text-stone-400">{v.service_type}</p>}
+                        {v.service_type && <p className="text-xs text-stone-500 dark:text-stone-400">{v.service_type}</p>}
                       </div>
                       {isOwner && (
-                        <button onClick={() => handleVendorDelete(v.id)} className="text-stone-300 hover:text-red-500"><X className="w-3 h-3" /></button>
+                        <button onClick={() => handleVendorDelete(v.id)} className="text-stone-300 dark:text-stone-600 hover:text-red-500 dark:hover:text-red-400"><X className="w-3 h-3" /></button>
                       )}
                     </div>
                   );
@@ -1029,77 +1029,77 @@ export default function EventDetailPage() {
       {/* Edit mode */}
       {editing && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setEditing(false)}>
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-xl font-display font-bold text-stone-800">{t("events.edit_event")}</h2>
+          <div className="bg-white dark:bg-stone-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-xl font-display font-bold text-stone-800 dark:text-stone-100">{t("events.edit_event")}</h2>
             {["title", "description", "location", "category", "url", "image_url", "contact_email", "contact_phone", "requirements"].map((f) => (
               <div key={f}>
-                <label className="block text-sm font-medium text-stone-700 mb-1 capitalize">{f.replace(/_/g, " ")}</label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1 capitalize">{f.replace(/_/g, " ")}</label>
                 {f === "description" || f === "requirements" ? (
-                  <textarea value={form[f] || ""} onChange={(e) => setForm({ ...form, [f]: e.target.value })} rows={3} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                  <textarea value={form[f] || ""} onChange={(e) => setForm({ ...form, [f]: e.target.value })} rows={3} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                 ) : (
-                  <input type="text" value={form[f] || ""} onChange={(e) => setForm({ ...form, [f]: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                  <input type="text" value={form[f] || ""} onChange={(e) => setForm({ ...form, [f]: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                 )}
               </div>
             ))}
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.date_label")}</label>
-                <input type="datetime-local" value={form.date ? new Date(form.date).toISOString().slice(0, 16) : ""} onChange={(e) => setForm({ ...form, date: new Date(e.target.value).toISOString() })} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.date_label")}</label>
+                <input type="datetime-local" value={form.date ? new Date(form.date).toISOString().slice(0, 16) : ""} onChange={(e) => setForm({ ...form, date: new Date(e.target.value).toISOString() })} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.end_date_label")}</label>
-                <input type="datetime-local" value={form.end_date ? new Date(form.end_date).toISOString().slice(0, 16) : ""} onChange={(e) => setForm({ ...form, end_date: new Date(e.target.value).toISOString() })} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.end_date_label")}</label>
+                <input type="datetime-local" value={form.end_date ? new Date(form.end_date).toISOString().slice(0, 16) : ""} onChange={(e) => setForm({ ...form, end_date: new Date(e.target.value).toISOString() })} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
               </div>
             </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.max_attendees")}</label>
-                <input type="number" value={form.max_attendees || ""} onChange={(e) => setForm({ ...form, max_attendees: e.target.value ? Number(e.target.value) : null })} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.max_attendees")}</label>
+                <input type="number" value={form.max_attendees || ""} onChange={(e) => setForm({ ...form, max_attendees: e.target.value ? Number(e.target.value) : null })} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.visibility")}</label>
-                <select value={form.visibility || "all"} onChange={(e) => setForm({ ...form, visibility: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.visibility")}</label>
+                <select value={form.visibility || "all"} onChange={(e) => setForm({ ...form, visibility: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
                   {VISIBILITY_OPTIONS.map((v) => <option key={v.value} value={v.value}>{t(`events.${v.labelKey}`)}</option>)}
                 </select>
               </div>
             </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.ticket_type")}</label>
-                <select value={form.ticket_type || "free"} onChange={(e) => setForm({ ...form, ticket_type: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.ticket_type")}</label>
+                <select value={form.ticket_type || "free"} onChange={(e) => setForm({ ...form, ticket_type: e.target.value })} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
                   {TICKET_TYPES.map((tt) => <option key={tt.value} value={tt.value}>{t(`events.${tt.labelKey}`)}</option>)}
                 </select>
               </div>
               {form.ticket_type === "paid" && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.ticket_price")} (cents)</label>
-                    <input type="number" value={form.ticket_price || ""} onChange={(e) => setForm({ ...form, ticket_price: e.target.value ? Number(e.target.value) : null })} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.ticket_price")} (cents)</label>
+                    <input type="number" value={form.ticket_price || ""} onChange={(e) => setForm({ ...form, ticket_price: e.target.value ? Number(e.target.value) : null })} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.ticket_tiers")}</label>
-                    <p className="text-xs text-stone-400 mb-2">{t("events.ticket_tiers_hint")}</p>
+                    <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.ticket_tiers")}</label>
+                    <p className="text-xs text-stone-500 dark:text-stone-400 mb-2">{t("events.ticket_tiers_hint")}</p>
                     <div className="space-y-2">
                       {(form.ticket_tiers || []).map((tier: any, i: number) => (
                         <div key={i} className="flex gap-2 items-center">
                           <input placeholder={t("events.tier_name")} value={tier.name} onChange={(e) => { const tiers = [...(form.ticket_tiers || [])]; tiers[i] = { ...tiers[i], name: e.target.value }; setForm({ ...form, ticket_tiers: tiers }); }}
-                            className="flex-1 px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                            className="flex-1 px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                           <select value={tier.type} onChange={(e) => { const tiers = [...(form.ticket_tiers || [])]; tiers[i] = { ...tiers[i], type: e.target.value }; setForm({ ...form, ticket_tiers: tiers }); }}
-                            className="px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+                            className="px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
                             <option value="regular">{t("events.ticket_type_regular")}</option>
                             <option value="early_bird">{t("events.ticket_type_early_bird")}</option>
                             <option value="vip">{t("events.ticket_type_vip")}</option>
                             <option value="student">{t("events.ticket_type_student")}</option>
                           </select>
                           <input type="number" placeholder={t("events.tier_price")} value={tier.price || ""} onChange={(e) => { const tiers = [...(form.ticket_tiers || [])]; tiers[i] = { ...tiers[i], price: Number(e.target.value) }; setForm({ ...form, ticket_tiers: tiers }); }}
-                            className="w-28 px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
-                          <button type="button" onClick={() => setForm({ ...form, ticket_tiers: (form.ticket_tiers || []).filter((_: any, j: number) => j !== i) })} className="text-stone-400 hover:text-red-500 transition">
+                            className="w-28 px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                          <button type="button" onClick={() => setForm({ ...form, ticket_tiers: (form.ticket_tiers || []).filter((_: any, j: number) => j !== i) })} className="text-stone-400 dark:text-stone-500 hover:text-red-500 dark:hover:text-red-400 transition">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       ))}
                       <button type="button" onClick={() => setForm({ ...form, ticket_tiers: [...(form.ticket_tiers || []), { name: "", type: "regular", price: 0 }] })}
-                        className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-medium">
+                        className="flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium">
                         <Plus className="w-3 h-3" /> {t("events.add_tier")}
                       </button>
                     </div>
@@ -1108,55 +1108,55 @@ export default function EventDetailPage() {
               )}
               {form.ticket_type === "donation_based" && (
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.donation_goal")} (cents)</label>
-                  <input type="number" value={form.donation_goal || ""} onChange={(e) => setForm({ ...form, donation_goal: e.target.value ? Number(e.target.value) : null })} className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.donation_goal")} (cents)</label>
+                  <input type="number" value={form.donation_goal || ""} onChange={(e) => setForm({ ...form, donation_goal: e.target.value ? Number(e.target.value) : null })} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                 </div>
               )}
             </div>
-            <label className="flex items-center gap-2 text-sm text-stone-700">
-              <input type="checkbox" checked={form.is_online || false} onChange={(e) => setForm({ ...form, is_online: e.target.checked })} className="rounded border-primary-200 text-primary-500" />
+            <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
+              <input type="checkbox" checked={form.is_online || false} onChange={(e) => setForm({ ...form, is_online: e.target.checked })} className="rounded border-primary-200 dark:border-stone-600 text-primary-500" />
               {t("events.online_event")}
             </label>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.recurrence")}</label>
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.recurrence")}</label>
               <select value={form.recurrence_type || "none"} onChange={(e) => setForm({ ...form, recurrence_type: e.target.value, recurrence_config: e.target.value === "open_door" ? { weekly_hours: (() => { const h: Record<string, any> = {}; DAYS_OF_WEEK.forEach((d) => { h[d] = { open: "09:00", close: "18:00" }; }); return h; })() } : e.target.value === "none" ? null : (form.recurrence_config || {}) })}
-                className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
+                className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
                 {RECURRENCE_TYPES.map((r) => <option key={r.value} value={r.value}>{t(`events.${r.labelKey}`)}</option>)}
               </select>
               {form.recurrence_type && form.recurrence_type !== "none" && form.recurrence_type !== "open_door" && (
                 <div className="mt-2">
-                  <label className="block text-sm font-medium text-stone-700 mb-1">{t("events.recurrence_end")}</label>
+                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.recurrence_end")}</label>
                   <input type="datetime-local" value={form.recurrence_config?.recurrence_end ? new Date(form.recurrence_config.recurrence_end).toISOString().slice(0, 16) : ""}
                     onChange={(e) => setForm({ ...form, recurrence_config: { ...(form.recurrence_config || {}), recurrence_end: e.target.value ? new Date(e.target.value).toISOString() : null } })}
-                    className="w-full px-3 py-2 rounded-xl border border-primary-100 bg-white text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+                    className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                 </div>
               )}
               {form.recurrence_type === "open_door" && (
                 <div className="mt-3 space-y-2">
-                  <p className="text-xs text-stone-400">{t("events.weekly_hours_hint")}</p>
+                  <p className="text-xs text-stone-500 dark:text-stone-400">{t("events.weekly_hours_hint")}</p>
                   {DAYS_OF_WEEK.map((day) => {
                     const hours = form.recurrence_config?.weekly_hours?.[day];
                     return (
                       <div key={day} className="flex items-center gap-2">
-                        <label className="w-10 text-sm font-medium text-stone-600">{t(`events.day_${day}`)}</label>
+                        <label className="w-10 text-sm font-medium text-stone-600 dark:text-stone-300">{t(`events.day_${day}`)}</label>
                         <input type="checkbox" checked={!!hours} onChange={(e) => {
                           const wh = { ...(form.recurrence_config?.weekly_hours || {}) };
                           wh[day] = e.target.checked ? { open: "09:00", close: "18:00" } : null;
                           setForm({ ...form, recurrence_config: { ...(form.recurrence_config || {}), weekly_hours: wh } });
-                        }} className="rounded border-primary-200 text-primary-500" />
+                        }} className="rounded border-primary-200 dark:border-stone-600 text-primary-500" />
                         {hours && (
                           <>
                             <input type="time" value={hours.open} onChange={(e) => {
                               const wh = { ...(form.recurrence_config?.weekly_hours || {}) };
                               wh[day] = { ...wh[day], open: e.target.value };
                               setForm({ ...form, recurrence_config: { ...(form.recurrence_config || {}), weekly_hours: wh } });
-                            }} className="px-2 py-1 rounded-lg border border-primary-100 bg-white text-sm" />
-                            <span className="text-stone-400">—</span>
+                            }} className="px-2 py-1 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm" />
+                            <span className="text-stone-400 dark:text-stone-500">—</span>
                             <input type="time" value={hours.close} onChange={(e) => {
                               const wh = { ...(form.recurrence_config?.weekly_hours || {}) };
                               wh[day] = { ...wh[day], close: e.target.value };
                               setForm({ ...form, recurrence_config: { ...(form.recurrence_config || {}), weekly_hours: wh } });
-                            }} className="px-2 py-1 rounded-lg border border-primary-100 bg-white text-sm" />
+                            }} className="px-2 py-1 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm" />
                           </>
                         )}
                       </div>

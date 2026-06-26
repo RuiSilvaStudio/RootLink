@@ -64,9 +64,9 @@ export default function GroupDetailPage() {
   if (loading) {
     return (
       <div className="max-w-3xl mx-auto px-4 sm:px-8 py-12 space-y-4">
-        <div className="h-8 bg-primary-100 rounded w-64 animate-pulse" />
-        <div className="h-4 bg-primary-100 rounded w-96 animate-pulse" />
-        <div className="h-32 bg-primary-100 rounded-xl animate-pulse" />
+        <div className="h-8 bg-primary-100 dark:bg-primary-950/20 rounded w-64 animate-pulse" />
+        <div className="h-4 bg-primary-100 dark:bg-primary-950/20 rounded w-96 animate-pulse" />
+        <div className="h-32 bg-primary-100 dark:bg-primary-950/20 rounded-xl animate-pulse" />
       </div>
     );
   }
@@ -86,7 +86,7 @@ export default function GroupDetailPage() {
         <div className="flex justify-between items-start">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <div className="w-12 h-12 rounded-2xl bg-primary-100 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-2xl bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center">
                 <Hash className="w-6 h-6 text-primary-500" />
               </div>
               <div>
@@ -107,7 +107,7 @@ export default function GroupDetailPage() {
         </div>
 
         {group.description && (
-          <p className="text-stone-600 mt-6 font-light leading-relaxed">{group.description}</p>
+          <p className="text-stone-600 dark:text-stone-300 mt-6 font-light leading-relaxed">{group.description}</p>
         )}
 
         <div className="mt-8 pt-6 border-t border-primary-100">
@@ -116,8 +116,8 @@ export default function GroupDetailPage() {
           </h2>
           <div className="flex flex-wrap gap-2">
             {members.map((member) => (
-              <div key={member.id} className="flex items-center gap-2 bg-primary-50 px-3 py-1.5 rounded-full text-sm text-stone-600">
-                <div className="w-6 h-6 rounded-full bg-primary-100 flex items-center justify-center">
+              <div key={member.id} className="flex items-center gap-2 bg-primary-50 px-3 py-1.5 rounded-full text-sm text-stone-600 dark:text-stone-300">
+                <div className="w-6 h-6 rounded-full bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center">
                   <Users className="w-3 h-3 text-primary-500" />
                 </div>
                 User #{member.user_id}
