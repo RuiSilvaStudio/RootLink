@@ -1,3 +1,7 @@
+## Deployment
+
+Before any deployment task, read `DEPLOY.md` for server access, architecture, domain mapping, and deployment process. The deployment info lives there — not in chat history.
+
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
