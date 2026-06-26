@@ -1,12 +1,16 @@
+import os
+
 from celery import Celery
 from celery.schedules import crontab
 
 from app.core.config import settings
 
+REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
+
 celery_app = Celery(
     "rootlink",
-    broker="redis://localhost:6379/0",
-    backend="redis://localhost:6379/1",
+    broker=REDIS_URL,
+    backend=REDIS_URL.replace("/0", "/1"),
 )
 
 celery_app.conf.update(
