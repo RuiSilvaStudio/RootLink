@@ -1,6 +1,13 @@
 ## Deployment
 
-Before any deployment task, read `DEPLOY.md` for server access, architecture, domain mapping, and deployment process. The deployment info lives there — not in chat history.
+`DEPLOY.md` is the single source of truth for deployment. It survives chat history loss.
+
+Rules (follow all of them):
+- **Before any deployment task, READ `DEPLOY.md` first** — server access, architecture, domains, secrets locations, and every hard-won gotcha live there, not in chat history.
+- **To deploy, run `./scripts/deploy.sh`** from the repo root on `main`. It pushes to GitHub (triggering the Vercel frontend deploy), then SSHes to the server to back up the DB, pull, rebuild containers, run migrations, and health-check. Use `--no-push` to skip the git push.
+- **The frontend deploys on Vercel** automatically from a push to `main`. The backend (FastAPI + Redis + Celery on 192.168.1.228) is what `deploy.sh` updates.
+- **ALWAYS keep `DEPLOY.md` current.** If anything changes — server, domains, secrets, the deploy process, the compose file, env vars, or you hit a NEW gotcha worth remembering — update `DEPLOY.md` in the SAME change. Treat an out-of-date `DEPLOY.md` as a bug.
+- Open tech debt and the planned Next.js 15 upgrade are tracked in `TECH_DEBT.md`.
 
 ## graphify
 
