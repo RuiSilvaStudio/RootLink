@@ -1,3 +1,5 @@
+import { safeImageUrl } from "@/lib/image-url";
+
 type Props = {
   src?: string | null;
   name?: string;
@@ -21,10 +23,11 @@ export function Avatar({ src, name, fallback, size = "md", className = "" }: Pro
     .toUpperCase()
     .slice(0, 2);
 
-  if (src) {
+  const safeSrc = safeImageUrl(src);
+  if (safeSrc) {
     return (
       <img
-        src={src}
+        src={safeSrc}
         alt={label}
         className={`${sizeMap[size]} rounded-full object-cover ring-2 ring-white dark:ring-stone-800 ${className}`}
       />

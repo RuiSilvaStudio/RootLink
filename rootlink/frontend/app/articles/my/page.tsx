@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus, FileText, Send, Trash2, Clock } from "lucide-react";
 import { api } from "@/lib/api";
+import { safeImageUrl } from "@/lib/image-url";
 import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/locale-context";
 import { useToast } from "@/lib/toast-context";
@@ -85,7 +86,7 @@ export default function MyArticlesPage() {
               <div className="flex items-center gap-4 flex-1 min-w-0">
                 <div className="w-12 h-12 rounded-xl shrink-0 overflow-hidden bg-stone-100 dark:bg-stone-800">
                   <img
-                    src={article.image_url || "/images/placeholder-card.svg"}
+                    src={safeImageUrl(article.image_url, "/images/placeholder-card.svg")}
                     alt={article.title}
                     className="w-full h-full object-cover"
                   />

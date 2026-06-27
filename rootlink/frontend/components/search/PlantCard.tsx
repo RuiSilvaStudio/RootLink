@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/Badge";
+import { safeImageUrl } from "@/lib/image-url";
 
 export function PlantCard({ item }: { item: any }) {
   const c = item.content;
@@ -13,7 +14,7 @@ export function PlantCard({ item }: { item: any }) {
       <div className="flex items-start gap-4">
         <div className="w-14 h-14 rounded-xl bg-primary-50 shrink-0 flex items-center justify-center overflow-hidden">
           <img
-            src={c.image_url || "/images/placeholder-card.svg"}
+            src={safeImageUrl(c.image_url, "/images/placeholder-card.svg")}
             alt={c.title}
             className="w-full h-full object-cover"
           />

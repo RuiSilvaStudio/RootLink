@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
+import { safeImageUrl } from "@/lib/image-url";
 
 const PLACEHOLDER = "/images/placeholder-card.svg";
 
@@ -13,7 +14,7 @@ export function ArticleCard({ item }: { item: any }) {
 
   const img = (alt: string) => (
     <img
-      src={c.image_url || PLACEHOLDER}
+      src={safeImageUrl(c.image_url, PLACEHOLDER)}
       alt={alt}
       className="w-full h-full object-cover"
     />

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Search, Plus, MapPin, CheckCircle, RefreshCw, Gift, ArrowRightLeft, Tag, ShoppingCart, Package } from "lucide-react";
 import { api } from "@/lib/api";
+import { safeImageUrl } from "@/lib/image-url";
 import { useLocale } from "@/lib/locale-context";
 import { useToast } from "@/lib/toast-context";
 import { Button } from "@/components/ui/Button";
@@ -210,8 +211,8 @@ export default function MarketplacePage() {
                 >
                   {/* Image */}
                   <div className="h-40 bg-primary-100 dark:bg-primary-900/30 overflow-hidden">
-                    {listing.images?.length > 0 ? (
-                      <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                    {safeImageUrl(listing.images?.[0]) ? (
+                      <img src={safeImageUrl(listing.images?.[0])} alt={listing.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <Package className="w-10 h-10 text-primary-300 dark:text-primary-600" />

@@ -5,6 +5,7 @@ import { Search, Leaf, TreePine, Wrench, Users, BookOpen, Calendar, CheckSquare,
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { safeImageUrl } from "@/lib/image-url";
 import { useLocale } from "@/lib/locale-context";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -276,7 +277,7 @@ export default function Home() {
                 >
                   <div className="h-40 bg-primary-100 dark:bg-primary-950/20/40 flex items-center justify-center overflow-hidden">
                     <img
-                      src={item.image_url || "/images/placeholder-card.svg"}
+                      src={safeImageUrl(item.image_url, "/images/placeholder-card.svg")}
                       alt={item.title}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       loading="lazy"

@@ -14,6 +14,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/locale-context";
 import { useToast } from "@/lib/toast-context";
 import { useDirtyGuard } from "@/lib/use-dirty-guard";
+import { safeImageUrl } from "@/lib/image-url";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -227,8 +228,8 @@ function ProfilePage() {
       <div className="flex justify-between items-start mb-6">
         <div className="flex items-center gap-4">
           <div className="w-20 h-20 rounded-full bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center overflow-hidden shrink-0">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt={profile.name} className="w-full h-full object-cover" />
+            {safeImageUrl(avatarUrl) ? (
+              <img src={safeImageUrl(avatarUrl)} alt={profile.name} className="w-full h-full object-cover" />
             ) : (
               <User className="w-10 h-10 text-primary-600" />
             )}
@@ -481,7 +482,7 @@ function ProfilePage() {
                 <div className="grid sm:grid-cols-2 gap-3">
                   {activity.content.map((c: any) => (
                     <Link key={c.id} href={`/content/${c.id}`} className="card-lift p-4 group">
-                      <img src={c.image_url || "/images/placeholder-card.svg"} alt={c.title} className="w-full h-24 object-cover rounded-lg mb-3" />
+                      <img src={safeImageUrl(c.image_url, "/images/placeholder-card.svg")} alt={c.title} className="w-full h-24 object-cover rounded-lg mb-3" />
                       <p className="text-sm font-medium text-stone-700 dark:text-stone-300 group-hover:text-primary-700 transition line-clamp-2">{c.title}</p>
                       {c.created_at && <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">{new Date(c.created_at).toLocaleDateString()}</p>}
                     </Link>
@@ -575,8 +576,8 @@ function ProfilePage() {
                   {myListings.map((lst: any) => (
                     <a key={lst.id} href={`/marketplace/${lst.id}`} className="flex items-center gap-3 bg-white dark:bg-stone-900 rounded-xl border border-primary-100/40 dark:border-stone-700/40 p-3 hover:shadow-md transition">
                       <div className="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center shrink-0">
-                        {lst.images?.length > 0 ? (
-                          <img src={lst.images[0]} alt="" className="w-full h-full object-cover rounded-lg" />
+                        {safeImageUrl(lst.images?.[0]) ? (
+                          <img src={safeImageUrl(lst.images?.[0])} alt="" className="w-full h-full object-cover rounded-lg" />
                         ) : (
                           <Package className="w-5 h-5 text-primary-600" />
                         )}
@@ -816,8 +817,8 @@ function ProfilePage() {
               {/* Avatar upload */}
               <div className="flex items-center gap-4">
                 <div className="w-20 h-20 rounded-full bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center overflow-hidden">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                  {safeImageUrl(avatarUrl) ? (
+                    <img src={safeImageUrl(avatarUrl)} alt="" className="w-full h-full object-cover" />
                   ) : (
                     <User className="w-10 h-10 text-primary-600" />
                   )}

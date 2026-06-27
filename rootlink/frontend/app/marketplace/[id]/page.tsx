@@ -5,6 +5,7 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { MapPin, CheckCircle, ArrowLeft, Tag, Gift, ArrowRightLeft, ShoppingCart, Search, Package, Clock, ShieldCheck, ExternalLink } from "lucide-react";
 import { api } from "@/lib/api";
+import { safeImageUrl } from "@/lib/image-url";
 import { useLocale } from "@/lib/locale-context";
 import { useToast } from "@/lib/toast-context";
 import { Button } from "@/components/ui/Button";
@@ -125,14 +126,14 @@ export default function ListingDetailPage() {
           {images.length > 0 ? (
             <>
               <div className="rounded-2xl overflow-hidden bg-primary-100 dark:bg-primary-900/30 mb-3">
-                <img src={images[activeImage]} alt={listing.title} className="w-full h-80 object-cover" />
+                <img src={safeImageUrl(images[activeImage], "/images/placeholder-card.svg")} alt={listing.title} className="w-full h-80 object-cover" />
               </div>
               {images.length > 1 && (
                 <div className="flex gap-2">
                   {images.map((img: string, i: number) => (
                     <button key={i} onClick={() => setActiveImage(i)}
                       className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition ${activeImage === i ? "border-primary-500" : "border-stone-200 dark:border-stone-700 hover:border-primary-300 dark:hover:border-primary-600"}`}>
-                      <img src={img} alt="" className="w-full h-full object-cover" />
+                      <img src={safeImageUrl(img, "/images/placeholder-card.svg")} alt="" className="w-full h-full object-cover" />
                     </button>
                   ))}
                 </div>

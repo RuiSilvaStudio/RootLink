@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Search, Filter, ArrowRight, TrendingUp, Sparkles, X } from "lucide-react";
 import { api } from "@/lib/api";
+import { safeImageUrl } from "@/lib/image-url";
 import { useLocale } from "@/lib/locale-context";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -456,7 +457,7 @@ function SearchContent() {
                         >
                         <div className="w-12 h-12 rounded-xl shrink-0 flex items-center justify-center overflow-hidden">
                           <img
-                            src={item.image_url || "/images/placeholder-card.svg"}
+                            src={safeImageUrl(item.image_url, "/images/placeholder-card.svg")}
                             alt={item.title}
                             className="w-full h-full object-cover"
                           />

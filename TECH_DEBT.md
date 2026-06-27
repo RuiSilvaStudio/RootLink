@@ -107,6 +107,31 @@ All resolved by the controlled Next 15 upgrade in §3.
 - Liberapay tier subscription sync logic
 - Remove stray repo-root files: `fix_dark_mode.js`, `scan_and_fix.js`, `setup_stripe.sh`, `reset_admin.py` (move to scripts/ or delete)
 
+## 6. Media URLs stored as absolute (root-cause hardening)
+**Problem:** Image uploads persist **absolute** URLs into the DB, built from
+`settings.media_url` at upload time (`backend/app/api/images.py:_build_urls()` →
+`f"{settings.media_url}/media/..."`). The default is `media_url="http://localhost:8001"`
+(`backend/app/core/config.py:17`). If `MEDIA_URL` is ever wrong/unset when an upload
+happens (dev machine, seed data, before prod env was set), a `localhost` URL gets baked
+permanently into production rows (`users.avatar_url`, `content.image_url`, `listings.images`,
+event/group images, etc.).
+
+**Impact seen (2026-06-27):** Firefox 150+ "local network access" protection blocked a
+prod avatar pointing at `http://localhost:8000/...` and showed a "wants to access other
+apps and services on this device" permission prompt on the profile page. Fixed by (a) a
+one-off host-rewrite of 3 affected prod rows → `https://api.ruisilvastudio.com`, and (b) a
+frontend safety net (`frontend/lib/image-url.ts` `safeImageUrl()`) that refuses to render
+localhost/private-network/non-web image URLs (falls back to a placeholder). Applied in
+`Avatar`, `OptimizedImage`, the 5 search cards, profile, home, search, my-articles, and
+marketplace.
+
+**Proper fix (do later):** Stop persisting absolute media URLs. Store **relative** paths
+(`/media/images/<hash>_<size>.webp`) in the DB and prepend the origin at serve/render time
+(backend response serialization, or frontend prepends `NEXT_PUBLIC_API_URL`). Then an env
+mismatch can never bake a host into the DB again, and the same DB row is portable across
+environments. Requires a data migration to strip the host from existing rows + updating
+`_build_urls()`/schemas and frontend consumers.
+
 ## 5. Migration hygiene — ✅ VERIFIED
 - Production DB was patched manually via ALTER TABLE + stamped to head.
 - Confirmed: prod `alembic current` = `d73cb2cb00bf (head)`; a fresh `alembic upgrade head`

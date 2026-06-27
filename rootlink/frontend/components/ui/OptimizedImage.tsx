@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { safeImageUrl } from "@/lib/image-url";
 
 type SizePreset = "original" | "large" | "medium" | "thumb";
 
@@ -27,12 +28,14 @@ export function OptimizedImage({
   const [loaded, setLoaded] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
+  const safeSrc = safeImageUrl(src);
+
   useEffect(() => {
     setError(false);
     setLoaded(false);
   }, [src]);
 
-  if (!src || error) {
+  if (!safeSrc || error) {
     if (fallback) return <>{fallback}</>;
     return null;
   }
@@ -44,7 +47,7 @@ export function OptimizedImage({
       )}
       <img
         ref={imgRef}
-        src={src}
+        src={safeSrc}
         alt={alt}
         loading={loading}
         className={`${className} ${loaded ? "" : "hidden"}`}
