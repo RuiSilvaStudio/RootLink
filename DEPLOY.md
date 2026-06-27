@@ -121,7 +121,7 @@ LIBERAPAY_WEBHOOK_SECRET=            # empty until Liberapay is wired
 - **Backups:** `backend-data/backups/` — `deploy.sh` makes a timestamped copy before every
   deploy and keeps the last 20.
 - **Migrations:** Alembic. `alembic upgrade head` (run automatically by `deploy.sh`).
-- **Current head revision:** `d73cb2cb00bf` (content evolution: points, ratings, feeds).
+- **Current head revision:** `8a1b2c3d4e5f` (content.category nullable + users.website_url).
 
 ### Admin user management
 Use `scripts/reset_admin.py` (see `scripts/README.md`). To run against PROD, exec inside

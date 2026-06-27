@@ -74,7 +74,7 @@ export default function ArticleEditor({ data, onChange, readOnly = false }: Arti
                     body: formData,
                   });
                   const json = await res.json();
-                  return { success: 1, file: { url: json.asset ? `${API_URL}${json.asset.path_large}` : json.url } };
+                  return { success: 1, file: { url: json.asset?.urls?.large || json.url } };
                 },
                 async uploadByUrl(url: string) {
                   return { success: 1, file: { url } };
