@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Rss, Plus, RefreshCw, Trash2, CheckCircle, XCircle, ArrowLeft, ExternalLink } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
