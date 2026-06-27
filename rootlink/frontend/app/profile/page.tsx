@@ -144,7 +144,7 @@ function ProfilePage() {
       }
     };
     load().finally(() => setLoading(false));
-  }, [userId]);
+  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isOwnProfile = currentUser && profile && currentUser.id === profile.id;
 

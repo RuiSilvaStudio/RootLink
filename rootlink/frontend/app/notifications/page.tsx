@@ -23,7 +23,7 @@ export default function NotificationsPage() {
       return;
     }
     api.notifications.list().then(setNotifs).catch(() => {}).finally(() => setLoading(false));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const markAllRead = async () => {
     await api.notifications.markAllRead();

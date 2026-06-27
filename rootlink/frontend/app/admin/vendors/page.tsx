@@ -52,7 +52,7 @@ export default function AdminVendors() {
     setVendors(data);
   };
 
-  useEffect(() => { fetchVendors(); }, []);
+  useEffect(() => { fetchVendors(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

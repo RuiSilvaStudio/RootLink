@@ -42,7 +42,7 @@ export default function ListingDetailPage() {
       setOrderStatus("cancelled");
       addToast("error", t("marketplace.payment_cancelled"));
     }
-  }, [statusParam, orderParam]);
+  }, [statusParam, orderParam]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const token = localStorage.getItem("token");

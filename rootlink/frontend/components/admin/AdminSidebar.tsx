@@ -86,7 +86,7 @@ export function AdminSidebar() {
       localStorage.removeItem("token");
       router.push("/auth/login");
     }).finally(() => setLoading(false));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (

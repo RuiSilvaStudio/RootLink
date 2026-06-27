@@ -43,7 +43,7 @@ export function AdminSidebarSection({
     } else if (defaultExpanded) {
       setExpanded(true);
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     localStorage.setItem(`admin-section-${section.labelKey}`, String(expanded));

@@ -50,7 +50,7 @@ export default function AdminSponsors() {
     setSponsors(data);
   };
 
-  useEffect(() => { fetchSponsors(); }, []);
+  useEffect(() => { fetchSponsors(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

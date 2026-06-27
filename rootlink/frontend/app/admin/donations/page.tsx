@@ -31,10 +31,11 @@ export default function AdminDonations() {
     setStats(data);
   };
 
+  // Fetch once on mount; filters apply via handleSearch.
   useEffect(() => {
     fetchDonations();
     fetchStats();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

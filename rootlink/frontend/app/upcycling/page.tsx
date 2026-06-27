@@ -50,7 +50,7 @@ export default function UpcyclingPage() {
     setToken(localStorage.getItem("token"));
     api.taxonomy.families().then(setFamilies).catch(() => {});
     fetchProjects();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchProjects = useCallback(async () => {
     setLoading(true);

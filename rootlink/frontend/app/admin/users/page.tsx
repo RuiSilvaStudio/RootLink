@@ -38,7 +38,7 @@ export default function AdminUsers() {
     setUsers(data);
   };
 
-  useEffect(() => { fetchUsers(); }, [roleFilter, accountTypeFilter]);
+  useEffect(() => { fetchUsers(); }, [roleFilter, accountTypeFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

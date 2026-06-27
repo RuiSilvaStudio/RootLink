@@ -15,7 +15,8 @@ export default function AdminComments() {
     setComments(data);
   };
 
-  useEffect(() => { fetchComments(); }, [entityFilter]);
+  // Auto-refetch when the entity filter changes.
+  useEffect(() => { fetchComments(); }, [entityFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDelete = async (id: number) => {
     if (!confirm(t("admin.delete_comment_confirm"))) return;

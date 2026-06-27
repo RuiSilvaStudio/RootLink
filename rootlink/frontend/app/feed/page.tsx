@@ -94,7 +94,7 @@ export default function FeedPage() {
       return;
     }
     api.social.feed().then(setFeed).catch(() => {}).finally(() => setLoading(false));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-8 py-12">

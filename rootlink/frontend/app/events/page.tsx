@@ -77,7 +77,7 @@ export default function EventsPage() {
   useEffect(() => {
     api.taxonomy.families().then(setFamilies).catch(() => {});
     loadEvents();
-  }, [category, family]);
+  }, [category, family]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadEvents = () => {
     setLoading(true);

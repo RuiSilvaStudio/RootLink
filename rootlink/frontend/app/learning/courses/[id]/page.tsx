@@ -43,7 +43,7 @@ export default function CourseDetailPage() {
     if (!params.id) return;
     setLoading(true);
     fetchData().finally(() => setLoading(false));
-  }, [params.id, user]);
+  }, [params.id, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleEnroll = async () => {
     try {

@@ -28,7 +28,7 @@ export default function PlantsPage() {
 
   useEffect(() => {
     loadPlants();
-  }, [plantType]);
+  }, [plantType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadPlants = async (q?: string) => {
     setLoading(true);

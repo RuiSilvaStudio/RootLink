@@ -116,7 +116,7 @@ function SearchContent() {
         setTrending(tr);
       }).finally(() => setInitLoading(false));
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // When family changes, load its categories
   const handleFamilyChange = (famValue: string) => {

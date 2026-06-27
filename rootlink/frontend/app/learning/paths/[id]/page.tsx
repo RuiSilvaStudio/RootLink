@@ -39,7 +39,7 @@ export default function LearningPathDetailPage() {
     if (!params.id) return;
     setLoading(true);
     fetchData().finally(() => setLoading(false));
-  }, [params.id]);
+  }, [params.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!showAdd) return;

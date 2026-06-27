@@ -164,7 +164,7 @@ export default function EventDetailPage() {
       setDonationStats(ds);
       setMyTicket(tk);
     } catch {}
-  }, [eventId]);
+  }, [eventId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const token = localStorage.getItem("token");

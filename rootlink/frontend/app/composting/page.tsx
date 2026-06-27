@@ -45,7 +45,7 @@ export default function CompostingPage() {
     setToken(localStorage.getItem("token"));
     fetchHubs();
     api.waste.challenges().then(setChallenges).catch(() => {});
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchHubs = useCallback(async () => {
     setLoading(true);

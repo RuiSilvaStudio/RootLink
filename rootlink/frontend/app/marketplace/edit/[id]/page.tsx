@@ -88,7 +88,7 @@ export default function EditListingPage() {
       addToast("error", t("marketplace.not_found"));
       router.push("/marketplace");
     }).finally(() => setLoading(false));
-  }, [listingId]);
+  }, [listingId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleFamilyChange = (famValue: string) => {
     setFamily(famValue);

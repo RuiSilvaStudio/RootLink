@@ -104,7 +104,7 @@ export default function ArticleEditor({ data, onChange, readOnly = false }: Arti
         editor.destroy();
       }
     };
-  }, [readOnly]);
+  }, [readOnly]); // eslint-disable-line react-hooks/exhaustive-deps -- editor re-init only on readOnly; `data` intentionally excluded to avoid rebuilding on every change
 
   return (
     <div

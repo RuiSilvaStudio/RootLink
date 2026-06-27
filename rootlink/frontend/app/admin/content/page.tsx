@@ -151,7 +151,8 @@ export default function AdminContent() {
     setContent(data);
   };
 
-  useEffect(() => { fetchContent(); }, [filter]);
+  // Intentionally auto-refetch only when `filter` changes; `search` applies on submit (handleSearch).
+  useEffect(() => { fetchContent(); }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

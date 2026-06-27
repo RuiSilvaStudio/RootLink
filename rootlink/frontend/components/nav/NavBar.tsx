@@ -147,13 +147,13 @@ export function NavBar() {
     if (user?.locale && user.locale !== locale) {
       setLocale(user.locale as "pt" | "en");
     }
-  }, [user?.locale]);
+  }, [user?.locale]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (user && user.locale !== locale) {
       api.auth.update({ locale }).catch(() => {});
     }
-  }, [locale]);
+  }, [locale]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isStaff = user && (user.role === "admin" || user.role === "moderator" || user.role === "contributor");
 

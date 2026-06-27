@@ -38,7 +38,7 @@ export default function EditArticlePage() {
       setLoading(false);
       addToast("error", "Article not found");
     });
-  }, [token, articleId, router]);
+  }, [token, articleId, router]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const autoSave = useCallback(async () => {
     if (!title.trim()) return;

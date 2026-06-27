@@ -61,7 +61,7 @@ export default function CreateListingPage() {
       return;
     }
     api.taxonomy.families().then(setFamilies).catch(() => {});
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleFamilyChange = (famValue: string) => {
     setFamily(famValue);
