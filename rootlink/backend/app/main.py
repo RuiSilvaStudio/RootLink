@@ -1,3 +1,4 @@
+import mimetypes
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -315,7 +316,12 @@ app.include_router(ratings.router)
 app.include_router(points.router)
 app.include_router(feeds.router)
 
-# Serve uploaded media files
+# Serve uploaded media files.
+# Register image MIME types explicitly: the slim Docker image's mimetypes DB does
+# not know .webp, so StaticFiles would otherwise serve uploaded images as
+# text/plain and browsers refuse to render them (editor image upload hangs).
+mimetypes.add_type("image/webp", ".webp")
+mimetypes.add_type("image/avif", ".avif")
 media_path = Path(settings.media_dir)
 media_path.mkdir(parents=True, exist_ok=True)
 app.mount("/media", StaticFiles(directory=str(media_path)), name="media")

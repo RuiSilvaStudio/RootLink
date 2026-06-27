@@ -68,13 +68,20 @@ export default function ArticleEditor({ data, onChange, readOnly = false }: Arti
                 async uploadByFile(file: File) {
                   const formData = new FormData();
                   formData.append("file", file);
-                  const res = await fetch(`${API_URL}/api/images/upload`, {
-                    method: "POST",
-                    headers: token ? { Authorization: `Bearer ${token}` } : {},
-                    body: formData,
-                  });
-                  const json = await res.json();
-                  return { success: 1, file: { url: json.asset?.urls?.large || json.url } };
+                  try {
+                    const res = await fetch(`${API_URL}/api/images/upload`, {
+                      method: "POST",
+                      headers: token ? { Authorization: `Bearer ${token}` } : {},
+                      body: formData,
+                    });
+                    if (!res.ok) return { success: 0 };
+                    const json = await res.json();
+                    const url = json.asset?.urls?.large || json.url;
+                    if (!url) return { success: 0 };
+                    return { success: 1, file: { url } };
+                  } catch {
+                    return { success: 0 };
+                  }
                 },
                 async uploadByUrl(url: string) {
                   return { success: 1, file: { url } };
