@@ -39,6 +39,14 @@ deploy — but running `./scripts/deploy.sh` is always safe (backend steps are i
                               │  https://api.ruisilvastudio.com
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
+│  Cloudflare (CDN/proxy in front of api.ruisilvastudio.com)      │
+│  Caches /media/* responses (~4h, max-age=14400).               │
+│  ⚠ After any media Content-Type / header fix you MUST purge the │
+│    Cloudflare cache (or wait out the TTL) — see gotcha #10.      │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
 │  Home server 192.168.1.228 (Ubuntu)                             │
 │  Caddy (80/443) → TLS termination + reverse proxy               │
 │    ├─ api.ruisilvastudio.com    → localhost:8000  (RootLink)   │
@@ -201,6 +209,18 @@ These cost real time. Read before debugging.
    otherwise the Celery containers fail with "executable file not found: celery".
 9. **`npm audit` shows Next.js 14 CVEs** — do NOT `npm audit fix --force` (jumps to Next 16
    and breaks the app). These are tracked in `TECH_DEBT.md` for the planned Next 15 upgrade.
+10. **`.webp` MIME type + Cloudflare cache** (cost real time — 2026-06-27). Uploaded images are
+    normalized to **webp**. The slim Docker image's `mimetypes` DB does NOT know `.webp`, so
+    Starlette `StaticFiles` served them as `Content-Type: text/plain` → browsers refuse to render
+    them → the article editor's image upload spinner hangs forever (worked locally only because the
+    host mimetypes knows webp). Fixed in `backend/app/main.py` with
+    `mimetypes.add_type("image/webp", ".webp")` **before** mounting `/media`. Do NOT remove this.
+    **Cloudflare** sits in front of `api.ruisilvastudio.com` and cached the bad `text/plain`
+    responses for ~4h (`cf-cache-status: HIT`, `max-age=14400`). After ANY media Content-Type/header
+    fix: **purge the Cloudflare cache** (dashboard → Caching → Configuration → Purge Everything, or
+    purge by prefix `https://api.ruisilvastudio.com/media/`) or wait out the TTL. New uploads get a
+    fresh hash-based URL (cache MISS) so they render immediately; only already-cached URLs are stale.
+    There is no Cloudflare API token on the server — purge is a manual dashboard action.
 
 ---
 
