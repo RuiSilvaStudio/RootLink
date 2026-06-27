@@ -93,8 +93,8 @@ async def initiate_donation(
                 "quantity": 1,
             }],
             metadata={"user_id": str(current_user.id), "points": str(body.amount_euros)},
-            success_url=f"{settings.cors_origins.split(',')[0]}/donate/success?session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{settings.cors_origins.split(',')[0]}/donate/cancel",
+            success_url="https://rootlink.ruisilvastudio.com/donate/success?session_id={CHECKOUT_SESSION_ID}",
+            cancel_url="https://rootlink.ruisilvastudio.com/donate/cancel",
         )
         return DonationInitiateResponse(checkout_url=session.url, session_id=session.id)
     except Exception as e:
