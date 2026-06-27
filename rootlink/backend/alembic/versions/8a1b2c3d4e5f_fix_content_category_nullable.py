@@ -24,6 +24,14 @@ def upgrade() -> None:
                type_=sa.String(length=100),
                nullable=True,
                existing_nullable=False)
+        batch_op.alter_column('status',
+               existing_type=sa.VARCHAR(length=20),
+               server_default=sa.text("'draft'"),
+               existing_server_default=sa.text("'draft'"))
+        batch_op.alter_column('verification_status',
+               existing_type=sa.VARCHAR(length=50),
+               server_default=sa.text("'unreviewed'"),
+               existing_server_default=sa.text("'unreviewed'"))
 
 
 def downgrade() -> None:
