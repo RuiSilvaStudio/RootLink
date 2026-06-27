@@ -36,11 +36,24 @@ Missing deps in `useEffect`/`useCallback`. Fix by adding deps or wrapping functi
 - `components/nav/NavBar.tsx:150,156` — `locale`, `setLocale`, `user`
 
 ### `<img>` → `<Image />` warnings (`@next/next/no-img-element`)
-Replace raw `<img>` with `next/image` `<Image />` for performance. ~25 occurrences across:
-admin/groups, admin/plants, admin/review-queue, articles/[slug], donate, entities,
-events/[id], events, leaderboard, learning/*, marketplace/*, page.tsx, plants/*,
-profile, search, tools/*, upcycling, components/search/*, components/ui/Avatar,
-components/ui/ImageUpload, components/ui/OptimizedImage.
+✅ **RESOLVED (Phase 3a) — rule disabled project-wide, by design.**
+
+Decision: turned off `@next/next/no-img-element` in `.eslintrc.json` rather than migrate.
+Rationale (deliberate, not laziness):
+- The vast majority of images are **arbitrary/unbounded sources** — user-uploaded
+  avatars & content images, plant photos from iNaturalist/UTAD, and RSS article
+  images from any blog. `next/image` requires every host in `remotePatterns`;
+  arbitrary hosts can't be safely enumerated.
+- `ImageUpload` shows a **local blob/base64 preview** of a just-selected file —
+  `next/image` is not applicable to data URLs.
+- `OptimizedImage` already implements lazy-loading + skeleton + onError fallback for
+  the self-hosted media server; `next/image` would lose that custom logic.
+- The Next 14 `npm audit` includes **active `next/image` optimizer CVEs** (unbounded
+  disk-cache growth, optimizer DoS). For a small self-hosted NGO, routing arbitrary
+  external images through the optimizer is a net negative.
+
+Revisit after Next 15 (Phase 5): if we move to a single known CDN for media and the
+optimizer CVEs are patched, reconsider `next/image` for first-party images only.
 
 ## 2. Deprecated npm packages (from Vercel install log)
 ✅ **MOSTLY RESOLVED in Phase 1** by removing unused `next-pwa` + `next-intl` (306 packages removed).
