@@ -6,6 +6,7 @@ import { api } from "./api";
 interface AuthContextType {
   user: any | null;
   token: string | null;
+  loading: boolean;
   setAuth: (token: string | null) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<void>;
@@ -14,6 +15,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
+  loading: true,
   setAuth: async () => {},
   logout: () => {},
   refresh: async () => {},
@@ -22,6 +24,7 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const fetchUser = useCallback(async (t: string) => {
     try {
@@ -64,12 +67,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const t = localStorage.getItem("token");
     if (t) {
       setToken(t);
-      fetchUser(t);
+      fetchUser(t).finally(() => setLoading(false));
+    } else {
+      setLoading(false);
     }
   }, [fetchUser]);
 
   return (
-    <AuthContext.Provider value={{ user, token, setAuth, logout, refresh }}>
+    <AuthContext.Provider value={{ user, token, loading, setAuth, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );

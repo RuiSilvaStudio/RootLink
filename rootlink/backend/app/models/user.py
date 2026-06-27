@@ -63,6 +63,7 @@ class User(TimestampMixin, Base):
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     verified_at: Mapped[str | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    website_url: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     feed_url: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     feed_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     feed_verification_token: Mapped[str | None] = mapped_column(String(255), nullable=True)

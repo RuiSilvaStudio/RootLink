@@ -13,7 +13,7 @@ import ArticleEditor from "@/components/editor/ArticleEditor";
 
 export default function NewArticlePage() {
   const router = useRouter();
-  const { user, token } = useAuth();
+  const { user, token, loading } = useAuth();
   const { t } = useLocale();
   const { addToast } = useToast();
   const [title, setTitle] = useState("");
@@ -27,8 +27,9 @@ export default function NewArticlePage() {
   const hasChanges = useRef(false);
 
   useEffect(() => {
+    if (loading) return;
     if (!token) router.push("/auth/login");
-  }, [token, router]);
+  }, [token, router, loading]);
 
   const autoSave = useCallback(async () => {
     if (!title.trim()) return;

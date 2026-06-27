@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { Upload, X, AlertCircle } from "lucide-react";
+import { Upload, X, AlertCircle, Check, RotateCcw } from "lucide-react";
 
 interface ImageUploadProps {
   onUpload: (urls: { thumb: string; medium: string; large: string; original: string }) => void;
@@ -30,6 +30,7 @@ export function ImageUpload({
   label,
 }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -69,9 +70,12 @@ export function ImageUpload({
     []
   );
 
-  const handleFile = useCallback(
+  const handleFileSelect = useCallback(
     async (file: File) => {
       setError(null);
+      setPendingFile(null);
+      if (preview) URL.revokeObjectURL(preview);
+      setPreview(null);
 
       const validationError = validateFile(file);
       if (validationError) {
@@ -87,51 +91,67 @@ export function ImageUpload({
         return;
       }
 
+      setPendingFile(file);
       setPreview(URL.createObjectURL(file));
-      setUploading(true);
-
-      try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
-        const token = localStorage.getItem("token");
-
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("source_type", "upload");
-
-        const res = await fetch(`${API_URL}/api/images/upload`, {
-          method: "POST",
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-          body: formData,
-        });
-
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({ detail: "Upload failed" }));
-          throw new Error(err.detail || "Upload failed");
-        }
-
-        const data = await res.json();
-        onUpload(data.asset.urls);
-        setPreview(null);
-      } catch (e: any) {
-        setError(e.message);
-        onError?.(e.message);
-      } finally {
-        setUploading(false);
-      }
     },
-    [validateFile, checkDimensions, onUpload, onError]
+    [validateFile, checkDimensions, onError, preview]
   );
+
+  const handleConfirmUpload = useCallback(async () => {
+    if (!pendingFile) return;
+    setError(null);
+    setUploading(true);
+
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+      const token = localStorage.getItem("token");
+
+      const formData = new FormData();
+      formData.append("file", pendingFile);
+      formData.append("source_type", "upload");
+
+      const res = await fetch(`${API_URL}/api/images/upload`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: "Upload failed" }));
+        throw new Error(err.detail || "Upload failed");
+      }
+
+      const data = await res.json();
+      onUpload(data.asset.urls);
+      setPendingFile(null);
+      if (preview) URL.revokeObjectURL(preview);
+      setPreview(null);
+    } catch (e: any) {
+      setError(e.message);
+      onError?.(e.message);
+    } finally {
+      setUploading(false);
+    }
+  }, [pendingFile, onUpload, onError, preview]);
+
+  const handleCancel = useCallback(() => {
+    if (preview) URL.revokeObjectURL(preview);
+    setPreview(null);
+    setPendingFile(null);
+    setError(null);
+    if (inputRef.current) inputRef.current.value = "";
+  }, [preview]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) handleFile(file);
+    if (file) handleFileSelect(file);
     if (inputRef.current) inputRef.current.value = "";
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
+    if (file) handleFileSelect(file);
   };
 
   return (
@@ -142,45 +162,68 @@ export function ImageUpload({
         </p>
       )}
 
-      <div
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={handleDrop}
-        onClick={() => inputRef.current?.click()}
-        className="relative border-2 border-dashed border-stone-200 rounded-xl p-4 text-center cursor-pointer hover:border-primary-300 hover:bg-primary-50/20 transition"
-      >
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleInputChange}
-          className="hidden"
-        />
-
-        {preview ? (
-          <div className="relative inline-block">
+      {preview && pendingFile ? (
+        <div className="border-2 border-primary-200 rounded-xl p-4">
+          <div className="relative inline-block w-full">
             <img
               src={preview}
               alt="Preview"
               className="max-h-32 rounded-lg object-contain mx-auto"
             />
-            {uploading && (
-              <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center">
-                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
           </div>
-        ) : (
+          <p className="text-xs text-stone-500 text-center mt-2 font-serif truncate">
+            {pendingFile.name} ({(pendingFile.size / 1024).toFixed(0)}KB)
+          </p>
+          <div className="flex items-center gap-2 mt-3 justify-center">
+            <button
+              type="button"
+              onClick={handleConfirmUpload}
+              disabled={uploading}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50 transition"
+            >
+              {uploading ? (
+                <RotateCcw className="w-3 h-3 animate-spin" />
+              ) : (
+                <Check className="w-3 h-3" />
+              )}
+              {uploading ? "Uploading..." : "Upload"}
+            </button>
+            <button
+              type="button"
+              onClick={handleCancel}
+              disabled={uploading}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-stone-100 text-stone-600 hover:bg-stone-200 disabled:opacity-50 transition"
+            >
+              <X className="w-3 h-3" />
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={handleDrop}
+          onClick={() => inputRef.current?.click()}
+          className="relative border-2 border-dashed border-stone-200 rounded-xl p-4 text-center cursor-pointer hover:border-primary-300 hover:bg-primary-50/20 transition"
+        >
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleInputChange}
+            className="hidden"
+          />
           <div className="py-2">
             <Upload className="w-6 h-6 text-stone-400 mx-auto mb-1" />
             <p className="text-xs text-stone-500 font-serif">
-              Drop image or click to upload
+              Drop image or click to select
             </p>
             <p className="text-[10px] text-stone-400 mt-0.5 font-serif">
               JPEG, PNG, WebP, GIF, BMP, TIFF (max {maxSizeMb}MB)
             </p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {error && (
         <div className="flex items-center gap-1.5 mt-2 text-xs text-red-600">

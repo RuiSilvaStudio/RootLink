@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Search, Filter, ArrowRight, TrendingUp, Sparkles, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
@@ -445,11 +446,14 @@ function SearchContent() {
                     <h2 className="text-lg font-serif font-bold text-stone-800">{t("home.popular_content")}</h2>
                   </div>
                   <div className="grid sm:grid-cols-3 gap-3">
-                    {popular.map((item: any) => (
-                      <a key={item.id} href={item.url || `/content/${item.id}`}
-                        target="_blank" rel="noopener noreferrer"
+                    {popular.map((item: any) => {
+                      const isExternal = Boolean(item.url);
+                      const Tag = isExternal ? "a" : Link;
+                      const extraProps = isExternal ? { target: "_blank", rel: "noopener noreferrer" as const } : {};
+                      return (
+                        <Tag key={item.id} href={isExternal ? item.url : `/articles/${item.slug!}`} {...extraProps}
                         className="rounded-2xl border border-primary-100/40 dark:border-stone-700 bg-white dark:bg-stone-900 p-4 flex items-start gap-3 transition-all hover:shadow-md hover:border-primary-200/60 dark:hover:border-primary-700"
-                      >
+                        >
                         <div className="w-12 h-12 rounded-xl bg-primary-50 dark:bg-primary-900/30 shrink-0 flex items-center justify-center overflow-hidden">
                           {item.image_url ? (
                             <img src={item.image_url} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
@@ -463,8 +467,9 @@ function SearchContent() {
                             <Badge variant="sage" className="text-[10px]">{item.category}</Badge>
                           </div>
                         </div>
-                      </a>
-                    ))}
+                      </Tag>
+                      );
+                    })}
                   </div>
                 </div>
               )}

@@ -45,7 +45,7 @@ export default function LoginPage() {
       )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1">
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
             {t("auth.email")}
           </label>
           <input
@@ -54,12 +54,12 @@ export default function LoginPage() {
             onChange={(e) => { setEmail(e.target.value); setEmailTouched(true); }}
             onBlur={() => setEmailTouched(true)}
             required
-            className="w-full px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-4 py-2 rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
           {emailError && <p className="text-xs text-red-500 mt-1">{emailError}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1">
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
             {t("auth.password")}
           </label>
           <input
@@ -68,7 +68,7 @@ export default function LoginPage() {
             onChange={(e) => { setPassword(e.target.value); setPasswordTouched(true); }}
             onBlur={() => setPasswordTouched(true)}
             required
-            className="w-full px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-4 py-2 rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
           {passwordError && <p className="text-xs text-red-500 mt-1">{passwordError}</p>}
         </div>

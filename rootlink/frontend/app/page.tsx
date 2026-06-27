@@ -263,12 +263,15 @@ export default function Home() {
             <p className="text-center text-stone-00 dark:text-stone-500 dark:text-stone-400 py-12 font-serif">{t("home.no_recent_content")}</p>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {recent.slice(0, 8).map((item: any) => (
-                <a
+              {recent.slice(0, 8).map((item: any) => {
+                const isExternal = !!item.url;
+                const href = isExternal ? item.url : `/articles/${item.slug}`;
+                return (
+                <Link
                   key={item.id}
-                  href={item.url || "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href={href}
+                  target={isExternal ? "_blank" : undefined}
+                  rel={isExternal ? "noopener noreferrer" : undefined}
                   className="card-lift overflow-hidden group"
                 >
                   <div className="h-40 bg-primary-100 dark:bg-primary-950/20/40 flex items-center justify-center overflow-hidden">
@@ -290,8 +293,9 @@ export default function Home() {
                       <p className="text-stone-500 text-xs mt-2 font-serif leading-relaxed line-clamp-2">{item.summary}</p>
                     )}
                   </div>
-                </a>
-              ))}
+                </Link>
+              );
+            })}
             </div>
           )}
         </div>

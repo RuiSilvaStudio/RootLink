@@ -12,16 +12,20 @@ import { Button, Badge, EmptyState } from "@/components/ui";
 
 export default function MyArticlesPage() {
   const router = useRouter();
-  const { user, token } = useAuth();
+  const { user, token, loading: authLoading } = useAuth();
   const { t } = useLocale();
   const { addToast } = useToast();
   const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!token) { router.push("/auth/login"); return; }
-    api.articles.my({ limit: 100 }).then(setArticles).catch(() => {}).finally(() => setLoading(false));
-  }, [token, router]);
+    api.articles.my({ limit: 100 }).then(setArticles).catch((err: any) => {
+      if (err?.status === 401) { router.push("/auth/login"); return; }
+      addToast("error", err?.message || "Failed to load articles");
+    }).finally(() => setLoading(false));
+  }, [token, router, addToast, authLoading]);
 
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this article?")) return;

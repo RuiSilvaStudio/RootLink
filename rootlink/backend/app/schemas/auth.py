@@ -51,6 +51,7 @@ class UserResponse(BaseModel):
     modality: str | None = None
     is_verified: bool = False
     verified_at: datetime | None = None
+    website_url: str | None = None
     feed_url: str | None = None
     feed_verified: bool = False
     feed_priority: int = 3
@@ -71,6 +72,7 @@ class UserUpdate(BaseModel):
     avatar_url: str | None = None
     visible_in_network: bool | None = None
     locale: str | None = None
+    website_url: str | None = None
     services: list[str] | None = None
     service_area: str | None = None
     certifications: list[str] | None = None

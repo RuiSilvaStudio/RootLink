@@ -48,6 +48,7 @@ class SearchContentResponse(BaseModel):
     so groups, plants, articles, events, courses, and videos can all be returned."""
     id: int
     title: str
+    slug: str | None = None
     url: str | None = None
     content_type: str
     category: str

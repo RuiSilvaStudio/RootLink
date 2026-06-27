@@ -12,6 +12,7 @@ import {
   ShoppingBag,
   MessageCircle,
   FileText,
+  Settings,
   type LucideIcon,
 } from "lucide-react";
 
@@ -36,6 +37,7 @@ export const discoverGroup: NavGroup = {
     { href: "/events", labelKey: "nav.events", icon: CalendarDays },
     { href: "/network", labelKey: "nav.network", icon: Network },
     { href: "/entities", labelKey: "nav.entities", icon: Building2 },
+    { href: "/settings/feeds", labelKey: "nav.settings", icon: Settings },
   ],
 };
 

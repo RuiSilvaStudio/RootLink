@@ -244,6 +244,7 @@
     "tab_events": "Events",
     "tab_discussions": "Discussions",
     "tab_settings": "Settings",
+    "tab_marketplace": "Marketplace",
     "about": "About",
     "member_since": "Member since",
     "articles": "articles",
@@ -276,7 +277,9 @@
     "verified": "Verified",
     "entity_info": "Entity Information",
     "entity_type": "Entity type",
-    "practitioner_info": "Practitioner Information"
+    "practitioner_info": "Practitioner Information",
+    "website": "Website",
+    "website_placeholder": "https://mywebsite.com"
   },
   "entities": {
     "title": "Entity Directory",
@@ -395,7 +398,8 @@
     "seller_setup": "Seller Setup",
     "seller_setup_desc": "To receive payments for your listings, connect your Stripe account.",
     "setup_stripe": "Set up Stripe payments",
-    "no_marketplace_activity": "No marketplace activity yet"
+    "no_marketplace_activity": "No marketplace activity yet",
+    "not_available_yet": "Not available yet. Check back soon."
   },
   "waste": {
     "composting_title": "Community Composting",
@@ -1200,7 +1204,7 @@
     "error": "Error",
     "success": "Success"
   },
-  "plants_page": {
+  "plants": {
     "title": "Plant Encyclopedia",
     "subtitle": "Explore our botanical database with detailed growing information",
     "search_placeholder": "Search by name, genus, or family...",

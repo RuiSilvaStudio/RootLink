@@ -102,6 +102,7 @@ async def hybrid_search(
             scored.append((rank, {
                 "id": c.id,
                 "title": c.title,
+                "slug": c.slug,
                 "url": c.url,
                 "content_type": "article",
                 "category": _normalize_category(c.category),

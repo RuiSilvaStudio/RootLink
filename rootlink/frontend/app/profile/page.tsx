@@ -79,6 +79,7 @@ function ProfilePage() {
   const [interests, setInterests] = useState("");
   const [visibleInNetwork, setVisibleInNetwork] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [websiteUrl, setWebsiteUrl] = useState("");
 
   // Entity edit fields
   const [servicesEdit, setServicesEdit] = useState("");
@@ -120,6 +121,7 @@ function ProfilePage() {
       setInterests((target.interests || []).join(", "));
       setVisibleInNetwork(target.visible_in_network !== false);
       setAvatarUrl(target.avatar_url || null);
+      setWebsiteUrl(target.website_url || "");
       setServicesEdit((target.services || []).join(", "));
       setServiceAreaEdit(target.service_area || "");
       setCertificationsEdit((target.certifications || []).join(", "));
@@ -156,6 +158,7 @@ function ProfilePage() {
     || interests !== ((profile.interests || []).join(", "))
     || visibleInNetwork !== (profile.visible_in_network !== false)
     || avatarUrl !== (profile.avatar_url || null)
+    || websiteUrl !== (profile.website_url || "")
   ));
   useDirtyGuard(profileDirty && !!isOwnProfile);
 
@@ -169,6 +172,7 @@ function ProfilePage() {
         interests: interests.split(",").map((s: string) => s.trim()).filter(Boolean),
         visible_in_network: visibleInNetwork,
         avatar_url: avatarUrl,
+        website_url: websiteUrl || undefined,
         services: servicesEdit ? servicesEdit.split(",").map((s: string) => s.trim()).filter(Boolean) : undefined,
         service_area: serviceAreaEdit || undefined,
         certifications: certificationsEdit ? certificationsEdit.split(",").map((s: string) => s.trim()).filter(Boolean) : undefined,
@@ -663,8 +667,8 @@ function ProfilePage() {
                 try {
                   const res = await api.marketplace.sellerOnboard();
                   window.location.href = res.url;
-                } catch (err: any) {
-                  addToast("error", err.message);
+                } catch {
+                  addToast("error", t("marketplace.not_available_yet"));
                 }
               }} className="inline-flex items-center gap-2 text-sm font-display font-medium text-primary-600 hover:text-primary-700 transition">
                 <Building className="w-4 h-4" /> {t("marketplace.setup_stripe")}
@@ -861,6 +865,12 @@ function ProfilePage() {
                     className="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm text-stone-800 dark:text-stone-100 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("profile.website")}</label>
+                <input type="url" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)}
+                  placeholder={t("profile.website_placeholder")}
+                  className="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm text-stone-800 dark:text-stone-100 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
               {/* Entity-specific edit fields */}
               {profile.account_type === "organization" && (
                 <div className="pt-4 border-t border-stone-200 dark:border-stone-700 space-y-4">
@@ -906,6 +916,16 @@ function ProfilePage() {
                 <Save className="w-4 h-4" /> {saving ? t("profile.saving") : t("profile.save_profile")}
               </Button>
             </form>
+
+            {/* Feed Settings */}
+            <Link href="/settings/feeds"
+              className="flex items-center gap-3 bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-700 p-4 hover:shadow-md transition group">
+              <Rss className="w-5 h-5 text-primary-500 group-hover:text-primary-600" />
+              <div>
+                <p className="text-sm font-medium text-stone-700 dark:text-stone-300">RSS Feed Settings</p>
+                <p className="text-xs text-stone-400 dark:text-stone-500 font-serif">Connect your blog or website to import articles</p>
+              </div>
+            </Link>
 
             {/* Bookmarks */}
             {activity?.bookmarks?.length > 0 && (

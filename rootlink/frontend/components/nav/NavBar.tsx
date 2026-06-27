@@ -409,6 +409,9 @@ export function NavBar() {
               <Link href="/articles/new" onClick={closeMobile} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-stone-600 dark:text-stone-200 hover:bg-primary-50/40 dark:hover:bg-primary-900/20 transition font-serif">
                 <FileText className="w-4 h-4 text-stone-400 dark:text-stone-400" />{t("nav.new_article")}
               </Link>
+              <Link href="/settings/feeds" onClick={closeMobile} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-stone-600 dark:text-stone-200 hover:bg-primary-50/40 dark:hover:bg-primary-900/20 transition font-serif">
+                <Rss className="w-4 h-4 text-stone-400 dark:text-stone-400" />{t("nav.settings")}
+              </Link>
               <Link href="/donate" onClick={closeMobile} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-stone-600 dark:text-stone-200 hover:bg-primary-50/40 dark:hover:bg-primary-900/20 transition font-serif">
                 <Heart className="w-4 h-4 text-stone-400 dark:text-stone-400" />{t("nav.donate")}
               </Link>

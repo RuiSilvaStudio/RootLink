@@ -13,7 +13,7 @@ export default function EditArticlePage() {
   const router = useRouter();
   const params = useParams();
   const articleId = Number(params.id);
-  const { user, token } = useAuth();
+  const { user, token, loading: authLoading } = useAuth();
   const { addToast } = useToast();
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
@@ -25,6 +25,7 @@ export default function EditArticlePage() {
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!token) { router.push("/auth/login"); return; }
     api.articles.my({ limit: 200 }).then((articles) => {
       const found = articles.find((a: any) => a.id === articleId);

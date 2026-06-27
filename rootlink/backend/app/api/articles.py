@@ -2,7 +2,7 @@ import re
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -216,6 +216,7 @@ async def get_article(
 
     article.view_count = (article.view_count or 0) + 1
     await db.commit()
+    await db.refresh(article)
 
     return await _to_response(article, db, current_user)
 
@@ -263,8 +264,14 @@ async def publish_article(
     article.published_at = datetime.now(UTC)
 
     text_for_embedding = article.full_text or article.summary or article.title
-    article.embedding = await embed_text(text_for_embedding)
-    await auto_cross_reference(db, article)
+    try:
+        article.embedding = await embed_text(text_for_embedding)
+    except Exception:
+        article.embedding = None
+    try:
+        await auto_cross_reference(db, article)
+    except Exception:
+        pass
 
     await db.commit()
     await db.refresh(article)

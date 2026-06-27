@@ -81,7 +81,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-12 px-4">
+    <div className="max-w-md mx-auto mt-20 px-4">
       <h1 className="text-3xl font-display font-bold text-stone-800 dark:text-stone-100 mb-2">
         {t("auth.register_title")}
       </h1>
@@ -89,18 +89,18 @@ export default function RegisterPage() {
       {/* Step indicator */}
       <div className="flex items-center gap-2 mb-6">
         {[1, 2].map((s) => (
-          <div key={s} className={`h-1 flex-1 rounded-full transition-colors ${s <= step ? "bg-primary-500" : "bg-stone-200"}`} />
+          <div key={s} className={`h-1 flex-1 rounded-full transition-colors ${s <= step ? "bg-primary-500" : "bg-stone-200 dark:bg-stone-700"}`} />
         ))}
       </div>
 
       {error && (
-        <p className="bg-red-50 text-red-700 px-4 py-2 rounded-lg mb-4 text-sm">{error}</p>
+        <p className="bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 px-4 py-2 rounded-lg mb-4 text-sm">{error}</p>
       )}
 
       {/* Step 1: Account type */}
       {step === 1 && (
         <div className="space-y-4">
-          <p className="text-sm text-stone-500 font-serif">{t("auth.choose_account_type")}</p>
+          <p className="text-sm text-stone-500 dark:text-stone-400 font-serif">{t("auth.choose_account_type")}</p>
           {ACCOUNT_TYPES.map((at) => {
             const Icon = at.icon;
             const isSelected = accountType === at.value;
@@ -110,8 +110,8 @@ export default function RegisterPage() {
                 onClick={() => setAccountType(at.value)}
                 className={`w-full flex items-start gap-4 p-5 rounded-2xl border-2 transition-all text-left ${
                   isSelected
-                    ? "border-primary-500 bg-primary-50/40 shadow-sm"
-                    : "border-stone-200 hover:border-primary-300"
+                    ? "border-primary-500 bg-primary-50/40 dark:bg-primary-900/20 shadow-sm"
+                    : "border-stone-200 dark:border-stone-700 hover:border-primary-300"
                 }`}
               >
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
@@ -120,8 +120,8 @@ export default function RegisterPage() {
                   <Icon className="w-6 h-6" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-display font-semibold text-stone-800">{t(at.labelKey)}</p>
-                  <p className="text-xs text-stone-500 mt-1 font-serif">{t(at.descKey)}</p>
+                  <p className="font-display font-semibold text-stone-800 dark:text-stone-100">{t(at.labelKey)}</p>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-serif">{t(at.descKey)}</p>
                 </div>
                 {isSelected && <Check className="w-5 h-5 text-primary-500 shrink-0 mt-1" />}
               </button>
@@ -141,7 +141,7 @@ export default function RegisterPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Common fields */}
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
               {accountType === "organization" ? t("auth.organization_name") : t("auth.name")}
             </label>
             <input
@@ -149,53 +149,53 @@ export default function RegisterPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="w-full px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-4 py-2 rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t("auth.email")}</label>
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.email")}</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-4 py-2 rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("auth.password")}</label>
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.password")}</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
-                className="w-full px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-4 py-2 rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("auth.confirm_password")}</label>
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.confirm_password")}</label>
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="w-full px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-4 py-2 rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
           </div>
 
           {/* Organization fields */}
           {accountType === "organization" && (
-            <div className="space-y-4 pt-2 border-t border-stone-200">
-              <p className="text-sm font-display font-semibold text-stone-700">{t("auth.organization_details")}</p>
+            <div className="space-y-4 pt-2 border-t border-stone-200 dark:border-stone-700">
+              <p className="text-sm font-display font-semibold text-stone-700 dark:text-stone-300">{t("auth.organization_details")}</p>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">{t("auth.entity_type")}</label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.entity_type")}</label>
                 <select
                   value={entityType}
                   onChange={(e) => setEntityType(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg border border-stone-300 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-4 py-2 rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="">—</option>
                   {ENTITY_TYPES.map((et) => (
@@ -204,33 +204,33 @@ export default function RegisterPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">{t("auth.registration_number")}</label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.registration_number")}</label>
                 <input
                   type="text"
                   value={registrationNumber}
                   onChange={(e) => setRegistrationNumber(e.target.value)}
                   placeholder={t("auth.registration_number_placeholder")}
-                  className="w-full px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-4 py-2 rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">{t("auth.services")}</label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.services")}</label>
                 <input
                   type="text"
                   value={services}
                   onChange={(e) => setServices(e.target.value)}
                   placeholder={t("auth.services_placeholder")}
-                  className="w-full px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-4 py-2 rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">{t("auth.service_area")}</label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.service_area")}</label>
                 <input
                   type="text"
                   value={serviceArea}
                   onChange={(e) => setServiceArea(e.target.value)}
                   placeholder={t("auth.service_area_placeholder")}
-                  className="w-full px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-4 py-2 rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
             </div>
@@ -238,26 +238,26 @@ export default function RegisterPage() {
 
           {/* Practitioner fields */}
           {accountType === "practitioner" && (
-            <div className="space-y-4 pt-2 border-t border-stone-200">
-              <p className="text-sm font-display font-semibold text-stone-700">{t("auth.practitioner_details")}</p>
+            <div className="space-y-4 pt-2 border-t border-stone-200 dark:border-stone-700">
+              <p className="text-sm font-display font-semibold text-stone-700 dark:text-stone-300">{t("auth.practitioner_details")}</p>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">{t("auth.modality")}</label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.modality")}</label>
                 <input
                   type="text"
                   value={modality}
                   onChange={(e) => setModality(e.target.value)}
                   placeholder={t("auth.modality_placeholder")}
-                  className="w-full px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-4 py-2 rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">{t("auth.certifications")}</label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.certifications")}</label>
                 <input
                   type="text"
                   value={certifications}
                   onChange={(e) => setCertifications(e.target.value)}
                   placeholder={t("auth.certifications_placeholder")}
-                  className="w-full px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-4 py-2 rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
             </div>
@@ -267,7 +267,7 @@ export default function RegisterPage() {
             <button
               type="button"
               onClick={() => setStep(1)}
-              className="px-4 py-2.5 rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-50 transition text-sm font-medium"
+              className="px-4 py-2.5 rounded-lg border border-stone-300 dark:border-stone-600 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition text-sm font-medium"
             >
               {t("auth.back")}
             </button>
@@ -281,7 +281,7 @@ export default function RegisterPage() {
         </form>
       )}
 
-      <p className="mt-6 text-sm text-stone-500 text-center">
+      <p className="mt-6 text-sm text-stone-500 dark:text-stone-400 text-center">
         {t("auth.has_account")}{" "}
         <Link href="/auth/login" className="text-primary-600 hover:underline">
           {t("auth.sign_in_link")}

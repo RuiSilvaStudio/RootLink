@@ -244,6 +244,7 @@
     "tab_events": "Eventos",
     "tab_discussions": "Discussões",
     "tab_settings": "Definições",
+    "tab_marketplace": "Marketplace",
     "about": "Sobre",
     "member_since": "Membro desde",
     "articles": "artigos",
@@ -276,7 +277,9 @@
     "verified": "Verificada",
     "entity_info": "Informação da Entidade",
     "entity_type": "Tipo de entidade",
-    "practitioner_info": "Informação do Profissional"
+    "practitioner_info": "Informação do Profissional",
+    "website": "Site",
+    "website_placeholder": "https://meusite.pt"
   },
   "entities": {
     "title": "Diretório de Entidades",
@@ -395,7 +398,8 @@
     "seller_setup": "Configuração de Vendedor",
     "seller_setup_desc": "Para receber pagamentos pelos seus anúncios, conecte a sua conta Stripe.",
     "setup_stripe": "Configurar pagamentos Stripe",
-    "no_marketplace_activity": "Ainda não há atividade no mercado"
+    "no_marketplace_activity": "Ainda não há atividade no mercado",
+    "not_available_yet": "Indisponível de momento. Volte mais tarde."
   },
   "waste": {
     "composting_title": "Compostagem Comunitária",
@@ -1200,7 +1204,7 @@
     "error": "Erro",
     "success": "Sucesso"
   },
-  "plants_page": {
+  "plants": {
     "title": "Enciclopédia de Plantas",
     "subtitle": "Explore a nossa base de dados botânica com informações detalhadas de cultivo",
     "search_placeholder": "Pesquisar por nome, género ou família...",
