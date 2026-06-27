@@ -35,6 +35,18 @@ class VerificationStatus(enum.StrEnum):
     community_reviewed = "community_reviewed"
 
 
+# Verification states that make content publicly visible (live & indexed).
+# Content stays hidden from all public surfaces until it reaches one of these.
+# NOTE: this is the gate for BOTH user-authored articles (which become
+# community_reviewed after a human approves) and crawled content (which becomes
+# cross_referenced once enough independent sources corroborate it). Crawled rows
+# keep status="draft", so verification_status — not status — is the public gate.
+PUBLIC_VERIFICATION_STATUSES = (
+    VerificationStatus.community_reviewed,
+    VerificationStatus.cross_referenced,
+)
+
+
 class ContentStatus(enum.StrEnum):
     draft = "draft"
     published = "published"

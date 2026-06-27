@@ -1,8 +1,6 @@
 "use client";
 
-import { Sprout } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import { OptimizedImage } from "@/components/ui/OptimizedImage";
 
 export function PlantCard({ item }: { item: any }) {
   const c = item.content;
@@ -14,17 +12,11 @@ export function PlantCard({ item }: { item: any }) {
     >
       <div className="flex items-start gap-4">
         <div className="w-14 h-14 rounded-xl bg-primary-50 shrink-0 flex items-center justify-center overflow-hidden">
-          {c.image_url ? (
-            <OptimizedImage
-              src={c.image_url}
-              alt=""
-              size="thumb"
-              className="w-full h-full object-cover"
-              fallback={<Sprout className="w-6 h-6 text-primary-400" />}
-            />
-          ) : (
-            <Sprout className="w-6 h-6 text-primary-400" />
-          )}
+          <img
+            src={c.image_url || "/images/placeholder-card.svg"}
+            alt={c.title}
+            className="w-full h-full object-cover"
+          />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">

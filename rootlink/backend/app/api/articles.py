@@ -7,17 +7,44 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user, get_optional_user
-from app.models.content import Content, ContentStatus, ContentSource, ContentType
+from app.models.content import Content, ContentSource, ContentStatus, ContentType, VerificationStatus
 from app.models.points import PointBalance
 from app.models.user import User
 from app.schemas.article import ArticleCreate, ArticleListResponse, ArticleResponse, ArticleUpdate
-from app.services.cross_reference import auto_cross_reference
+from app.services.content_visibility import is_publicly_visible
 from app.services.embeddings import embed_text
 from app.services.ranking import compute_rank
 
 router = APIRouter(prefix="/api/articles", tags=["articles"])
 
 BOOST_SLOTS_PER_PAGE = 2
+
+
+def _extract_first_image_from_body(body: dict | str | None) -> str | None:
+    if not body:
+        return None
+    if isinstance(body, str):
+        try:
+            import json
+            body = json.loads(body)
+        except (json.JSONDecodeError, TypeError):
+            return None
+    blocks = body.get("blocks", [])
+    for block in blocks:
+        t = block.get("type", "")
+        data = block.get("data", {})
+        if t in ("image", "simpleImage", "attaches"):
+            file_data = data.get("file")
+            if isinstance(file_data, dict):
+                url = file_data.get("url")
+                if url:
+                    return url
+            if isinstance(file_data, str):
+                return file_data
+            url = data.get("url")
+            if url:
+                return url
+    return None
 
 
 def _slugify(title: str) -> str:
@@ -93,13 +120,17 @@ async def create_article(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    image_url = body.image_url
+    if not image_url:
+        image_url = _extract_first_image_from_body(body.body)
+
     article = Content(
         title=body.title,
         summary=body.summary,
         body=body.body,
         category=body.category,
         family=body.family,
-        image_url=body.image_url,
+        image_url=image_url,
         content_type=ContentType.article,
         source=ContentSource.user,
         created_by=current_user.id,
@@ -210,13 +241,22 @@ async def get_article(
     article = result.scalar_one_or_none()
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
-    if article.status == ContentStatus.draft:
-        if not current_user or (article.created_by != current_user.id and current_user.role not in ("admin", "moderator")):
+
+    # Not-yet-live articles (drafts and published-but-awaiting-review) are only
+    # viewable by their author and moderators. Everyone else gets a 404 until a
+    # reviewer approves the article.
+    live = is_publicly_visible(article)
+    if not live:
+        is_owner = current_user and article.created_by == current_user.id
+        is_staff = current_user and current_user.role in ("admin", "moderator")
+        if not (is_owner or is_staff):
             raise HTTPException(status_code=404, detail="Article not found")
 
-    article.view_count = (article.view_count or 0) + 1
-    await db.commit()
-    await db.refresh(article)
+    # Only count public views, so author/mod previews don't inflate the counter.
+    if live:
+        article.view_count = (article.view_count or 0) + 1
+        await db.commit()
+        await db.refresh(article)
 
     return await _to_response(article, db, current_user)
 
@@ -236,6 +276,11 @@ async def update_article(
 
     for key, val in body.model_dump(exclude_unset=True).items():
         setattr(article, key, val)
+
+    if not article.image_url:
+        first_img = _extract_first_image_from_body(article.body)
+        if first_img:
+            article.image_url = first_img
 
     article.edited_at = datetime.now(UTC)
     await db.commit()
@@ -260,18 +305,30 @@ async def publish_article(
     if not article.slug:
         article.slug = await _unique_slug(db, article.title)
 
+    if not article.image_url:
+        first_img = _extract_first_image_from_body(article.body)
+        if first_img:
+            article.image_url = first_img
+
+    # "Publish" submits the article for community review — it does NOT go live.
+    # status=published + verification_status=unreviewed means "pending review".
+    # A moderator must approve it (-> community_reviewed) before it appears in
+    # search, feeds, recent, or is viewable by the public via its slug.
+    # We deliberately do NOT auto-cross-reference here: cross-referencing is the
+    # auto-verification path for crawled multi-source content, and running it on
+    # a single user's article could promote it to a publicly-visible state,
+    # bypassing human review.
     article.status = ContentStatus.published
     article.published_at = datetime.now(UTC)
+    article.verification_status = VerificationStatus.unreviewed
 
+    # Generate the embedding now so the article is instantly searchable the
+    # moment a reviewer approves it (search still hides it until then).
     text_for_embedding = article.full_text or article.summary or article.title
     try:
         article.embedding = await embed_text(text_for_embedding)
     except Exception:
         article.embedding = None
-    try:
-        await auto_cross_reference(db, article)
-    except Exception:
-        pass
 
     await db.commit()
     await db.refresh(article)

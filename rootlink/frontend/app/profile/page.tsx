@@ -481,7 +481,7 @@ function ProfilePage() {
                 <div className="grid sm:grid-cols-2 gap-3">
                   {activity.content.map((c: any) => (
                     <Link key={c.id} href={`/content/${c.id}`} className="card-lift p-4 group">
-                      {c.image_url && <img src={c.image_url} alt="" className="w-full h-24 object-cover rounded-lg mb-3" />}
+                      <img src={c.image_url || "/images/placeholder-card.svg"} alt={c.title} className="w-full h-24 object-cover rounded-lg mb-3" />
                       <p className="text-sm font-medium text-stone-700 dark:text-stone-300 group-hover:text-primary-700 transition line-clamp-2">{c.title}</p>
                       {c.created_at && <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">{new Date(c.created_at).toLocaleDateString()}</p>}
                     </Link>

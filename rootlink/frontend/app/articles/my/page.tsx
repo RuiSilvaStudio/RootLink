@@ -82,27 +82,36 @@ export default function MyArticlesPage() {
               key={article.id}
               className="flex items-center justify-between p-4 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700"
             >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <Badge variant={article.status === "published" ? "green" : "stone"}>
-                    {article.status === "published" ? (
-                      <span className="flex items-center gap-1"><Send size={10} /> Published</span>
-                    ) : (
-                      <span className="flex items-center gap-1"><Clock size={10} /> Draft</span>
-                    )}
-                  </Badge>
-                  {article.verification_status === "community_reviewed" && (
-                    <Badge variant="sage">Reviewed</Badge>
-                  )}
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className="w-12 h-12 rounded-xl shrink-0 overflow-hidden bg-stone-100 dark:bg-stone-800">
+                  <img
+                    src={article.image_url || "/images/placeholder-card.svg"}
+                    alt={article.title}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-                <h3 className="text-base font-medium text-stone-900 dark:text-stone-100 truncate">
-                  {article.title}
-                </h3>
-                <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">
-                  {article.updated_at ? new Date(article.updated_at).toLocaleDateString() : ""}
-                  {article.rating_up > 0 && ` · ${article.rating_up} likes`}
-                  {article.view_count > 0 && ` · ${article.view_count} views`}
-                </p>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant={article.status === "published" ? "green" : "stone"}>
+                      {article.status === "published" ? (
+                        <span className="flex items-center gap-1"><Send size={10} /> Published</span>
+                      ) : (
+                        <span className="flex items-center gap-1"><Clock size={10} /> Draft</span>
+                      )}
+                    </Badge>
+                    {article.verification_status === "community_reviewed" && (
+                      <Badge variant="sage">Reviewed</Badge>
+                    )}
+                  </div>
+                  <h3 className="text-base font-medium text-stone-900 dark:text-stone-100 truncate">
+                    {article.title}
+                  </h3>
+                  <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">
+                    {article.updated_at ? new Date(article.updated_at).toLocaleDateString() : ""}
+                    {article.rating_up > 0 && ` · ${article.rating_up} likes`}
+                    {article.view_count > 0 && ` · ${article.view_count} views`}
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center gap-2 ml-4">

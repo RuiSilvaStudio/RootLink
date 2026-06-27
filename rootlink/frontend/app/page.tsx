@@ -275,13 +275,12 @@ export default function Home() {
                   className="card-lift overflow-hidden group"
                 >
                   <div className="h-40 bg-primary-100 dark:bg-primary-950/20/40 flex items-center justify-center overflow-hidden">
-                    {item.image_url ? (
-                      <img src={item.image_url} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy"
-                        onError={(e) => { e.currentTarget.style.display = "none"; (e.currentTarget.parentElement!.classList.add("bg-primary-100 dark:bg-primary-950/20/40")); }}
-                      />
-                    ) : (
-                      <Leaf className="w-10 h-10 text-primary-300" />
-                    )}
+                    <img
+                      src={item.image_url || "/images/placeholder-card.svg"}
+                      alt={item.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
                   </div>
                   <div className="p-5">
                     <div className="flex items-center gap-2 mb-3 flex-wrap">

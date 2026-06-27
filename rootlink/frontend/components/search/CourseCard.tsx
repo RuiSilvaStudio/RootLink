@@ -1,6 +1,5 @@
 "use client";
 
-import { BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 
 export function CourseCard({ item }: { item: any }) {
@@ -13,11 +12,11 @@ export function CourseCard({ item }: { item: any }) {
     >
       <div className="flex items-start gap-4">
         <div className="w-14 h-14 rounded-xl bg-blue-50 shrink-0 flex items-center justify-center overflow-hidden">
-          {c.image_url ? (
-            <img src={c.image_url} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <BookOpen className="w-6 h-6 text-blue-400" />
-          )}
+          <img
+            src={c.image_url || "/images/placeholder-card.svg"}
+            alt={c.title}
+            className="w-full h-full object-cover"
+          />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">

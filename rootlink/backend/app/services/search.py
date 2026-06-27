@@ -10,6 +10,7 @@ from app.models.learning import Course, Lesson
 from app.models.plant import Plant
 from app.models.points import PointBalance
 from app.schemas.content import SearchContentResponse, SearchResponse, SearchResult
+from app.services.content_visibility import public_content_clause
 from app.services.embeddings import embed_text
 from app.services.ranking import compute_rank
 
@@ -69,7 +70,9 @@ async def hybrid_search(
 
     # --- Articles ---
     if content_type in (None, "article"):
-        stmt = select(Content)
+        # Only publicly-visible content is searchable/indexed. Drafts and
+        # published-but-unreviewed articles awaiting review stay out of search.
+        stmt = select(Content).where(public_content_clause())
         if category:
             stmt = stmt.where(Content.category == category)
         if family:

@@ -1,13 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { FileText, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
+
+const PLACEHOLDER = "/images/placeholder-card.svg";
 
 export function ArticleCard({ item }: { item: any }) {
   const c = item.content;
   const hostname = c.source_url ? new URL(c.source_url).hostname.replace("www.", "") : null;
   const isExternal = Boolean(c.url);
+
+  const img = (alt: string) => (
+    <img
+      src={c.image_url || PLACEHOLDER}
+      alt={alt}
+      className="w-full h-full object-cover"
+    />
+  );
 
   if (isExternal) {
     return (
@@ -19,11 +29,7 @@ export function ArticleCard({ item }: { item: any }) {
       >
         <div className="flex items-start gap-4">
           <div className="w-14 h-14 rounded-xl bg-stone-100 shrink-0 flex items-center justify-center overflow-hidden">
-            {c.image_url ? (
-              <img src={c.image_url} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-            ) : (
-              <FileText className="w-6 h-6 text-stone-400" />
-            )}
+            {img(c.title)}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
@@ -52,11 +58,7 @@ export function ArticleCard({ item }: { item: any }) {
     >
       <div className="flex items-start gap-4">
         <div className="w-14 h-14 rounded-xl bg-stone-100 shrink-0 flex items-center justify-center overflow-hidden">
-          {c.image_url ? (
-            <img src={c.image_url} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-          ) : (
-            <FileText className="w-6 h-6 text-stone-400" />
-          )}
+          {img(c.title)}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">

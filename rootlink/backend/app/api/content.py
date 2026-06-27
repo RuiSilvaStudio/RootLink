@@ -17,6 +17,7 @@ from app.schemas.content import (
     IndexRequest,
     SearchResponse,
 )
+from app.services.content_visibility import is_publicly_visible, public_content_clause
 from app.services.cross_reference import auto_cross_reference
 from app.services.embeddings import embed_text
 from app.services.ranking import compute_rank
@@ -59,7 +60,7 @@ async def recent(
     limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Content))
+    result = await db.execute(select(Content).where(public_content_clause()))
     items = result.scalars().all()
 
     creator_ids = {c.created_by for c in items if c.created_by}
@@ -126,7 +127,7 @@ async def by_category(
 ):
     result = await db.execute(
         select(Content)
-        .where(Content.category == category)
+        .where(Content.category == category, public_content_clause())
         .order_by(Content.crawled_at.desc())
         .limit(limit)
     )
@@ -134,11 +135,21 @@ async def by_category(
 
 
 @router.get("/{content_id}", response_model=ContentResponse)
-async def get_content(content_id: int, db: AsyncSession = Depends(get_db)):
+async def get_content(
+    content_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User | None = Depends(get_optional_user),
+):
     result = await db.execute(select(Content).where(Content.id == content_id))
     content = result.scalar_one_or_none()
     if not content:
         raise HTTPException(status_code=404, detail="Content not found")
+    # Hide not-yet-live content from the public; author/mods may still preview it.
+    if not is_publicly_visible(content):
+        is_owner = current_user and content.created_by == current_user.id
+        is_staff = current_user and current_user.role in ("admin", "moderator")
+        if not (is_owner or is_staff):
+            raise HTTPException(status_code=404, detail="Content not found")
     return content
 
 

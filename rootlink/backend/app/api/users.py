@@ -14,6 +14,7 @@ from app.models.learning import Course, Enrollment
 from app.models.notification import Notification
 from app.models.user import User
 from app.schemas.auth import UserResponse
+from app.services.content_visibility import public_content_clause
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -255,7 +256,9 @@ async def get_user_activity(
 
     # --- Stats ---
     stats = {}
-    stats["content"] = await db.scalar(select(func.count(Content.id)).where(Content.created_by == user_id)) or 0
+    stats["content"] = await db.scalar(
+        select(func.count(Content.id)).where(Content.created_by == user_id, public_content_clause())
+    ) or 0
     stats["events"] = await db.scalar(select(func.count(Event.id)).where(Event.created_by == user_id)) or 0
     stats["groups"] = await db.scalar(select(func.count(Group.id)).where(Group.created_by == user_id)) or 0
     stats["courses"] = await db.scalar(select(func.count(Course.id)).where(Course.created_by == user_id)) or 0
@@ -274,9 +277,13 @@ async def get_user_activity(
         stats["bookmarks"] = await db.scalar(select(func.count(Bookmark.id)).where(Bookmark.user_id == user_id)) or 0
         stats["enrollments"] = await db.scalar(select(func.count(Enrollment.id)).where(Enrollment.user_id == user_id)) or 0
 
-    # --- Content published ---
+    # --- Content published (only live/approved content is shown publicly) ---
     content_result = await db.execute(
-        select(Content).where(Content.created_by == user_id, Content.source == "user")
+        select(Content).where(
+            Content.created_by == user_id,
+            Content.source == "user",
+            public_content_clause(),
+        )
         .order_by(Content.created_at.desc()).limit(12)
     )
     content_list = [{
