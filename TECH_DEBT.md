@@ -43,22 +43,40 @@ profile, search, tools/*, upcycling, components/search/*, components/ui/Avatar,
 components/ui/ImageUpload, components/ui/OptimizedImage.
 
 ## 2. Deprecated npm packages (from Vercel install log)
-These come transitively from dependencies. Audit and upgrade root deps where possible.
-- `eslint@8.57.1` — no longer supported → upgrade to ESLint 9
-- `rimraf@2.7.1`, `rimraf@3.0.2` — < v4 unsupported
-- `glob@7.2.3`, `glob@10.3.10` — old, security advisories
-- `inflight@1.0.6` — leaks memory, unsupported
-- `rollup-plugin-terser@7.0.2` — deprecated → `@rollup/plugin-terser`
-- `sourcemap-codec@1.4.8` → `@jridgewell/sourcemap-codec`
-- `workbox-*@6.6.0` (from next-pwa) — outdated
-- `@humanwhocodes/config-array`, `@humanwhocodes/object-schema` — replaced by `@eslint/*`
-- `@types/minimatch@6.0.0` — stub, removable
-- `source-map@0.8.0-beta.0` — beta, won't ship
+✅ **MOSTLY RESOLVED in Phase 1** by removing unused `next-pwa` + `next-intl` (306 packages removed).
+The following were all transitive deps of `next-pwa` and are now GONE:
+- ✅ `rimraf@2.7.1`, `rimraf@3.0.2` — removed with next-pwa
+- ✅ `glob@7.2.3`, `glob@10.3.10` — removed with next-pwa
+- ✅ `inflight@1.0.6` — removed with next-pwa
+- ✅ `rollup-plugin-terser@7.0.2` — removed with next-pwa
+- ✅ `sourcemap-codec@1.4.8` — removed with next-pwa
+- ✅ `workbox-*@6.6.0` — removed with next-pwa
+- ✅ `source-map@0.8.0-beta.0` — removed with next-pwa
 
-## 3. Version / framework currency
-- Next.js pinned at `14.2.x`; Vercel build machine uses Node 24. Evaluate Next 15 upgrade.
-- `next-pwa@5.6.0` pulls most of the deprecated workbox packages — check for maintained fork or replacement.
-- Backend: dependabot PRs open for bcrypt 5, redis 8, lxml 6, sqlalchemy, pydantic, celery, etc. Review/merge after testing.
+Still present (coupled to ESLint/Next, fixed only by Next 15 + ESLint 9 — see §3):
+- ⏳ `eslint@8.57.1` — this IS the last 8.x release (already at ceiling). "Unsupported"
+  refers to the whole 8.x line being EOL. ESLint 9 requires `eslint-config-next@15`,
+  which requires Next 15. So this is hard-coupled to the Next 15 upgrade. CANNOT bump
+  safely in isolation (eslint-config-next@14 peer dep = `^7 || ^8` only).
+- ⏳ `@humanwhocodes/config-array`, `@humanwhocodes/object-schema` — transitive deps of
+  eslint@8; go away with ESLint 9.
+- ⏳ `@types/minimatch`, `glob` (CLI advisory) — pulled by `@next/eslint-plugin-next@14`;
+  resolved by Next 15 / eslint-config-next@15.
+
+### Pre-existing Next.js 14 CVEs (surfaced by `npm audit` after Phase 1)
+Not introduced by us — they were always there, hidden under the deprecation noise.
+A long list of Next.js 14 advisories (image optimizer DoS, RSC cache poisoning, request
+smuggling, middleware bypass, XSS in CSP nonces, etc.) + vulnerable `postcss`/`glob`.
+**Do NOT run `npm audit fix --force`** — it jumps to Next 16 unplanned and breaks the app.
+All resolved by the controlled Next 15 upgrade in §3.
+
+## 3. Version / framework currency (Phase 5 — dedicated effort, do last)
+- **Next.js 14 → 15** — this is the keystone upgrade. It unlocks:
+  - `eslint-config-next@15` → ESLint 9 (flat config) → clears the EOL ESLint warning + its transitive deprecated deps
+  - Patches the full list of Next 14 CVEs from `npm audit`
+  - Requires handling async request APIs (`cookies()`, `headers()`, `params`) and caching changes — needs full regression testing.
+- ✅ `next-pwa` removed (Phase 1) — no longer a concern.
+- Backend: 1 open dependabot PR (`sqlalchemy 2.0.50`). bcrypt 5 / redis 8 / lxml 6 already handled. Review/merge after testing migrations.
 
 ## 4. Remaining feature work (separate from tech debt)
 - Link article feed from home page
