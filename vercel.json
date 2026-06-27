@@ -1,0 +1,6 @@
+{
+  "buildCommand": "cd rootlink/frontend && npm install && npm run build",
+  "outputDirectory": "rootlink/frontend/.next",
+  "installCommand": "cd rootlink/frontend && npm install",
+  "framework": "nextjs"
+}
