@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 # Add backend to path
-sys.path.insert(0, str(Path(__file__).parent / "rootlink" / "backend"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rootlink" / "backend"))
 
 from app.core.database import async_session_factory
 from app.core.security import hash_password
