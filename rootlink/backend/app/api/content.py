@@ -1,3 +1,8 @@
+import ipaddress
+import socket
+from urllib.parse import urlparse
+
+import anyio
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,12 +23,58 @@ from app.schemas.content import (
     SearchResponse,
 )
 from app.services.content_visibility import is_publicly_visible, public_content_clause
+from app.services.crawler import crawl_url
 from app.services.cross_reference import auto_cross_reference
 from app.services.embeddings import embed_text
 from app.services.ranking import compute_rank
 from app.services.search import hybrid_search
 
 router = APIRouter(prefix="/api/content", tags=["content"])
+
+
+def _is_safe_public_url(url: str) -> bool:
+    """Reject non-http(s) and URLs resolving to private/loopback addresses (SSRF guard)."""
+    try:
+        p = urlparse(url)
+    except Exception:
+        return False
+    if p.scheme not in ("http", "https") or not p.hostname:
+        return False
+    host = p.hostname.lower()
+    if host == "localhost" or host.endswith(".local"):
+        return False
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except Exception:
+        return False
+    for info in infos:
+        try:
+            ip = ipaddress.ip_address(info[4][0])
+        except ValueError:
+            return False
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+            return False
+    return True
+
+
+@router.get("/link-preview")
+async def link_preview(url: str = Query(..., min_length=4, max_length=2000)):
+    """Fetch OpenGraph/title/description/image for a URL (Editor.js LinkTool endpoint)."""
+    safe = await anyio.to_thread.run_sync(_is_safe_public_url, url)
+    if not safe:
+        return {"success": 0}
+    try:
+        data = await crawl_url(url)
+    except Exception:
+        return {"success": 0}
+    return {
+        "success": 1,
+        "meta": {
+            "title": (data.get("title") or url)[:300],
+            "description": (data.get("description") or "")[:500],
+            "image": {"url": data.get("image_url") or ""},
+        },
+    }
 
 
 @router.get("/search", response_model=SearchResponse)

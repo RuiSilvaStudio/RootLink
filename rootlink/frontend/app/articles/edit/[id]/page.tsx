@@ -157,7 +157,7 @@ export default function EditArticlePage() {
         </div>
 
         <div className="border-t border-stone-200 dark:border-stone-700 pt-6">
-          <ArticleEditor data={body} onChange={handleEditorChange} />
+          <ArticleEditor data={body} onChange={handleEditorChange} onError={(m) => addToast("error", m)} />
         </div>
       </div>
     </div>

@@ -7,6 +7,15 @@ from urllib.parse import urlparse
 import httpx
 from PIL import Image, ImageOps
 
+# Enable HEIC/HEIF (iPhone photos) support in Pillow if the optional dep is present.
+try:
+    import pillow_heif
+
+    pillow_heif.register_heif_opener()
+    _HEIF_AVAILABLE = True
+except Exception:  # pragma: no cover - missing optional dependency
+    _HEIF_AVAILABLE = False
+
 # Format detection via magic bytes (not file extension)
 _MAGIC_BYTES = {
     b"\xff\xd8\xff": "jpeg",
@@ -19,8 +28,13 @@ _MAGIC_BYTES = {
     b"MM\x00\x2a": "tiff",
 }
 
+# HEIC/HEIF: ISO-BMFF "ftyp" box at offset 4, with one of these brands.
+_HEIF_BRANDS = {b"heic", b"heix", b"heim", b"heis", b"hevc", b"hevx", b"mif1", b"msf1", b"heif"}
+
 # Allowed input formats
 ALLOWED_INPUT_FORMATS = {"jpeg", "png", "webp", "gif", "bmp", "tiff"}
+if _HEIF_AVAILABLE:
+    ALLOWED_INPUT_FORMATS.add("heic")
 
 # Size presets: name -> (max_width, max_height, quality)
 SIZE_PRESETS = {
@@ -51,6 +65,9 @@ def detect_format(data: bytes) -> str:
                     return fmt
                 continue
             return fmt
+    # HEIC/HEIF (iPhone): "ftyp" box at offset 4, brand follows.
+    if len(data) >= 12 and data[4:8] == b"ftyp" and any(b in data[8:32] for b in _HEIF_BRANDS):
+        return "heic"
     raise ValueError("Unrecognized image format")
 
 

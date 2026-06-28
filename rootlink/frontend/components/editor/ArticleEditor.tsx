@@ -6,13 +6,16 @@ interface ArticleEditorProps {
   data?: any;
   onChange?: (data: any) => void;
   readOnly?: boolean;
+  onError?: (message: string) => void;
 }
 
-export default function ArticleEditor({ data, onChange, readOnly = false }: ArticleEditorProps) {
+export default function ArticleEditor({ data, onChange, readOnly = false, onError }: ArticleEditorProps) {
   const editorRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -74,12 +77,20 @@ export default function ArticleEditor({ data, onChange, readOnly = false }: Arti
                       headers: token ? { Authorization: `Bearer ${token}` } : {},
                       body: formData,
                     });
-                    if (!res.ok) return { success: 0 };
-                    const json = await res.json();
-                    const url = json.asset?.urls?.large || json.url;
-                    if (!url) return { success: 0 };
+                    const json = await res.json().catch(() => null);
+                    if (!res.ok) {
+                      const detail = json?.detail || `Upload failed (${res.status})`;
+                      onErrorRef.current?.(detail);
+                      return { success: 0 };
+                    }
+                    const url = json?.asset?.urls?.large || json?.url;
+                    if (!url) {
+                      onErrorRef.current?.("Upload succeeded but no image URL was returned.");
+                      return { success: 0 };
+                    }
                     return { success: 1, file: { url } };
-                  } catch {
+                  } catch (e: any) {
+                    onErrorRef.current?.(e?.message || "Network error while uploading image.");
                     return { success: 0 };
                   }
                 },
@@ -93,7 +104,7 @@ export default function ArticleEditor({ data, onChange, readOnly = false }: Arti
           quote: { class: Quote as any, inlineToolbar: true },
           code: { class: Code as any },
           table: { class: Table as any, inlineToolbar: true },
-          linkTool: { class: LinkTool as any },
+          linkTool: { class: LinkTool as any, config: { endpoint: `${API_URL}/api/content/link-preview` } },
           marker: { class: Marker as any },
           inlineCode: { class: InlineCode as any },
           checklist: { class: Checklist as any, inlineToolbar: true },
