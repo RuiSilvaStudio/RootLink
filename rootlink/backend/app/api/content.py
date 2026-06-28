@@ -59,22 +59,25 @@ def _is_safe_public_url(url: str) -> bool:
 
 @router.get("/link-preview")
 async def link_preview(url: str = Query(..., min_length=4, max_length=2000)):
-    """Fetch OpenGraph/title/description/image for a URL (Editor.js LinkTool endpoint)."""
+    """Return OpenGraph metadata for a URL (Editor.js LinkTool endpoint).
+
+    Always returns success:1 so a link is ALWAYS addable — rich preview when the
+    URL is safe and fetchable, otherwise a minimal card showing just the URL.
+    Only safe public URLs are fetched server-side (SSRF guard); unsafe URLs are
+    echoed back without any server fetch.
+    """
+    meta = {"title": url, "description": "", "image": {"url": ""}}
     safe = await anyio.to_thread.run_sync(_is_safe_public_url, url)
-    if not safe:
-        return {"success": 0}
-    try:
-        data = await crawl_url(url)
-    except Exception:
-        return {"success": 0}
-    return {
-        "success": 1,
-        "meta": {
-            "title": (data.get("title") or url)[:300],
-            "description": (data.get("description") or "")[:500],
-            "image": {"url": data.get("image_url") or ""},
-        },
-    }
+    if safe:
+        try:
+            data = await crawl_url(url)
+            if data.get("title"):
+                meta["title"] = data["title"][:300]
+            meta["description"] = (data.get("description") or "")[:500]
+            meta["image"] = {"url": data.get("image_url") or ""}
+        except Exception:
+            pass  # keep minimal meta (URL only) so the link still saves
+    return {"success": 1, "meta": meta}
 
 
 @router.get("/search", response_model=SearchResponse)
