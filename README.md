@@ -1,6 +1,6 @@
-# HomeOwnersPortal
+# CommunitiesPortal
 
-Monorepo for the RootLink platform — a specialized search engine and community platform for gardeners, makers, tradespeople, and homesteaders.
+Monorepo for the RootLink platform — a specialized search engine and communities platform for individuals, families, gardeners, makers, tradespeople, professionals, and homesteaders.
 
 **Project source is in `/rootlink`** — see [rootlink/README.md](rootlink/README.md) for full documentation.
 
