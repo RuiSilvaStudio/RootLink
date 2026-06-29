@@ -16,3 +16,5 @@ export { GrainOverlay } from "./GrainOverlay";
 export { OptimizedImage } from "./OptimizedImage";
 export { ImageUpload } from "./ImageUpload";
 export { ScrollReveal } from "./ScrollReveal";
+export { Tooltip } from "./Tooltip";
+export { InfoPopover } from "./InfoPopover";

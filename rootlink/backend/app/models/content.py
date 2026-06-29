@@ -49,7 +49,10 @@ PUBLIC_VERIFICATION_STATUSES = (
 
 class ContentStatus(enum.StrEnum):
     draft = "draft"
+    in_review = "in_review"
     published = "published"
+    needs_changes = "needs_changes"
+    rejected = "rejected"
     archived = "archived"
 
 
@@ -78,6 +81,8 @@ class Content(TimestampMixin, Base):
     slug: Mapped[str | None] = mapped_column(String(500), unique=True, nullable=True)
     body: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="draft")
+    # Latest moderator note for needs_changes / rejected (surfaced to the author).
+    review_note: Mapped[str | None] = mapped_column(Text, nullable=True)
     edited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     canonical_url: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     feed_source_id: Mapped[int | None] = mapped_column(ForeignKey("feed_sources.id"), nullable=True)

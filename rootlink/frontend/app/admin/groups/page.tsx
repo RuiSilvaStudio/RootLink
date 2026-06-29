@@ -2,12 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { safeImageUrl } from "@/lib/image-url";
+import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/locale-context";
+import { useToast } from "@/lib/toast-context";
 import { Badge } from "@/components/ui/Badge";
 import { Search } from "lucide-react";
 
 export default function AdminGroups() {
   const { t } = useLocale();
+  const { user } = useAuth();
+  const { addToast } = useToast();
+  const isSuperAdmin = user?.role === "super_admin";
   const [groups, setGroups] = useState<any[]>([]);
   const [search, setSearch] = useState("");
 
@@ -25,10 +31,15 @@ export default function AdminGroups() {
     fetchGroups();
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm(t("admin.delete_group_confirm"))) return;
-    await api.admin.deleteGroup(id);
-    fetchGroups();
+  const handleArchive = async (g: any) => {
+    if (!confirm(`Archive "${g.name}"? All members will be notified and the group will be hidden (not deleted). This requires super admin.`)) return;
+    try {
+      const res = await api.admin.archiveGroup(g.id);
+      addToast("success", `Group archived${res?.notified != null ? ` — ${res.notified} member(s) notified` : ""}`);
+      fetchGroups();
+    } catch (err: any) {
+      addToast("error", err.message || "Failed to archive group");
+    }
   };
 
   return (
@@ -73,14 +84,17 @@ export default function AdminGroups() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       {g.image_url ? (
-                        <img src={g.image_url} alt="" loading="lazy" className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                        <img src={safeImageUrl(g.image_url, "/images/placeholder-card.svg")} alt="" loading="lazy" className="w-8 h-8 rounded-lg object-cover shrink-0" />
                       ) : (
                         <div className="w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-950/20/60 text-primary-600 flex items-center justify-center shrink-0">
                           <span className="text-sm">🏠</span>
                         </div>
                       )}
                       <div className="min-w-0">
-                        <p className="font-medium text-stone-800 dark:text-stone-100 font-serif truncate">{g.name}</p>
+                        <p className="font-medium text-stone-800 dark:text-stone-100 font-serif truncate flex items-center gap-2">
+                          {g.name}
+                          {g.status === "archived" && <Badge variant="stone" className="text-[10px]">Archived</Badge>}
+                        </p>
                         <p className="text-xs text-stone-400 font-serif sm:hidden">{g.slug}</p>
                       </div>
                     </div>
@@ -89,12 +103,18 @@ export default function AdminGroups() {
                     <Badge variant="sage" className="text-[10px]">{g.category}</Badge>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => handleDelete(g.id)}
-                      className="text-xs bg-stone-100/60 text-stone-500 border border-stone-200/40 px-2.5 py-1 rounded-lg hover:bg-stone-100 font-display font-medium transition"
-                    >
-                      {t("admin.delete")}
-                    </button>
+                    {g.status === "archived" ? (
+                      <span className="text-xs text-stone-400 font-serif">Archived</span>
+                    ) : isSuperAdmin ? (
+                      <button
+                        onClick={() => handleArchive(g)}
+                        className="text-xs bg-rust-50 text-rust-600 border border-rust-200/60 px-2.5 py-1 rounded-lg hover:bg-rust-100 font-display font-medium transition"
+                      >
+                        Archive
+                      </button>
+                    ) : (
+                      <span className="text-xs text-stone-300 font-serif" title="Only a super admin can archive groups">Super admin only</span>
+                    )}
                   </td>
                 </tr>
               ))}

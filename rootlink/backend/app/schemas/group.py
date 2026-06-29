@@ -15,6 +15,7 @@ class GroupResponse(BaseModel):
     image_url: str | None = None
     created_by: int
     created_at: datetime | None = None
+    status: str = "active"
 
     model_config = {"from_attributes": True}
 
@@ -22,6 +23,14 @@ class GroupResponse(BaseModel):
 class GroupCreate(BaseModel):
     name: str
     slug: str
+    description: str | None = None
+    category: str | None = None
+    family: str | None = None
+    image_url: str | None = None
+
+
+class GroupUpdate(BaseModel):
+    name: str | None = None
     description: str | None = None
     category: str | None = None
     family: str | None = None

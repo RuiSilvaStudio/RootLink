@@ -132,6 +132,15 @@ def process_image_bytes(data: bytes) -> ProcessedImage:
     img = Image.open(io.BytesIO(data))
     img = ImageOps.exif_transpose(img)
 
+    # Privacy / GDPR data-minimisation (CONTENT_PLATFORM.md §6.3): strip ALL
+    # embedded metadata (EXIF incl. GPS, XMP, ICC) so uploaded photos can't leak a
+    # user's home coordinates. exif_transpose has already baked in orientation; we
+    # drop the metadata here and never pass exif=/xmp= to save() below.
+    for meta_key in ("exif", "xmp", "icc_profile", "photoshop", "comment"):
+        img.info.pop(meta_key, None)
+    if hasattr(img, "_exif"):
+        img._exif = None
+
     # Convert to RGB if needed (WebP doesn't support palette or RGBA in all cases cleanly)
     if img.mode not in ("RGB",):
         if img.mode == "RGBA" and fmt in ("png", "webp", "gif"):

@@ -1,9 +1,10 @@
 import math
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.content import Content, VerificationStatus
+from app.models.content import Content, ContentStatus, VerificationStatus
 
 
 def cosine_similarity(a: list[float], b: list[float]) -> float:
@@ -39,8 +40,16 @@ async def auto_cross_reference(db: AsyncSession, content: Content) -> None:
                 similar_ids.append(other.id)
 
     if len(similar_ids) >= MIN_SOURCES_FOR_CROSS_REF - 1:
+        # Corroborated by enough independent sources: earn the "verified" badge AND
+        # go live. status is the visibility gate, so we must publish here — crawled
+        # rows are created as drafts and only become public via cross-reference
+        # (CONTENT_PLATFORM.md §2.3).
+        now = datetime.now(UTC)
         content.verification_status = VerificationStatus.cross_referenced
         content.cross_referenced_sources = similar_ids
+        content.status = ContentStatus.published
+        if content.published_at is None:
+            content.published_at = now
 
         for sid in similar_ids:
             sibling = await db.get(Content, sid)
@@ -54,5 +63,8 @@ async def auto_cross_reference(db: AsyncSession, content: Content) -> None:
                 sibling.cross_referenced_sources = all_ids
                 if len(all_ids) >= MIN_SOURCES_FOR_CROSS_REF:
                     sibling.verification_status = VerificationStatus.cross_referenced
+                    sibling.status = ContentStatus.published
+                    if sibling.published_at is None:
+                        sibling.published_at = now
 
     await db.commit()

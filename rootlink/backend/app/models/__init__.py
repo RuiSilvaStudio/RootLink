@@ -1,6 +1,8 @@
 from app.models.checklist import ChecklistItem
 from app.models.comment import Comment
 from app.models.content import Bookmark, Content, ContentStatus, SearchQueryLog, VerificationStatus
+from app.models.content_template import ContentTemplate
+from app.models.copy_override import CopyOverride
 from app.models.event import (
     Event,
     EventAmenity,
@@ -24,6 +26,7 @@ from app.models.learning import (
 )
 from app.models.marketplace import Listing, ListingOrder, SellerStripeAccount
 from app.models.message import Conversation, ConversationParticipant, Message
+from app.models.moderation import ModerationAction, ModerationAuditLog
 from app.models.notification import Notification
 from app.models.plant import Plant
 from app.models.points import PointBalance, PointTransaction
@@ -56,4 +59,7 @@ __all__ = [
     "PointBalance", "PointTransaction",
     "ContentRating",
     "FeedSource", "FeedItem",
+    "ContentTemplate",
+    "ModerationAuditLog", "ModerationAction",
+    "CopyOverride",
 ]

@@ -47,6 +47,7 @@ from app.schemas.event import (
     VenueCreate,
     VenueResponse,
 )
+from app.services.default_cover import default_cover_for
 from app.services.sse import sse_manager
 
 router = APIRouter(prefix="/api/events", tags=["events"])
@@ -198,6 +199,8 @@ async def create_event(
     db: AsyncSession = Depends(get_db),
 ):
     event = Event(**body.model_dump(), created_by=current_user.id)
+    if not event.image_url:
+        event.image_url = default_cover_for(event.family, event.category)
     db.add(event)
     await db.commit()
     await db.refresh(event)

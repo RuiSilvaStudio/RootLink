@@ -121,6 +121,8 @@ export const api = {
         method: "POST",
         body: JSON.stringify(data),
       }),
+    update: (id: number, data: any) =>
+      request<any>(`/api/groups/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
     join: (id: number) =>
       request<any>(`/api/groups/${id}/join`, { method: "POST" }),
     leave: (id: number) =>
@@ -441,6 +443,8 @@ export const api = {
       if (params?.q) qs.set("q", params.q);
       return request<any[]>(`/api/admin/groups?${qs}`);
     },
+    archiveGroup: (id: number) =>
+      request<any>(`/api/admin/groups/${id}/archive`, { method: "POST" }),
     deleteGroup: (id: number) =>
       request<void>(`/api/admin/groups/${id}`, { method: "DELETE" }),
     listComments: (params?: { entity_type?: string }) => {
@@ -744,6 +748,7 @@ export const api = {
     update: (id: number, data: { title?: string; summary?: string; body?: any; category?: string; family?: string; image_url?: string }) =>
       request<any>(`/api/articles/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
     publish: (id: number) => request<any>(`/api/articles/${id}/publish`, { method: "POST" }),
+    appeal: (id: number) => request<any>(`/api/articles/${id}/appeal`, { method: "POST" }),
     delete: (id: number) => request<void>(`/api/articles/${id}`, { method: "DELETE" }),
     my: (opts?: { status?: string; limit?: number; offset?: number }) => {
       const params = new URLSearchParams();
@@ -763,6 +768,28 @@ export const api = {
       return request<{ articles: any[]; total: number; boosted_count: number }>(`/api/articles/feed${qs ? `?${qs}` : ""}`);
     },
     rankingTransparency: () => request<any>("/api/articles/ranking/transparency"),
+  },
+
+  contentTemplates: {
+    list: (kind = "article") => request<any[]>(`/api/content-templates?kind=${kind}`),
+    all: () => request<any[]>("/api/content-templates/all"),
+    create: (data: any) => request<any>("/api/content-templates", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: number, data: any) => request<any>(`/api/content-templates/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    delete: (id: number) => request<void>(`/api/content-templates/${id}`, { method: "DELETE" }),
+  },
+
+  selfPublish: {
+    eligibility: () => request<{ eligible: boolean; granted: boolean; agreed: boolean; email_verified: boolean; approved_count: number; threshold: number }>("/api/me/self-publish/eligibility"),
+    accept: () => request<{ ok: boolean; agreed_at: string }>("/api/me/self-publish/accept", { method: "POST" }),
+  },
+
+  copy: {
+    get: (locale: string) => request<Record<string, string>>(`/api/copy?locale=${locale}`),
+    all: () => request<{ key: string; locale: string; value: string }[]>("/api/copy/all"),
+    set: (key: string, locale: string, value: string) =>
+      request<any>(`/api/copy/${encodeURIComponent(key)}?locale=${locale}`, { method: "PUT", body: JSON.stringify({ value }) }),
+    revert: (key: string, locale: string) =>
+      request<any>(`/api/copy/${encodeURIComponent(key)}?locale=${locale}`, { method: "DELETE" }),
   },
 
   ratings: {

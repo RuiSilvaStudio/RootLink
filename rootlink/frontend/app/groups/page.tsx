@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Users, Plus, Search, ExternalLink, Hash, MessageCircle, Calendar } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Users, Plus, Search, ExternalLink, Hash, MessageCircle, Calendar, X } from "lucide-react";
 import { api } from "@/lib/api";
+import { safeImageUrl } from "@/lib/image-url";
 import { useLocale } from "@/lib/locale-context";
 import { useToast } from "@/lib/toast-context";
 import { useDirtyGuard } from "@/lib/use-dirty-guard";
@@ -13,6 +15,7 @@ import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardSkeleton } from "@/components/ui/LoadingSkeleton";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 export default function GroupsPage() {
   const [groups, setGroups] = useState<any[]>([]);
@@ -23,6 +26,7 @@ export default function GroupsPage() {
   const [description, setDescription] = useState("");
   const [family, setFamily] = useState("");
   const [category, setCategory] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [families, setFamilies] = useState<any[]>([]);
   const [familyCategories, setFamilyCategories] = useState<any[]>([]);
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -32,10 +36,12 @@ export default function GroupsPage() {
   const { t, locale } = useLocale();
   const { addToast } = useToast();
 
+  const searchParams = useSearchParams();
   useEffect(() => {
     api.groups.list().then(setGroups).catch(() => {}).finally(() => setLoading(false));
     api.taxonomy.families().then(setFamilies).catch(() => {});
-  }, []);
+    if (searchParams.get("new") === "1") setShowForm(true);
+  }, [searchParams]);
 
   const handleFamilyChange = (famValue: string) => {
     setFamily(famValue);
@@ -65,12 +71,13 @@ export default function GroupsPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const group = await api.groups.create({ name, slug, description, family: family || undefined, category: category || undefined });
+      const group = await api.groups.create({ name, slug, description, family: family || undefined, category: category || undefined, image_url: imageUrl || undefined });
       setGroups([group, ...groups]);
       setShowForm(false);
       setName("");
       setSlug("");
       setDescription("");
+      setImageUrl("");
       setSuggestions([]);
     } catch (err: any) {
       addToast("error", err.message);
@@ -162,6 +169,20 @@ export default function GroupsPage() {
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("groups.cover_label") || "Cover image"}</label>
+            {imageUrl ? (
+              <div className="relative inline-block">
+                <img src={safeImageUrl(imageUrl)} alt="Cover" className="max-h-40 rounded-xl object-cover border border-stone-200 dark:border-stone-700" />
+                <button type="button" onClick={() => setImageUrl("")} className="absolute top-2 right-2 p-1 rounded-full bg-stone-900/70 text-white hover:bg-stone-900" aria-label="Remove cover">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <ImageUpload label="" requireLicense onUpload={(urls) => setImageUrl(urls.large)} onError={(m) => addToast("error", m)} />
+            )}
+          </div>
+
           {suggestions.length > 0 && (
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-4">
               <div className="flex items-center gap-1.5 text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
@@ -203,9 +224,15 @@ export default function GroupsPage() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {groups.map((group) => (
             <a key={group.id} href={`/groups/${group.id}`} className="card-lift p-5 group">
-              <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
-                <Hash className="w-5 h-5 text-primary-500" />
-              </div>
+              {group.image_url ? (
+                <div className="w-full h-32 rounded-xl overflow-hidden mb-4 bg-primary-50 dark:bg-primary-950/20">
+                  <img src={safeImageUrl(group.image_url, "/images/placeholder-card.svg")} alt={group.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                </div>
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                  <Hash className="w-5 h-5 text-primary-500" />
+                </div>
+              )}
               <h3 className="font-semibold text-stone-800 dark:text-stone-100 group-hover:text-primary-700 transition">{group.name}</h3>
               <p className="text-sm text-stone-500 mt-1 line-clamp-2 font-light">
                 {group.description || t("groups.no_description")}

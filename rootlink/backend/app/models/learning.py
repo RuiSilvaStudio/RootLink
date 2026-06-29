@@ -29,6 +29,9 @@ class Lesson(TimestampMixin, Base):
     title: Mapped[str] = mapped_column(String(500))
     body: Mapped[str | None] = mapped_column(Text, nullable=True)
     video_url: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    # Video poster/thumbnail (CONTENT_PLATFORM.md §6.5): auto-fetched from
+    # YouTube/Vimeo oEmbed where possible, user-overridable. Doubles as the cover.
+    poster: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     order: Mapped[int] = mapped_column(Integer)
 
 

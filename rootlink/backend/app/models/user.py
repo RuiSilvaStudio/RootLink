@@ -1,5 +1,5 @@
 import enum
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import JSON, Boolean, DateTime, Float, Integer, String, Text
 from sqlalchemy import Enum as SAEnum
@@ -9,10 +9,17 @@ from app.models.base import Base, TimestampMixin
 
 
 class UserRole(enum.StrEnum):
+    super_admin = "super_admin"
     admin = "admin"
     moderator = "moderator"
     contributor = "contributor"
     user = "user"
+
+
+class AccountStatus(enum.StrEnum):
+    active = "active"
+    suspended = "suspended"
+    banned = "banned"
 
 
 class AccountType(enum.StrEnum):
@@ -72,3 +79,37 @@ class User(TimestampMixin, Base):
 
     boost_active: Mapped[bool] = mapped_column(Boolean, default=False)
     boost_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Content platform: trusted-author self-publish (see docs/content-platform/CONTENT_PLATFORM.md §3)
+    can_self_publish: Mapped[bool] = mapped_column(Boolean, default=False)
+    self_publish_agreed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Content platform: editable site copy permission (§12)
+    can_edit_copy: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Content platform: account enforcement ladder (§4.4)
+    account_status: Mapped[str] = mapped_column(String(20), default=AccountStatus.active)
+    suspended_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    banned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    ban_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    banned_by: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    @property
+    def is_banned(self) -> bool:
+        return self.account_status == AccountStatus.banned
+
+    @property
+    def is_suspended(self) -> bool:
+        """True only while a suspension is active (auto-expires at suspended_until)."""
+        if self.account_status != AccountStatus.suspended:
+            return False
+        if self.suspended_until is None:
+            return True
+        until = self.suspended_until
+        if until.tzinfo is None:
+            until = until.replace(tzinfo=UTC)
+        return until > datetime.now(UTC)
+
+    @property
+    def can_author(self) -> bool:
+        """Whether the user may currently create/edit content or comment."""
+        return not self.is_banned and not self.is_suspended

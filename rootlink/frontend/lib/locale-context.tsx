@@ -71,13 +71,25 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setLoading(true);
-    loadMessages(locale)
-      .then((msgs) => {
-        setMessages(flatten(msgs));
-        localStorage.setItem(LOCALE_KEY, locale);
-        document.documentElement.lang = locale;
-      })
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    (async () => {
+      const base = flatten(await loadMessages(locale));
+      // Merge runtime copy overrides (editable site copy, §12) over the static defaults.
+      let overrides: Record<string, string> = {};
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+        const res = await fetch(`${API_URL}/api/copy?locale=${locale}`);
+        if (res.ok) overrides = await res.json();
+      } catch {
+        // ignore — fall back to static copy
+      }
+      if (cancelled) return;
+      setMessages({ ...base, ...overrides });
+      localStorage.setItem(LOCALE_KEY, locale);
+      document.documentElement.lang = locale;
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
   }, [locale]);
 
   const setLocale = useCallback((l: Locale) => {

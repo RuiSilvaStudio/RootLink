@@ -9,7 +9,16 @@ interface ImageUploadProps {
   className?: string;
   maxSizeMb?: number;
   label?: string;
+  /** Require a license choice + liability acceptance before upload (content covers). */
+  requireLicense?: boolean;
 }
+
+const LICENSE_OPTIONS = [
+  { value: "own_work", label: "My own work" },
+  { value: "cc_by", label: "Creative Commons (CC-BY)" },
+  { value: "cc0", label: "Public domain (CC0)" },
+  { value: "permission", label: "I have the owner's permission" },
+];
 
 const ALLOWED_TYPES = new Set([
   "image/jpeg",
@@ -28,11 +37,15 @@ export function ImageUpload({
   className = "",
   maxSizeMb = 10,
   label,
+  requireLicense = false,
 }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [license, setLicense] = useState("own_work");
+  const [credit, setCredit] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const validateFile = useCallback(
@@ -108,9 +121,18 @@ export function ImageUpload({
 
       const formData = new FormData();
       formData.append("file", pendingFile);
-      formData.append("source_type", "upload");
 
-      const res = await fetch(`${API_URL}/api/images/upload`, {
+      // The backend reads provenance fields as query params.
+      const params = new URLSearchParams({ source_type: "upload" });
+      if (requireLicense) {
+        params.set("license", license);
+        if (credit.trim()) {
+          params.set("author", credit.trim());
+          params.set("attribution_text", credit.trim());
+        }
+      }
+
+      const res = await fetch(`${API_URL}/api/images/upload?${params.toString()}`, {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
@@ -126,19 +148,23 @@ export function ImageUpload({
       setPendingFile(null);
       if (preview) URL.revokeObjectURL(preview);
       setPreview(null);
+      setAgreed(false);
+      setCredit("");
     } catch (e: any) {
       setError(e.message);
       onError?.(e.message);
     } finally {
       setUploading(false);
     }
-  }, [pendingFile, onUpload, onError, preview]);
+  }, [pendingFile, onUpload, onError, preview, requireLicense, license, credit]);
 
   const handleCancel = useCallback(() => {
     if (preview) URL.revokeObjectURL(preview);
     setPreview(null);
     setPendingFile(null);
     setError(null);
+    setAgreed(false);
+    setCredit("");
     if (inputRef.current) inputRef.current.value = "";
   }, [preview]);
 
@@ -174,11 +200,45 @@ export function ImageUpload({
           <p className="text-xs text-stone-500 text-center mt-2 font-serif truncate">
             {pendingFile.name} ({(pendingFile.size / 1024).toFixed(0)}KB)
           </p>
+
+          {requireLicense && (
+            <div className="mt-3 space-y-2 text-left">
+              <div>
+                <label className="block text-[11px] font-medium text-stone-600 dark:text-stone-300 mb-1">License</label>
+                <select
+                  value={license}
+                  onChange={(e) => setLicense(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200"
+                >
+                  {LICENSE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-stone-600 dark:text-stone-300 mb-1">Credit / author <span className="text-stone-400 font-normal">(optional)</span></label>
+                <input
+                  type="text"
+                  value={credit}
+                  onChange={(e) => setCredit(e.target.value)}
+                  placeholder="e.g. your name or the source"
+                  className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200"
+                />
+              </div>
+              <label className="flex items-start gap-2 p-2.5 rounded-lg bg-rust-50 dark:bg-rust-900/20 border border-rust-200/70 dark:border-rust-800/40 cursor-pointer">
+                <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 accent-rust-600" />
+                <span className="text-[11px] leading-snug text-stone-600 dark:text-stone-300">
+                  I own or have the rights to this image and accept full legal responsibility for it. Misuse results in removal of the content and a ban.
+                </span>
+              </label>
+            </div>
+          )}
+
           <div className="flex items-center gap-2 mt-3 justify-center">
             <button
               type="button"
               onClick={handleConfirmUpload}
-              disabled={uploading}
+              disabled={uploading || (requireLicense && !agreed)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50 transition"
             >
               {uploading ? (

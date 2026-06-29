@@ -2,15 +2,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { api } from "@/lib/api";
+import { safeImageUrl } from "@/lib/image-url";
 import { useLocale } from "@/lib/locale-context";
+import { useToast } from "@/lib/toast-context";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 const CATEGORIES = ["gardening", "woodworking", "craft_trades", "homesteading"];
 const DIFFICULTIES = ["beginner", "intermediate", "advanced"];
 
 export default function NewCoursePage() {
   const { t } = useLocale();
+  const { addToast } = useToast();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -70,15 +74,22 @@ export default function NewCoursePage() {
             </select>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("learning.estimated_hours")}</label>
-            <input type="number" min={0} value={form.estimated_hours} onChange={(e) => setForm({ ...form, estimated_hours: parseInt(e.target.value) || 0 })} className="w-full border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 rounded-lg px-3 py-2 text-sm" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("learning.image_url")}</label>
-            <input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} className="w-full border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 rounded-lg px-3 py-2 text-sm" />
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("learning.estimated_hours")}</label>
+          <input type="number" min={0} value={form.estimated_hours} onChange={(e) => setForm({ ...form, estimated_hours: parseInt(e.target.value) || 0 })} className="w-full border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 rounded-lg px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("learning.cover_image") || "Cover image"}</label>
+          {form.image_url ? (
+            <div className="relative inline-block">
+              <img src={safeImageUrl(form.image_url)} alt="Cover" className="max-h-40 rounded-xl object-cover border border-stone-200 dark:border-stone-700" />
+              <button type="button" onClick={() => setForm({ ...form, image_url: "" })} className="absolute top-2 right-2 p-1 rounded-full bg-stone-900/70 text-white hover:bg-stone-900" aria-label="Remove cover">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <ImageUpload label="" requireLicense onUpload={(urls) => setForm({ ...form, image_url: urls.large })} onError={(m) => addToast("error", m)} />
+          )}
         </div>
         <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
           <input type="checkbox" checked={form.published} onChange={(e) => setForm({ ...form, published: e.target.checked })} className="rounded border-stone-300 dark:border-stone-700" />

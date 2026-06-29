@@ -1,5 +1,5 @@
 import math
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 def wilson_score(up: int, down: int) -> float:
@@ -16,9 +16,9 @@ def wilson_score(up: int, down: int) -> float:
 def freshness_score(published_at: datetime | None, half_life_hours: float = 168.0) -> float:
     if published_at is None:
         return 0.0
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if published_at.tzinfo is None:
-        published_at = published_at.replace(tzinfo=timezone.utc)
+        published_at = published_at.replace(tzinfo=UTC)
     age_hours = (now - published_at).total_seconds() / 3600
     if age_hours < 0:
         age_hours = 0

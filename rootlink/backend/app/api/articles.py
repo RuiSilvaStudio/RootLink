@@ -1,19 +1,23 @@
 import re
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.security import get_current_user, get_optional_user
+from app.core.security import get_current_user, get_optional_user, get_writable_user
 from app.models.content import Content, ContentSource, ContentStatus, ContentType, VerificationStatus
+from app.models.moderation import ModerationAction
 from app.models.points import PointBalance
 from app.models.user import User
 from app.schemas.article import ArticleCreate, ArticleListResponse, ArticleResponse, ArticleUpdate
+from app.services.audit import log_moderation
 from app.services.content_visibility import is_publicly_visible
+from app.services.default_cover import default_cover_for
 from app.services.embeddings import embed_text
 from app.services.ranking import compute_rank
+from app.services.view_tracking import should_count_view, viewer_key
 
 router = APIRouter(prefix="/api/articles", tags=["articles"])
 
@@ -94,6 +98,7 @@ async def _to_response(article: Content, db: AsyncSession, current_user: User | 
         family=article.family,
         image_url=article.image_url,
         status=article.status,
+        review_note=article.review_note,
         source=article.source.value if hasattr(article.source, "value") else str(article.source),
         source_url=article.source_url,
         canonical_url=article.canonical_url,
@@ -117,7 +122,7 @@ async def _to_response(article: Content, db: AsyncSession, current_user: User | 
 @router.post("/", response_model=ArticleResponse, status_code=201)
 async def create_article(
     body: ArticleCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_writable_user),
     db: AsyncSession = Depends(get_db),
 ):
     image_url = body.image_url
@@ -174,7 +179,6 @@ async def article_feed(
     stmt = select(Content).where(
         Content.content_type == ContentType.article,
         Content.status == ContentStatus.published,
-        Content.verification_status.in_(["community_reviewed", "cross_referenced"]),
     )
     if category:
         stmt = stmt.where(Content.category == category)
@@ -234,6 +238,7 @@ async def article_feed(
 @router.get("/{slug}", response_model=ArticleResponse)
 async def get_article(
     slug: str,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(get_optional_user),
 ):
@@ -252,11 +257,14 @@ async def get_article(
         if not (is_owner or is_staff):
             raise HTTPException(status_code=404, detail="Article not found")
 
-    # Only count public views, so author/mod previews don't inflate the counter.
+    # Only count public views (author/mod previews don't inflate it), and only
+    # one per viewer per window so refreshes/bots can't inflate it (§9.6).
     if live:
-        article.view_count = (article.view_count or 0) + 1
-        await db.commit()
-        await db.refresh(article)
+        vkey = viewer_key(current_user.id if current_user else None, request.client.host if request.client else None)
+        if await should_count_view(vkey, article.id):
+            article.view_count = (article.view_count or 0) + 1
+            await db.commit()
+            await db.refresh(article)
 
     return await _to_response(article, db, current_user)
 
@@ -265,14 +273,16 @@ async def get_article(
 async def update_article(
     article_id: int,
     body: ArticleUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_writable_user),
     db: AsyncSession = Depends(get_db),
 ):
     article = await db.get(Content, article_id)
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
-    if article.created_by != current_user.id and current_user.role not in ("admin", "moderator"):
+    if article.created_by != current_user.id and current_user.role not in ("super_admin", "admin", "moderator"):
         raise HTTPException(status_code=403, detail="Not authorized")
+
+    was_published = article.status == ContentStatus.published
 
     for key, val in body.model_dump(exclude_unset=True).items():
         setattr(article, key, val)
@@ -281,6 +291,21 @@ async def update_article(
         first_img = _extract_first_image_from_body(article.body)
         if first_img:
             article.image_url = first_img
+
+    # Editing published content (CONTENT_PLATFORM.md §2.4): trusted authors/staff
+    # keep it live; everyone else's edits return it to review until re-approved.
+    if was_published:
+        trusted = (
+            current_user.role in ("super_admin", "admin", "moderator")
+            or current_user.can_self_publish
+        )
+        if not trusted:
+            article.status = ContentStatus.in_review
+            await log_moderation(
+                db, action=ModerationAction.submit, target_type="content",
+                target_id=article.id, actor_id=current_user.id,
+                meta={"reason": "edit_of_published"},
+            )
 
     article.edited_at = datetime.now(UTC)
     await db.commit()
@@ -291,7 +316,7 @@ async def update_article(
 @router.post("/{article_id}/publish", response_model=ArticleResponse)
 async def publish_article(
     article_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_writable_user),
     db: AsyncSession = Depends(get_db),
 ):
     article = await db.get(Content, article_id)
@@ -305,31 +330,77 @@ async def publish_article(
     if not article.slug:
         article.slug = await _unique_slug(db, article.title)
 
+    # Cover required at publish (CONTENT_PLATFORM.md §6.4): satisfy via the
+    # 4-source fallback chain so a published article is never blank —
+    # explicit image_url -> first body image -> category default cover.
     if not article.image_url:
         first_img = _extract_first_image_from_body(article.body)
         if first_img:
             article.image_url = first_img
+    if not article.image_url:
+        article.image_url = default_cover_for(article.family, article.category)
 
-    # "Publish" submits the article for community review — it does NOT go live.
-    # status=published + verification_status=unreviewed means "pending review".
-    # A moderator must approve it (-> community_reviewed) before it appears in
-    # search, feeds, recent, or is viewable by the public via its slug.
-    # We deliberately do NOT auto-cross-reference here: cross-referencing is the
-    # auto-verification path for crawled multi-source content, and running it on
-    # a single user's article could promote it to a publicly-visible state,
-    # bypassing human review.
-    article.status = ContentStatus.published
-    article.published_at = datetime.now(UTC)
+    # Trust-based publishing (CONTENT_PLATFORM.md §3): staff and trusted authors
+    # publish instantly; everyone else is pre-moderated into in_review. status is
+    # the single visibility gate, so in_review stays hidden until a moderator
+    # approves. We deliberately do NOT auto-cross-reference user articles — that
+    # is the auto-verification path for crawled multi-source content.
+    can_publish_live = (
+        current_user.role in ("super_admin", "admin", "moderator")
+        or current_user.can_self_publish
+    )
+    if can_publish_live:
+        article.status = ContentStatus.published
+        article.published_at = datetime.now(UTC)
+        audit_action = ModerationAction.approve  # self-published by a trusted author
+    else:
+        article.status = ContentStatus.in_review
+        audit_action = ModerationAction.submit
     article.verification_status = VerificationStatus.unreviewed
 
     # Generate the embedding now so the article is instantly searchable the
-    # moment a reviewer approves it (search still hides it until then).
+    # moment it is live (search still hides it until status=published).
     text_for_embedding = article.full_text or article.summary or article.title
     try:
         article.embedding = await embed_text(text_for_embedding)
     except Exception:
         article.embedding = None
 
+    await log_moderation(
+        db,
+        action=audit_action,
+        target_type="content",
+        target_id=article.id,
+        actor_id=current_user.id,
+        meta={"status": str(article.status), "self_published": can_publish_live},
+    )
+    await db.commit()
+    await db.refresh(article)
+    return await _to_response(article, db, current_user)
+
+
+@router.post("/{article_id}/appeal", response_model=ArticleResponse)
+async def appeal_article(
+    article_id: int,
+    current_user: User = Depends(get_writable_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Author appeals a rejected article → back to in_review (§2.5)."""
+    article = await db.get(Content, article_id)
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    if article.created_by != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    if article.status != ContentStatus.rejected:
+        raise HTTPException(status_code=400, detail="Only rejected content can be appealed")
+    article.status = ContentStatus.in_review
+    await log_moderation(
+        db,
+        action=ModerationAction.appeal,
+        target_type="content",
+        target_id=article.id,
+        actor_id=current_user.id,
+    )
     await db.commit()
     await db.refresh(article)
     return await _to_response(article, db, current_user)

@@ -2,8 +2,6 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from app.models.content import ContentStatus
-
 
 class ArticleCreate(BaseModel):
     title: str
@@ -34,6 +32,7 @@ class ArticleResponse(BaseModel):
     family: str | None = None
     image_url: str | None = None
     status: str = "draft"
+    review_note: str | None = None
     source: str = "user"
     source_url: str | None = None
     canonical_url: str | None = None

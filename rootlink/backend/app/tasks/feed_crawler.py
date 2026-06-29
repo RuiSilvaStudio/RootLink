@@ -73,7 +73,10 @@ async def _crawl_feeds_async(priority: int):
                         feed_source_id=feed.id,
                         canonical_url=item.url,
                         verification_status=VerificationStatus.unreviewed,
-                        status="published",
+                        # Crawled feed items stay hidden until corroborated by
+                        # cross-reference, which then sets status=published.
+                        # status is now the single visibility gate (§2.1).
+                        status="draft",
                         crawled_at=datetime.now(UTC),
                     )
                     db.add(content)

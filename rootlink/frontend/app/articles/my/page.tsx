@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, FileText, Send, Trash2, Clock } from "lucide-react";
+import { Plus, FileText, Send, Trash2, Clock, XCircle, RotateCcw, AlertTriangle } from "lucide-react";
 import { api } from "@/lib/api";
 import { safeImageUrl } from "@/lib/image-url";
 import { useAuth } from "@/lib/auth-context";
@@ -38,6 +38,54 @@ export default function MyArticlesPage() {
       addToast("error", err.message);
     }
   };
+
+  const handleAppeal = async (id: number) => {
+    try {
+      const updated = await api.articles.appeal(id);
+      setArticles((prev) => prev.map((a) => (a.id === id ? { ...a, ...updated } : a)));
+      addToast("success", "Appeal submitted — your article is back in review");
+    } catch (err: any) {
+      addToast("error", err.message);
+    }
+  };
+
+  const statusMeta = (
+    status: string,
+  ): { variant: "green" | "stone" | "amber" | "red"; label: string; icon: React.ReactNode } => {
+    switch (status) {
+      case "published":
+        return { variant: "green", label: "Published", icon: <Send size={10} /> };
+      case "in_review":
+        return { variant: "amber", label: "In review", icon: <Clock size={10} /> };
+      case "needs_changes":
+        return { variant: "amber", label: "Needs changes", icon: <AlertTriangle size={10} /> };
+      case "rejected":
+        return { variant: "red", label: "Rejected", icon: <XCircle size={10} /> };
+      case "archived":
+        return { variant: "stone", label: "Archived", icon: <Clock size={10} /> };
+      default:
+        return { variant: "stone", label: "Draft", icon: <Clock size={10} /> };
+    }
+  };
+
+  const nextStepText = (status: string): string => {
+    switch (status) {
+      case "in_review":
+        return "A moderator usually reviews within 24h.";
+      case "published":
+        return "Live and visible to the community.";
+      case "needs_changes":
+        return "Edit and resubmit to publish.";
+      case "rejected":
+        return "You can appeal this decision.";
+      default:
+        return "";
+    }
+  };
+
+  // Owners can edit their own content in any active state (published edits trigger
+  // trust-based re-review on the backend). Archived items are read-only.
+  const isEditable = (status: string) => status !== "archived";
 
   if (!user) return null;
 
@@ -93,13 +141,14 @@ export default function MyArticlesPage() {
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <Badge variant={article.status === "published" ? "green" : "stone"}>
-                      {article.status === "published" ? (
-                        <span className="flex items-center gap-1"><Send size={10} /> Published</span>
-                      ) : (
-                        <span className="flex items-center gap-1"><Clock size={10} /> Draft</span>
-                      )}
-                    </Badge>
+                    {(() => {
+                      const meta = statusMeta(article.status);
+                      return (
+                        <Badge variant={meta.variant}>
+                          <span className="flex items-center gap-1">{meta.icon} {meta.label}</span>
+                        </Badge>
+                      );
+                    })()}
                     {article.verification_status === "community_reviewed" && (
                       <Badge variant="sage">Reviewed</Badge>
                     )}
@@ -111,12 +160,24 @@ export default function MyArticlesPage() {
                     {article.updated_at ? new Date(article.updated_at).toLocaleDateString() : ""}
                     {article.rating_up > 0 && ` · ${article.rating_up} likes`}
                     {article.view_count > 0 && ` · ${article.view_count} views`}
+                    {nextStepText(article.status) && ` · ${nextStepText(article.status)}`}
                   </p>
+                  {article.review_note && ["rejected", "needs_changes"].includes(article.status) && (
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                      Reason: {article.review_note}
+                    </p>
+                  )}
                 </div>
               </div>
 
               <div className="flex items-center gap-2 ml-4">
-                {article.status === "draft" && (
+                {article.status === "rejected" && (
+                  <Button variant="secondary" size="sm" onClick={() => handleAppeal(article.id)}>
+                    <RotateCcw size={14} className="mr-1" />
+                    Appeal
+                  </Button>
+                )}
+                {isEditable(article.status) && (
                   <Button
                     variant="secondary"
                     size="sm"
@@ -125,7 +186,7 @@ export default function MyArticlesPage() {
                     Edit
                   </Button>
                 )}
-                {article.slug && (
+                {article.slug && article.status === "published" && (
                   <Link href={`/articles/${article.slug}`}>
                     <Button variant="ghost" size="sm">View</Button>
                   </Link>

@@ -1,7 +1,8 @@
 import enum
+from datetime import datetime
 
+from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin
@@ -11,6 +12,11 @@ class MemberRole(enum.StrEnum):
     member = "member"
     moderator = "moderator"
     admin = "admin"
+
+
+class GroupStatus(enum.StrEnum):
+    active = "active"
+    archived = "archived"
 
 
 class Group(TimestampMixin, Base):
@@ -24,6 +30,10 @@ class Group(TimestampMixin, Base):
     family: Mapped[str | None] = mapped_column(String(50), nullable=True)
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    # Soft-archive lifecycle (CONTENT_PLATFORM.md §10.x): archived groups are
+    # hidden from public surfaces but never hard-deleted by default.
+    status: Mapped[str] = mapped_column(String(20), default=GroupStatus.active)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class GroupMember(TimestampMixin, Base):

@@ -8,12 +8,15 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app.api import (
+    account,
     admin,
     articles,
     auth,
     checklist,
     comments,
     content,
+    content_templates,
+    copy,
     crawl,
     events,
     external,
@@ -29,13 +32,14 @@ from app.api import (
     plants,
     points,
     ratings,
+    self_publish,
     social,
     taxonomy,
     users,
     waste,
 )
 from app.core.config import settings
-from app.core.database import engine
+from app.core.database import async_session_factory, engine
 from app.core.logging import setup_logging
 from app.core.rate_limit import RateLimitMiddleware
 from app.models.base import Base
@@ -47,6 +51,7 @@ from app.models.taxonomy import (  # noqa: F401
     TaxonomyCategory,
     TaxonomyFamily,
 )
+from app.services.template_seed import seed_content_templates
 
 
 @asynccontextmanager
@@ -86,6 +91,76 @@ async def lifespan(app: FastAPI):
             )
         except Exception:
             pass
+        # Content platform Phase 1: `status` becomes the SINGLE visibility gate
+        # (see docs/content-platform/CONTENT_PLATFORM.md §2). Migrate existing rows
+        # so visibility is preserved exactly, then the app reads only `status`.
+        try:
+            await conn.execute(text("ALTER TABLE content ADD COLUMN review_note TEXT"))
+        except Exception:
+            pass
+        # NOTE: authored vs crawled is discriminated by `url` (NULL for editor
+        # articles, always set for crawled rows). We deliberately do NOT use
+        # `body IS NULL`: SQLAlchemy's JSON column stores Python None as JSON
+        # 'null', not SQL NULL, so that predicate never matches.
+        # 1) Authored articles that were "published but unreviewed" (hidden under
+        #    the old verification gate) -> in_review (still hidden, now in the queue).
+        try:
+            await conn.execute(text(
+                "UPDATE content SET status='in_review' "
+                "WHERE status='published' AND verification_status='unreviewed' AND url IS NULL"
+            ))
+        except Exception:
+            pass
+        # 2) Crawled rows that were published-but-unreviewed -> draft (hidden, not in
+        #    the human queue; cross-reference will publish them when corroborated).
+        try:
+            await conn.execute(text(
+                "UPDATE content SET status='draft' "
+                "WHERE status='published' AND verification_status='unreviewed' AND url IS NOT NULL"
+            ))
+        except Exception:
+            pass
+        # 3) Everything corroborated/approved under the old gate -> published.
+        try:
+            await conn.execute(text(
+                "UPDATE content SET status='published' "
+                "WHERE verification_status IN ('community_reviewed','cross_referenced')"
+            ))
+        except Exception:
+            pass
+        # Content platform Phase 2: video poster on lessons (§6.5)
+        try:
+            await conn.execute(text("ALTER TABLE lessons ADD COLUMN poster VARCHAR(2000)"))
+        except Exception:
+            pass
+        # Group soft-archive lifecycle
+        for col, typedef in [
+            ("status", "VARCHAR(20) DEFAULT 'active'"),
+            ("archived_at", "TIMESTAMP"),
+        ]:
+            try:
+                await conn.execute(text(f"ALTER TABLE groups ADD COLUMN {col} {typedef}"))
+            except Exception:
+                pass
+        # Legacy fix: older DBs created groups.category as NOT NULL, but the model is
+        # nullable — creating a group with no category 500s. SQLite can't drop a
+        # NOT NULL in place, so rebuild the table once (data preserved).
+        try:
+            info = await conn.execute(text("PRAGMA table_info(groups)"))
+            cat = next((r for r in info.fetchall() if r[1] == "category"), None)
+            if cat is not None and cat[3] == 1:  # category currently NOT NULL
+                await conn.execute(text("ALTER TABLE groups RENAME TO groups_legacy"))
+                await conn.execute(text("DROP INDEX IF EXISTS ix_groups_slug"))
+                await conn.run_sync(Base.metadata.tables["groups"].create)
+                await conn.execute(text(
+                    "INSERT INTO groups (id, name, slug, description, category, family, "
+                    "created_by, image_url, status, archived_at, created_at, updated_at) "
+                    "SELECT id, name, slug, description, category, family, created_by, "
+                    "image_url, status, archived_at, created_at, updated_at FROM groups_legacy"
+                ))
+                await conn.execute(text("DROP TABLE groups_legacy"))
+        except Exception as e:
+            print(f"groups category rebuild: {e}")
         try:
             await conn.execute(
                 text("UPDATE content SET verification_status = 'community_reviewed' WHERE is_validated = 1")
@@ -100,6 +175,22 @@ async def lifespan(app: FastAPI):
             await conn.execute(text("ALTER TABLE users ADD COLUMN locale VARCHAR(10) DEFAULT NULL"))
         except Exception:
             pass
+        # Content platform Phase 0: trust, editable-copy & enforcement-ladder fields
+        # (see docs/content-platform/CONTENT_PLATFORM.md §3, §4.4, §12)
+        for col, typedef in [
+            ("can_self_publish", "BOOLEAN DEFAULT 0"),
+            ("self_publish_agreed_at", "TIMESTAMP"),
+            ("can_edit_copy", "BOOLEAN DEFAULT 0"),
+            ("account_status", "VARCHAR(20) DEFAULT 'active'"),
+            ("suspended_until", "TIMESTAMP"),
+            ("banned_at", "TIMESTAMP"),
+            ("ban_reason", "TEXT"),
+            ("banned_by", "INTEGER"),
+        ]:
+            try:
+                await conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {typedef}"))
+            except Exception:
+                pass
         try:
             await conn.execute(
                 text("ALTER TABLE plants ADD COLUMN soil_texture JSON")
@@ -274,6 +365,12 @@ async def lifespan(app: FastAPI):
                         ))
         except Exception as e:
             print(f"taxonomy seed: {e}")
+    # Seed starter long-form templates (idempotent) — CONTENT_PLATFORM.md §5.4
+    try:
+        async with async_session_factory() as session:
+            await seed_content_templates(session)
+    except Exception as e:
+        print(f"template seed: {e}")
     yield
     await engine.dispose()
 
@@ -315,6 +412,10 @@ app.include_router(articles.router)
 app.include_router(ratings.router)
 app.include_router(points.router)
 app.include_router(feeds.router)
+app.include_router(content_templates.router)
+app.include_router(self_publish.router)
+app.include_router(account.router)
+app.include_router(copy.router)
 
 # Serve uploaded media files.
 # Register image MIME types explicitly: the slim Docker image's mimetypes DB does

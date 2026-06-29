@@ -42,6 +42,9 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     user = result.scalar_one_or_none()
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password")
+    # Enforcement ladder (CONTENT_PLATFORM.md §4.4): banned accounts cannot log in.
+    if user.is_banned:
+        raise HTTPException(status_code=403, detail="Account banned")
 
     token = create_access_token({"sub": str(user.id)})
     return TokenResponse(access_token=token)

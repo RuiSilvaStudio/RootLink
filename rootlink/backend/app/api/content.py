@@ -144,11 +144,7 @@ async def popular(
     limit: int = Query(10, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(Content).where(
-            Content.verification_status.in_(["community_reviewed", "cross_referenced"])
-        )
-    )
+    result = await db.execute(select(Content).where(public_content_clause()))
     items = result.scalars().all()
 
     creator_ids = {c.created_by for c in items if c.created_by}

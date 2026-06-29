@@ -53,6 +53,13 @@ async def get_current_user(
     user = result.scalar_one_or_none()
     if user is None:
         raise credentials_exception
+    # Enforcement ladder: banned users are fully blocked (see CONTENT_PLATFORM.md §4.4).
+    # Suspended users keep read access here; authoring is gated by get_writable_user.
+    if user.is_banned:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account banned",
+        )
     return user
 
 
@@ -70,4 +77,22 @@ async def get_optional_user(
     except JWTError:
         return None
     result = await db.execute(select(User).where(User.id == int(user_id)))
-    return result.scalar_one_or_none()
+    user = result.scalar_one_or_none()
+    if user is not None and user.is_banned:
+        return None
+    return user
+
+
+async def get_writable_user(current_user: User = Depends(get_current_user)) -> User:
+    """Require an account that may currently author content (create/edit/comment/rate).
+
+    Banned users are already rejected by get_current_user; this additionally blocks
+    temporarily-suspended users (CONTENT_PLATFORM.md §4.4: suspension blocks authoring
+    but allows read).
+    """
+    if current_user.is_suspended:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account suspended — you cannot create or edit content right now",
+        )
+    return current_user

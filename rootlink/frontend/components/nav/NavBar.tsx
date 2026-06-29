@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/locale-context";
 import { Collapsible } from "@/components/Collapsible";
 import { DesktopDropdown } from "./DesktopDropdown";
+import { CreateMenu } from "./CreateMenu";
 import { desktopDropdowns } from "./NavConfig";
 
 function LanguageSwitcher() {
@@ -225,6 +226,7 @@ export function NavBar() {
           )}
           {token && (
             <>
+              <CreateMenu />
               <Link href="/articles/my" className="p-1.5 text-stone-400 dark:text-stone-300 hover:text-primary-600 dark:hover:text-primary-400 transition" aria-label={t("nav.my_articles")}>
                 <FileText className="w-3.5 h-3.5" />
               </Link>

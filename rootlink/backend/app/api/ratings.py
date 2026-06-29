@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import delete, func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.security import get_current_user, get_optional_user
+from app.core.security import get_current_user, get_optional_user, get_writable_user
 from app.models.content import Content
 from app.models.rating import ContentRating
 from app.models.user import User
@@ -21,7 +21,7 @@ RATING_TAGS = [
 async def rate_content(
     content_id: int,
     body: RatingCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_writable_user),
     db: AsyncSession = Depends(get_db),
 ):
     if body.reaction not in ("up", "down"):

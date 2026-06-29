@@ -2,12 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { api } from "@/lib/api";
+import { safeImageUrl } from "@/lib/image-url";
 import { useLocale } from "@/lib/locale-context";
+import { useToast } from "@/lib/toast-context";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 export default function NewPathPage() {
   const { t } = useLocale();
+  const { addToast } = useToast();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ title: "", description: "", image_url: "" });
@@ -41,8 +45,17 @@ export default function NewPathPage() {
           <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={4} className="w-full border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 rounded-lg px-3 py-2 text-sm resize-none" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("learning.image_url")}</label>
-          <input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} className="w-full border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 rounded-lg px-3 py-2 text-sm" />
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("learning.cover_image") || "Cover image"}</label>
+          {form.image_url ? (
+            <div className="relative inline-block">
+              <img src={safeImageUrl(form.image_url)} alt="Cover" className="max-h-40 rounded-xl object-cover border border-stone-200 dark:border-stone-700" />
+              <button type="button" onClick={() => setForm({ ...form, image_url: "" })} className="absolute top-2 right-2 p-1 rounded-full bg-stone-900/70 text-white hover:bg-stone-900" aria-label="Remove cover">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <ImageUpload label="" requireLicense onUpload={(urls) => setForm({ ...form, image_url: urls.large })} onError={(m) => addToast("error", m)} />
+          )}
         </div>
         <button type="submit" disabled={saving} className="bg-primary-600 text-white px-6 py-2.5 rounded-lg hover:bg-primary-700 transition text-sm font-medium disabled:opacity-50">
           {saving ? t("common.creating") : t("learning.create_learning_path")}

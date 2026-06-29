@@ -3,7 +3,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, get_writable_user
 from app.models.comment import Comment
 from app.models.content import Content
 from app.models.event import Event
@@ -114,7 +114,7 @@ async def get_comments(
 @router.post("/", response_model=CommentResponse, status_code=201)
 async def create_comment(
     body: CommentCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_writable_user),
     db: AsyncSession = Depends(get_db),
 ):
     if not await _validate_entity(body.entity_type, body.entity_id, db):

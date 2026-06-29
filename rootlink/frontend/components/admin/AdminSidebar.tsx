@@ -21,10 +21,11 @@ import {
   Award,
   Store,
   Settings,
+  Type,
 } from "lucide-react";
 import { AdminSidebarSection, type AdminSection } from "./AdminSidebarSection";
 
-function getAdminSections(t: (key: string) => string, isAdmin: boolean): AdminSection[] {
+function getAdminSections(t: (key: string) => string, isAdmin: boolean, canEditCopy: boolean): AdminSection[] {
   return [
     {
       labelKey: "admin.section_overview",
@@ -62,6 +63,7 @@ function getAdminSections(t: (key: string) => string, isAdmin: boolean): AdminSe
       items: [
         { href: "/admin/notifications", label: t("admin.broadcast"), icon: Megaphone },
         { href: "/admin/submit", label: t("admin.submit_url"), icon: Globe },
+        ...(canEditCopy ? [{ href: "/admin/copy", label: t("admin.site_copy"), icon: Type }] : []),
         ...(isAdmin ? [{ href: "/admin/config", label: t("admin.config"), icon: Settings }] : []),
       ],
     },
@@ -96,7 +98,7 @@ export function AdminSidebar() {
     );
   }
 
-  const allowed = user?.role === "admin" || user?.role === "moderator" || user?.role === "contributor";
+  const allowed = ["super_admin", "admin", "moderator", "contributor"].includes(user?.role);
   if (!allowed) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 pt-16 ml-16">
@@ -107,8 +109,9 @@ export function AdminSidebar() {
   }
 
   const closeMobile = () => setMobileOpen(false);
-  const isAdmin = user?.role === "admin";
-  const sections = getAdminSections(t, isAdmin);
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+  const canEditCopy = user?.role === "super_admin" || user?.can_edit_copy;
+  const sections = getAdminSections(t, isAdmin, canEditCopy);
 
   return (
     <>

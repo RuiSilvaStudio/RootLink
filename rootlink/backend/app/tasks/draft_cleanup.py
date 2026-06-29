@@ -1,7 +1,7 @@
 import logging
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import delete, select
+from sqlalchemy import select
 
 from app.core.database import async_session_factory
 from app.models.content import Content, ContentStatus, ContentType

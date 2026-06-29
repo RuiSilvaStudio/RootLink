@@ -4,6 +4,14 @@ version = "0.1.0"
 description = "RootLink backend — community platform for gardeners, makers & homesteaders"
 requires-python = ">=3.12"
 
+[project.optional-dependencies]
+dev = ["pytest", "pytest-asyncio", "httpx"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
+
 [tool.ruff]
 line-length = 120
 target-version = "py312"

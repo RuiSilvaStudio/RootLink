@@ -57,6 +57,10 @@ class UserResponse(BaseModel):
     feed_priority: int = 3
     boost_active: bool = False
     boost_expires_at: datetime | None = None
+    # Content platform (§3, §4.4, §12) — let the frontend gate UI accordingly
+    can_self_publish: bool = False
+    can_edit_copy: bool = False
+    account_status: str = "active"
 
     model_config = {"from_attributes": True}
 

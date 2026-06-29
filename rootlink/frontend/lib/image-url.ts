@@ -7,6 +7,16 @@
  * provided fallback so the UI shows a placeholder instead.
  */
 
+// Our own backend/media origin is trusted even when it is localhost in dev.
+// (The private-host guard is meant for stale third-party data, not our media server.)
+const API_ORIGIN = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001").origin;
+  } catch {
+    return "";
+  }
+})();
+
 function isPrivateHost(hostname: string): boolean {
   const h = hostname.toLowerCase();
   if (h === "localhost" || h === "0.0.0.0" || h === "::1" || h.endsWith(".local")) return true;
@@ -37,6 +47,8 @@ export function safeImageUrl(url?: string | null, fallback = ""): string {
   }
   // Only http(s) may be auto-loaded; custom schemes also trigger the prompt.
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return fallback;
+  // Always trust our own backend (where uploaded media is served from).
+  if (API_ORIGIN && parsed.origin === API_ORIGIN) return u;
   if (isPrivateHost(parsed.hostname)) return fallback;
   return u;
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Calendar, MapPin, Plus, Users, Globe, Clock, Sparkles, Tag, Shield, Building, Heart, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
@@ -12,6 +13,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 const VISIBILITY_OPTIONS = [
   { value: "all", labelKey: "vis_all" },
@@ -65,6 +67,7 @@ export default function EventsPage() {
   const [recurrenceType, setRecurrenceType] = useState("none");
   const [recurrenceConfig, setRecurrenceConfig] = useState<any>({});
   const [descriptionLong, setDescriptionLong] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [families, setFamilies] = useState<any[]>([]);
   const [familyCategories, setFamilyCategories] = useState<any[]>([]);
   const [formFamilyCategories, setFormFamilyCategories] = useState<any[]>([]);
@@ -73,7 +76,11 @@ export default function EventsPage() {
   const { t, locale } = useLocale();
   const { addToast } = useToast();
 
-  useEffect(() => { setToken(localStorage.getItem("token")); }, []);
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    setToken(localStorage.getItem("token"));
+    if (searchParams.get("new") === "1") setShowForm(true);
+  }, [searchParams]);
   useEffect(() => {
     api.taxonomy.families().then(setFamilies).catch(() => {});
     loadEvents();
@@ -123,13 +130,14 @@ export default function EventsPage() {
         ticket_tiers: ticketType === "paid" && ticketTiers.length > 0 ? ticketTiers : undefined,
         recurrence_type: recurrenceType,
         recurrence_config: recurrenceType !== "none" ? recurrenceConfig : undefined,
+        image_url: imageUrl || undefined,
       });
       setEvents([event, ...events]);
       setShowForm(false);
       setTitle(""); setDescription(""); setDate(""); setLocation("");
       setIsOnline(false); setEventCategory(""); setEventFamily(""); setMaxAttendees("");
       setVisibility("all"); setTicketType("free"); setTicketPrice(""); setTicketTiers([]);
-      setRecurrenceType("none"); setRecurrenceConfig({}); setDescriptionLong("");
+      setRecurrenceType("none"); setRecurrenceConfig({}); setDescriptionLong(""); setImageUrl("");
     } catch (err: any) {
       addToast("error", err.message);
     }
@@ -188,6 +196,10 @@ export default function EventsPage() {
           <div>
             <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.title_label")}</label>
             <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.cover_label") || "Cover image"}</label>
+            <ImageUpload label="" requireLicense onUpload={(urls) => setImageUrl(urls.large)} onError={(m) => addToast("error", m)} />
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div>

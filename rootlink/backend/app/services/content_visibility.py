@@ -1,25 +1,26 @@
 """Single source of truth for whether a Content row is publicly visible.
 
-A piece of content is "live" (publicly listed, searchable, indexed, viewable by
-anyone) only once its verification_status reaches one of
-PUBLIC_VERIFICATION_STATUSES:
+`status` is the **single** visibility gate (CONTENT_PLATFORM.md §2.1): a piece of
+content is "live" (publicly listed, searchable, indexed, viewable by anyone) only
+once its status reaches `published`. Everything else — draft, in_review,
+needs_changes, rejected, archived — stays hidden from every public surface and is
+visible only to its owner, moderators and super_admin.
 
-  - user-authored articles  -> community_reviewed (a human approved it)
-  - crawled content         -> cross_referenced  (corroborated by >= 3 sources)
+The separate `verification_status` (unreviewed / cross_referenced /
+community_reviewed) is an orthogonal **quality badge**, NOT a visibility gate.
 
-Everything else — drafts and published-but-unreviewed articles awaiting review —
-must stay hidden from every public surface. Use these helpers everywhere instead
-of re-deriving the condition, so the gate can never drift out of sync.
+Use these helpers everywhere instead of re-deriving the condition, so the gate
+can never drift out of sync.
 """
 
-from app.models.content import PUBLIC_VERIFICATION_STATUSES, Content
+from app.models.content import Content, ContentStatus
 
 
 def public_content_clause():
     """SQLAlchemy WHERE clause selecting only publicly-visible content."""
-    return Content.verification_status.in_(PUBLIC_VERIFICATION_STATUSES)
+    return Content.status == ContentStatus.published
 
 
 def is_publicly_visible(content: Content) -> bool:
-    """True if this content is live (approved/cross-referenced)."""
-    return content.verification_status in PUBLIC_VERIFICATION_STATUSES
+    """True if this content is live (published)."""
+    return content.status == ContentStatus.published

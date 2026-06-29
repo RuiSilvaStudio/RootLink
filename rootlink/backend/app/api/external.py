@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter, Query
 
 from app.services.gbif import get_portugal_occurrences, search_species
@@ -29,7 +31,7 @@ async def species_search(
     limit: int = Query(5, ge=1, le=20),
 ):
     """Search species across iNaturalist and GBIF."""
-    inat_results, gbif_results = await (
+    inat_results, gbif_results = await asyncio.gather(
         search_taxa(q, limit),
         search_species(q, limit),
     )

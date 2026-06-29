@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RootLink — Unified Content Editor</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Source+Serif+4:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  fontFamily: { display: ['Fraunces','serif'], serif: ['"Source Serif 4"','serif'] },
+  colors: {
+    primary:{50:'#f3f0eb',100:'#e3ddd0',200:'#cabda6',300:'#ad9a7a',400:'#917a56',500:'#7a6040',600:'#634d33',700:'#4f3d2a',800:'#3d2f21',900:'#291f16'},
+    earth:{50:'#f5f0ea',100:'#e8ddd0',200:'#d4c0a8',300:'#bba080',400:'#a6845e',500:'#8c6b48',600:'#70553a',700:'#5a432e',800:'#453324',900:'#2e2218'},
+    rust:{50:'#f9f0ec',100:'#f0dcd1',200:'#e0bea8',300:'#cf9b7a',400:'#c07d53',500:'#a8643d',600:'#8b5032',700:'#714029',800:'#5c3422',900:'#4a2a1c'},
+    cream:'#f8f6f2',
+  }, borderRadius:{ xl2:'16px' },
+}}}
+</script>
+<style>body{font-family:'Source Serif 4',serif}h1,h2,h3,.font-display{font-family:'Fraunces',serif}.font-sans{font-family:ui-sans-serif,system-ui,sans-serif}</style>
+</head>
+<body class="bg-cream text-earth-900 min-h-screen">
+
+<div class="bg-earth-800 text-cream text-xs px-4 py-1.5 text-center font-sans">MOCKUP · §5.1 ContentEditor · §5.4 Templates · §6.4 Cover + attribution · §9.2 Autosave · §9.4 (i) help</div>
+
+<!-- Editor top bar -->
+<header class="sticky top-0 z-20 bg-cream/95 backdrop-blur border-b border-earth-100">
+  <div class="max-w-3xl mx-auto px-5 h-14 flex items-center gap-3">
+    <a class="flex items-center gap-1.5 text-earth-600 text-sm hover:text-earth-800"><i data-lucide="arrow-left" class="w-4 h-4"></i>Articles</a>
+    <span class="ml-1 inline-flex items-center gap-1.5 text-[12px] font-sans font-600 px-2.5 py-1 rounded-full bg-stone-100 text-stone-600 ring-1 ring-stone-200"><span class="w-1.5 h-1.5 rounded-full bg-stone-400"></span>Draft</span>
+    <span class="inline-flex items-center gap-1.5 text-[13px] text-earth-500 font-sans"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i>Saved</span>
+    <div class="ml-auto flex items-center gap-2">
+      <button class="text-sm font-sans text-earth-600 px-3 py-2 rounded-full hover:bg-earth-50">Save draft</button>
+      <div class="relative group">
+        <div class="flex items-center">
+          <button class="flex items-center gap-1.5 bg-earth-700 text-cream px-4 py-2 rounded-full text-sm font-600 font-sans">Publish</button>
+          <button class="ml-1.5 w-7 h-7 grid place-items-center rounded-full bg-earth-100 text-earth-600 hover:bg-earth-200" title="info"><i data-lucide="info" class="w-4 h-4"></i></button>
+        </div>
+        <!-- info popover -->
+        <div class="absolute right-0 mt-2 w-72 bg-earth-900 text-cream text-[13px] font-sans leading-relaxed rounded-xl2 p-3 shadow-xl">
+          <p class="font-600 mb-1 flex items-center gap-1.5"><i data-lucide="shield-check" class="w-4 h-4"></i>What happens when you publish?</p>
+          Your article is scanned automatically, then sent for a quick human review. Once approved it goes live. <span class="text-earth-300">Trusted authors publish instantly.</span>
+          <div class="absolute -top-1.5 right-9 w-3 h-3 bg-earth-900 rotate-45"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-3xl mx-auto px-5 py-7">
+
+  <!-- Template picker -->
+  <div class="mb-6">
+    <div class="flex items-center gap-2 mb-2">
+      <p class="text-[13px] font-sans font-600 uppercase tracking-wide text-earth-500">Start from a template</p>
+      <button class="w-5 h-5 grid place-items-center rounded-full bg-earth-100 text-earth-500" title="Templates give you a ready structure — just fill in the blanks."><i data-lucide="info" class="w-3.5 h-3.5"></i></button>
+    </div>
+    <div class="flex gap-2.5 overflow-x-auto pb-1">
+      <button class="shrink-0 w-32 text-left p-3 rounded-xl2 bg-white ring-2 ring-earth-700 shadow-sm">
+        <i data-lucide="list-checks" class="w-5 h-5 text-earth-700"></i><p class="mt-2 text-sm font-600 text-earth-800">How-to / build log</p>
+      </button>
+      <button class="shrink-0 w-32 text-left p-3 rounded-xl2 bg-white ring-1 ring-earth-100 hover:ring-earth-300">
+        <i data-lucide="leaf" class="w-5 h-5 text-earth-600"></i><p class="mt-2 text-sm font-600 text-earth-700">Plant profile</p>
+      </button>
+      <button class="shrink-0 w-32 text-left p-3 rounded-xl2 bg-white ring-1 ring-earth-100 hover:ring-earth-300">
+        <i data-lucide="utensils" class="w-5 h-5 text-earth-600"></i><p class="mt-2 text-sm font-600 text-earth-700">Recipe</p>
+      </button>
+      <button class="shrink-0 w-32 text-left p-3 rounded-xl2 bg-white ring-1 ring-earth-100 hover:ring-earth-300">
+        <i data-lucide="notebook-pen" class="w-5 h-5 text-earth-600"></i><p class="mt-2 text-sm font-600 text-earth-700">Project journal</p>
+      </button>
+      <button class="shrink-0 w-32 text-left p-3 rounded-xl2 bg-white ring-1 ring-earth-100 hover:ring-earth-300">
+        <i data-lucide="file" class="w-5 h-5 text-earth-600"></i><p class="mt-2 text-sm font-600 text-earth-700">Blank</p>
+      </button>
+    </div>
+  </div>
+
+  <!-- Cover -->
+  <div class="relative rounded-xl2 overflow-hidden ring-1 ring-earth-100 mb-5 group">
+    <div class="h-56 bg-gradient-to-br from-earth-200 via-earth-300 to-rust-200 grid place-items-center">
+      <div class="text-center text-earth-700/80">
+        <i data-lucide="image" class="w-8 h-8 mx-auto"></i>
+        <p class="text-sm font-sans mt-1">Cover image · <span class="underline">required to publish</span></p>
+      </div>
+    </div>
+    <div class="absolute bottom-3 left-3 flex items-center gap-2">
+      <button class="flex items-center gap-1.5 bg-white/95 text-earth-700 text-[13px] font-sans font-600 px-3 py-1.5 rounded-full shadow"><i data-lucide="upload" class="w-4 h-4"></i>Upload</button>
+      <button class="flex items-center gap-1.5 bg-white/95 text-earth-700 text-[13px] font-sans font-600 px-3 py-1.5 rounded-full shadow"><i data-lucide="link" class="w-4 h-4"></i>Link</button>
+      <span class="flex items-center gap-1.5 bg-earth-900/70 text-cream text-[12px] font-sans px-2.5 py-1.5 rounded-full"><i data-lucide="badge-info" class="w-3.5 h-3.5"></i>Add attribution & license</span>
+    </div>
+  </div>
+
+  <!-- Title -->
+  <input class="w-full font-display text-4xl font-600 text-earth-900 placeholder-earth-300 bg-transparent outline-none" value="Companion Planting Basics" />
+  <input class="w-full mt-2 text-lg text-earth-500 placeholder-earth-300 bg-transparent outline-none font-sans" placeholder="Add a short summary…" value="Which plants thrive together — and which to keep apart." />
+
+  <div class="border-t border-earth-100 my-5"></div>
+
+  <!-- Blocks -->
+  <div class="space-y-4 text-[18px] leading-relaxed text-earth-800">
+    <div class="relative pl-7 group">
+      <span class="absolute left-0 top-1.5 flex gap-0.5 opacity-40 group-hover:opacity-100"><i data-lucide="grip-vertical" class="w-4 h-4 text-earth-400"></i></span>
+      <h2 class="font-display text-2xl font-600 text-earth-900">Why pairing matters</h2>
+    </div>
+    <p class="pl-7 relative group"><span class="absolute left-0 top-1.5 opacity-0 group-hover:opacity-100"><i data-lucide="plus" class="w-4 h-4 text-earth-400"></i></span>Some plants improve each other's growth, deter pests, or share space efficiently. Others compete for the same nutrients.</p>
+    <ul class="pl-12 list-disc space-y-1 marker:text-earth-400">
+      <li>Tomatoes + basil — basil repels common tomato pests.</li>
+      <li>Carrots + onions — onions mask the carrot-fly scent.</li>
+      <li>Beans + corn — beans fix nitrogen the corn needs.</li>
+    </ul>
+    <blockquote class="pl-7 border-l-4 border-rust-300 ml-7 text-earth-600 italic">Keep fennel away from almost everything — it inhibits nearby growth.</blockquote>
+    <div class="pl-7"><div class="rounded-xl2 ring-1 ring-earth-100 bg-white p-3 flex items-center gap-3 text-earth-500 font-sans text-sm"><i data-lucide="image" class="w-5 h-5"></i>Image block — drag a photo here</div></div>
+  </div>
+
+  <!-- inline add toolbar hint -->
+  <div class="mt-6 flex items-center gap-1.5 text-earth-400 font-sans text-sm pl-7"><i data-lucide="plus-circle" class="w-5 h-5"></i> Add heading, list, image, quote, video embed…</div>
+</main>
+
+<script>lucide.createIcons()</script>
+</body>
+</html>

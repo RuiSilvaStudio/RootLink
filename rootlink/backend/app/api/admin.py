@@ -1,36 +1,44 @@
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import delete, func, or_, select
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user, hash_password
 from app.models.comment import Comment
-from app.models.content import Content, SearchQueryLog, VerificationStatus
+from app.models.content import Content, ContentStatus, SearchQueryLog, VerificationStatus
 from app.models.event import Event, EventDonation, EventSponsor, EventTicket, EventVendor
-from app.models.group import Group, GroupMember
+from app.models.group import Group, GroupMember, GroupStatus
 from app.models.learning import Course, Enrollment
+from app.models.moderation import ModerationAction
 from app.models.notification import Notification, NotificationType
 from app.models.setting import Setting
-from app.models.user import User, UserRole
+from app.models.user import AccountStatus, User, UserRole
 from app.schemas.comment import CommentResponse
 from app.schemas.content import ContentResponse
 from app.schemas.event import SponsorUpdate, VendorUpdate
 from app.schemas.group import GroupResponse
+from app.schemas.moderation import BanRequest, SelfPublishGrant, SuspendRequest
 from app.schemas.setting import SettingResponse, SettingUpdate
+from app.services.audit import log_moderation
+from app.services.trust import self_publish_eligibility
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 
 def require_role(allowed_roles: list[UserRole]):
     def _require_role(current_user: User = Depends(get_current_user)):
+        # super_admin sits above admin and satisfies every role gate (§4.1).
+        if current_user.role == UserRole.super_admin:
+            return current_user
         if current_user.role not in allowed_roles:
             raise HTTPException(status_code=403, detail="Not enough permissions")
         return current_user
     return _require_role
 
 
+require_super_admin = Depends(require_role([UserRole.super_admin]))
 require_admin = Depends(require_role([UserRole.admin]))
 require_mod = Depends(require_role([UserRole.admin, UserRole.moderator]))
 require_contributor = Depends(require_role([UserRole.admin, UserRole.moderator, UserRole.contributor]))
@@ -164,6 +172,143 @@ async def unverify_user(
     return {"ok": True, "is_verified": False}
 
 
+# ── Trust & enforcement ladder (CONTENT_PLATFORM.md §3, §4.4) ──
+
+@router.get("/users/{user_id}/self-publish/eligibility")
+async def user_self_publish_eligibility(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    _=require_admin,
+):
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return await self_publish_eligibility(db, user)
+
+
+@router.patch("/users/{user_id}/self-publish")
+async def set_self_publish(
+    user_id: int,
+    body: SelfPublishGrant,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = require_admin,
+):
+    """Grant/revoke trusted-author self-publishing. Granting requires the user to be
+    eligible and to have accepted the agreement (super_admin may override)."""
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if body.grant:
+        elig = await self_publish_eligibility(db, user)
+        is_super = current_user.role == UserRole.super_admin
+        if not is_super and not elig["eligible"]:
+            raise HTTPException(status_code=400, detail="User is not eligible for self-publishing")
+        if not is_super and not elig["agreed"]:
+            raise HTTPException(status_code=400, detail="User has not accepted the publisher responsibility agreement")
+        user.can_self_publish = True
+        action = ModerationAction.grant_self_publish
+    else:
+        user.can_self_publish = False
+        action = ModerationAction.revoke_self_publish
+    await log_moderation(db, action=action, target_type="user", target_id=user_id, actor_id=current_user.id)
+    await db.commit()
+    return {"ok": True, "can_self_publish": user.can_self_publish}
+
+
+@router.post("/users/{user_id}/suspend")
+async def suspend_user(
+    user_id: int,
+    body: SuspendRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = require_admin,
+):
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot suspend yourself")
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.account_status = AccountStatus.suspended
+    user.suspended_until = body.until
+    await log_moderation(
+        db, action=ModerationAction.suspend, target_type="user", target_id=user_id,
+        actor_id=current_user.id, reason=body.reason, meta={"until": body.until.isoformat()},
+    )
+    await db.commit()
+    return {"ok": True, "account_status": "suspended", "suspended_until": user.suspended_until}
+
+
+@router.post("/users/{user_id}/lift-suspension")
+async def lift_suspension(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = require_admin,
+):
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.account_status = AccountStatus.active
+    user.suspended_until = None
+    await log_moderation(
+        db, action=ModerationAction.lift_suspension, target_type="user",
+        target_id=user_id, actor_id=current_user.id,
+    )
+    await db.commit()
+    return {"ok": True, "account_status": "active"}
+
+
+@router.post("/users/{user_id}/ban")
+async def ban_user(
+    user_id: int,
+    body: BanRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = require_admin,
+):
+    """Permanent ban: blocks access AND unpublishes the user's live content
+    (CONTENT_PLATFORM.md §4.4 / §10.14). Author anonymisation is handled by the
+    GDPR erasure path (§8); a moderator may later re-publish high-value items."""
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot ban yourself")
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.account_status = AccountStatus.banned
+    user.banned_at = datetime.now(UTC)
+    user.ban_reason = body.reason
+    user.banned_by = current_user.id
+    await db.execute(
+        update(Content)
+        .where(Content.created_by == user_id, Content.status == ContentStatus.published)
+        .values(status=ContentStatus.archived)
+    )
+    await log_moderation(
+        db, action=ModerationAction.ban, target_type="user", target_id=user_id,
+        actor_id=current_user.id, reason=body.reason,
+    )
+    await db.commit()
+    return {"ok": True, "account_status": "banned"}
+
+
+@router.post("/users/{user_id}/unban")
+async def unban_user(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = require_admin,
+):
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.account_status = AccountStatus.active
+    user.banned_at = None
+    user.ban_reason = None
+    user.banned_by = None
+    await log_moderation(
+        db, action=ModerationAction.unban, target_type="user",
+        target_id=user_id, actor_id=current_user.id,
+    )
+    await db.commit()
+    return {"ok": True, "account_status": "active"}
+
+
 # ── Content ──
 
 @router.get("/content", response_model=list[ContentResponse])
@@ -198,25 +343,49 @@ async def approve_content(
     content = result.scalar_one_or_none()
     if not content:
         raise HTTPException(status_code=404, detail="Content not found")
+    # Approve = go live (status is the visibility gate) AND earn the
+    # community-reviewed quality badge (CONTENT_PLATFORM.md §2.3).
+    content.status = ContentStatus.published
     content.verification_status = VerificationStatus.community_reviewed
     content.validated_by = current_user.id
+    if content.published_at is None:
+        content.published_at = datetime.now(UTC)
+    await log_moderation(
+        db,
+        action=ModerationAction.approve,
+        target_type="content",
+        target_id=content.id,
+        actor_id=current_user.id,
+    )
     await db.commit()
-    return {"ok": True, "verification_status": "community_reviewed"}
+    return {"ok": True, "status": "published", "verification_status": "community_reviewed"}
 
 
 @router.patch("/content/{content_id}/reject")
 async def reject_content(
     content_id: int,
+    reason: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
-    _=require_mod,
+    current_user: User = require_mod,
 ):
+    """Soft reject: never hard-deletes (CONTENT_PLATFORM.md §2.5). Records a reason
+    and leaves the content appealable by its author."""
     result = await db.execute(select(Content).where(Content.id == content_id))
     content = result.scalar_one_or_none()
     if not content:
         raise HTTPException(status_code=404, detail="Content not found")
-    await db.execute(delete(Content).where(Content.id == content_id))
+    content.status = ContentStatus.rejected
+    content.review_note = reason
+    await log_moderation(
+        db,
+        action=ModerationAction.reject,
+        target_type="content",
+        target_id=content.id,
+        actor_id=current_user.id,
+        reason=reason,
+    )
     await db.commit()
-    return {"ok": True}
+    return {"ok": True, "status": "rejected"}
 
 
 @router.get("/review-queue", response_model=list[ContentResponse])
@@ -228,7 +397,7 @@ async def review_queue(
 ):
     stmt = (
         select(Content)
-        .where(Content.verification_status == VerificationStatus.unreviewed)
+        .where(Content.status == ContentStatus.in_review)
         .order_by(Content.created_at.desc())
         .offset(offset)
         .limit(limit)
@@ -322,12 +491,49 @@ async def list_groups(
     return result.scalars().all()
 
 
+@router.post("/groups/{group_id}/archive")
+async def archive_group(
+    group_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = require_super_admin,
+):
+    """Soft-archive a group (super_admin only). Members are notified; the group is
+    hidden from public surfaces but NOT hard-deleted (data + activity preserved)."""
+    group = await db.get(Group, group_id)
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found")
+    if group.status == GroupStatus.archived:
+        return {"ok": True, "status": "archived"}
+
+    group.status = GroupStatus.archived
+    group.archived_at = datetime.now(UTC)
+
+    # Notify every member that the group is being retired.
+    members = (await db.execute(select(GroupMember).where(GroupMember.group_id == group_id))).scalars().all()
+    for m in members:
+        db.add(Notification(
+            user_id=m.user_id,
+            actor_id=current_user.id,
+            type=NotificationType.system,
+            message=f'The group "{group.name}" is being retired and will be archived. Please save anything you need.',
+            link=f"/groups/{group_id}",
+        ))
+
+    await log_moderation(
+        db, action="archive_group", target_type="group", target_id=group_id,
+        actor_id=current_user.id, meta={"member_count": len(members)},
+    )
+    await db.commit()
+    return {"ok": True, "status": "archived", "notified": len(members)}
+
+
 @router.delete("/groups/{group_id}", status_code=204)
 async def delete_group(
     group_id: int,
     db: AsyncSession = Depends(get_db),
-    _=require_admin,
+    _=require_super_admin,
 ):
+    """Permanent hard-delete (super_admin only). Prefer /archive; this is irreversible."""
     await db.execute(delete(GroupMember).where(GroupMember.group_id == group_id))
     await db.execute(delete(Group).where(Group.id == group_id))
     await db.commit()
