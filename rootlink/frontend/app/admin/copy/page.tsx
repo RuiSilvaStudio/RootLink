@@ -20,7 +20,22 @@ function flatten(obj: any, prefix = "", out: Record<string, string> = {}): Recor
 const EN = flatten(en);
 const PT = flatten(pt);
 const ALL_KEYS = Array.from(new Set([...Object.keys(EN), ...Object.keys(PT)])).sort();
-const LIMIT = 60;
+const SEARCH_LIMIT = 80;
+
+const ns = (key: string) => (key.includes(".") ? key.split(".")[0] : "_other");
+const leaf = (key: string) => key.slice(ns(key).length + 1) || key;
+const humanize = (s: string) =>
+  s.replace(/_/g, " ").replace(/\./g, " › ").replace(/(^|\s)\w/g, (m) => m.toUpperCase());
+
+// Friendlier labels for common namespaces
+const NS_LABELS: Record<string, string> = {
+  nav: "Navigation", auth: "Auth & sign-in", create: "Create menu", admin: "Admin panel",
+  content: "Content", articles: "Articles", events: "Events", groups: "Groups",
+  learning: "Learning", marketplace: "Marketplace", waste: "Waste", plants: "Plants",
+  profile: "Profile", home: "Home", search: "Search", tools: "Tools", calc: "Calculators",
+  common: "Common", footer: "Footer", notifications: "Notifications",
+};
+const nsLabel = (n: string) => NS_LABELS[n] || humanize(n);
 
 export default function AdminCopyPage() {
   const { user } = useAuth();
@@ -28,7 +43,8 @@ export default function AdminCopyPage() {
   const canEdit = user?.role === "super_admin" || user?.can_edit_copy;
 
   const [search, setSearch] = useState("");
-  const [overrides, setOverrides] = useState<Record<string, string>>({}); // `${locale}:${key}` -> value
+  const [category, setCategory] = useState<string>("");
+  const [overrides, setOverrides] = useState<Record<string, string>>({});
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<string | null>(null);
 
@@ -41,13 +57,34 @@ export default function AdminCopyPage() {
     }).catch(() => {});
   }, [canEdit]);
 
-  const filtered = useMemo(() => {
+  // namespaces with counts, sorted by count desc
+  const namespaces = useMemo(() => {
+    const counts: Record<string, number> = {};
+    ALL_KEYS.forEach((k) => { counts[ns(k)] = (counts[ns(k)] || 0) + 1; });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([n, c]) => ({ n, c }));
+  }, []);
+
+  useEffect(() => {
+    if (!category && namespaces.length) setCategory(namespaces[0].n);
+  }, [namespaces, category]);
+
+  const searching = search.trim().length > 0;
+
+  const visibleKeys = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return ALL_KEYS.slice(0, LIMIT);
-    return ALL_KEYS.filter((k) =>
-      k.toLowerCase().includes(q) || (EN[k] || "").toLowerCase().includes(q) || (PT[k] || "").toLowerCase().includes(q)
-    ).slice(0, LIMIT);
-  }, [search]);
+    if (q) {
+      return ALL_KEYS.filter((k) =>
+        k.toLowerCase().includes(q) || (EN[k] || "").toLowerCase().includes(q) || (PT[k] || "").toLowerCase().includes(q)
+      ).slice(0, SEARCH_LIMIT);
+    }
+    return ALL_KEYS.filter((k) => ns(k) === category);
+  }, [search, category]);
+
+  const overriddenInNs = useMemo(() => {
+    const set = new Set<string>();
+    Object.keys(overrides).forEach((ek) => set.add(ns(ek.split(":").slice(1).join(":"))));
+    return set;
+  }, [overrides]);
 
   const effective = (locale: "en" | "pt", key: string) => {
     const ek = `${locale}:${key}`;
@@ -55,7 +92,6 @@ export default function AdminCopyPage() {
     if (ek in overrides) return overrides[ek];
     return (locale === "en" ? EN : PT)[key] ?? "";
   };
-
   const isOverridden = (key: string) => `en:${key}` in overrides || `pt:${key}` in overrides;
 
   const save = async (key: string) => {
@@ -63,16 +99,11 @@ export default function AdminCopyPage() {
     try {
       for (const locale of ["en", "pt"] as const) {
         const ek = `${locale}:${key}`;
-        if (ek in edits) {
-          await api.copy.set(key, locale, edits[ek]);
-          setOverrides((o) => ({ ...o, [ek]: edits[ek] }));
-        }
+        if (ek in edits) { await api.copy.set(key, locale, edits[ek]); setOverrides((o) => ({ ...o, [ek]: edits[ek] })); }
       }
       setEdits((e) => { const n = { ...e }; delete n[`en:${key}`]; delete n[`pt:${key}`]; return n; });
       addToast("success", "Copy saved");
-    } catch (err: any) {
-      addToast("error", err.message);
-    }
+    } catch (err: any) { addToast("error", err.message); }
     setSaving(null);
   };
 
@@ -85,9 +116,7 @@ export default function AdminCopyPage() {
       setOverrides((o) => { const n = { ...o }; delete n[`en:${key}`]; delete n[`pt:${key}`]; return n; });
       setEdits((e) => { const n = { ...e }; delete n[`en:${key}`]; delete n[`pt:${key}`]; return n; });
       addToast("success", "Reverted to default");
-    } catch (err: any) {
-      addToast("error", err.message);
-    }
+    } catch (err: any) { addToast("error", err.message); }
     setSaving(null);
   };
 
@@ -100,28 +129,58 @@ export default function AdminCopyPage() {
       <div className="mb-6">
         <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.08]">Site copy</h1>
         <p className="text-sm text-stone-500 dark:text-stone-400 mt-2 font-serif">
-          Edit any interface text without a redeploy. Changes override the defaults; revert restores the original.
+          Edit any interface text without a redeploy. Pick a section below, or search across everything.
         </p>
       </div>
 
-      <div className="relative mb-5 max-w-md">
+      <div className="relative mb-4 max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search keys or text (e.g. create.button, Publish)…"
+          placeholder="Search all text (e.g. Publish, create.button)…"
           className="w-full pl-9 pr-3 py-2 border border-stone-200/60 rounded-xl text-sm bg-white dark:bg-stone-900 font-serif focus:outline-none focus:ring-2 focus:ring-primary-500/15"
         />
       </div>
 
+      {/* Category buttons */}
+      {!searching && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          {namespaces.map(({ n, c }) => (
+            <button
+              key={n}
+              onClick={() => setCategory(n)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium font-display transition border ${
+                category === n
+                  ? "bg-primary-600 text-white border-primary-600"
+                  : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border-stone-200/70 dark:border-stone-700 hover:border-primary-300"
+              }`}
+            >
+              {nsLabel(n)}
+              <span className={`text-[10px] ${category === n ? "text-primary-100" : "text-stone-400"}`}>{c}</span>
+              {overriddenInNs.has(n) && <span className="w-1.5 h-1.5 rounded-full bg-rust-500" title="has overrides" />}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {!searching && (
+        <h2 className="text-lg font-display font-semibold text-stone-700 dark:text-stone-200 mb-3">
+          {nsLabel(category)} <span className="text-sm font-normal text-stone-400">· {visibleKeys.length} strings</span>
+        </h2>
+      )}
+
       <div className="space-y-3">
-        {filtered.map((key) => {
+        {visibleKeys.map((key) => {
           const dirty = `en:${key}` in edits || `pt:${key}` in edits;
           return (
             <div key={key} className="bg-white dark:bg-stone-900 rounded-xl border border-stone-200/60 dark:border-stone-700 p-4">
               <div className="flex items-center justify-between gap-2 mb-2">
-                <code className="text-xs text-primary-600 dark:text-primary-400 font-mono">{key}</code>
-                {isOverridden(key) && <span className="text-[10px] uppercase tracking-wide text-rust-600 bg-rust-50 px-2 py-0.5 rounded-full">overridden</span>}
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-stone-700 dark:text-stone-200">{humanize(leaf(key))}</p>
+                  <code className="text-[11px] text-stone-400 font-mono">{key}</code>
+                </div>
+                {isOverridden(key) && <span className="text-[10px] uppercase tracking-wide text-rust-600 bg-rust-50 px-2 py-0.5 rounded-full shrink-0">overridden</span>}
               </div>
               <div className="grid sm:grid-cols-2 gap-3">
                 {(["en", "pt"] as const).map((loc) => (
@@ -158,8 +217,9 @@ export default function AdminCopyPage() {
           );
         })}
       </div>
-      {!search && (
-        <p className="text-xs text-stone-400 mt-4 font-serif">Showing first {LIMIT} keys — search to find any of {ALL_KEYS.length} copy strings.</p>
+
+      {searching && visibleKeys.length >= SEARCH_LIMIT && (
+        <p className="text-xs text-stone-400 mt-4 font-serif">Showing first {SEARCH_LIMIT} matches — refine your search to narrow down.</p>
       )}
     </div>
   );
