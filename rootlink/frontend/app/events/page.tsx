@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { Calendar, MapPin, Plus, Users, Globe, Clock, Sparkles, Tag, Shield, Building, Heart, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
@@ -76,11 +75,10 @@ export default function EventsPage() {
   const { t, locale } = useLocale();
   const { addToast } = useToast();
 
-  const searchParams = useSearchParams();
   useEffect(() => {
     setToken(localStorage.getItem("token"));
-    if (searchParams.get("new") === "1") setShowForm(true);
-  }, [searchParams]);
+    if (new URLSearchParams(window.location.search).get("new") === "1") setShowForm(true);
+  }, []);
   useEffect(() => {
     api.taxonomy.families().then(setFamilies).catch(() => {});
     loadEvents();

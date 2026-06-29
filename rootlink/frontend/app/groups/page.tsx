@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { Users, Plus, Search, ExternalLink, Hash, MessageCircle, Calendar, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { safeImageUrl } from "@/lib/image-url";
@@ -36,12 +35,11 @@ export default function GroupsPage() {
   const { t, locale } = useLocale();
   const { addToast } = useToast();
 
-  const searchParams = useSearchParams();
   useEffect(() => {
     api.groups.list().then(setGroups).catch(() => {}).finally(() => setLoading(false));
     api.taxonomy.families().then(setFamilies).catch(() => {});
-    if (searchParams.get("new") === "1") setShowForm(true);
-  }, [searchParams]);
+    if (new URLSearchParams(window.location.search).get("new") === "1") setShowForm(true);
+  }, []);
 
   const handleFamilyChange = (famValue: string) => {
     setFamily(famValue);
