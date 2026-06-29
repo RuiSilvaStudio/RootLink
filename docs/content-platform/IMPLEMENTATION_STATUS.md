@@ -132,6 +132,18 @@ All backend changes live in `rootlink/backend/`; tests in `rootlink/backend/test
 
 ---
 
+## 🚀 Deployed to production — 2026-06-29
+
+All of the below is **live**. Verified after deploy: prod backend `/api/health` 200,
+new endpoints 200 (`/api/content-templates` returns the 6 seeded templates), both
+uvicorn workers start clean (no `create_all` race), `alembic upgrade head` no-op,
+frontend routes (`/`, `/articles/my`, `/groups`, `/learning`) 200 on Vercel.
+
+Pre-deploy safety: ran the real prod Docker image (2 workers) against a **copy of the
+live prod DB** — caught & fixed the 2-worker `create_all` race (flock) and made the
+`groups.category` rebuild crash-safe (savepoint); data-visibility invariant preserved.
+See commit `812d372`. `deploy.sh` backed up the prod DB before applying.
+
 ## Roadmap round 3 (done this session)
 
 - ✅ **Phase 6b — editable site copy (§12):** `copy_override` model + `api/copy.py` (`GET /api/copy?locale` public; `PUT`/`DELETE /api/copy/{key}` gated by `can_edit_copy`/super_admin; `GET /api/copy/all`). `locale-context.tsx` merges overrides over static JSON at runtime. New admin editor at `/admin/copy` (searchable, per-locale edit + revert). Tests: `test_copy.py` (5).
