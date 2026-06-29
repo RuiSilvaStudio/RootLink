@@ -49,6 +49,7 @@ class LessonResponse(BaseModel):
     title: str
     body: str | None = None
     video_url: str | None = None
+    poster: str | None = None
     order: int
     created_at: datetime | None = None
     updated_at: datetime | None = None

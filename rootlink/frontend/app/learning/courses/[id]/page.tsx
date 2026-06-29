@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { BookOpen, Clock, CheckCircle, PlayCircle, ChevronDown, ChevronUp, Edit, Plus, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { safeImageUrl } from "@/lib/image-url";
+import { videoThumbnail } from "@/lib/video";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useLocale } from "@/lib/locale-context";
 
@@ -267,11 +269,25 @@ export default function CourseDetailPage() {
                       {user ? (
                         <>
                           <div className="prose prose-sm max-w-none text-stone-700 dark:text-stone-300 whitespace-pre-wrap">{lesson.body}</div>
-                          {lesson.video_url && (
-                            <a href={lesson.video_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 mt-3 text-primary-600 dark:text-primary-400 hover:underline text-sm">
-                              <PlayCircle className="w-4 h-4" /> {t("learning.watch_video")}
-                            </a>
-                          )}
+                          {lesson.video_url && (() => {
+                            const thumb = videoThumbnail(lesson.video_url, lesson.poster);
+                            return (
+                              <a href={lesson.video_url} target="_blank" rel="noopener noreferrer" className="group/vid block mt-3 max-w-sm">
+                                {thumb ? (
+                                  <div className="relative rounded-xl overflow-hidden border border-stone-200 dark:border-stone-700">
+                                    <img src={safeImageUrl(thumb, "/images/placeholder-card.svg")} alt={lesson.title} className="w-full aspect-video object-cover" />
+                                    <span className="absolute inset-0 flex items-center justify-center bg-black/25 group-hover/vid:bg-black/35 transition">
+                                      <PlayCircle className="w-12 h-12 text-white/90" />
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-primary-600 dark:text-primary-400 hover:underline text-sm">
+                                    <PlayCircle className="w-4 h-4" /> {t("learning.watch_video")}
+                                  </span>
+                                )}
+                              </a>
+                            );
+                          })()}
                           {enrollment && !completed && (
                             <button onClick={() => handleMarkComplete(lesson.id)} className="mt-3 bg-green-600 text-white px-4 py-1.5 rounded-lg hover:bg-green-700 transition text-sm">
                               {t("learning.mark_complete")}

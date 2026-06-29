@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { BookOpen, GraduationCap, Library, Plus, Edit, Users, Clock, Award, TrendingUp } from "lucide-react";
 import { api } from "@/lib/api";
+import { safeImageUrl } from "@/lib/image-url";
 import { useLocale } from "@/lib/locale-context";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -181,7 +182,7 @@ export default function LearningPage() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {courses.slice(0, 6).map((course) => (
             <Link key={course.id} href={`/learning/courses/${course.id}`} className="card-lift p-5 group">
-              {course.image_url && <img src={course.image_url} alt="" loading="lazy" className="w-full h-32 object-cover rounded-lg mb-3" />}
+              {course.image_url && <img src={safeImageUrl(course.image_url, "/images/placeholder-card.svg")} alt="" loading="lazy" className="w-full h-32 object-cover rounded-lg mb-3" />}
               <h3 className="font-semibold text-stone-800">{course.title}</h3>
               <p className="text-sm text-stone-500 mt-1 line-clamp-2 font-light">{course.description}</p>
               <div className="flex gap-2 mt-3 text-xs text-stone-500 items-center flex-wrap">
@@ -206,7 +207,11 @@ export default function LearningPage() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {paths.map((path) => (
             <Link key={path.id} href={`/learning/paths/${path.id}`} className="card-lift p-5 group">
-              <Library className="w-8 h-8 text-primary-600 mb-3" />
+              {path.image_url ? (
+                <img src={safeImageUrl(path.image_url, "/images/placeholder-card.svg")} alt="" loading="lazy" className="w-full h-32 object-cover rounded-lg mb-3" />
+              ) : (
+                <Library className="w-8 h-8 text-primary-600 mb-3" />
+              )}
               <h3 className="font-semibold text-stone-800">{path.title}</h3>
               <p className="text-sm text-stone-500 mt-1 line-clamp-2 font-light">{path.description}</p>
               {isStaff && (user?.role === "admin" || user?.role === "moderator" || path.created_by === user?.id) && (
