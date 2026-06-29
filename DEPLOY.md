@@ -232,6 +232,14 @@ These cost real time. Read before debugging.
    otherwise the Celery containers fail with "executable file not found: celery".
 9. **`npm audit` shows Next.js 14 CVEs** — do NOT `npm audit fix --force` (jumps to Next 16
    and breaks the app). These are tracked in `TECH_DEBT.md` for the planned Next 15 upgrade.
+9a. **ALWAYS run `npm run build` (next build) locally before a frontend deploy.** `tsc --noEmit`
+    and `next lint` do NOT catch prerender/SSG errors. In particular, `useSearchParams()` in a
+    statically-prerendered page throws "should be wrapped in a suspense boundary" and **fails the
+    Vercel build** (the live site then silently stays on the previous build). Fix: read the query
+    via `new URLSearchParams(window.location.search)` in an effect, or wrap the component in
+    `<Suspense>`, or mark the route dynamic. This cost a failed deploy on 2026-06-29
+    (`/events`, `/groups`). If you must avoid `next build` clobbering a running `next dev` `.next`,
+    stop dev → build → `npm run dev:restart`.
 10. **`.webp` MIME type + Cloudflare cache** (cost real time — 2026-06-27). Uploaded images are
     normalized to **webp**. The slim Docker image's `mimetypes` DB does NOT know `.webp`, so
     Starlette `StaticFiles` served them as `Content-Type: text/plain` → browsers refuse to render
