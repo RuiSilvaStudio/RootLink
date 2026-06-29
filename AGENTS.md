@@ -1,3 +1,12 @@
+## Lessons learned (read first)
+
+**Before any dev or deploy work, read `docs/LESSONS.md`.** It captures hard-won,
+non-obvious gotchas from past sessions (e.g. always run `next build` before a frontend
+deploy; never `npm run build` while `next dev` is live; restart the backend after backend
+changes; multi-worker lifespan migration races; SQLite/JSON-null pitfalls). When a new
+gotcha bites, add it there in the same change. The content-platform work is documented in
+`docs/content-platform/` (spec `CONTENT_PLATFORM.md`, status `IMPLEMENTATION_STATUS.md`).
+
 ## Deployment
 
 `DEPLOY.md` is the single source of truth for deployment. It survives chat history loss.

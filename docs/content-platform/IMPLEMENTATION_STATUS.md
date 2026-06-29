@@ -1,49 +1,28 @@
-# Content Platform — Implementation Status & Handoff
+# Content Platform — Implementation Status
 
-> **Last updated:** 2026-06-28 (end of session)
-> **Purpose:** Durable record of progress so work can resume later with zero context loss.
+> **Status:** ✅ SHIPPED — live in production (2026-06-29). Chapter closed.
 > **Spec:** [`CONTENT_PLATFORM.md`](./CONTENT_PLATFORM.md) · **Mockups:** [`mockups/`](./mockups/)
+> **Lessons learned (read before similar work):** [`../LESSONS.md`](../LESSONS.md)
 
 ---
 
-## TL;DR — where we are
+## TL;DR
 
-The core content platform is **implemented and tested end-to-end** (backend Phases 0–6 + the main frontend layer). The user is now doing **manual QA** and **collecting a list of issues** (several found; some already fixed below — see "Issues found in QA"). We **paused mid-QA**; resume by reading "How to resume" then working through the user's issue notes.
+The full content platform (backend Phases 0–6 + frontend) is **implemented, tested, committed, pushed, and deployed to production**. Verified live after deploy: backend `/api/health` 200, new endpoints 200, both uvicorn workers start clean, Vercel frontend live, super_admin created.
 
-**Automated tests: 58 passing** (`rootlink/backend/tests/`). Frontend `tsc --noEmit` + `next lint` clean. Production build (`next build`) compiles — **but do NOT run it while `next dev` is live** (see Gotchas).
+- **Automated tests: 70 passing** (`rootlink/backend/tests/`). Frontend `tsc --noEmit` + `next lint` + **`next build`** all clean.
+- All work is committed to `main` and pushed to GitHub (Vercel + backend both deployed).
+- Production super_admin: **`admin@rootlink.app`** (elevated to `super_admin` + `can_self_publish` + `can_edit_copy`); dev DB also has `super@rootlink.app` / `superadmin123`.
 
-Nothing has been committed to git — all changes are working-tree only.
+## Local dev quick reference
 
----
+- Frontend dev: http://localhost:3001 (`/tmp/rootlink-dev.log`); backend API: http://localhost:8001 (`/tmp/rootlink-backend.log`).
+- Start backend: `cd rootlink/backend && source .venv/bin/activate && setsid nohup uvicorn app.main:app --port 8001 > /tmp/rootlink-backend.log 2>&1 < /dev/null &` (~15s to load the embedding model).
+- Start frontend: `cd rootlink/frontend && setsid nohup npm run dev > /tmp/rootlink-dev.log 2>&1 < /dev/null &` (:3000 is an unrelated app; it lands on :3001).
+- Tests: `cd rootlink/backend && source .venv/bin/activate && python -m pytest -q` → **70 passed**.
+- Deploy: `./scripts/deploy.sh` (see `DEPLOY.md`). **Always run `npm run build` before a frontend deploy** (see LESSONS.md).
 
-## How to resume (do this first)
-
-1. **Check servers are up** (they may have been stopped):
-   - Frontend dev: http://localhost:3001 — log `/tmp/rootlink-dev.log`
-   - Backend API: http://localhost:8001 — log `/tmp/rootlink-backend.log`
-   - Check: `curl -s localhost:8001/api/health` and `curl -sI localhost:3001 | head -1`
-2. **Restart if needed:**
-   - Backend: `cd rootlink/backend && source .venv/bin/activate && setsid nohup uvicorn app.main:app --port 8001 > /tmp/rootlink-backend.log 2>&1 < /dev/null &` (takes ~15s to load the embedding model before `/api/health` returns 200).
-   - Frontend: `cd rootlink/frontend && setsid nohup npm run dev > /tmp/rootlink-dev.log 2>&1 < /dev/null &` (it auto-picks a port; :3000 is taken by an unrelated "Open WebUI", so it lands on :3001).
-3. **Run the test suite** to confirm a clean baseline:
-   `cd rootlink/backend && source .venv/bin/activate && python -m pytest -q` → expect **58 passed**.
-4. **Read the user's QA issue notes** (the user is keeping a separate list) and work through them one by one, in build mode, verifying each with tests / Playwright.
-
-### Test super-admin login (in the dev DB)
-- URL: http://localhost:3001/auth/login
-- Email: `super@rootlink.app` · Password: `superadmin123`
-- Flags: `role=super_admin, is_verified, can_self_publish, can_edit_copy, account_status=active` (user id 6 in `rootlink.db`).
-- There's also `admin@rootlink.app` (user id 3) who owns most existing test articles.
-
----
-
-## Gotchas / lessons (IMPORTANT — don't repeat)
-
-1. **NEVER run `npm run build` while the `next dev` server is running.** They share `.next/`; the build clobbers the dev server's webpack chunks → `Cannot find module './NNNN.js'` → 500s / "lost formatting". Verify the frontend with **`npx tsc --noEmit` + `npm run lint` only**. If it happens: `rm -rf rootlink/frontend/.next` and restart dev (there's a `dev:restart` script).
-2. **Restart the backend after backend changes** — the dev uvicorn runs **without `--reload`**, so code changes (new endpoints, migrations, seeds) are NOT picked up until restart. Symptom: new endpoints return 404, template picker empty, etc.
-3. **Backend graceful shutdown can hang** waiting on open SSE notification streams. If a restart stalls, `kill -9` the old uvicorn pid (find via `pgrep -af "uvicorn app.main:app --port 8001"`), confirm `:8001` is free (`ss -ltnp | grep :8001`), then start fresh.
-4. **`safeImageUrl` blocks private hosts** — fixed to trust `NEXT_PUBLIC_API_URL` origin, but remember uploaded media URLs are absolute `http://localhost:8001/media/...` in dev.
-5. **`JSON` columns store Python `None` as JSON `null`**, not SQL `NULL` — don't use `body IS NULL` in migrations (we key authored-vs-crawled on `url IS NULL` instead).
+> The full hard-won gotchas/lessons now live in **[`docs/LESSONS.md`](../LESSONS.md)** (surfaced via `AGENTS.md`) and deployment specifics in **`DEPLOY.md`**.
 
 ---
 
@@ -151,6 +130,16 @@ See commit `812d372`. `deploy.sh` backed up the prod DB before applying.
 - ✅ **Pre-existing bug fixes:** `api/external.py` species search (`asyncio.gather` instead of awaiting a tuple); `groups.category` NOT NULL → guarded SQLite table-rebuild migration (tested on a DB copy first; data preserved, now nullable).
 
 **Total backend tests now: 70 passing.**
+
+## QA round 3 — learning covers & video thumbnails (3 issues, fixed + deployed)
+
+1. ✅ Course/Path **edit** pages showed a raw `image_url` text input → now use `ImageUpload` (preview/remove + license), matching the new pages.
+2. ✅ Learning page **path cards** showed no cover → render `path.image_url` (and hardened course covers via `safeImageUrl`).
+3. ✅ Course detail **lessons with video** had no thumbnail → show `poster`, else a client-derived YouTube thumbnail with a play overlay; `lessons.poster` exposed in `LessonResponse`. New `lib/video.ts` mirrors backend `services/oembed.py`. (Commit `cdda7c4`.)
+   - Edge: YouTube thumbnails derive client-side (no backend dep); **Vimeo** lessons only show a thumb once `poster` is populated (set via oEmbed on lesson save; existing Vimeo lessons would need a re-save/backfill).
+
+### Vercel deploy gotcha that bit us (now logged in DEPLOY.md 9a + LESSONS.md)
+The first frontend deploy this session **failed on Vercel** — `useSearchParams()` on `/events` & `/groups` needs a Suspense boundary for Next 14 static export. `tsc`/`lint` don't catch it; only `next build` does, which had been skipped to protect the dev server. Live site silently stayed on the old build. Fixed by reading the query via `window.location.search`; **now always run `next build` before a frontend deploy.**
 
 ## Deferred / not yet done
 

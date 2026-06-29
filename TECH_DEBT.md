@@ -132,7 +132,30 @@ mismatch can never bake a host into the DB again, and the same DB row is portabl
 environments. Requires a data migration to strip the host from existing rows + updating
 `_build_urls()`/schemas and frontend consumers.
 
-## 5. Migration hygiene — ✅ VERIFIED
-- Production DB was patched manually via ALTER TABLE + stamped to head.
-- Confirmed: prod `alembic current` = `d73cb2cb00bf (head)`; a fresh `alembic upgrade head`
-  is a no-op; all 5 new tables present. Prod schema matches Alembic head exactly. ✅
+## 5. Migration hygiene — ⚠ DIVERGED AGAIN (content platform, 2026-06-29)
+- Earlier: prod DB patched manually + stamped; `alembic current` = `d73cb2cb00bf (head)`.
+- **Now:** the content-platform schema (2026-06-29) is applied entirely via the **app
+  lifespan** (`create_all` + idempotent `ALTER`/backfills in `app/main.py`), with **no new
+  Alembic revisions**. So `alembic upgrade head` is a no-op and Alembic head no longer
+  reflects the real schema (it's behind). This works (lifespan is idempotent + flock-serialized
+  across workers) but is divergent. **TODO: backfill Alembic revisions** for the new tables
+  (`moderation_audit_log`, `content_templates`, `copy_overrides`) and columns
+  (users trust/ban fields, `content.review_note` + status states, `lessons.poster`,
+  `groups.status/archived_at` + nullable `category`) so the documented path matches reality.
+
+## 7. Content-platform follow-ups (2026-06-29)
+Deferred during the content-platform initiative (also tracked in
+`docs/content-platform/IMPLEMENTATION_STATUS.md`):
+- **Moderation ML service (SHADOW mode):** Detoxify / NudeNet / Falconsai ViT / Whisper —
+  self-hosted in-EU; infra-heavy (models + container + Celery). Lifecycle already has the
+  `auto_allow/auto_review/auto_block` audit hooks. Its own dedicated task.
+- **Cross-Kind "My Content" dashboard** + engagement counts (likes/views) on **public** cards —
+  the latter needs `rating_up`/`view_count` added to the search/feed response schemas. Low value.
+- **Editable-copy inline "click any text to edit" mode** — the `/admin/copy` editor page covers
+  the need for now.
+- **Vimeo lesson poster backfill** — YouTube thumbnails derive client-side; Vimeo needs `poster`
+  populated (set via oEmbed on lesson save). Existing Vimeo lessons would need a re-save/backfill.
+- **`email_verified` signal** — self-publish eligibility currently reuses `is_verified` (which
+  doubles as org/practitioner verification). Consider a dedicated `email_verified` flag.
+- **Liability-disclaimer legal sign-off** (CONTENT_PLATFORM.md §6.2) and **per-Kind retention
+  periods** (§8) — product/legal, not code.
