@@ -128,8 +128,27 @@ LIBERAPAY_WEBHOOK_SECRET=            # empty until Liberapay is wired
 - **Type:** SQLite at `/home/rui/RootLink/rootlink/backend-data/rootlink.db`
 - **Backups:** `backend-data/backups/` — `deploy.sh` makes a timestamped copy before every
   deploy and keeps the last 20.
-- **Migrations:** Alembic. `alembic upgrade head` (run automatically by `deploy.sh`).
-- **Current head revision:** `8a1b2c3d4e5f` (content.category nullable + users.website_url).
+- **Migrations — TWO mechanisms (know this):**
+  1. **App lifespan** (`app/main.py`): on startup it runs `Base.metadata.create_all`
+     (new tables) + idempotent `ALTER TABLE` / data backfills. This is the de-facto
+     schema path and applies the **content-platform** additions below. Because
+     `Dockerfile.prod` runs `uvicorn --workers 2`, the whole migration block is wrapped
+     in an **flock** (`/tmp/rootlink-migrate.lock`) so the two workers don't race in
+     `create_all` ("table X already exists" → worker crash). The `groups.category`
+     rebuild runs inside a SAVEPOINT (crash-safe: a failure leaves the original table
+     intact).
+  2. **Alembic** (`alembic upgrade head`, run by `deploy.sh`): currently a no-op for the
+     content-platform changes (no new revisions were added this round). Head is still
+     `8a1b2c3d4e5f`. TODO: backfill Alembic revisions so the documented path matches reality.
+- **Content-platform schema added (applied via lifespan):** new tables
+  `moderation_audit_log`, `content_templates`, `copy_overrides`; new columns on `users`
+  (`role` gains `super_admin`, `account_status`, `suspended_until`, `banned_at`,
+  `ban_reason`, `banned_by`, `can_self_publish`, `self_publish_agreed_at`, `can_edit_copy`),
+  `content` (`review_note`; `status` gains in_review/needs_changes/rejected; visibility gate
+  moved from `verification_status` → `status`), `lessons` (`poster`), `groups`
+  (`status`, `archived_at`, `category` made nullable via one-time table rebuild).
+  **Verified via a prod-DB-copy dry-run before deploy** (data invariant preserved, both
+  workers start clean, alembic no-op).
 
 ### Admin user management
 Use `scripts/reset_admin.py` (see `scripts/README.md`). To run against PROD, exec inside
@@ -205,6 +224,10 @@ These cost real time. Read before debugging.
    exist when Alembic runs, causing "table already exists". If that happens, stamp instead:
    `alembic stamp head`. Then verify with `alembic current` (should be `d73cb2cb00bf (head)`)
    and that `alembic upgrade head` is a no-op. (This was resolved; prod schema == head.)
+   **Also:** `--workers 2` means two processes run the lifespan `create_all` concurrently —
+   introducing NEW tables would race ("table X already exists" → a worker exits on startup).
+   This is now prevented by an flock around the migration block (see Database §). If you add
+   more new tables via the lifespan, that lock keeps the workers from racing.
 8. **`requirements-prod.txt` must include** alembic, feedparser, celery[redis], redis —
    otherwise the Celery containers fail with "executable file not found: celery".
 9. **`npm audit` shows Next.js 14 CVEs** — do NOT `npm audit fix --force` (jumps to Next 16

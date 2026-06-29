@@ -1,4 +1,8 @@
+import asyncio
+import fcntl
 import mimetypes
+import os
+import tempfile
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -57,6 +61,14 @@ from app.services.template_seed import seed_content_templates
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging()
+    # Serialize schema setup across uvicorn workers. Dockerfile.prod runs
+    # `--workers 2`, and each process runs this lifespan; without this exclusive
+    # lock, two workers race in create_all → "table X already exists" and a worker
+    # crashes on startup (DEPLOY.md gotcha #7). All workers share the container FS,
+    # so an flock on a temp file gates them. The second worker then finds every
+    # table/column already present and its migrations no-op.
+    _migrate_lock = open(os.path.join(tempfile.gettempdir(), "rootlink-migrate.lock"), "w")
+    await asyncio.to_thread(fcntl.flock, _migrate_lock, fcntl.LOCK_EX)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         try:
@@ -145,22 +157,36 @@ async def lifespan(app: FastAPI):
         # Legacy fix: older DBs created groups.category as NOT NULL, but the model is
         # nullable — creating a group with no category 500s. SQLite can't drop a
         # NOT NULL in place, so rebuild the table once (data preserved).
+        #
+        # Hardened: the whole rebuild runs inside a SAVEPOINT so a mid-way failure
+        # rolls back to the ORIGINAL `groups` table (never a half-migrated / renamed
+        # state). The nullability is re-checked inside the savepoint so a second
+        # uvicorn worker (Dockerfile.prod runs --workers 2, each runs this lifespan)
+        # or a later restart simply no-ops instead of racing.
         try:
             info = await conn.execute(text("PRAGMA table_info(groups)"))
             cat = next((r for r in info.fetchall() if r[1] == "category"), None)
             if cat is not None and cat[3] == 1:  # category currently NOT NULL
-                await conn.execute(text("ALTER TABLE groups RENAME TO groups_legacy"))
-                await conn.execute(text("DROP INDEX IF EXISTS ix_groups_slug"))
-                await conn.run_sync(Base.metadata.tables["groups"].create)
-                await conn.execute(text(
-                    "INSERT INTO groups (id, name, slug, description, category, family, "
-                    "created_by, image_url, status, archived_at, created_at, updated_at) "
-                    "SELECT id, name, slug, description, category, family, created_by, "
-                    "image_url, status, archived_at, created_at, updated_at FROM groups_legacy"
-                ))
-                await conn.execute(text("DROP TABLE groups_legacy"))
+                async with conn.begin_nested():  # SAVEPOINT — atomic rebuild
+                    # Re-check inside the savepoint (dodges the 2-worker race).
+                    recheck = await conn.execute(text("PRAGMA table_info(groups)"))
+                    rcat = next((r for r in recheck.fetchall() if r[1] == "category"), None)
+                    if rcat is not None and rcat[3] == 1:
+                        # Clear any orphan from a prior aborted run.
+                        await conn.execute(text("DROP TABLE IF EXISTS groups_legacy"))
+                        await conn.execute(text("ALTER TABLE groups RENAME TO groups_legacy"))
+                        await conn.execute(text("DROP INDEX IF EXISTS ix_groups_slug"))
+                        await conn.run_sync(Base.metadata.tables["groups"].create)
+                        await conn.execute(text(
+                            "INSERT INTO groups (id, name, slug, description, category, family, "
+                            "created_by, image_url, status, archived_at, created_at, updated_at) "
+                            "SELECT id, name, slug, description, category, family, created_by, "
+                            "image_url, status, archived_at, created_at, updated_at FROM groups_legacy"
+                        ))
+                        await conn.execute(text("DROP TABLE groups_legacy"))
         except Exception as e:
-            print(f"groups category rebuild: {e}")
+            # Savepoint rolled back → original groups table is intact; retried next boot.
+            print(f"groups category rebuild (skipped, will retry): {e}")
         try:
             await conn.execute(
                 text("UPDATE content SET verification_status = 'community_reviewed' WHERE is_validated = 1")
@@ -371,6 +397,8 @@ async def lifespan(app: FastAPI):
             await seed_content_templates(session)
     except Exception as e:
         print(f"template seed: {e}")
+    fcntl.flock(_migrate_lock, fcntl.LOCK_UN)
+    _migrate_lock.close()
     yield
     await engine.dispose()
 
