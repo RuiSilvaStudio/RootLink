@@ -13,9 +13,19 @@ import { Badge } from "@/components/ui/Badge";
 import { StatCounter } from "@/components/ui/StatCounter";
 import { HeroParticleCanvas } from "@/components/ui/HeroParticleCanvas";
 import { ContentCardSkeleton } from "@/components/ui/LoadingSkeleton";
+import { EditableText } from "@/components/editor-mode/editable-text";
+import { EditableIcon } from "@/components/editor-mode/editable-icon";
 
 const ICON_MAP: Record<string, any> = {
   Sprout, Bird, Flower, TreePine, Wrench, HomeIcon, Leaf, Users, BookOpen, Calendar,
+};
+
+// Maps a taxonomy family's default icon name to this feature's curated icon
+// registry (lib/icon-library.ts), so EditableIcon has a sensible starting point.
+const FAM_ICON_TO_LIBRARY_ID: Record<string, string> = {
+  Sprout: "sprout", Bird: "bird", Flower: "flower", TreePine: "tree-pine",
+  Wrench: "wrench", HomeIcon: "home", Leaf: "leaf", Users: "users",
+  BookOpen: "book", Calendar: "calendar",
 };
 
 export default function Home() {
@@ -60,15 +70,19 @@ export default function Home() {
           <div className="grid lg:grid-cols-5 gap-12 items-center">
             <div className="lg:col-span-3 animate-fade-in">
               <Badge variant="sage" className="mb-6">
-                {t("home.discover_rootlink")}
+                <EditableText k="home.discover_rootlink" />
               </Badge>
-              <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-100 leading-[0.95] tracking-tight">
-                {t("home.hero_title")}
-              </h1>
+              <EditableText
+                k="home.hero_title"
+                as="h1"
+                className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-100 leading-[0.95] tracking-tight"
+              />
               <div className="mt-6 w-20 h-0.5 bg-primary-300/50 rounded-full" />
-              <p className="text-lg sm:text-xl text-stone-500 dark:text-stone-300 mt-6 max-w-lg font-serif leading-relaxed">
-                {t("home.hero_subtitle")}
-              </p>
+              <EditableText
+                k="home.hero_subtitle"
+                as="p"
+                className="text-lg sm:text-xl text-stone-500 dark:text-stone-300 mt-6 max-w-lg font-serif leading-relaxed"
+              />
               <form onSubmit={handleSearch} className="mt-8 flex flex-col sm:flex-row gap-3 max-w-lg">
                 <div className="relative flex-1">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-00 dark:text-stone-500 dark:text-stone-400" />
@@ -80,7 +94,7 @@ export default function Home() {
                     className="w-full pl-11 pr-4 py-3 rounded-xl2 border border-primary-200/60 bg-white/80 backdrop-blur-sm text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none transition-all font-serif"
                   />
                 </div>
-                <Button type="submit" size="md">{t("home.search")}</Button>
+                <Button type="submit" size="md"><EditableText k="home.search" /></Button>
               </form>
             </div>
 
@@ -118,10 +132,12 @@ export default function Home() {
       <section className="px-4 sm:px-8 py-24 sm:py-32">
         <div className="max-w-6xl mx-auto">
           <div className="mb-16">
-            <Badge variant="earth" className="mb-5">{t("home.browse_category")}</Badge>
-            <h2 className="text-4xl sm:text-5xl md:text-6xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.05] max-w-2xl">
-              {t("home.find_your_corner")}
-            </h2>
+            <Badge variant="earth" className="mb-5"><EditableText k="home.browse_category" /></Badge>
+            <EditableText
+              k="home.find_your_corner"
+              as="h2"
+              className="text-4xl sm:text-5xl md:text-6xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.05] max-w-2xl"
+            />
             <div className="mt-5 w-16 h-0.5 bg-primary-300/40 rounded-full" />
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -136,14 +152,21 @@ export default function Home() {
                 style={{ animationDelay: `${i * 0.12}s` }}
               >
                 <div className={`w-14 h-14 rounded-2xl ${colors[i % colors.length]} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                  <Icon className="w-7 h-7 text-primary-600" />
+                  <EditableIcon
+                    k={`home.category.${fam.value}.icon`}
+                    defaultIconId={FAM_ICON_TO_LIBRARY_ID[fam.icon] || "leaf"}
+                    className="w-7 h-7 text-primary-600"
+                  />
                 </div>
                 <h3 className="text-2xl font-display font-semibold text-stone-800 dark:text-stone-100 mb-3">
                   {locale === "pt" ? fam.label_pt : fam.label}
                 </h3>
-                <p className="text-stone-500 dark:text-stone-400 font-serif leading-relaxed">
-                  {t("home.discover_category", { category: (locale === "pt" ? fam.label_pt : fam.label).toLowerCase() })}
-                </p>
+                <EditableText
+                  k={`home.category.${fam.value}.description`}
+                  as="p"
+                  className="text-stone-500 dark:text-stone-400 font-serif leading-relaxed"
+                  defaultText={t("home.discover_category", { category: (locale === "pt" ? fam.label_pt : fam.label).toLowerCase() })}
+                />
                 <span className="inline-flex items-center gap-2 text-sm font-display font-medium text-primary-600 mt-6 group-hover:gap-3 transition-all">
                   {t("home.explore")} <ArrowRight className="w-3.5 h-3.5" />
                 </span>
@@ -160,11 +183,17 @@ export default function Home() {
       <section className="px-4 sm:px-8 py-24 sm:py-32 bg-primary-50/40 dark:bg-primary-950/20 noise-bg">
         <div className="max-w-6xl mx-auto">
           <div className="mb-16 max-w-2xl">
-            <Badge variant="sage" className="mb-5">{t("home.featured_tools")}</Badge>
-            <h2 className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-100 leading-[1.05]">
-              {t("home.built_for_seasons")}
-            </h2>
-            <p className="mt-5 text-lg text-stone-500 dark:text-stone-300 font-serif leading-relaxed">{t("home.tools_subtitle")}</p>
+            <Badge variant="sage" className="mb-5"><EditableText k="home.featured_tools" /></Badge>
+            <EditableText
+              k="home.built_for_seasons"
+              as="h2"
+              className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-100 leading-[1.05]"
+            />
+            <EditableText
+              k="home.tools_subtitle"
+              as="p"
+              className="mt-5 text-lg text-stone-500 dark:text-stone-300 font-serif leading-relaxed"
+            />
             <div className="mt-5 w-16 h-0.5 bg-primary-300/40 dark:bg-primary-700/40 rounded-full" />
           </div>
           <div className="grid sm:grid-cols-3 gap-6">
@@ -197,8 +226,12 @@ export default function Home() {
       <section className="px-4 sm:px-8 py-24 sm:py-32">
         <div className="max-w-6xl mx-auto">
           <div className="mb-16">
-            <Badge variant="green" className="mb-5">{t("home.community")}</Badge>
-            <h2 className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-100 leading-[1.05]">{t("home.learning")}</h2>
+            <Badge variant="green" className="mb-5"><EditableText k="home.community" /></Badge>
+            <EditableText
+              k="home.learning"
+              as="h2"
+              className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-100 leading-[1.05]"
+            />
             <div className="mt-5 w-16 h-0.5 bg-primary-300/40 dark:bg-primary-700/40 rounded-full" />
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -305,15 +338,23 @@ export default function Home() {
       <section className="px-4 sm:px-8 py-24 sm:py-32">
         <div className="max-w-3xl mx-auto text-center">
           <div className="w-12 h-px bg-primary-300/40 mx-auto mb-8" />
-          <Badge variant="sage" className="mb-5">{t("home.join_community")}</Badge>
-          <h2 className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.05]">{t("home.ready_to_share")}</h2>
-          <p className="text-stone-500 dark:text-stone-400 mt-5 max-w-md mx-auto font-serif text-lg leading-relaxed">{t("home.cta_subtitle")}</p>
+          <Badge variant="sage" className="mb-5"><EditableText k="home.join_community" /></Badge>
+          <EditableText
+            k="home.ready_to_share"
+            as="h2"
+            className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.05]"
+          />
+          <EditableText
+            k="home.cta_subtitle"
+            as="p"
+            className="text-stone-500 dark:text-stone-400 mt-5 max-w-md mx-auto font-serif text-lg leading-relaxed"
+          />
             <div className="flex flex-wrap justify-center gap-4 mt-10">
             <Button variant="primary" size="lg" onClick={() => router.push("/submit")}>
-              {t("home.submit_link")}
+              <EditableText k="home.submit_link" />
             </Button>
             <Button variant="secondary" size="lg" onClick={() => router.push("/search")}>
-              {t("home.browse_all")}
+              <EditableText k="home.browse_all" />
             </Button>
             </div>
           <div className="mt-10 w-12 h-px bg-primary-300/40 mx-auto" />

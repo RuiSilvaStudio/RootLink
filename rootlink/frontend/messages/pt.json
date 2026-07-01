@@ -1263,6 +1263,10 @@
     "error": "Erro",
     "success": "Sucesso"
   },
+  "editor": {
+    "leave_confirm": "Tens alterações por guardar. Cancela para as guardar antes de sair.",
+    "reset_confirm": "Repor todas as alterações nesta página? Não é possível desfazer."
+  },
   "plants": {
     "title": "Enciclopédia de Plantas",
     "subtitle": "Explore a nossa base de dados botânica com informações detalhadas de cultivo",

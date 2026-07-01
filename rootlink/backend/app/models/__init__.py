@@ -2,6 +2,7 @@ from app.models.checklist import ChecklistItem
 from app.models.comment import Comment
 from app.models.content import Bookmark, Content, ContentStatus, SearchQueryLog, VerificationStatus
 from app.models.content_template import ContentTemplate
+from app.models.content_ui_override import ContentUIOverride
 from app.models.copy_override import CopyOverride
 from app.models.event import (
     Event,
@@ -62,4 +63,5 @@ __all__ = [
     "ContentTemplate",
     "ModerationAuditLog", "ModerationAction",
     "CopyOverride",
+    "ContentUIOverride",
 ]

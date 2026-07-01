@@ -2,14 +2,31 @@
 
 import { useEffect, useCallback, useRef } from "react";
 
-export function useDirtyGuard(dirty: boolean) {
+const DEFAULT_MESSAGE = "You have unsaved changes. Leave anyway?";
+
+interface DirtyGuardOptions {
+  /** Custom confirm() text. Note: browsers ignore custom text for the native
+   *  beforeunload prompt (refresh/tab-close) — this only affects the in-app
+   *  <Link>-click confirm below. */
+  message?: string;
+  /** Called once the user confirms leaving (i.e. chooses to discard). Only
+   *  fires for in-app link clicks — not for beforeunload, since the page is
+   *  already being destroyed/navigated away by the time that fires. */
+  onConfirmedLeave?: () => void;
+}
+
+export function useDirtyGuard(dirty: boolean, options?: DirtyGuardOptions) {
   const dirtyRef = useRef(dirty);
   dirtyRef.current = dirty;
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
 
   useEffect(() => {
     if (!dirty) return;
 
-    // 1) Hard navigation (refresh / tab close / external link).
+    // 1) Hard navigation (refresh / tab close / external link). Browsers force
+    //    their own generic 2-button prompt here — custom text/buttons are not
+    //    possible (security restriction across all modern browsers).
     const beforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
       e.returnValue = "";
@@ -24,7 +41,9 @@ export function useDirtyGuard(dirty: boolean) {
       if (!anchor) return;
       const href = anchor.getAttribute("href");
       if (!href || href.startsWith("#") || anchor.target === "_blank") return;
-      if (!window.confirm("You have unsaved changes. Leave anyway?")) {
+      if (window.confirm(optionsRef.current?.message || DEFAULT_MESSAGE)) {
+        optionsRef.current?.onConfirmedLeave?.();
+      } else {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
@@ -41,7 +60,7 @@ export function useDirtyGuard(dirty: boolean) {
 
   const confirmLeave = useCallback((message?: string) => {
     if (dirtyRef.current) {
-      return window.confirm(message || "You have unsaved changes. Leave anyway?");
+      return window.confirm(message || DEFAULT_MESSAGE);
     }
     return true;
   }, []);

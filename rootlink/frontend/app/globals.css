@@ -231,6 +231,61 @@
 /* CSS variable for mobile bar height — used by Footer padding */
 :root { --mobile-bar-h: 64px; }
 
+/* Content UI Editor: scan-line sweep on entering editor mode
+   (components/editor-mode/editor-mode-chrome.tsx) */
+@keyframes editor-scan {
+  0%   { top: 0;     opacity: 1; }
+  100% { top: 100vh; opacity: 0; }
+}
+.animate-editor-scan {
+  position: fixed;
+  animation: editor-scan 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Content UI Editor: editable element affordances (editor mode, super_admin
+   only — components/editor-mode/editable-{text,image,icon}.tsx) */
+.rl-editable-text {
+  cursor: text;
+  border-radius: 4px;
+  outline: 2px dashed transparent;
+  outline-offset: 2px;
+  transition: outline-color 0.15s, background-color 0.15s;
+}
+.rl-editable-text:hover {
+  outline-color: rgba(168, 100, 61, 0.55);
+  background-color: rgba(168, 100, 61, 0.06);
+}
+.rl-editable-text--active {
+  outline: 2px solid #a8643d !important;
+  background-color: rgba(168, 100, 61, 0.08);
+}
+.rl-editable-media {
+  position: relative;
+  cursor: pointer;
+  border-radius: inherit;
+  outline: 2px dashed transparent;
+  outline-offset: 2px;
+  transition: outline-color 0.15s;
+}
+.rl-editable-media:hover {
+  outline-color: rgba(168, 100, 61, 0.55);
+}
+.rl-editable-media:hover .rl-editable-media__badge {
+  opacity: 1;
+}
+.rl-editable-media__badge {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+  background: rgba(9, 9, 11, 0.35);
+  border-radius: inherit;
+}
+
 @keyframes grain-shift {
   0%, 100% { transform: translate(0, 0); }
   10% { transform: translate(-5%, -10%); }

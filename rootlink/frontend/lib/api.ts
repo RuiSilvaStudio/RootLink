@@ -792,6 +792,26 @@ export const api = {
       request<any>(`/api/copy/${encodeURIComponent(key)}?locale=${locale}`, { method: "DELETE" }),
   },
 
+  contentUi: {
+    // Image/icon overrides for the Content UI Editor (site chrome only — see
+    // discovery/mockups/content-ui-editor/briefing-to-build-local.md). Text
+    // overrides reuse `api.copy` above unchanged.
+    get: () =>
+      request<Record<string, { kind: "image" | "icon"; value: any }>>("/api/content-ui"),
+    setImage: (key: string, value: { url: string; alt: string }) =>
+      request<any>(`/api/content-ui/${encodeURIComponent(key)}`, {
+        method: "PUT",
+        body: JSON.stringify({ kind: "image", value }),
+      }),
+    setIcon: (key: string, iconId: string) =>
+      request<any>(`/api/content-ui/${encodeURIComponent(key)}`, {
+        method: "PUT",
+        body: JSON.stringify({ kind: "icon", value: { iconId } }),
+      }),
+    revert: (key: string) =>
+      request<any>(`/api/content-ui/${encodeURIComponent(key)}`, { method: "DELETE" }),
+  },
+
   ratings: {
     rate: (contentId: number, data: { reaction: string; tags?: string[] }) =>
       request<any>(`/api/content/${contentId}/rate`, { method: "POST", body: JSON.stringify(data) }),

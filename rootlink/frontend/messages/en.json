@@ -1263,6 +1263,10 @@
     "error": "Error",
     "success": "Success"
   },
+  "editor": {
+    "leave_confirm": "Unsaved changes. Press Cancel to save them before leaving.",
+    "reset_confirm": "Reset all changes on this page? This cannot be undone."
+  },
   "plants": {
     "title": "Plant Encyclopedia",
     "subtitle": "Explore our botanical database with detailed growing information",

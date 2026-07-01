@@ -151,8 +151,11 @@ Deferred during the content-platform initiative (also tracked in
   `auto_allow/auto_review/auto_block` audit hooks. Its own dedicated task.
 - **Cross-Kind "My Content" dashboard** + engagement counts (likes/views) on **public** cards —
   the latter needs `rating_up`/`view_count` added to the search/feed response schemas. Low value.
-- **Editable-copy inline "click any text to edit" mode** — the `/admin/copy` editor page covers
-  the need for now.
+- ✅ **Editable-copy inline "click any text to edit" mode** — SHIPPED (2026-07-01) as the
+  "Content UI Editor" feature, gated strictly to `super_admin` (no `can_edit_copy` delegation).
+  See `discovery/mockups/content-ui-editor/briefing-to-build-local.md` for the design and
+  `docs/content-platform/IMPLEMENTATION_STATUS.md` for status/known limitations. The `/admin/copy`
+  form editor is unaffected and still works for `can_edit_copy` delegates.
 - **Vimeo lesson poster backfill** — YouTube thumbnails derive client-side; Vimeo needs `poster`
   populated (set via oEmbed on lesson save). Existing Vimeo lessons would need a re-save/backfill.
 - **`email_verified` signal** — self-publish eligibility currently reuses `is_verified` (which

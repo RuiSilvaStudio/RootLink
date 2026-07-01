@@ -141,11 +141,93 @@ See commit `812d372`. `deploy.sh` backed up the prod DB before applying.
 ### Vercel deploy gotcha that bit us (now logged in DEPLOY.md 9a + LESSONS.md)
 The first frontend deploy this session **failed on Vercel** — `useSearchParams()` on `/events` & `/groups` needs a Suspense boundary for Next 14 static export. `tsc`/`lint` don't catch it; only `next build` does, which had been skipped to protect the dev server. Live site silently stayed on the old build. Fixed by reading the query via `window.location.search`; **now always run `next build` before a frontend deploy.**
 
+## Roadmap round 4 — Content UI Editor (2026-07-01)
+
+Shipped the previously-deferred inline "click any text to edit" mode, expanded to also cover
+images and icons. Design doc: `discovery/mockups/content-ui-editor/briefing-to-build-local.md`.
+Reference mockup (button/mode mechanics only): `discovery/mockups/content-ui-editor/index.html`.
+
+- ✅ **Backend:** new `content_ui_overrides` table + `api/content_ui.py` (`GET /api/content-ui`
+  public; `PUT`/`DELETE /api/content-ui/{key}` gated **strictly** to `super_admin`, no
+  `can_edit_copy` delegation — deliberately stricter than the existing `/api/copy` gate). Text
+  overrides reuse `/api/copy` unchanged. Tests: `test_content_ui.py` (6, all passing; 76 total now).
+- ✅ **Frontend:** `EditorModeProvider` (pending-changes-until-save model, per-page "Reset page",
+  `useDirtyGuard` integration for confirm-before-navigate) + `EditorModeChrome` (toggle pill at
+  `bottom-20 right-4` — clears the toast stack and mobile bottom bar) + three wrapper components:
+  `EditableText`, `EditableImage` (reuses `ImageUpload` → `/api/images/upload`, no new storage
+  code), `EditableIcon` (fixed curated registry, `lib/icon-library.ts`, deliberately no free-form
+  SVG/upload to avoid an XSS surface). All render as portals to `document.body` when open as
+  modals — required because several editable slots (e.g. homepage category icons) sit inside
+  `<Link>` elements, and a non-portaled modal's clicks bubble to the anchor's default navigation.
+- ✅ **Phase 1 wiring:** homepage (`app/page.tsx`) hero, section headers/subtitles, CTA buttons →
+  `EditableText`; homepage category icons → `EditableIcon`. **Nav/footer and `EditableImage` are
+  NOT wired to any live page yet** — nav/footer labels sit inside dropdown click-handlers (edit
+  risk not worth it yet) and no static marketing image currently exists in the codebase to attach
+  `EditableImage` to without a page-design change (out of scope per the brief). The component and
+  backend are fully built and Playwright-verified against a live slot regardless.
+- ✅ **Verified live (Playwright, not just unit tests):** super_admin toggles editor mode → edits
+  headline → saves → **persists across a full page reload** → a logged-out visitor and a
+  plain "user"-role account never see the toggle at all → icon swap end-to-end → "Reset page"
+  discards pending edits without a backend call → navigating away with pending edits triggers the
+  existing `useDirtyGuard` confirm dialog.
+- **Known limitation:** per-element "revert to default" for *text* (as opposed to the page-level
+  Reset) re-derives the static default by dynamically importing `messages/{locale}.json` inside
+  the provider — correct, but if `messages/*.json` keys are ever restructured, revert for very
+  deeply-nested keys should be re-tested.
+
+### Fix round (2026-07-01, same day) — real bugs found in first-round manual QA
+
+Three real bugs + two UX gaps found by manual testing, all fixed and re-verified with Playwright:
+
+- ✅ **"Leave anyway" didn't actually discard edits.** `useDirtyGuard`'s confirm only gated
+  navigation, nothing cleared the pending-drafts state afterward — so a discarded edit was still
+  sitting in memory and reappeared on navigating back. Fixed by adding an `onConfirmedLeave`
+  callback to `lib/use-dirty-guard.ts` (new optional param, backward-compatible — 8 other existing
+  callers unaffected) that `EditorModeProvider` uses to clear all drafts.
+- ✅ **Save briefly reverted text to the old value.** Images/icons already cached the saved value
+  locally (`committedImages`/`committedIcons`) so they display correctly right after save without
+  needing a refetch; text was missing the equivalent `committedText` cache, so clearing
+  `textDrafts` after save fell back to the *stale* `t()` result (locale-context only fetches
+  `/api/copy` once per locale change, not after every save) until a full refresh re-fetched it.
+  Added `committedText` mirroring the image/icon pattern.
+- ✅ **"Reset page" had no confirmation** — a bulk-discard action with zero warning. Added a native
+  `confirm()` (matches the existing pattern in `admin/config`'s family-delete flow), localized via
+  new `editor.reset_confirm` key.
+- ✅ **Navigation confirm message improved + localized.** Kept the native 2-button browser
+  `confirm()` (a custom 3-button Discard/Save/Cancel dialog is impossible for the hard
+  refresh/tab-close case regardless — browsers force their own fixed-button prompt there, by
+  design, so a custom dialog would only ever cover the in-app-link-click case, inconsistent UX).
+  Instead the message itself now tells the user what to do: `editor.leave_confirm` — PT: "Tens
+  alterações por guardar. Cancela para as guardar antes de sair."; EN: "Unsaved changes. Press
+  Cancel to save them before leaving." New i18n keys in both `messages/en.json`/`pt.json` under a
+  new `editor` namespace.
+- ✅ **Homepage category card copy.** Confirmed via the actual model (`TaxonomyFamily` has
+  `label`/`label_pt`, no `description` field) that the card *name* already has one true owner
+  (`/admin/config`) but the *description* paragraph was a generic template
+  (`t("home.discover_category", {category})`) owned by nothing. Made the description (not the
+  name) editable via `EditableText` with a new `defaultText` prop (falls back to the current
+  generated sentence when no override exists yet — needed because these are per-family generated
+  keys like `home.category.agricultura.description` with no entry in `messages/*.json`).
+- ✅ **`EditableText` had the same "modal-nested-in-`<Link>`" navigation bug as icons/images** (see
+  `docs/LESSONS.md` #16) — clicking to start editing a `<p>`/`<h3>` inside a homepage category card
+  (an `<a>`) would also navigate away. Fixed with `e.preventDefault()` in the click handler, always
+  (not just modals — any click-to-activate inside an anchor needs this).
+- ✅ **Visual redesign.** The original chrome used Tailwind's default `emerald` and default
+  sans-serif font — inconsistent with the platform's actual design system
+  (`tailwind.config.ts`: taupe/brown `primary`, terracotta `rust`, `Fraunces` display font;
+  Button.tsx's shadow/hover-lift treatment). Rebuilt: "Edit page" = the same `primary-600`/`cream`/
+  `font-display` treatment as any other primary CTA on the site (e.g. the homepage's "Pesquisar"
+  button); "Exit editor" (active state) = `rust-600`, signaling a distinct mode without introducing
+  an off-palette color; "Save changes"/"Reset page" now literally render `components/ui/Button.tsx`
+  (`primary`/`danger` variants) instead of hand-rolled buttons; editable-element hover/active
+  outlines switched from emerald to rust to match.
+
 ## Deferred / not yet done
 
 - **Phase 5b-ii:** generalize "My Articles" → cross-Kind "My Content" dashboard; engagement counts on public cards (needs `rating_up`/`view_count` added to the search/feed response shapes — low value, deferred).
 - **Moderation ML service (SHADOW mode):** Detoxify / NudeNet / Falconsai ViT / Whisper — infra-heavy (models + container + Celery), deliberately its own task. Audit `ModerationAction` enum already has `auto_allow/auto_review/auto_block` hooks.
-- **Spec follow-ups:** liability-disclaimer legal sign-off (§6.2); per-Kind retention periods (§8); `is_verified` currently doubles as the "email verified" signal for self-publish eligibility (consider a dedicated `email_verified`); editable-copy inline "click any text to edit" mode (the admin editor page covers the need for now).
+- **Spec follow-ups:** liability-disclaimer legal sign-off (§6.2); per-Kind retention periods (§8); `is_verified` currently doubles as the "email verified" signal for self-publish eligibility (consider a dedicated `email_verified`).
+- **Content UI Editor Phase 2:** wire `EditableText` into nav/footer; wire `EditableImage` into a real static image slot once/if one is introduced; expand `EditableText` coverage namespace-by-namespace beyond the homepage.
 
 ---
 

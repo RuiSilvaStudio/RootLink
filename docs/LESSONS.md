@@ -29,6 +29,66 @@
    covers refresh/close. To guard in-app `<Link>` clicks (e.g. the nav logo), intercept clicks in
    the capture phase (see `lib/use-dirty-guard.ts`).
 
+16. **A modal rendered as a normal React child (not a portal) is still a DOM descendant of
+    whatever it's nested inside** — even though `position: fixed` makes it look full-screen and
+    unrelated. If that ancestor is an `<a>`/`<Link>` (e.g. an editable icon/image slot placed
+    inside a card that links somewhere), clicking any button *inside* the modal bubbles up to the
+    anchor and triggers its default navigation, closing the modal without applying anything.
+    Symptom: a picker/apply button appears to do nothing, or the page silently navigates away.
+    Fix: render the modal via `createPortal(modal, document.body)` so it's outside that DOM
+    subtree entirely — don't just add `stopPropagation`/`preventDefault` to every button inside it
+    (fragile, easy to miss one). (Content UI Editor, 2026-07-01 — `EditableIcon`/`EditableImage`.)
+    **Same class of bug also hits any inline click-to-activate element** (no modal needed) — a
+    click-to-edit `<p>`/`<h3>` nested in an `<a>` still needs `e.preventDefault()` in its own click
+    handler, every time it's clicked (not just the first click that activates it), or it navigates
+    away instead of entering edit mode. (`EditableText`.)
+
+17. **Flipping an element's `contentEditable` to `true` in React does not move browser focus to
+    it.** Focus only transfers automatically to an element that was *already* focusable at the
+    moment of the physical click; React updating the attribute afterward doesn't retroactively
+    focus it. If a click handler sets `contentEditable=true` via state, add a `useEffect` keyed on
+    the editing flag that calls `.focus()` (and places the cursor via `Range`/`Selection` if you
+    want it at the end) once the element re-renders as editable. Also remember hooks must run
+    unconditionally — put this `useEffect` *before* any early `return` that depends on the same
+    state, or you'll hit "Rendered more hooks than during the previous render." (Content UI Editor,
+    2026-07-01 — `EditableText`.)
+
+18. **Never call a state setter (e.g. a toast/`addToast`) from inside another setter's functional
+    updater** (`setMode((m) => { ...; addToast(...); return next; })`). React logs "Cannot update a
+    component while rendering a different component" because the updater runs during render.
+    Compute the next value first, call `setMode(next)`, then call the side-effecting setter
+    afterward, outside the updater. (Content UI Editor, 2026-07-01 — `EditorModeProvider`.)
+
+19. **`/api/auth/login` is rate-limited (5 req/60s, `core/rate_limit.py`).** Scripted/E2E tests that
+    log in repeatedly in a short loop will start getting silently-failed logins (no redirect, no
+    error surfaced) once the limit is hit — this is correct behavior, not a bug, but it's easy to
+    mistake for a broken login flow mid-debugging. Space out repeated test logins or reuse one
+
+20. **A locally-cached "committed" value (state kept in memory after a successful save) must exist
+    for *every* editable field type, not just some of them.** Building the Content UI Editor,
+    images/icons got a `committedImages`/`committedIcons` cache so Save reflects immediately without
+    a refetch — text was left relying on `t()` alone, which is only fetched once per locale change,
+    so Save appeared to silently revert until the next full page refresh. If you add this pattern
+    for some fields, audit that *every* field sharing the same save flow got it too.
+
+21. **Extending a shared hook used by many callers: add an optional second parameter with the same
+    default behavior, never change what existing callers get.** `useDirtyGuard(dirty)` is used in 8+
+    places; adding a confirm-message override + a post-confirm callback for the Content UI Editor
+    was done as `useDirtyGuard(dirty, { message, onConfirmedLeave })` — every other caller still
+    passes just `dirty` and behaves exactly as before. Grep for all existing usages before changing
+    a shared hook's signature.
+
+22. **A native `confirm()`/`beforeunload` dialog cannot have custom buttons, ever, on any modern
+    browser** (this is a deliberate browser security restriction, not a framework limitation) — you
+    get exactly "OK"/"Cancel" with fixed browser-chrome labels for `beforeunload`, and `confirm()`
+    lets you customize the *message* but never the button text or count. A 3-option "Discard / Save
+    / Cancel" flow is only achievable with a custom in-app modal, and only for in-app navigation
+    (link clicks) — a hard refresh/tab-close will always fall back to the browser's own 2-button
+    prompt with no way to offer a "Save" action from within it. Don't promise 3-button UX for the
+    hard-navigation case; word the 2-button dialog's message to guide the user instead (e.g. "Press
+    Cancel to save first").
+    session across assertions.
+
 ## Backend (FastAPI + SQLAlchemy async + SQLite)
 
 5. **Restart the backend after backend changes.** Dev uvicorn runs **without `--reload`**; new

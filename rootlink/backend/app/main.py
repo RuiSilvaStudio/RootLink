@@ -20,6 +20,7 @@ from app.api import (
     comments,
     content,
     content_templates,
+    content_ui,
     copy,
     crawl,
     events,
@@ -444,6 +445,7 @@ app.include_router(content_templates.router)
 app.include_router(self_publish.router)
 app.include_router(account.router)
 app.include_router(copy.router)
+app.include_router(content_ui.router)
 
 # Serve uploaded media files.
 # Register image MIME types explicitly: the slim Docker image's mimetypes DB does
