@@ -56,3 +56,6 @@ docker-compose.override.yml
 graphify-out/
 images/
 rootlink/backend/media/
+
+# --- Discovery / design workspace ---
+discovery/

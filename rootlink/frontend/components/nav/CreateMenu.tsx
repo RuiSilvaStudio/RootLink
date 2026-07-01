@@ -48,14 +48,15 @@ export function CreateMenu() {
 
   return (
     <div ref={ref} className="relative">
+      {/* Circle + button */}
       <button
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="true"
-        className="flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium font-serif transition-colors shadow-sm"
+        title={t("create.button")}
+        className="w-8 h-8 rounded-full bg-primary-500 hover:bg-primary-400 active:scale-95 text-cream flex items-center justify-center shadow-sm shadow-primary-500/40 transition-all duration-150"
       >
-        <Plus className="w-4 h-4" />
-        <span className="hidden sm:inline">{t("create.button")}</span>
+        <Plus className="w-4 h-4" strokeWidth={2.5} />
       </button>
 
       <AnimatePresence>
@@ -65,41 +66,41 @@ export function CreateMenu() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.98 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute right-0 mt-2 w-80 bg-white dark:bg-stone-900 rounded-xl shadow-lg border border-primary-200/40 dark:border-primary-800/40 z-50 overflow-hidden"
+            className="absolute right-0 mt-2 w-[340px] bg-white dark:bg-stone-900 rounded-xl shadow-xl border border-primary-200/40 dark:border-primary-800/40 z-50 overflow-hidden"
           >
-            <div className="px-4 pt-3 pb-1">
-              <p className="font-display font-semibold text-stone-800 dark:text-stone-100">{t("create.heading")}</p>
-              <p className="text-xs text-stone-500 dark:text-stone-400">{t("create.subheading")}</p>
+            {/* Header */}
+            <div className="px-4 pt-4 pb-3 border-b border-stone-100 dark:border-stone-800">
+              <p className="font-display font-semibold text-stone-800 dark:text-stone-100 text-[0.9375rem]">{t("create.heading")}</p>
+              <p className="text-[0.8125rem] text-primary-500 dark:text-primary-400 mt-0.5 leading-snug">{t("create.subheading")}</p>
             </div>
-            <div className="py-1">
-              {ITEMS.map((item) => {
+            {/* 2-col grid */}
+            <div className="p-3 grid grid-cols-2 gap-0.5">
+              {ITEMS.map((item, i) => {
                 const Icon = item.icon;
                 const locked = item.requiresContributor && !isContributor;
+                const isLastOdd = i === ITEMS.length - 1 && ITEMS.length % 2 !== 0;
                 const inner = (
-                  <div className={`flex items-start gap-3 px-4 py-2.5 ${locked ? "opacity-60" : "hover:bg-primary-50/40 dark:hover:bg-primary-900/20"}`}>
-                    <span className={`mt-0.5 grid place-items-center w-8 h-8 rounded-lg shrink-0 ${item.accent ? "bg-rust-100 dark:bg-rust-900/30 text-rust-600 dark:text-rust-300" : "bg-primary-100/70 dark:bg-primary-900/30 text-primary-600 dark:text-primary-300"}`}>
-                      <Icon className="w-4 h-4" />
+                  <div className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-colors ${
+                    locked
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:bg-primary-50/60 dark:hover:bg-primary-900/20"
+                  }`}>
+                    <span className={`grid place-items-center w-7 h-7 rounded-lg shrink-0 ${
+                      item.accent
+                        ? "bg-rust-100 dark:bg-rust-900/30 text-rust-600 dark:text-rust-300"
+                        : "bg-primary-100/70 dark:bg-primary-900/30 text-primary-600 dark:text-primary-300"
+                    }`}>
+                      <Icon className="w-3.5 h-3.5" />
                     </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-stone-800 dark:text-stone-100 flex items-center gap-1.5">
-                        {t(item.labelKey)}
-                        {locked && <Lock className="w-3 h-3 text-stone-400" />}
-                      </p>
-                      <p className="text-xs text-stone-500 dark:text-stone-400 leading-snug">
-                        {locked ? t("create.requires_contributor") : t(item.descKey)}
-                      </p>
-                    </div>
+                    <span className="text-[0.8125rem] font-medium text-stone-700 dark:text-stone-200 flex items-center gap-1">
+                      {t(item.labelKey)}
+                      {locked && <Lock className="w-3 h-3 text-stone-400 shrink-0" />}
+                    </span>
                   </div>
                 );
-                if (locked) {
-                  return <div key={item.href}>{inner}</div>;
-                }
+                if (locked) return <div key={item.href} className={isLastOdd ? "col-span-2" : ""}>{inner}</div>;
                 return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setOpen(false)}
-                  >
+                  <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={isLastOdd ? "col-span-2" : ""}>
                     {inner}
                   </Link>
                 );

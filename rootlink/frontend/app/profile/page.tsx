@@ -95,6 +95,14 @@ function ProfilePage() {
 
   const userId = searchParams.get("id") ? Number(searchParams.get("id")) : null;
 
+  // Open a specific tab via ?tab=settings (etc.)
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && TABS.includes(tabParam as Tab)) {
+      setActiveTab(tabParam as Tab);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token && !userId) {

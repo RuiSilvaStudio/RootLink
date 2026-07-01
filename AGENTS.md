@@ -1,3 +1,10 @@
+## Responses
+- Keep responses concise and to the point - unless the user asks otherwise
+
+## Planning Mode
+- Always ask clarifying questions
+- Never assume design, tech stack or features
+
 ## Lessons learned (read first)
 
 **Before any dev or deploy work, read `docs/LESSONS.md`.** It captures hard-won,
@@ -6,6 +13,16 @@ deploy; never `npm run build` while `next dev` is live; restart the backend afte
 changes; multi-worker lifespan migration races; SQLite/JSON-null pitfalls). When a new
 gotcha bites, add it there in the same change. The content-platform work is documented in
 `docs/content-platform/` (spec `CONTENT_PLATFORM.md`, status `IMPLEMENTATION_STATUS.md`).
+
+## Directory Routing Map
+- `discovery/research/` Technical spikes, third-party API evaluation, and architectural ideas.
+- `discovery/assessment/` Stress test, security audits, and breaking/change impact report.
+- `discovery/mockups/`Schema drafts, JSON payloads, and UI/UX sandbox code.
+- `discovery/business/` Business Models, goals, monetization strategies, and vision documents.
+
+## Guardrails & Safety Rules
+1. **Context Isolation**: When evaluating new ideas, read rootlink/ for context, but dump all thoughts, research, and code drafts into /discovery.
+2. **Idempotency**: Never alter existing database schemas or core business logic in rootlink/ during ideation or research phase.
 
 ## Deployment
 
