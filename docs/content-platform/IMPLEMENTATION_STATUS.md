@@ -222,6 +222,22 @@ Three real bugs + two UX gaps found by manual testing, all fixed and re-verified
   (`primary`/`danger` variants) instead of hand-rolled buttons; editable-element hover/active
   outlines switched from emerald to rust to match.
 
+### 🔴 Deployed 2026-07-02 — production access + a permission bug found along the way
+
+Deployed to production via `./scripts/deploy.sh`. Post-deploy: tried to promote the real production
+admin (`admin@rootlink.app`, role `admin`) to `super_admin` so they could use this feature, and
+**caught a pre-existing bug before applying it** — see `TECH_DEBT.md` §0 (🔴 high priority): 23
+authorization checks across 8 API modules don't treat `super_admin` as a superset of `admin`, so
+promoting a real admin today would cost them cross-user edit/delete on articles, events, courses,
+plants, marketplace listings, feeds, and taxonomy admin.
+
+**Stopgap (in place now):** created a separate, dedicated production account,
+`content-ui-editor@rootlink.app` (role `super_admin`), for using this feature — `admin@rootlink.app`
+was left completely untouched (still `role: admin`, verified). Password shared with the user
+out-of-band (not in any file) — they should rotate it after first login. **This is a stopgap, not
+the fix** — see `TECH_DEBT.md` §0 for the real fix, which should land before anyone tries to
+promote a real admin account again.
+
 ## Deferred / not yet done
 
 - **Phase 5b-ii:** generalize "My Articles" → cross-Kind "My Content" dashboard; engagement counts on public cards (needs `rating_up`/`view_count` added to the search/feed response shapes — low value, deferred).

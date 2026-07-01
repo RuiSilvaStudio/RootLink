@@ -11,6 +11,67 @@
 - ✅ **Phase 6** — Repo root tidied (scripts/ created, one-offs removed).
 - **Vercel build is now 0 warnings / 0 errors.**
 - ⏳ **Phase 5** (Next 15 + ESLint 9 + Next CVEs + backend dependabot) — remaining, dedicated effort.
+- 🔴 **HIGH PRIORITY (next after Content UI Editor round 2):** `super_admin` is not actually a
+  superset of `admin` in ~23 places — see §0 below. Found 2026-07-02 while trying to promote a
+  production user; do NOT promote any `admin` to `super_admin` until this is fixed, or they will
+  lose cross-user edit/delete capability on articles, events, courses, plants, marketplace
+  listings, feeds, and taxonomy admin.
+
+## 0. 🔴 HIGH PRIORITY — `super_admin` is not a strict superset of `admin` (found 2026-07-02)
+
+**The bug:** `docs/content-platform/CONTENT_PLATFORM.md` documents `super_admin > admin >
+moderator > contributor > user` as an explicit invariant — *"super_admin — the only role that can
+edit any content in any state"* (§4.1), with a verb matrix stating super_admin's "edit any" is a
+strict superset of admin's. This is correctly implemented in `app/api/admin.py`'s `require_role()`
+helper (super_admin satisfies every gate, checked first) and a handful of ad-hoc checks
+(`copy.py:24`, `articles.py:282/299/349`, `groups.py`'s `STAFF_ROLES` tuple). **But 23 other
+authorization checks across 8 API modules were written as `role in ("admin", "moderator")` or
+`role != "admin"` and never updated to also include `super_admin`.** Promoting a real admin to
+super_admin today would make them **lose** capabilities they currently have.
+
+**How this was found:** tried to promote `admin@rootlink.app` to `super_admin` (to grant access to
+the new Content UI Editor, see below) and caught it before applying — see chat history
+2026-07-02. Worked around it for now by creating a **separate, dedicated** `super_admin` account
+(`content-ui-editor@rootlink.app`) instead of promoting the real admin account, so zero regression
+risk today. **This is a stopgap, not a fix** — the real admin account still can't safely become
+super_admin, and the underlying inconsistency affects the whole platform, not just this feature.
+
+**Full list of checks that exclude `super_admin` (must all be fixed together, then tested):**
+
+| # | File:Line | Code | Breaks |
+|---|---|---|---|
+| 1 | `articles.py:256` | `current_user.role in ("admin", "moderator")` | draft/in_review preview visibility |
+| 2 | `articles.py:325` | `current_user.role not in ("admin", "moderator")` | publish-any (ownership bypass) |
+| 3 | `articles.py:418` | `current_user.role not in ("admin", "moderator")` | delete-any |
+| 4 | `content.py:200` | `current_user.role in ("admin", "moderator")` | draft/in_review preview visibility |
+| 5 | `events.py:104` | `user.role not in (UserRole.admin, UserRole.moderator)` | update-any |
+| 6 | `events.py:113` | `user.role not in (UserRole.admin, UserRole.moderator)` | delete-any |
+| 7 | `events.py:119` | `user.role in (UserRole.admin, UserRole.moderator)` | draft-view-any |
+| 8 | `events.py:184` | `current_user.role in (UserRole.admin, UserRole.moderator)` | group-only view-any |
+| 9 | `learning.py:35` (`_can_manage`) | `user.role in (UserRole.admin, UserRole.moderator) or user.id == owner_id` | update/delete-any course |
+| 10 | `learning.py:39` (`_staff_only`) | `user.role not in (UserRole.admin, UserRole.moderator, UserRole.contributor)` | staff-only create |
+| 11 | `learning.py:149` | `current_user.role in (UserRole.admin, UserRole.moderator)` | "my courses" staff view |
+| 12 | `learning.py:343` | same pattern | same, 2nd site |
+| 13 | `plants.py:186` | `current_user.role not in ("admin", "moderator", "contributor")` | create |
+| 14 | `plants.py:208` | same | update |
+| 15 | `plants.py:228` | `current_user.role != "admin"` (bare exact-match, worst case) | delete |
+| 16 | `plants.py:244` | `current_user.role not in ("admin", "moderator", "contributor")` | (another action) |
+| 17 | `plants.py:283` | `current_user.role not in ("admin", "moderator")` | crawl-utad-all |
+| 18 | `marketplace.py:182` | `current_user.role.value != "admin"` (bare exact-match) | update-any listing |
+| 19 | `marketplace.py:204` | `current_user.role.value != "admin"` (bare exact-match) | delete-any listing |
+| 20 | `feeds.py:126` | `current_user.role not in ("admin", "moderator")` | view feed status |
+| 21 | `feeds.py:160` | same | refresh feed |
+| 22 | `feeds.py:203` | same | disconnect-any feed |
+| 23 | `taxonomy.py:146` (`_require_admin`) | `user.role.value != "admin"` (bare exact-match), gates 7 endpoints (lines 156,168,191,209,237,258,276) | all taxonomy admin CRUD (`/admin/config`) |
+
+**Recommended fix:** don't patch each site ad hoc. Either (a) add `super_admin` to every list above
+(23 mechanical edits, needs careful per-site review since a couple use `UserRole.admin` enum
+members and others use bare strings — check both), or (b) — likely better — introduce a single
+shared helper (e.g. `is_staff_or_above(user, *, moderator_ok=True, contributor_ok=False)`) that
+always treats `super_admin` as satisfying everything, and migrate all 23 sites to call it, so this
+class of bug can't recur. Needs its own test coverage per Kind (article/event/course/plant/
+marketplace/feed/taxonomy) verifying super_admin passes every one of these gates. Do this **before**
+promoting any real admin account to super_admin.
 
 ## 1. ESLint Warnings — ✅ RESOLVED (Phases 4 & 3a)
 
