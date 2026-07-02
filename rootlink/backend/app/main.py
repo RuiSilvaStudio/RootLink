@@ -30,6 +30,7 @@ from app.api import (
     groups,
     images,
     learning,
+    legal,
     marketplace,
     messages,
     notifications,
@@ -56,6 +57,7 @@ from app.models.taxonomy import (  # noqa: F401
     TaxonomyCategory,
     TaxonomyFamily,
 )
+from app.services.legal_seed import seed_legal_documents
 from app.services.template_seed import seed_content_templates
 
 
@@ -398,6 +400,12 @@ async def lifespan(app: FastAPI):
             await seed_content_templates(session)
     except Exception as e:
         print(f"template seed: {e}")
+    # Seed the 3 legal documents (Privacidade/Termos/Legal) — idempotent, admin-editable
+    try:
+        async with async_session_factory() as session:
+            await seed_legal_documents(session)
+    except Exception as e:
+        print(f"legal document seed: {e}")
     fcntl.flock(_migrate_lock, fcntl.LOCK_UN)
     _migrate_lock.close()
     yield
@@ -446,6 +454,7 @@ app.include_router(self_publish.router)
 app.include_router(account.router)
 app.include_router(copy.router)
 app.include_router(content_ui.router)
+app.include_router(legal.router)
 
 # Serve uploaded media files.
 # Register image MIME types explicitly: the slim Docker image's mimetypes DB does

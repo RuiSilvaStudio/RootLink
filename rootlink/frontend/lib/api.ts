@@ -792,6 +792,34 @@ export const api = {
       request<any>(`/api/copy/${encodeURIComponent(key)}?locale=${locale}`, { method: "DELETE" }),
   },
 
+  legal: {
+    // Public: always the last *published* snapshot. 404 if never published yet
+    // — pages fall back to their bundled static copy (content/legal/*.ts) in
+    // that case, so nothing is ever blank.
+    get: (slug: "privacidade" | "termos" | "legal") =>
+      request<import("@/content/legal/types").ApiLegalDocumentPublic>(`/api/legal/${slug}`),
+  },
+
+  adminLegal: {
+    // super_admin only — draft/publish workflow for the 3 legal documents.
+    list: () => request<import("@/content/legal/types").ApiLegalDocumentAdmin[]>("/api/admin/legal"),
+    get: (slug: string) =>
+      request<import("@/content/legal/types").ApiLegalDocumentAdmin>(`/api/admin/legal/${slug}`),
+    update: (
+      slug: string,
+      body: { title: string; description: string; intro: string[]; sections: import("@/content/legal/types").LegalSection[] }
+    ) =>
+      request<import("@/content/legal/types").ApiLegalDocumentAdmin>(`/api/admin/legal/${slug}`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+      }),
+    publish: (slug: string, body: { version: string; effective_date: string; summary: string }) =>
+      request<import("@/content/legal/types").ApiLegalDocumentAdmin>(`/api/admin/legal/${slug}/publish`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+  },
+
   contentUi: {
     // Image/icon overrides for the Content UI Editor (site chrome only — see
     // discovery/mockups/content-ui-editor/briefing-to-build-local.md). Text

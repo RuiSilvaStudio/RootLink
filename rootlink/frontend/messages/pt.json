@@ -862,6 +862,7 @@
     "broadcast_sent": "Notificação enviada para {count} utilizador(es).",
     "config": "Configuração",
     "site_copy": "Texto do site",
+    "legal_docs": "Documentos legais",
     "config_title": "Configuração da Plataforma",
     "config_description": "Gerir definições da plataforma. As alterações aplicam-se imediatamente em todo o site.",
     "group_categories": "Categorias de Grupos",

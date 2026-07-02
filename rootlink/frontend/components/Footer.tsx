@@ -6,6 +6,14 @@ import { X, ChevronDown } from "lucide-react";
 import { useLocale } from "@/lib/locale-context";
 import { EditableText } from "@/components/editor-mode/editable-text";
 
+/**
+ * The Privacidade/Termos/Legal pages exist and are fully functional
+ * (/privacidade, /termos, /legal) but haven't been reviewed by a lawyer or
+ * officially published yet. Flip this to `true` once they're ready to go
+ * live — that's the only change needed to surface the footer links.
+ */
+const SHOW_LEGAL_LINKS = false;
+
 /* ── Botanical SVG separator ─────────────────────────────── */
 function BotanicalSvg() {
   return (
@@ -322,13 +330,15 @@ export function Footer() {
             <p className="text-xs text-stone-400 dark:text-stone-500 font-serif">
               &copy; {new Date().getFullYear()} RootLink. <EditableText k="nav.all_rights_reserved" as="span" />
             </p>
-            <nav className="flex items-center gap-1.5 text-xs text-stone-400 dark:text-stone-500 font-serif" aria-label="Legal">
-              <Link href="/policies" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Privacy</Link>
-              <span className="text-stone-300 dark:text-stone-700">·</span>
-              <Link href="/policies" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Terms</Link>
-              <span className="text-stone-300 dark:text-stone-700">·</span>
-              <Link href="/policies" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Legal</Link>
-            </nav>
+            {SHOW_LEGAL_LINKS && (
+              <nav className="flex items-center gap-1.5 text-xs text-stone-400 dark:text-stone-500 font-serif" aria-label="Legal">
+                <Link href="/privacidade" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Privacidade</Link>
+                <span className="text-stone-300 dark:text-stone-700">·</span>
+                <Link href="/termos" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Termos</Link>
+                <span className="text-stone-300 dark:text-stone-700">·</span>
+                <Link href="/legal" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Legal</Link>
+              </nav>
+            )}
             <button
               onClick={() => setIndexOpen(true)}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-display text-xs font-semibold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 border border-primary-200/40 dark:border-primary-800/30 hover:bg-primary-100 dark:hover:bg-primary-900/40 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"

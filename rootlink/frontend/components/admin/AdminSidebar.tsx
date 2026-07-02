@@ -22,10 +22,11 @@ import {
   Store,
   Settings,
   Type,
+  Scale,
 } from "lucide-react";
 import { AdminSidebarSection, type AdminSection } from "./AdminSidebarSection";
 
-function getAdminSections(t: (key: string) => string, isAdmin: boolean, canEditCopy: boolean): AdminSection[] {
+function getAdminSections(t: (key: string) => string, isAdmin: boolean, canEditCopy: boolean, isSuperAdmin: boolean): AdminSection[] {
   return [
     {
       labelKey: "admin.section_overview",
@@ -64,6 +65,7 @@ function getAdminSections(t: (key: string) => string, isAdmin: boolean, canEditC
         { href: "/admin/notifications", label: t("admin.broadcast"), icon: Megaphone },
         { href: "/admin/submit", label: t("admin.submit_url"), icon: Globe },
         ...(canEditCopy ? [{ href: "/admin/copy", label: t("admin.site_copy"), icon: Type }] : []),
+        ...(isSuperAdmin ? [{ href: "/admin/legal", label: t("admin.legal_docs"), icon: Scale }] : []),
         ...(isAdmin ? [{ href: "/admin/config", label: t("admin.config"), icon: Settings }] : []),
       ],
     },
@@ -110,8 +112,9 @@ export function AdminSidebar() {
 
   const closeMobile = () => setMobileOpen(false);
   const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+  const isSuperAdmin = user?.role === "super_admin";
   const canEditCopy = user?.role === "super_admin" || user?.can_edit_copy;
-  const sections = getAdminSections(t, isAdmin, canEditCopy);
+  const sections = getAdminSections(t, isAdmin, canEditCopy, isSuperAdmin);
 
   return (
     <>

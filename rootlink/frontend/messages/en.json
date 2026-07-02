@@ -862,6 +862,7 @@
     "broadcast_sent": "Notification sent to {count} user(s).",
     "config": "Configuration",
     "site_copy": "Site copy",
+    "legal_docs": "Legal documents",
     "config_title": "Platform Configuration",
     "config_description": "Manage platform-wide settings. Changes apply immediately across the site.",
     "group_categories": "Group Categories",
