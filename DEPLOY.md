@@ -4,7 +4,7 @@
 > If anything here changes (server, domains, secrets, process, gotchas), UPDATE THIS FILE
 > in the same change. AGENTS.md instructs every agent to keep this current.
 >
-> Last verified working: 2026-06-27
+> Last verified working: 2026-07-02
 
 ---
 
@@ -149,6 +149,18 @@ LIBERAPAY_WEBHOOK_SECRET=            # empty until Liberapay is wired
   (`status`, `archived_at`, `category` made nullable via one-time table rebuild).
   **Verified via a prod-DB-copy dry-run before deploy** (data invariant preserved, both
   workers start clean, alembic no-op).
+- **Legal documents feature (2026-07-02):** new table `legal_documents` (Privacidade/Termos/Legal,
+  draft/publish workflow, super_admin only — see `app/api/legal.py`, `app/services/legal_seed.py`).
+  Seeded idempotently on startup as **unpublished drafts** (`published_snapshot`/`published_at`
+  stay `NULL`, `changelog` starts empty) — `GET /api/legal/{slug}` 404s and the public pages show
+  the "draft, not reviewed" banner until a super_admin explicitly publishes from `/admin/legal`.
+  **Gotcha:** the seed is startup-idempotent (only inserts a row if its `slug` is missing), so if
+  you ever change what "freshly seeded" should look like, editing `legal_seed.py` alone does
+  nothing for rows already in the DB — you must also delete the existing row(s)
+  (`docker compose exec backend python3 -c "..."` against `/app/data/rootlink.db`) and restart the
+  backend to re-trigger the seed. Hit this the same day the feature shipped: the first version of
+  the seed pre-published the initial content, which had to be corrected and the already-seeded
+  prod rows manually cleared.
 
 ### Admin user management
 Use `scripts/reset_admin.py` (see `scripts/README.md`). To run against PROD, exec inside
