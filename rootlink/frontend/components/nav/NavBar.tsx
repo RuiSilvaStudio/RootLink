@@ -17,6 +17,7 @@ import { MobileNav } from "./MobileNav";
 import { MobileBottomBar } from "./MobileBottomBar";
 import { desktopDropdowns } from "./NavConfig";
 import { SafeAvatar } from "./UserAvatar";
+import { EditableText } from "@/components/editor-mode/editable-text";
 
 type NotifTab = "notifications" | "messages" | "activity";
 type MobileSheet = "create" | "notifications" | "profile" | null;
@@ -376,7 +377,7 @@ export function NavBar() {
             {!token && (
               <Link href="/auth/login"
                 className="hidden lg:inline-flex ml-1 px-4 py-1.5 rounded-xl2 bg-primary-600 text-cream text-sm font-display font-semibold hover:bg-primary-500 transition-colors shadow-sm shadow-primary-600/20">
-                {t("nav.sign_in")}
+                <EditableText k="nav.sign_in" as="span" />
               </Link>
             )}
 

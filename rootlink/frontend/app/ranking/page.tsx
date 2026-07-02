@@ -4,10 +4,9 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { useLocale } from "@/lib/locale-context";
+import { EditableText } from "@/components/editor-mode/editable-text";
 
 export default function RankingPage() {
-  const { locale } = useLocale();
   const [info, setInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -41,22 +40,14 @@ export default function RankingPage() {
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-100 dark:bg-primary-900/30 mb-4">
           <BarChart3 className="w-8 h-8 text-primary-600 dark:text-primary-400" />
         </div>
-        <h1 className="text-3xl font-display font-bold text-stone-900 dark:text-stone-100 mb-2">
-          {locale === "pt" ? "Como funciona a classificação" : "How ranking works"}
-        </h1>
-        <p className="text-stone-600 dark:text-stone-400 font-serif">
-          {locale === "pt"
-            ? "Transparência total sobre como o conteúdo é classificado no RootLink."
-            : "Full transparency on how content is ranked on RootLink."}
-        </p>
+        <EditableText k="ranking.hero_title" as="h1" className="text-3xl font-display font-bold text-stone-900 dark:text-stone-100 mb-2" />
+        <EditableText k="ranking.hero_subtitle" as="p" className="text-stone-600 dark:text-stone-400 font-serif" />
       </div>
 
       {info && (
         <div className="space-y-6">
           <div className="p-6 rounded-2xl bg-primary-50 dark:bg-primary-900/20 border border-primary-200/40 dark:border-primary-800/30">
-            <h2 className="text-lg font-display font-semibold text-stone-900 dark:text-stone-100 mb-3">
-              {locale === "pt" ? "Fórmula" : "Formula"}
-            </h2>
+            <EditableText k="ranking.formula" as="h2" className="text-lg font-display font-semibold text-stone-900 dark:text-stone-100 mb-3" />
             <code className="block text-sm text-primary-700 dark:text-primary-400 bg-white dark:bg-stone-900 p-4 rounded-lg overflow-x-auto">
               {info.formula}
             </code>
@@ -84,25 +75,23 @@ export default function RankingPage() {
           </div>
 
           <div className="p-6 rounded-2xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-700">
-            <h2 className="text-lg font-display font-semibold text-stone-900 dark:text-stone-100 mb-4">
-              {locale === "pt" ? "Detalhes" : "Details"}
-            </h2>
+            <EditableText k="ranking.details" as="h2" className="text-lg font-display font-semibold text-stone-900 dark:text-stone-100 mb-4" />
             <ul className="space-y-2 text-sm text-stone-600 dark:text-stone-400 font-serif">
               <li>
-                • <strong>{locale === "pt" ? "Boost:" : "Boost:"}</strong> {info.boost_slots_per_page}{" "}
-                {locale === "pt" ? "resultados boost por página, rotulados como" : "boosted results per page, labeled as"}{" "}
+                • <strong><EditableText k="ranking.boost_label" as="span" /></strong> {info.boost_slots_per_page}{" "}
+                <EditableText k="ranking.boost_text" as="span" />{" "}
                 &ldquo;{info.boost_label}&rdquo;
               </li>
               <li>
-                • <strong>{locale === "pt" ? "Decaimento temporal:" : "Time decay:"}</strong>{" "}
-                {locale === "pt" ? "Meia-vida de" : "Half-life of"} {info.freshness_half_life}
+                • <strong><EditableText k="ranking.time_decay_label" as="span" /></strong>{" "}
+                <EditableText k="ranking.half_life_of" as="span" /> {info.freshness_half_life}
               </li>
               <li>
-                • <strong>{locale === "pt" ? "Método de rating:" : "Rating method:"}</strong>{" "}
+                • <strong><EditableText k="ranking.rating_method_label" as="span" /></strong>{" "}
                 {info.rating_method}
               </li>
               <li>
-                • <strong>{locale === "pt" ? "Sinais de engagement:" : "Engagement signals:"}</strong>{" "}
+                • <strong><EditableText k="ranking.engagement_signals_label" as="span" /></strong>{" "}
                 {info.engagement_signals}
               </li>
             </ul>

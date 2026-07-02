@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { StatCounter } from "@/components/ui/StatCounter";
+import { EditableText } from "@/components/editor-mode/editable-text";
 
 export default function LearningPage() {
   const { t } = useLocale();
@@ -64,9 +65,9 @@ export default function LearningPage() {
             <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center">
               <BookOpen className="w-5 h-5 text-primary-600" />
             </div>
-            <h1 className="text-3xl font-bold text-stone-800 dark:text-stone-100 font-serif">{t("learning.title")}</h1>
+            <EditableText k="learning.title" as="h1" className="text-3xl font-bold text-stone-800 dark:text-stone-100 font-serif" />
           </div>
-          <p className="text-stone-500 mt-1 font-light">{t("learning.subtitle")}</p>
+          <EditableText k="learning.subtitle" as="p" className="text-stone-500 mt-1 font-light" />
         </div>
         <div className="flex gap-2">
           {isStaff && (

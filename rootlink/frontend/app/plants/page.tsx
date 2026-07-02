@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardSkeleton } from "@/components/ui/LoadingSkeleton";
+import { EditableText } from "@/components/editor-mode/editable-text";
 
 const plantTypes = [
   { label: "All", value: "" },
@@ -58,8 +59,8 @@ export default function PlantsPage() {
           <Sprout className="w-5 h-5 text-primary-500" />
         </div>
         <div>
-          <h1 className="text-2xl font-serif font-bold text-stone-800">{t("plants.title") || "Plant Encyclopedia"}</h1>
-          <p className="text-sm text-stone-500 font-light">{t("plants.subtitle") || "Explore our botanical database with detailed growing information"}</p>
+          <EditableText k="plants.title" as="h1" defaultText="Plant Encyclopedia" className="text-2xl font-serif font-bold text-stone-800" />
+          <EditableText k="plants.subtitle" as="p" defaultText="Explore our botanical database with detailed growing information" className="text-sm text-stone-500 font-light" />
         </div>
       </div>
 

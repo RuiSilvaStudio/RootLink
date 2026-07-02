@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardSkeleton } from "@/components/ui/LoadingSkeleton";
+import { EditableText } from "@/components/editor-mode/editable-text";
 
 const ENTITY_TYPES = [
   { value: "", labelKey: "entities.all_types" },
@@ -78,8 +79,8 @@ export default function EntitiesPage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
       <PageHeader
         icon={<Building className="w-5 h-5 text-primary-500" />}
-        title={t("entities.title")}
-        subtitle={t("entities.subtitle")}
+        title={<EditableText k="entities.title" as="span" />}
+        subtitle={<EditableText k="entities.subtitle" as="span" />}
       />
 
       {/* Stats row */}

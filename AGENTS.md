@@ -14,6 +14,14 @@ changes; multi-worker lifespan migration races; SQLite/JSON-null pitfalls). When
 gotcha bites, add it there in the same change. The content-platform work is documented in
 `docs/content-platform/` (spec `CONTENT_PLATFORM.md`, status `IMPLEMENTATION_STATUS.md`).
 
+**The Content UI Editor** (super_admin inline text/image/icon editor) is documented in
+`discovery/mockups/content-ui-editor/briefing-to-build-local.md` (design + per-phase coverage of
+which pages are wired). Coverage is added page by page, not automatically. **Whenever you add a
+new frontend page, or new static marketing/header copy to an existing page, ask the user whether
+it should be wired into the Content UI Editor — never assume either way.** See
+`.opencode/skills/platform-coherence/references/design-patterns.md` → "Content UI Editor" for the
+wiring pattern and pitfalls (click-conflict elements, static-array content).
+
 ## Directory Routing Map
 - `discovery/research/` Technical spikes, third-party API evaluation, and architectural ideas.
 - `discovery/assessment/` Stress test, security audits, and breaking/change impact report.

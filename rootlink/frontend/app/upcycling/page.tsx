@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardSkeleton } from "@/components/ui/LoadingSkeleton";
 import { ImageUpload } from "@/components/ui/ImageUpload";
+import { EditableText } from "@/components/editor-mode/editable-text";
 import { useDirtyGuard } from "@/lib/use-dirty-guard";
 
 const DIFFICULTIES = [
@@ -104,8 +105,8 @@ export default function UpcyclingPage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
       <PageHeader
         icon={<RefreshCw className="w-5 h-5 text-primary-500" />}
-        title={t("waste.upcycling_title")}
-        subtitle={t("waste.upcycling_subtitle")}
+        title={<EditableText k="waste.upcycling_title" as="span" />}
+        subtitle={<EditableText k="waste.upcycling_subtitle" as="span" />}
         action={token && (
           <Button variant="primary" size="sm" onClick={() => setShowForm(!showForm)}>
             <Plus className="w-4 h-4" /> {t("waste.share_project")}

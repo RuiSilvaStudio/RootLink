@@ -9,6 +9,7 @@
  */
 
 import { useEffect, useRef } from "react";
+import { RotateCcw } from "lucide-react";
 import { useLocale } from "@/lib/locale-context";
 import { useEditorMode } from "./editor-mode-provider";
 
@@ -29,7 +30,7 @@ interface EditableTextProps {
 
 export function EditableText({ k, as = "span", className, defaultText }: EditableTextProps) {
   const { t } = useLocale();
-  const { mode, isSuperAdmin, textDrafts, committedText, setTextDraft, activeKey, setActiveKey } = useEditorMode();
+  const { mode, isSuperAdmin, textDrafts, committedText, setTextDraft, activeKey, setActiveKey, revertElement } = useEditorMode();
   const ref = useRef<HTMLElement>(null);
   const translated = t(k);
   // Any non-static key we made up (like a per-family description) will come
@@ -63,6 +64,11 @@ export function EditableText({ k, as = "span", className, defaultText }: Editabl
   }
 
   const Tag = as as any;
+  // Only offer "revert to default" once there's actually a saved override to
+  // revert — mirrors EditableImage/EditableIcon's `canRevert` check — and
+  // never while actively editing (it unmounts on click-to-edit, so it can
+  // never end up as stray markup inside the contentEditable region).
+  const canRevert = !editing && !!committedText[k];
 
   return (
     <Tag
@@ -92,6 +98,25 @@ export function EditableText({ k, as = "span", className, defaultText }: Editabl
       }}
     >
       {value}
+      {canRevert && (
+        <button
+          type="button"
+          className="rl-editable-text__revert"
+          title="Revert to default"
+          aria-label="Revert to default"
+          contentEditable={false}
+          suppressContentEditableWarning
+          onClick={(e: React.MouseEvent) => {
+            // Stop this from bubbling to the Tag's own onClick (which would
+            // otherwise enter edit mode) or to any ancestor <Link>/<a>.
+            e.preventDefault();
+            e.stopPropagation();
+            revertElement(k, "text", defaultText);
+          }}
+        >
+          <RotateCcw className="w-3 h-3" />
+        </button>
+      )}
     </Tag>
   );
 }

@@ -67,13 +67,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     </motion.main>
                   </AnimatePresence>
                 )}
+                {/* Footer lives inside EditorModeProvider (Phase 2) so its text
+                    can use useEditorMode() — moved from outside the provider
+                    tree, see briefing-to-build-local.md "Phase 2". Providers
+                    render no DOM, so this is layout/CSS-safe. */}
+                {!isAdmin && !isAuth && <Footer />}
                 {/* Content UI Editor toggle/save/reset chrome — renders nothing
                     unless the signed-in user is super_admin (briefing-to-build-local.md) */}
                 <EditorModeChrome />
               </EditorModeProvider>
             </ToastProvider>
           </AuthProvider>
-          {!isAdmin && !isAuth && <Footer />}
         </LocaleProvider>
       </body>
     </html>

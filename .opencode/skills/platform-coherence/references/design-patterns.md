@@ -207,6 +207,31 @@ export default function DetailPage({ params }) {
 - Success feedback (toast or redirect)
 - Cancel button returns to previous page
 
+### Content UI Editor (super_admin inline editing)
+RootLink has a WYSIWYG inline text/image/icon editor for `super_admin` only — see
+`discovery/mockups/content-ui-editor/briefing-to-build-local.md` for the full design and
+`frontend/components/editor-mode/` for the components (`EditableText`, `EditableImage`,
+`EditableIcon`). Coverage is added incrementally, page by page — it is **not** automatic just
+because a page uses `t()`.
+
+**Whenever you add a new page, or add new static marketing/header copy to an existing page, ask
+the user whether it should be wired into the Content UI Editor** (do not silently decide either
+way — this mirrors the working method already established for this feature: propose, don't assume).
+If yes:
+- Add real `t()` i18n keys first if the copy is hardcoded/ternary (see the `donate`/`leaderboard`/
+  `ranking` migration in the Phase 3 section of `briefing-to-build-local.md` for the pattern).
+- Wrap headings/paragraphs/labels in `<EditableText k="namespace.key" as="h1" className="..." />`
+  (replaces the tag entirely — do not double-wrap in an extra element).
+- If the same copy renders inside a `.map()` over a static array (e.g. cards, tool lists), carry
+  the i18n **key** in the array item (`nameKey`/`descKey`), not a pre-resolved string, so the wrap
+  applies to the loop generically and new array entries stay editable automatically.
+- **Skip** wrapping any text that lives inside an element with its own state-changing `onClick`
+  (filter chips, tabs, dropdown triggers, accordion headers) — clicking to edit would also fire
+  the click handler. This needs a deliberate UX decision (how does an admin use the control *and*
+  edit its label?), not a quick `stopPropagation` fix — flag it and ask rather than wiring it.
+- `PageHeader`'s `title`/`subtitle`/`description` props accept `ReactNode` (not just `string`)
+  specifically so `EditableText` can be passed straight in.
+
 ## Accessibility
 
 ### Rules

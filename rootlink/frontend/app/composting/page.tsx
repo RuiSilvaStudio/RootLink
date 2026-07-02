@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardSkeleton } from "@/components/ui/LoadingSkeleton";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import { EditableText } from "@/components/editor-mode/editable-text";
 
 const MATERIALS = [
   { value: "food_scraps", labelKey: "waste.material_food_scraps" },
@@ -98,8 +99,8 @@ export default function CompostingPage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
       <PageHeader
         icon={<Leaf className="w-5 h-5 text-green-600" />}
-        title={t("waste.composting_title")}
-        subtitle={t("waste.composting_subtitle")}
+        title={<EditableText k="waste.composting_title" as="span" />}
+        subtitle={<EditableText k="waste.composting_subtitle" as="span" />}
         action={token && (
           <Button variant="primary" size="sm" onClick={() => setShowForm(!showForm)}>
             <Plus className="w-4 h-4" /> {t("waste.create_hub")}

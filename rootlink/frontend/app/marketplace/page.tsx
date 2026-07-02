@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardSkeleton } from "@/components/ui/LoadingSkeleton";
+import { EditableText } from "@/components/editor-mode/editable-text";
 
 const LISTING_TYPES = [
   { value: "", icon: Package, labelKey: "marketplace.all_types" },
@@ -102,8 +103,8 @@ export default function MarketplacePage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
       <PageHeader
         icon={<RefreshCw className="w-5 h-5 text-primary-500" />}
-        title={t("marketplace.title")}
-        subtitle={t("marketplace.subtitle")}
+        title={<EditableText k="marketplace.title" as="span" />}
+        subtitle={<EditableText k="marketplace.subtitle" as="span" />}
         action={token && (
           <Button variant="primary" size="sm" onClick={() => window.location.href = "/marketplace/create"}>
             <Plus className="w-4 h-4" /> {t("marketplace.list_item")}

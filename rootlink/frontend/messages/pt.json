@@ -1287,5 +1287,45 @@
     "notes": "Notas",
     "external_data": "Dados Externos",
     "sources": "Fontes"
+  },
+  "donate": {
+    "hero_title": "Apoie o RootLink",
+    "hero_subtitle": "RootLink é uma ONG. Todas as doações ajudam a manter a plataforma viva e a apoiar a comunidade. 1€ = 1 ponto = 1 dia de visibilidade.",
+    "your_balance": "O seu saldo de pontos",
+    "total_donated": "Total doado",
+    "boost_active_until": "Boost ativo até",
+    "donation_tiers": "Níveis de doação",
+    "points_label": "pontos",
+    "days_of_boost": "dias de boost",
+    "processing": "A processar...",
+    "donate_button": "Doar",
+    "top_donors": "Maiores doadores",
+    "how_it_works": "Como funciona?",
+    "how_it_works_1": "1€ = 1 ponto = 1 dia de visibilidade boost",
+    "how_it_works_2": "O boost aplica-se a todos os seus artigos publicados",
+    "how_it_works_3": "Máximo de 2 resultados boost por página (rotulados 'Apoiado pela comunidade')",
+    "how_it_works_4": "Decaimento de 10% ao mês quando tem artigos publicados",
+    "how_it_works_5": "Sem decaimento se não tiver artigos publicados"
+  },
+  "leaderboard": {
+    "hero_title": "Classificação de Doadores",
+    "hero_subtitle": "Reconhecimento aos membros que mais apoiam a comunidade RootLink.",
+    "empty_state": "Ainda não há doadores. Seja o primeiro!",
+    "donate_now": "Doar agora",
+    "gold": "Ouro",
+    "silver": "Prata",
+    "bronze": "Bronze"
+  },
+  "ranking": {
+    "hero_title": "Como funciona a classificação",
+    "hero_subtitle": "Transparência total sobre como o conteúdo é classificado no RootLink.",
+    "formula": "Fórmula",
+    "details": "Detalhes",
+    "boost_label": "Boost:",
+    "boost_text": "resultados boost por página, rotulados como",
+    "time_decay_label": "Decaimento temporal:",
+    "half_life_of": "Meia-vida de",
+    "rating_method_label": "Método de rating:",
+    "engagement_signals_label": "Sinais de engagement:"
   }
 }

@@ -20,6 +20,7 @@ import { ExternalCard } from "@/components/search/ExternalCard";
 import { MoonWidget } from "@/components/search/MoonWidget";
 import { SunWidget } from "@/components/search/SunWidget";
 import { RelatedGroups } from "@/components/search/RelatedGroups";
+import { EditableText } from "@/components/editor-mode/editable-text";
 import { SpeciesWidget } from "@/components/search/SpeciesWidget";
 
 const PAGE_SIZE = 10;
@@ -525,14 +526,12 @@ function SearchContent() {
       {/* Submit CTA */}
       <div className="max-w-6xl mx-auto mt-12">
         <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800 rounded-2xl p-6 text-center">
-          <p className="text-stone-600 dark:text-stone-300 text-sm mb-3 font-medium">
-            {t("search.cant_find")}
-          </p>
+          <EditableText k="search.cant_find" as="p" className="text-stone-600 dark:text-stone-300 text-sm mb-3 font-medium" />
           <a
             href="/submit"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-primary-500 hover:bg-primary-700 px-5 py-2.5 rounded-xl transition shadow-sm hover:shadow-md"
           >
-            {t("search.submit_link")} <ArrowRight className="w-3.5 h-3.5" />
+            <EditableText k="search.submit_link" as="span" /> <ArrowRight className="w-3.5 h-3.5" />
           </a>
         </div>
       </div>

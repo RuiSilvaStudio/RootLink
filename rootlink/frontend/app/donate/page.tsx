@@ -5,13 +5,12 @@ import { Heart, Trophy, Sparkles, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { useLocale } from "@/lib/locale-context";
 import { useToast } from "@/lib/toast-context";
 import { Button, Badge } from "@/components/ui";
+import { EditableText } from "@/components/editor-mode/editable-text";
 
 export default function DonatePage() {
   const { user, token } = useAuth();
-  const { t, locale } = useLocale();
   const { addToast } = useToast();
   const [tiers, setTiers] = useState<any[]>([]);
   const [balance, setBalance] = useState<any>(null);
@@ -73,31 +72,21 @@ export default function DonatePage() {
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-100 dark:bg-primary-900/30 mb-6">
           <Heart className="w-8 h-8 text-primary-600 dark:text-primary-400" />
         </div>
-        <h1 className="text-4xl font-display font-bold text-stone-900 dark:text-stone-100 mb-3">
-          {locale === "pt" ? "Apoie o RootLink" : "Support RootLink"}
-        </h1>
-        <p className="text-lg text-stone-600 dark:text-stone-400 font-serif max-w-2xl mx-auto">
-          {locale === "pt"
-            ? "RootLink é uma ONG. Todas as doações ajudam a manter a plataforma viva e a apoiar a comunidade. 1€ = 1 ponto = 1 dia de visibilidade."
-            : "RootLink is an NGO. All donations help keep the platform alive and support the community. €1 = 1 point = 1 day of visibility."}
-        </p>
+        <EditableText k="donate.hero_title" as="h1" className="text-4xl font-display font-bold text-stone-900 dark:text-stone-100 mb-3" />
+        <EditableText k="donate.hero_subtitle" as="p" className="text-lg text-stone-600 dark:text-stone-400 font-serif max-w-2xl mx-auto" />
       </div>
 
       {balance && (
         <div className="mb-10 p-6 rounded-2xl bg-primary-50 dark:bg-primary-900/20 border border-primary-200/40 dark:border-primary-800/30">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-stone-500 dark:text-stone-400">
-                {locale === "pt" ? "O seu saldo de pontos" : "Your point balance"}
-              </p>
+              <EditableText k="donate.your_balance" as="p" className="text-sm text-stone-500 dark:text-stone-400" />
               <p className="text-3xl font-display font-bold text-primary-700 dark:text-primary-400">
                 {balance.balance.toFixed(1)}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-stone-500 dark:text-stone-400">
-                {locale === "pt" ? "Total doado" : "Total donated"}
-              </p>
+              <EditableText k="donate.total_donated" as="p" className="text-sm text-stone-500 dark:text-stone-400" />
               <p className="text-xl font-display font-semibold text-stone-700 dark:text-stone-300">
                 €{balance.total_donated.toFixed(0)}
               </p>
@@ -107,7 +96,7 @@ export default function DonatePage() {
             <div className="mt-4 pt-4 border-t border-primary-200/40 dark:border-primary-800/30">
               <Badge variant="amber">
                 <Sparkles size={12} className="mr-1" />
-                {locale === "pt" ? "Boost ativo até" : "Boost active until"}{" "}
+                <EditableText k="donate.boost_active_until" as="span" />{" "}
                 {new Date(balance.boost_expires_at).toLocaleDateString()}
               </Badge>
             </div>
@@ -115,9 +104,7 @@ export default function DonatePage() {
         </div>
       )}
 
-      <h2 className="text-2xl font-display font-bold text-stone-900 dark:text-stone-100 mb-6">
-        {locale === "pt" ? "Níveis de doação" : "Donation tiers"}
-      </h2>
+      <EditableText k="donate.donation_tiers" as="h2" className="text-2xl font-display font-bold text-stone-900 dark:text-stone-100 mb-6" />
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
         {tiers.map((tier) => (
@@ -137,8 +124,8 @@ export default function DonatePage() {
               {tier.description}
             </p>
             <div className="text-xs text-stone-500 dark:text-stone-500 mb-4">
-              {tier.points} {locale === "pt" ? "pontos" : "points"} = {tier.points}{" "}
-              {locale === "pt" ? "dias de boost" : "days of boost"}
+              {tier.points} <EditableText k="donate.points_label" as="span" /> = {tier.points}{" "}
+              <EditableText k="donate.days_of_boost" as="span" />
             </div>
             <Button
               variant="primary"
@@ -148,8 +135,8 @@ export default function DonatePage() {
               className="w-full"
             >
               {donating === tier.euros
-                ? locale === "pt" ? "A processar..." : "Processing..."
-                : locale === "pt" ? "Doar" : "Donate"}
+                ? <EditableText k="donate.processing" as="span" />
+                : <EditableText k="donate.donate_button" as="span" />}
             </Button>
           </div>
         ))}
@@ -159,7 +146,7 @@ export default function DonatePage() {
         <div>
           <h2 className="text-2xl font-display font-bold text-stone-900 dark:text-stone-100 mb-6 flex items-center gap-2">
             <Trophy className="w-6 h-6 text-amber-500" />
-            {locale === "pt" ? "Maiores doadores" : "Top donors"}
+            <EditableText k="donate.top_donors" as="span" />
           </h2>
           <div className="space-y-2">
             {leaderboard.map((entry, i) => (
@@ -192,15 +179,13 @@ export default function DonatePage() {
       )}
 
       <div className="mt-12 p-6 rounded-2xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-700">
-        <h3 className="text-lg font-display font-semibold text-stone-900 dark:text-stone-100 mb-3">
-          {locale === "pt" ? "Como funciona?" : "How does it work?"}
-        </h3>
+        <EditableText k="donate.how_it_works" as="h3" className="text-lg font-display font-semibold text-stone-900 dark:text-stone-100 mb-3" />
         <ul className="space-y-2 text-sm text-stone-600 dark:text-stone-400 font-serif">
-          <li>• {locale === "pt" ? "1€ = 1 ponto = 1 dia de visibilidade boost" : "€1 = 1 point = 1 day of boosted visibility"}</li>
-          <li>• {locale === "pt" ? "O boost aplica-se a todos os seus artigos publicados" : "Boost applies to all your published articles"}</li>
-          <li>• {locale === "pt" ? "Máximo de 2 resultados boost por página (rotulados 'Apoiado pela comunidade')" : "Max 2 boosted results per page (labeled 'Community Supported')"}</li>
-          <li>• {locale === "pt" ? "Decaimento de 10% ao mês quando tem artigos publicados" : "10% monthly decay when you have published articles"}</li>
-          <li>• {locale === "pt" ? "Sem decaimento se não tiver artigos publicados" : "No decay if you have no published articles"}</li>
+          <li>• <EditableText k="donate.how_it_works_1" as="span" /></li>
+          <li>• <EditableText k="donate.how_it_works_2" as="span" /></li>
+          <li>• <EditableText k="donate.how_it_works_3" as="span" /></li>
+          <li>• <EditableText k="donate.how_it_works_4" as="span" /></li>
+          <li>• <EditableText k="donate.how_it_works_5" as="span" /></li>
         </ul>
       </div>
     </div>

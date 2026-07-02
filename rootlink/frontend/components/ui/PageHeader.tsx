@@ -4,9 +4,13 @@ import { Badge } from "./Badge";
 type Props = {
   icon?: ReactNode;
   badge?: string;
-  title: string;
-  description?: string;
-  subtitle?: string;
+  // string -> ReactNode: purely additive (a string is a valid ReactNode), so
+  // every existing `title={t("x")}` call site keeps working unchanged. Lets
+  // pages pass `<EditableText k="x" as="span" />` here for the Content UI
+  // Editor without a separate wrapper element (see app/*/page.tsx Phase 3).
+  title: ReactNode;
+  description?: ReactNode;
+  subtitle?: ReactNode;
   action?: ReactNode;
   children?: ReactNode;
   className?: string;

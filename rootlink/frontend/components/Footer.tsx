@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { X, ChevronDown } from "lucide-react";
 import { useLocale } from "@/lib/locale-context";
+import { EditableText } from "@/components/editor-mode/editable-text";
 
 /* ── Botanical SVG separator ─────────────────────────────── */
 function BotanicalSvg() {
@@ -232,18 +233,22 @@ export function Footer() {
                 <span className="font-display text-lg font-semibold text-primary-700 dark:text-primary-300">RootLink</span>
               </Link>
 
-              <p className="text-sm text-stone-500 dark:text-stone-400 leading-relaxed max-w-xs">
-                {t("nav.footer_description")}
-              </p>
+              <EditableText
+                k="nav.footer_description"
+                as="p"
+                className="text-sm text-stone-500 dark:text-stone-400 leading-relaxed max-w-xs"
+              />
 
               {/* OSS badge */}
               <div className="inline-flex items-center gap-1.5 mt-4 mb-4 px-3 py-1.5 rounded-full bg-primary-50 dark:bg-primary-900/20 border border-primary-200/40 dark:border-primary-800/30" aria-label={t("nav.open_source_community")}>
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary-600 dark:text-primary-400" aria-hidden="true">
                   <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
                 </svg>
-                <span className="font-display text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-primary-600 dark:text-primary-400">
-                  {t("nav.open_source_community")}
-                </span>
+                <EditableText
+                  k="nav.open_source_community"
+                  as="span"
+                  className="font-display text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-primary-600 dark:text-primary-400"
+                />
               </div>
 
               {/* Social links */}
@@ -272,19 +277,19 @@ export function Footer() {
             {/* ── Column 2: Resources ──────────────────────── */}
             <FooterCol heading={t("nav.resources")}>
               {[
-                { href: "/submit",   label: t("nav.add_knowledge") },
-                { href: "/articles", label: t("nav.articles") },
-                { href: "/learning", label: t("nav.learning") },
-                { href: "/tools",    label: t("nav.tools") },
-              ].map(({ href, label }) => (
+                { href: "/submit",   key: "nav.add_knowledge" },
+                { href: "/articles", key: "nav.articles" },
+                { href: "/learning", key: "nav.learning" },
+                { href: "/tools",    key: "nav.tools" },
+              ].map(({ href, key }) => (
                 <Link key={href} href={href}
                   className="block text-[0.9375rem] text-stone-600 dark:text-stone-400 py-[0.4375rem] leading-snug hover:text-primary-700 dark:hover:text-primary-300 transition-colors font-serif">
-                  {label}
+                  <EditableText k={key} as="span" />
                 </Link>
               ))}
               <a href="https://github.com/RuiSilvaStudio/RootLink" target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-[0.9375rem] text-stone-600 dark:text-stone-400 py-[0.4375rem] hover:text-primary-700 dark:hover:text-primary-300 transition-colors font-serif">
-                {t("nav.source_code")}
+                <EditableText k="nav.source_code" as="span" />
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
                 </svg>
@@ -294,14 +299,14 @@ export function Footer() {
             {/* ── Column 3: Community ──────────────────────── */}
             <FooterCol heading={t("nav.community")}>
               {[
-                { href: "/leaderboard", label: t("nav.leaderboard") },
-                { href: "/donate",      label: t("nav.support_us") },
-                { href: "/groups",      label: t("nav.groups") },
-                { href: "/network",     label: t("nav.network") },
-              ].map(({ href, label }) => (
+                { href: "/leaderboard", key: "nav.leaderboard" },
+                { href: "/donate",      key: "nav.support_us" },
+                { href: "/groups",      key: "nav.groups" },
+                { href: "/network",     key: "nav.network" },
+              ].map(({ href, key }) => (
                 <Link key={href} href={href}
                   className="block text-[0.9375rem] text-stone-600 dark:text-stone-400 py-[0.4375rem] leading-snug hover:text-primary-700 dark:hover:text-primary-300 transition-colors font-serif">
-                  {label}
+                  <EditableText k={key} as="span" />
                 </Link>
               ))}
             </FooterCol>
@@ -315,7 +320,7 @@ export function Footer() {
         <div className="border-t border-primary-200/15 dark:border-primary-800/15" style={{ background: "rgba(0,0,0,0.025)" }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-6 pb-[calc(1.5rem+var(--mobile-bar-h,64px))] sm:pb-6 flex flex-col sm:flex-row justify-between items-center gap-3">
             <p className="text-xs text-stone-400 dark:text-stone-500 font-serif">
-              &copy; {new Date().getFullYear()} RootLink. {t("nav.all_rights_reserved")}
+              &copy; {new Date().getFullYear()} RootLink. <EditableText k="nav.all_rights_reserved" as="span" />
             </p>
             <nav className="flex items-center gap-1.5 text-xs text-stone-400 dark:text-stone-500 font-serif" aria-label="Legal">
               <Link href="/policies" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Privacy</Link>

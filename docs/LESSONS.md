@@ -78,6 +78,28 @@
     passes just `dirty` and behaves exactly as before. Grep for all existing usages before changing
     a shared hook's signature.
 
+23. **`committedText` (Content UI Editor) was only ever populated from local session actions
+    (save/revert), never fetched from the server** — unlike `committedImages`/`committedIcons`,
+    which `fetchOverrides()` populates from `GET /api/content-ui` on entering editor mode. This
+    was invisible during Phase 1 (homepage-only, tested mostly within one unsaved session) but
+    broke Phase 2's per-element text "revert to default" affordance: after a real page reload,
+    `committedText` was empty again even though the override still existed server-side (`t()`
+    itself showed the saved value fine — that part *is* fetched via the normal copy/locale
+    pipeline — but the *local* cache used to decide "does a revert option exist" wasn't). Fixed by
+    also fetching `api.copy.get(locale)` inside `fetchOverrides()`, same pattern as images/icons.
+    Caught by an end-to-end Playwright check that specifically reloaded the page between save and
+    revert, rather than testing everything within one continuous session — do this for any
+    "revert/undo" feature, not just Add/Save. (Content UI Editor Phase 2, 2026-07-02.)
+
+24. **This repo runs behind sandboxed port-forwarding where `localhost:3000` may not be the actual
+    Next.js dev server.** `ss -ltnp` can show a process bound to `0.0.0.0:3000` with no owning PID
+    visible, while the real `next-server` process is listening on a different port entirely (seen:
+    3001) — hitting the "obvious" port returns a plausible-looking 200 OK from a *completely
+    unrelated* service (seen: an "Open WebUI" instance), which is a silent trap for
+    curl/Playwright-based verification (wrong content, no error, easy to misdiagnose as an app bug).
+    Always confirm with `ss -ltnp | grep node` (or match the actual `next-server`/`uvicorn` PID)
+    before trusting `localhost:<default-port>` in this environment.
+
 22. **A native `confirm()`/`beforeunload` dialog cannot have custom buttons, ever, on any modern
     browser** (this is a deliberate browser security restriction, not a framework limitation) — you
     get exactly "OK"/"Cancel" with fixed browser-chrome labels for `beforeunload`, and `confirm()`
@@ -128,6 +150,21 @@
 12. **Background long-running servers:** launch with `setsid nohup … > log 2>&1 < /dev/null &`,
     then poll a log/health endpoint in a *separate* command — the launching command otherwise hangs
     on the child's fds until the tool times out.
+
+25. **A full `/graphify` rebuild resets every community label to a placeholder** ("Community 0",
+    "Community 1", ...) — the pipeline's Step 4 (`.opencode/skills/graphify/SKILL.md`) unconditionally
+    writes `labels = {cid: 'Community ' + str(cid) ...}`, and only Step 5 (the calling agent naming
+    each community from its node contents) overwrites them with real names before
+    `graphify-out/.graphify_labels.json` is finalized. If Step 5 is skipped or the session ends
+    early, the placeholders silently persist into `graph.json`, `GRAPH_REPORT.md`, and
+    `graph.html`'s sidebar/legend. The bare CLI `graphify update .` (what `DEPLOY.md` tells you to
+    run after code changes) does **not** have this problem — it remaps new clusters onto old ones
+    by node overlap and keeps whatever names already exist in `.graphify_labels.json`. Fix if it
+    happens: read every community's node list out of `graphify-out/graph.json` (group nodes by the
+    `community` field), write a 2-5 word semantic label per community into
+    `graphify-out/.graphify_labels.json`, then re-run `graphify export html` and regenerate
+    `graph.json`/`GRAPH_REPORT.md` via `graphify.export.to_json(..., community_labels=labels)` and
+    `graphify.report.generate(...)` so all three outputs agree (2026-07-02).
 
 ## Process / working style (what worked)
 

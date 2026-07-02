@@ -245,6 +245,7 @@
 /* Content UI Editor: editable element affordances (editor mode, super_admin
    only — components/editor-mode/editable-{text,image,icon}.tsx) */
 .rl-editable-text {
+  position: relative;
   cursor: text;
   border-radius: 4px;
   outline: 2px dashed transparent;
@@ -258,6 +259,30 @@
 .rl-editable-text--active {
   outline: 2px solid #a8643d !important;
   background-color: rgba(168, 100, 61, 0.08);
+}
+/* Per-element "revert to default" — only rendered when a committed override
+   exists for the key (see editable-text.tsx); mirrors .rl-editable-media__badge's
+   hover-reveal treatment for a consistent affordance across text/image/icon. */
+.rl-editable-text__revert {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: rgba(9, 9, 11, 0.75);
+  color: #f8f6f2;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.rl-editable-text:hover .rl-editable-text__revert {
+  opacity: 1;
+  pointer-events: auto;
 }
 .rl-editable-media {
   position: relative;

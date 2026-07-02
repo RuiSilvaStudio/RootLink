@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardSkeleton } from "@/components/ui/LoadingSkeleton";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import { EditableText } from "@/components/editor-mode/editable-text";
 
 export default function NetworkPage() {
   const { t } = useLocale();
@@ -108,8 +109,8 @@ export default function NetworkPage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
       <PageHeader
         icon={<Users className="w-5 h-5 text-primary-500" />}
-        title={t("network.title")}
-        subtitle={t("network.subtitle")}
+        title={<EditableText k="network.title" as="span" />}
+        subtitle={<EditableText k="network.subtitle" as="span" />}
       />
 
       {!token && (

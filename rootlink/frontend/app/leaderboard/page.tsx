@@ -4,11 +4,10 @@ import { useEffect, useState } from "react";
 import { Trophy, ArrowLeft, Heart } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { useLocale } from "@/lib/locale-context";
 import { Button } from "@/components/ui";
+import { EditableText } from "@/components/editor-mode/editable-text";
 
 export default function LeaderboardPage() {
-  const { locale } = useLocale();
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,24 +41,16 @@ export default function LeaderboardPage() {
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-900/30 mb-4">
           <Trophy className="w-8 h-8 text-amber-600 dark:text-amber-400" />
         </div>
-        <h1 className="text-3xl font-display font-bold text-stone-900 dark:text-stone-100 mb-2">
-          {locale === "pt" ? "Classificação de Doadores" : "Donor Leaderboard"}
-        </h1>
-        <p className="text-stone-600 dark:text-stone-400 font-serif">
-          {locale === "pt"
-            ? "Reconhecimento aos membros que mais apoiam a comunidade RootLink."
-            : "Recognizing members who most support the RootLink community."}
-        </p>
+        <EditableText k="leaderboard.hero_title" as="h1" className="text-3xl font-display font-bold text-stone-900 dark:text-stone-100 mb-2" />
+        <EditableText k="leaderboard.hero_subtitle" as="p" className="text-stone-600 dark:text-stone-400 font-serif" />
       </div>
 
       {leaderboard.length === 0 ? (
         <div className="text-center py-12">
           <Heart className="w-12 h-12 text-stone-300 dark:text-stone-600 mx-auto mb-4" />
-          <p className="text-stone-500 dark:text-stone-400 font-serif">
-            {locale === "pt" ? "Ainda não há doadores. Seja o primeiro!" : "No donors yet. Be the first!"}
-          </p>
+          <EditableText k="leaderboard.empty_state" as="p" className="text-stone-500 dark:text-stone-400 font-serif" />
           <Link href="/donate" className="mt-4 inline-block">
-            <Button variant="primary">{locale === "pt" ? "Doar agora" : "Donate now"}</Button>
+            <Button variant="primary"><EditableText k="leaderboard.donate_now" as="span" /></Button>
           </Link>
         </div>
       ) : (
@@ -105,10 +96,10 @@ export default function LeaderboardPage() {
                   {i < 3 && (
                     <p className="text-xs text-stone-400 dark:text-stone-500">
                       {i === 0
-                        ? locale === "pt" ? "Ouro" : "Gold"
+                        ? <EditableText k="leaderboard.gold" as="span" />
                         : i === 1
-                        ? locale === "pt" ? "Prata" : "Silver"
-                        : locale === "pt" ? "Bronze" : "Bronze"}
+                        ? <EditableText k="leaderboard.silver" as="span" />
+                        : <EditableText k="leaderboard.bronze" as="span" />}
                     </p>
                   )}
                 </div>

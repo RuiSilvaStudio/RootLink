@@ -15,6 +15,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardSkeleton } from "@/components/ui/LoadingSkeleton";
 import { ImageUpload } from "@/components/ui/ImageUpload";
+import { EditableText } from "@/components/editor-mode/editable-text";
 
 export default function GroupsPage() {
   const [groups, setGroups] = useState<any[]>([]);
@@ -86,8 +87,8 @@ export default function GroupsPage() {
     <div className="max-w-5xl mx-auto px-4 sm:px-8 py-12">
       <PageHeader
         icon={<Users className="w-5 h-5 text-primary-500" />}
-        title={t("groups.title")}
-        subtitle={t("groups.subtitle")}
+        title={<EditableText k="groups.title" as="span" />}
+        subtitle={<EditableText k="groups.subtitle" as="span" />}
         action={
           <Button variant="primary" size="sm" onClick={() => setShowForm(!showForm)}>
             <Plus className="w-4 h-4" /> {t("groups.new_group")}
@@ -103,8 +104,8 @@ export default function GroupsPage() {
               <MessageCircle className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-stone-800 dark:text-stone-100 text-sm">{t("groups.hero_discuss") || "Discuss & Share"}</h3>
-              <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-light leading-relaxed">{t("groups.hero_discuss_desc") || "Exchange tips, ask questions, and share your projects with like-minded people."}</p>
+              <EditableText k="groups.hero_discuss" as="h3" defaultText="Discuss & Share" className="font-semibold text-stone-800 dark:text-stone-100 text-sm" />
+              <EditableText k="groups.hero_discuss_desc" as="p" defaultText="Exchange tips, ask questions, and share your projects with like-minded people." className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-light leading-relaxed" />
             </div>
           </div>
           <div className="flex items-start gap-3">
@@ -112,8 +113,8 @@ export default function GroupsPage() {
               <Calendar className="w-5 h-5 text-earth-600 dark:text-earth-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-stone-800 dark:text-stone-100 text-sm">{t("groups.hero_events") || "Group Events"}</h3>
-              <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-light leading-relaxed">{t("groups.hero_events_desc") || "Organise workshops, meetups, and gatherings for your community."}</p>
+              <EditableText k="groups.hero_events" as="h3" defaultText="Group Events" className="font-semibold text-stone-800 dark:text-stone-100 text-sm" />
+              <EditableText k="groups.hero_events_desc" as="p" defaultText="Organise workshops, meetups, and gatherings for your community." className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-light leading-relaxed" />
             </div>
           </div>
           <div className="flex items-start gap-3">
@@ -121,8 +122,8 @@ export default function GroupsPage() {
               <Users className="w-5 h-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-stone-800 dark:text-stone-100 text-sm">{t("groups.hero_network") || "Grow Together"}</h3>
-              <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-light leading-relaxed">{t("groups.hero_network_desc") || "Connect with fellow gardeners, woodworkers, and homesteaders in your region."}</p>
+              <EditableText k="groups.hero_network" as="h3" defaultText="Grow Together" className="font-semibold text-stone-800 dark:text-stone-100 text-sm" />
+              <EditableText k="groups.hero_network_desc" as="p" defaultText="Connect with fellow gardeners, woodworkers, and homesteaders in your region." className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-light leading-relaxed" />
             </div>
           </div>
         </div>

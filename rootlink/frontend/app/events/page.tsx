@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ImageUpload } from "@/components/ui/ImageUpload";
+import { EditableText } from "@/components/editor-mode/editable-text";
 
 const VISIBILITY_OPTIONS = [
   { value: "all", labelKey: "vis_all" },
@@ -145,8 +146,8 @@ export default function EventsPage() {
     <div className="max-w-5xl mx-auto px-4 sm:px-8 py-12">
       <PageHeader
         icon={<Calendar className="w-5 h-5 text-primary-500" />}
-        title={t("events.title")}
-        subtitle={t("events.subtitle")}
+        title={<EditableText k="events.title" as="span" />}
+        subtitle={<EditableText k="events.subtitle" as="span" />}
         action={token && (
           <Button variant="primary" size="sm" onClick={() => setShowForm(!showForm)}>
             <Plus className="w-4 h-4" /> {t("events.new_event")}

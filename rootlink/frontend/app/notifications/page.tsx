@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ListSkeleton } from "@/components/ui/LoadingSkeleton";
+import { EditableText } from "@/components/editor-mode/editable-text";
 
 export default function NotificationsPage() {
   const { t } = useLocale();
@@ -34,7 +35,7 @@ export default function NotificationsPage() {
     <div className="max-w-2xl mx-auto px-4 sm:px-8 py-12">
       <PageHeader
         icon={<Bell className="w-5 h-5 text-primary-500" />}
-        title={t("notifications.title")}
+        title={<EditableText k="notifications.title" as="span" />}
         action={
           notifs.length > 0 ? (
             <Button variant="secondary" size="sm" onClick={markAllRead}>

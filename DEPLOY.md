@@ -272,7 +272,13 @@ done
 
 - **DEPLOY.md:** Any change to server, domains, secrets, process, or a new gotcha → edit
   this file in the same commit.
-- **Graphify:** After code changes run `graphify update .` to refresh the knowledge graph.
+- **Graphify:** After code changes run `graphify update .` (bare CLI, code-only, no LLM) to
+  refresh the knowledge graph. This is safe — it preserves existing community names in
+  `graphify-out/.graphify_labels.json` (remaps by node overlap), only new communities get a
+  placeholder. **Never** run a full `/graphify` rebuild (the skill pipeline) without immediately
+  completing its Step 5 (semantic community labeling) — that step unconditionally resets every
+  community to a placeholder name ("Community 0", "Community 1", ...) and only Step 5 restores
+  real names. Skipping it silently leaves the whole graph mislabeled. See `docs/LESSONS.md` #25.
 
 ## Future improvements
 - [x] Automated deploy script (`scripts/deploy.sh`)

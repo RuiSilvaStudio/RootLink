@@ -5,6 +5,7 @@ import { ArrowLeft, Leaf } from "lucide-react";
 import { useLocale } from "@/lib/locale-context";
 import { SubmitForm } from "@/components/SubmitForm";
 import { Button } from "@/components/ui/Button";
+import { EditableText } from "@/components/editor-mode/editable-text";
 
 export default function SubmitPage() {
   const { t } = useLocale();
@@ -41,8 +42,8 @@ export default function SubmitPage() {
           <Leaf className="w-5 h-5 text-primary-500" />
         </div>
         <div>
-          <h1 className="text-2xl font-serif font-bold text-stone-800">{t("submit.title")}</h1>
-          <p className="text-sm text-stone-500 font-light">{t("submit.subtitle")}</p>
+          <EditableText k="submit.title" as="h1" className="text-2xl font-serif font-bold text-stone-800" />
+          <EditableText k="submit.subtitle" as="p" className="text-sm text-stone-500 font-light" />
         </div>
       </div>
       <div className="mt-8">

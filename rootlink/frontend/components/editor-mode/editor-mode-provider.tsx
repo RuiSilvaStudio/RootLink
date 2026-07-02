@@ -125,7 +125,16 @@ export function EditorModeProvider({ children }: { children: ReactNode }) {
     if (fetchedOverrides.current) return;
     fetchedOverrides.current = true;
     try {
-      const overrides = await api.contentUi.get();
+      const [overrides, textOverrides] = await Promise.all([
+        api.contentUi.get(),
+        // Text overrides are already merged into t()'s own cache (so visitors
+        // see saved copy without this), but committedText also drives
+        // EditableText's per-element "revert to default" affordance — that
+        // needs its own fetch on entering editor mode, same as images/icons,
+        // otherwise it only reflects the current session's own edits and
+        // goes stale (shows no revert option) after any page reload.
+        api.copy.get(locale),
+      ]);
       const images: Record<string, ImageValue> = {};
       const icons: Record<string, string> = {};
       for (const [key, entry] of Object.entries(overrides)) {
@@ -134,10 +143,11 @@ export function EditorModeProvider({ children }: { children: ReactNode }) {
       }
       setCommittedImages(images);
       setCommittedIcons(icons);
+      setCommittedText((prev) => ({ ...textOverrides, ...prev }));
     } catch {
       // Non-fatal — editable elements just fall back to their defaults.
     }
-  }, []);
+  }, [locale]);
 
   const toggleMode = useCallback(() => {
     if (!isSuperAdmin) return;

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ListSkeleton } from "@/components/ui/LoadingSkeleton";
+import { EditableText } from "@/components/editor-mode/editable-text";
 
 const typeIcons: Record<string, any> = {
   content: FileText,
@@ -100,8 +101,8 @@ export default function FeedPage() {
     <div className="max-w-3xl mx-auto px-4 sm:px-8 py-12">
       <PageHeader
         icon={<Rss className="w-5 h-5 text-primary-500" />}
-        title={t("feed.title")}
-        subtitle={t("feed.subtitle")}
+        title={<EditableText k="feed.title" as="span" />}
+        subtitle={<EditableText k="feed.subtitle" as="span" />}
       />
 
       {loading ? (

@@ -101,3 +101,19 @@
 - [ ] **Frontend UI:** Update search results display
 - [ ] **Filters:** Add category/filter for new entity type
 - [ ] **Trending:** Add to trending searches if applicable
+
+## Add New Frontend Page / New Static Marketing Copy
+
+- [ ] **i18n:** Use real `t()` keys, never hardcoded/`locale === "pt" ? ... : ...` ternaries
+- [ ] **Content UI Editor:** Ask the user whether this page's headings/intro copy should be wired
+      to `EditableText` (super_admin inline editor) — do not assume yes or no. See
+      `references/design-patterns.md` → "Content UI Editor" and
+      `discovery/mockups/content-ui-editor/briefing-to-build-local.md` for the pattern and the
+      current per-page coverage (updated after every phase).
+- [ ] **Click-conflict check:** If wiring text, confirm it isn't inside an element with its own
+      state-changing `onClick` (filter/tab/dropdown/accordion) — if it is, flag it and ask instead
+      of wiring it silently.
+- [ ] **Static array content:** If the copy comes from a `.map()` over a hardcoded array (cards,
+      lists), carry the i18n key in the array item, not a pre-resolved string, so new entries stay
+      editable automatically.
+- [ ] **Graphify:** Run `graphify update .` after changes

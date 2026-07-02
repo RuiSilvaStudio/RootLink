@@ -1287,5 +1287,45 @@
     "notes": "Notes",
     "external_data": "External Data",
     "sources": "Sources"
+  },
+  "donate": {
+    "hero_title": "Support RootLink",
+    "hero_subtitle": "RootLink is an NGO. All donations help keep the platform alive and support the community. €1 = 1 point = 1 day of visibility.",
+    "your_balance": "Your point balance",
+    "total_donated": "Total donated",
+    "boost_active_until": "Boost active until",
+    "donation_tiers": "Donation tiers",
+    "points_label": "points",
+    "days_of_boost": "days of boost",
+    "processing": "Processing...",
+    "donate_button": "Donate",
+    "top_donors": "Top donors",
+    "how_it_works": "How does it work?",
+    "how_it_works_1": "€1 = 1 point = 1 day of boosted visibility",
+    "how_it_works_2": "Boost applies to all your published articles",
+    "how_it_works_3": "Max 2 boosted results per page (labeled 'Community Supported')",
+    "how_it_works_4": "10% monthly decay when you have published articles",
+    "how_it_works_5": "No decay if you have no published articles"
+  },
+  "leaderboard": {
+    "hero_title": "Donor Leaderboard",
+    "hero_subtitle": "Recognizing members who most support the RootLink community.",
+    "empty_state": "No donors yet. Be the first!",
+    "donate_now": "Donate now",
+    "gold": "Gold",
+    "silver": "Silver",
+    "bronze": "Bronze"
+  },
+  "ranking": {
+    "hero_title": "How ranking works",
+    "hero_subtitle": "Full transparency on how content is ranked on RootLink.",
+    "formula": "Formula",
+    "details": "Details",
+    "boost_label": "Boost:",
+    "boost_text": "boosted results per page, labeled as",
+    "time_decay_label": "Time decay:",
+    "half_life_of": "Half-life of",
+    "rating_method_label": "Rating method:",
+    "engagement_signals_label": "Engagement signals:"
   }
 }
