@@ -1,3 +1,5 @@
+import datetime
+
 from sqlalchemy import JSON, DateTime, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -32,7 +34,7 @@ class LegalDocument(TimestampMixin, Base):
 
     # Published state — a frozen snapshot of the fields above at last publish.
     published_snapshot: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-    published_at: Mapped[str | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    published_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     changelog: Mapped[list] = mapped_column(JSON, default=list)  # list[{date, version, summary}]
     updated_by: Mapped[int | None] = mapped_column(Integer, nullable=True)

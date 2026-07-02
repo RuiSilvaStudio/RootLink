@@ -7,13 +7,16 @@ offline fallback now that the DB is the source of truth — see
 re-running this on every startup never clobbers edits made through the admin
 panel.
 
-Seeded as already "published" (draft == published_snapshot) so the pages that
-were already live before this admin UI existed keep showing the exact same
-text — nothing regresses. The next edit + Publish from `/admin/legal` moves
-the version forward from there.
+Seeded as an unpublished draft — `published_snapshot`/`published_at` stay
+None and `changelog` starts empty. These documents haven't actually gone
+through a real review + Publish yet, so `/api/legal/{slug}` correctly 404s
+until a super_admin explicitly hits "Publish" in `/admin/legal` (at which
+point the frontend's fallback-to-static-copy + "draft, not reviewed" banner
+stop applying, because real published content now exists). This mirrors the
+site's behavior before this admin UI existed — the pages were never actually
+live/linked (footer links are still hidden behind `SHOW_LEGAL_LINKS`) — so
+there's nothing to regress by seeding them as drafts rather than pre-publishing.
 """
-
-from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -427,14 +430,6 @@ async def seed_legal_documents(db: AsyncSession) -> None:
         existing = await db.scalar(select(LegalDocument).where(LegalDocument.slug == slug))
         if existing:
             continue
-        snapshot = {
-            "title": data["title"],
-            "description": data["description"],
-            "intro": data["intro"],
-            "sections": data["sections"],
-            "version": data["version"],
-            "effective_date": data["effective_date"],
-        }
         db.add(LegalDocument(
             slug=slug,
             title=data["title"],
@@ -443,8 +438,8 @@ async def seed_legal_documents(db: AsyncSession) -> None:
             sections=data["sections"],
             version=data["version"],
             effective_date=data["effective_date"],
-            published_snapshot=snapshot,
-            published_at=datetime.now(UTC),
-            changelog=data["changelog"],
+            published_snapshot=None,
+            published_at=None,
+            changelog=[],
         ))
     await db.commit()
