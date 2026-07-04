@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.security import create_access_token, get_current_user, hash_password, verify_password
+from app.core.security import get_current_user, hash_password, issue_token_for_user, verify_password
 from app.models.user import User
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserResponse, UserUpdate
 
@@ -21,7 +21,10 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
         name=body.name,
         password_hash=hash_password(body.password),
         account_type=body.account_type,
-        entity_type=body.entity_type,
+        # External API field stays `entity_type` (schemas/auth.py) — internal
+        # model attribute is `organization_kind` post-rename, see
+        # docs/roles-permissions/phase0-decisions.md (f).
+        organization_kind=body.entity_type,
         registration_number=body.registration_number,
         services=body.services,
         service_area=body.service_area,
@@ -32,7 +35,7 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await db.refresh(user)
 
-    token = create_access_token({"sub": str(user.id)})
+    token = await issue_token_for_user(db, user)
     return TokenResponse(access_token=token)
 
 
@@ -42,11 +45,13 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     user = result.scalar_one_or_none()
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password")
-    # Enforcement ladder (CONTENT_PLATFORM.md §4.4): banned accounts cannot log in.
+    # Enforcement ladder (originally CONTENT_PLATFORM.md §4.4; superseded by
+    # docs/roles-permissions/ROLES_PERMISSIONS.md §4's 4-rung ladder — ban is
+    # still the top rung in both): banned accounts cannot log in.
     if user.is_banned:
         raise HTTPException(status_code=403, detail="Account banned")
 
-    token = create_access_token({"sub": str(user.id)})
+    token = await issue_token_for_user(db, user)
     return TokenResponse(access_token=token)
 
 

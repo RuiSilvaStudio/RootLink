@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
-import { api } from "./api";
+import { api, SESSION_INVALID_EVENT } from "./api";
 
 interface AuthContextType {
   user: any | null;
@@ -53,6 +53,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("token");
     setToken(null);
     setUser(null);
+    // Force a full hard navigation, not a client-side router.push. This is
+    // deliberate: a soft SPA navigation leaves every other already-mounted
+    // component's local state (e.g. an admin page that fetched data into
+    // its own useState before logout) sitting in memory untouched — only a
+    // real page load guarantees nothing already-rendered can keep showing
+    // stale, no-longer-authorized data. See docs/roles-permissions/ for the
+    // bug this closes (logging out didn't clear a currently-open admin page).
+    window.location.href = "/";
   }, []);
 
   const refresh = useCallback(async () => {
@@ -72,6 +80,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }
   }, [fetchUser]);
+
+  // Any authenticated request anywhere in the app that comes back 401 means
+  // our session is no longer valid (logged out in another tab, expired, or
+  // revoked/banned/suspended/restricted mid-session — see
+  // docs/roles-permissions/ROLES_PERMISSIONS.md §1/§4). Force the same
+  // hard, full-page logout as clicking "Log out" — this is what actually
+  // makes force-logout/ban/suspend real-time from the user's point of view,
+  // instead of only affecting the *next* page load.
+  useEffect(() => {
+    const handleSessionInvalid = () => logout();
+    window.addEventListener(SESSION_INVALID_EVENT, handleSessionInvalid);
+    return () => window.removeEventListener(SESSION_INVALID_EVENT, handleSessionInvalid);
+  }, [logout]);
 
   return (
     <AuthContext.Provider value={{ user, token, loading, setAuth, logout, refresh }}>

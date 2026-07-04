@@ -4,6 +4,8 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.permissions import rank_at_least
+from app.core.permissions_registry import Rank
 from app.core.security import get_current_user
 from app.models.content import Content
 from app.models.event import Event
@@ -143,7 +145,9 @@ async def get_categories_by_family(family_value: str, db: AsyncSession = Depends
 # ── Admin CRUD ─────────────────────────────────────────────────────────
 
 def _require_admin(user: User = Depends(get_current_user)) -> User:
-    if user.role.value != "admin":
+    # TECH_DEBT.md §0 (was missing super_admin; was also a bare exact-match
+    # on the string "admin", gating 7 endpoints below) — Phase 3 cutover.
+    if not rank_at_least(user, Rank.admin):
         raise HTTPException(status_code=403, detail="Admin only")
     return user
 

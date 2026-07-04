@@ -3,6 +3,8 @@ from sqlalchemy import delete, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.permissions import rank_at_least
+from app.core.permissions_registry import Rank
 from app.core.security import get_current_user, get_optional_user
 from app.models.group import Group, GroupMember, GroupStatus, MemberRole
 from app.models.user import User
@@ -11,12 +13,18 @@ from app.services.default_cover import default_cover_for
 
 router = APIRouter(prefix="/api/groups", tags=["groups"])
 
-STAFF_ROLES = ("super_admin", "admin", "moderator")
+def _is_staff(user: User) -> bool:
+    # Was a bare `("super_admin", "admin", "moderator")` tuple check — already
+    # correct before this change (TECH_DEBT.md §0 names it as one of the few
+    # pre-existing correct sites). Migrated onto `rank_at_least` for
+    # consistency with the 23 sites that weren't correct, not because it was
+    # broken.
+    return rank_at_least(user, Rank.moderator)
 
 
 async def _can_manage_group(db: AsyncSession, group: Group, user: User) -> bool:
     """Group creator, a group admin/moderator, or platform staff may manage it."""
-    if group.created_by == user.id or user.role in STAFF_ROLES:
+    if group.created_by == user.id or _is_staff(user):
         return True
     membership = await db.scalar(
         select(GroupMember).where(GroupMember.group_id == group.id, GroupMember.user_id == user.id)
@@ -98,7 +106,7 @@ async def get_group(
     if not group:
         raise HTTPException(status_code=404, detail="Group not found")
     # Archived groups are hidden from everyone except platform staff.
-    if group.status == GroupStatus.archived and not (current_user and current_user.role in STAFF_ROLES):
+    if group.status == GroupStatus.archived and not (current_user and _is_staff(current_user)):
         raise HTTPException(status_code=404, detail="Group not found")
     return group
 

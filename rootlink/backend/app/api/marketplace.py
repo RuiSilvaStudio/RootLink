@@ -6,6 +6,8 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.permissions import rank_at_least
+from app.core.permissions_registry import Rank
 from app.core.security import get_current_user
 from app.models.marketplace import Listing, ListingOrder, SellerStripeAccount
 from app.models.user import User
@@ -179,7 +181,9 @@ async def update_listing(
     listing = result.scalar_one_or_none()
     if not listing:
         raise HTTPException(status_code=404, detail="Listing not found")
-    if listing.seller_id != current_user.id and current_user.role.value != "admin":
+    # TECH_DEBT.md §0 (was missing super_admin; was also a bare exact-match
+    # on the string "admin") — Phase 3 cutover.
+    if listing.seller_id != current_user.id and not rank_at_least(current_user, Rank.admin):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     for key, val in body.model_dump(exclude_unset=True).items():
@@ -201,7 +205,9 @@ async def delete_listing(
     listing = result.scalar_one_or_none()
     if not listing:
         raise HTTPException(status_code=404, detail="Listing not found")
-    if listing.seller_id != current_user.id and current_user.role.value != "admin":
+    # TECH_DEBT.md §0 (was missing super_admin; was also a bare exact-match
+    # on the string "admin") — Phase 3 cutover.
+    if listing.seller_id != current_user.id and not rank_at_least(current_user, Rank.admin):
         raise HTTPException(status_code=403, detail="Not authorized")
     listing.status = "removed"
     await db.commit()

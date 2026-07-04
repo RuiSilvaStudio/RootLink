@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Library, Plus, Edit } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
+import { usePermission } from "@/lib/use-permission";
 
 export default function LearningPathsPage() {
   const { t } = useLocale();
@@ -21,7 +22,17 @@ export default function LearningPathsPage() {
     api.learning.paths.list().then(setPaths).finally(() => setLoading(false));
   }, []);
 
-  const isStaff = user && (user.role === "admin" || user.role === "moderator" || user.role === "contributor");
+  // Phase 3 (frontend half): wired onto the shared permissions registry.
+  // Reuses the "course.*" action keys (not a distinct "learning_path.*" one)
+  // deliberately — the backend's own `_staff_only`/`_can_manage` helpers
+  // (app/api/learning.py) gate course AND path creation/management with the
+  // exact same thresholds (identical functions, identical floors), even
+  // though docs/roles-permissions/ROLES_PERMISSIONS.md §8 classifies learning paths as a separate,
+  // platform-wide action with a different shape. Using a path-specific
+  // registry key here would silently diverge from what the backend actually
+  // enforces today — see permissions_registry.py's own "course.*" entries.
+  const { can } = usePermission();
+  const isStaff = user && can("course.create_edit_archive_own");
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -47,7 +58,10 @@ export default function LearningPathsPage() {
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {paths.map((path) => {
-            const canEditPath = user && (user.role === "admin" || user.role === "moderator" || path.created_by === user?.id);
+            // Phase 3 (frontend half): reuses "course.manage_any" — see the
+            // isStaff comment above for why (backend treats courses/paths
+            // identically today).
+            const canEditPath = user && (can("course.manage_any") || path.created_by === user?.id);
             return (
               <Link key={path.id} href={`/learning/paths/${path.id}`} className="bg-white dark:bg-stone-900 p-6 rounded-xl border border-stone-200 dark:border-stone-700 hover:shadow-md transition group">
                 <div className="flex items-start justify-between">

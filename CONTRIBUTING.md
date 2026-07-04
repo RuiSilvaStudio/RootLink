@@ -80,6 +80,8 @@ This project is governed by the [Contributor Covenant](CODE_OF_CONDUCT.md). By p
 
 When in doubt, look at the existing code in the same area for style cues.
 
+**Working on roles/permissions?** See [`docs/roles-permissions/contributor-guide.md`](docs/roles-permissions/contributor-guide.md) — it covers the approved, **implemented** design (`docs/roles-permissions/ROLES_PERMISSIONS.md`) and how to propose changes to it.
+
 ## Translation (i18n)
 
 RootLink defaults to Portuguese and falls back to English.

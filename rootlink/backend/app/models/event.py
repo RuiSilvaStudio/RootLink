@@ -130,6 +130,23 @@ class EventSponsor(TimestampMixin, Base):
     agreement_status: Mapped[str] = mapped_column(String(50), default="none")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     visible_to_attendees: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Phase 4 (docs/roles-permissions/ROLES_PERMISSIONS.md §3 "Cross-entity ban cascade"). Nullable — most
+    # sponsor rows today are free-text (no linked platform entity at all);
+    # only set when the sponsor is itself a real `organization`/`partners`/
+    # `suppliers` entity on this platform. This FK didn't exist before this
+    # phase — surfaced while checking what "an entity's footprint on another
+    # entity's content" actually looks like in the current schema (per the
+    # session briefing's own instruction to verify this, not assume it), see
+    # docs/roles-permissions/phase0-decisions.md addendum.
+    contributing_entity_id: Mapped[int | None] = mapped_column(
+        ForeignKey("entities.id"), nullable=True
+    )
+    # Set (not null) while hidden by an entity ban/dissolution cascade.
+    # Deliberately a separate overlay from `is_active`/`visible_to_attendees`
+    # above (which stay admin-controlled and untouched by the cascade) — a
+    # public listing must check *both* independently, and reversal is a
+    # plain "set this back to NULL" with no snapshot/restore ambiguity.
+    cascade_hidden_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class EventVendor(TimestampMixin, Base):
@@ -149,6 +166,11 @@ class EventVendor(TimestampMixin, Base):
     contract_url: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     agreement_status: Mapped[str] = mapped_column(String(50), default="none")
     visible_to_attendees: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Phase 4 — same shape/reasoning as EventSponsor's two new fields above.
+    contributing_entity_id: Mapped[int | None] = mapped_column(
+        ForeignKey("entities.id"), nullable=True
+    )
+    cascade_hidden_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class EventDonation(TimestampMixin, Base):

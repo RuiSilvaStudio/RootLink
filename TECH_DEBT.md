@@ -11,13 +11,43 @@
 - ✅ **Phase 6** — Repo root tidied (scripts/ created, one-offs removed).
 - **Vercel build is now 0 warnings / 0 errors.**
 - ⏳ **Phase 5** (Next 15 + ESLint 9 + Next CVEs + backend dependabot) — remaining, dedicated effort.
-- 🔴 **HIGH PRIORITY (next after Content UI Editor round 2):** `super_admin` is not actually a
-  superset of `admin` in ~23 places — see §0 below. Found 2026-07-02 while trying to promote a
-  production user; do NOT promote any `admin` to `super_admin` until this is fixed, or they will
-  lose cross-user edit/delete capability on articles, events, courses, plants, marketplace
-  listings, feeds, and taxonomy admin.
+- ✅ **§0 RESOLVED (2026-07-03)** — `super_admin`-not-a-superset-of-`admin` bug closed via the
+  roles/permissions redesign's Phase 3 backend endpoint cutover. See §0 below for the closure
+  details; it's safe to promote a real `admin` to `super_admin` now.
 
-## 0. 🔴 HIGH PRIORITY — `super_admin` is not a strict superset of `admin` (found 2026-07-02)
+## 0. ✅ RESOLVED (2026-07-03) — `super_admin` is not a strict superset of `admin` (found 2026-07-02)
+
+> **Resolution:** Closed as part of the roles/permissions redesign's Phase 3 backend endpoint
+> cutover (`docs/roles-permissions/roadmap.md` Phase 3 — backend half only; the frontend
+> `isStaff`/`isAdmin`/`isSuperAdmin` mirror of this same bug, `docs/roles-permissions/user-logic-review.md` §9, was
+> closed too, in the same Phase 3 — see `docs/roles-permissions/IMPLEMENTATION_STATUS.md`'s Phase 3
+> entry). All 23 sites below, plus `admin.py`'s `require_role` factory,
+> `groups.py`'s `STAFF_ROLES`/`_can_manage_group`, were migrated to call a single shared helper,
+> `rank_at_least` (`app/core/permissions.py`), built on `app/core/entity_resolution.py`'s
+> `resolve_entity_and_rank` — so `super_admin` (resolved rank 5) structurally passes every floor
+> `admin` (rank 4) does, everywhere, by construction rather than by remembering to list one more
+> string per site. `comments.py` needed no change: its only endpoint is self-service
+> (delete-your-own); the actual comment-moderation delete lives in `admin.py`
+> (`/api/admin/comments/{id}`), already covered by the `require_role`/`rank_at_least` fix.
+>
+> Deliberately did **not** route these 23 sites through the new `can()`/permissions-registry
+> helper directly (built the same session, `app/core/permissions_registry.py`) — several of these
+> sites' historical rank floors don't match `docs/roles-permissions/ROLES_PERMISSIONS.md`'s redesigned per-action floors for the
+> closest-named registry action (e.g. plants creation here allows `contributor`+, while
+> `docs/roles-permissions/ROLES_PERMISSIONS.md` §7's "Create/edit plants" row starts at `moderator`); adopting the registry's
+> floor at those sites would have silently changed *who* is allowed, not just closed this named bug
+> — a real product decision for a later phase, out of scope for this fix.
+>
+> Closure proof: `tests/test_tech_debt_0_super_admin_closure.py` — both a unit-level check (every
+> rank floor used across the cutover sites, `super_admin` passes each one `admin` does, for both
+> already-migrated and never-migrated/freshly-registered user shapes) and integration-level checks
+> hitting 3 real endpoints (`articles.py` delete-any, `events.py` update-any, `plants.py` delete —
+> the exact worst-case bare `role != "admin"` site) with a real super_admin acting on content it
+> doesn't own. Also spot-checked live against the running dev server using the actual seed
+> `e2e-editor-test@example.com` account (migrated to `entity_kind=platform`/`rank=5` by the
+> roles/permissions Phase 1 data migration).
+>
+> The original finding is kept below for the historical record.
 
 **The bug:** `docs/content-platform/CONTENT_PLATFORM.md` documents `super_admin > admin >
 moderator > contributor > user` as an explicit invariant — *"super_admin — the only role that can

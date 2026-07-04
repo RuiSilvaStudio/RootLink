@@ -123,7 +123,8 @@ export default function EventDetailPage() {
 
   const eventId = Number(params.id);
   const isOwner = userId === event?.created_by;
-  const isAdmin = userRole === "admin" || userRole === "moderator";
+  // TECH_DEBT.md §0 / user-logic-review.md §9 (was missing super_admin).
+  const isAdmin = userRole === "admin" || userRole === "moderator" || userRole === "super_admin";
 
   const loadEvent = useCallback(async () => {
     try {

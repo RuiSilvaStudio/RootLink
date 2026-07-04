@@ -6,10 +6,16 @@ import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
 import { Badge } from "@/components/ui/Badge";
 
-const ROLES = ["user", "contributor", "moderator", "admin"];
+// NOTE: `super_admin` was added to `UserRole` after this page was written and
+// wasn't wired in here — a `<select value={u.role}>` with no matching
+// `<option>` silently displays the *first* option instead of the real value,
+// so a super_admin's row rendered as "user" here even though their actual
+// role/access was correct. Fixed 2026-07-04 (see docs/roles-permissions/).
+const ROLES = ["user", "contributor", "moderator", "admin", "super_admin"];
 const ACCOUNT_TYPES = ["", "individual", "organization", "practitioner"];
 
-const roleBadgeVariant = (role: string): "sage" | "earth" | "blue" | "green" | "stone" => {
+const roleBadgeVariant = (role: string): "sage" | "earth" | "blue" | "green" | "stone" | "amber" => {
+  if (role === "super_admin") return "amber";
   if (role === "admin") return "green";
   if (role === "moderator") return "blue";
   if (role === "contributor") return "earth";

@@ -5,6 +5,8 @@ from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.entity_resolution import ROLE_RANK
+from app.core.permissions import rank_at_least
 from app.core.security import get_current_user, hash_password
 from app.models.comment import Comment
 from app.models.content import Content, ContentStatus, SearchQueryLog, VerificationStatus
@@ -19,7 +21,7 @@ from app.schemas.comment import CommentResponse
 from app.schemas.content import ContentResponse
 from app.schemas.event import SponsorUpdate, VendorUpdate
 from app.schemas.group import GroupResponse
-from app.schemas.moderation import BanRequest, SelfPublishGrant, SuspendRequest
+from app.schemas.moderation import BanRequest, RestrictRequest, SelfPublishGrant, SuspendRequest
 from app.schemas.setting import SettingResponse, SettingUpdate
 from app.services.audit import log_moderation
 from app.services.trust import self_publish_eligibility
@@ -28,11 +30,19 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 
 def require_role(allowed_roles: list[UserRole]):
+    """Every call site here passes a contiguous "this role and everything
+    above it" list (e.g. `[admin, moderator]`, never a gap like
+    `[moderator]` alone without `admin`) — so the gate is really "resolved
+    rank >= the lowest rank named," which is exactly `rank_at_least`
+    (Phase 3 cutover, TECH_DEBT.md §0). This was already correct before
+    this change (`super_admin` checked first, unconditionally) — migrated
+    onto the shared helper for consistency with the other 23 sites, not
+    because it was broken.
+    """
+    floor = min(ROLE_RANK[r.value] for r in allowed_roles)
+
     def _require_role(current_user: User = Depends(get_current_user)):
-        # super_admin sits above admin and satisfies every role gate (§4.1).
-        if current_user.role == UserRole.super_admin:
-            return current_user
-        if current_user.role not in allowed_roles:
+        if not rank_at_least(current_user, floor):
             raise HTTPException(status_code=403, detail="Not enough permissions")
         return current_user
     return _require_role
@@ -172,7 +182,11 @@ async def unverify_user(
     return {"ok": True, "is_verified": False}
 
 
-# ── Trust & enforcement ladder (CONTENT_PLATFORM.md §3, §4.4) ──
+# ── Trust (CONTENT_PLATFORM.md §3, still the live self-publish mechanism —
+# see models/user.py's field comment) & enforcement ladder (originally
+# CONTENT_PLATFORM.md §4.4; the ladder itself — including this file's
+# restrict/lift-restriction endpoints below — is now specified by
+# docs/roles-permissions/ROLES_PERMISSIONS.md §4) ──
 
 @router.get("/users/{user_id}/self-publish/eligibility")
 async def user_self_publish_eligibility(
@@ -213,6 +227,51 @@ async def set_self_publish(
     await log_moderation(db, action=action, target_type="user", target_id=user_id, actor_id=current_user.id)
     await db.commit()
     return {"ok": True, "can_self_publish": user.can_self_publish}
+
+
+@router.post("/users/{user_id}/restrict")
+async def restrict_user(
+    user_id: int,
+    body: RestrictRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = require_admin,
+):
+    """Phase 4 restriction rung (docs/roles-permissions/ROLES_PERMISSIONS.md §4): full read/write access is
+    retained (unlike suspend/ban) — only future authoring trust is affected.
+    See `User.is_restricted` / `app/api/articles.py`'s trust checks for the
+    enforcement half of this."""
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot restrict yourself")
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.account_status = AccountStatus.restricted
+    await log_moderation(
+        db, action=ModerationAction.restrict, target_type="user", target_id=user_id,
+        actor_id=current_user.id, reason=body.reason,
+    )
+    await db.commit()
+    return {"ok": True, "account_status": "restricted"}
+
+
+@router.post("/users/{user_id}/lift-restriction")
+async def lift_restriction(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = require_admin,
+):
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.account_status != AccountStatus.restricted:
+        raise HTTPException(status_code=400, detail="User is not currently restricted")
+    user.account_status = AccountStatus.active
+    await log_moderation(
+        db, action=ModerationAction.lift_restriction, target_type="user",
+        target_id=user_id, actor_id=current_user.id,
+    )
+    await db.commit()
+    return {"ok": True, "account_status": "active"}
 
 
 @router.post("/users/{user_id}/suspend")
@@ -263,9 +322,21 @@ async def ban_user(
     db: AsyncSession = Depends(get_db),
     current_user: User = require_admin,
 ):
-    """Permanent ban: blocks access AND unpublishes the user's live content
-    (CONTENT_PLATFORM.md §4.4 / §10.14). Author anonymisation is handled by the
-    GDPR erasure path (§8); a moderator may later re-publish high-value items."""
+    """Permanent ban: blocks access, unpublishes the user's live content, AND
+    anonymizes (tombstones) their authorship on it — docs/roles-permissions/ROLES_PERMISSIONS.md §4 / GDPR
+    Art. 17 (Phase 4; previously this endpoint only unpublished, leaving
+    anonymization entirely to the separate self-service erasure path in
+    `app/api/account.py` — but a ban is platform-triggered, not user-
+    triggered, so it needs its own anonymization step, not a dependency on
+    the banned user separately requesting erasure). `created_by -> NULL` is
+    the same tombstone mechanism `account.delete_my_account` already uses,
+    reused here for consistency — it is deliberately NOT restored on unban
+    (anonymization is a one-way GDPR erasure action; reversing the ban only
+    restores account access, never the anonymized authorship — see
+    docs/roles-permissions/ROLES_PERMISSIONS.md §4's "Appeal-only to reverse" note, which is about the ban
+    decision, not about un-anonymizing content). A moderator/admin may still
+    choose to re-publish a high-value item afterwards — it stays
+    anonymized (author shown as a tombstone), never re-attributed."""
     if user_id == current_user.id:
         raise HTTPException(status_code=400, detail="Cannot ban yourself")
     user = await db.get(User, user_id)
@@ -278,7 +349,7 @@ async def ban_user(
     await db.execute(
         update(Content)
         .where(Content.created_by == user_id, Content.status == ContentStatus.published)
-        .values(status=ContentStatus.archived)
+        .values(status=ContentStatus.archived, created_by=None)
     )
     await log_moderation(
         db, action=ModerationAction.ban, target_type="user", target_id=user_id,

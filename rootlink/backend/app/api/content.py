@@ -8,6 +8,8 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.permissions import rank_at_least
+from app.core.permissions_registry import Rank
 from app.core.security import get_current_user, get_optional_user
 from app.models.content import Bookmark, Content, SearchQueryLog
 from app.models.event import Event
@@ -197,7 +199,8 @@ async def get_content(
     # Hide not-yet-live content from the public; author/mods may still preview it.
     if not is_publicly_visible(content):
         is_owner = current_user and content.created_by == current_user.id
-        is_staff = current_user and current_user.role in ("admin", "moderator")
+        # TECH_DEBT.md §0 (was missing super_admin) — Phase 3 cutover.
+        is_staff = current_user and rank_at_least(current_user, Rank.moderator)
         if not (is_owner or is_staff):
             raise HTTPException(status_code=404, detail="Content not found")
     return content

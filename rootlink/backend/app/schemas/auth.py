@@ -57,12 +57,74 @@ class UserResponse(BaseModel):
     feed_priority: int = 3
     boost_active: bool = False
     boost_expires_at: datetime | None = None
-    # Content platform (§3, §4.4, §12) — let the frontend gate UI accordingly
+    # Content platform (§3, §4.4, §12) — let the frontend gate UI accordingly.
+    # `account_status` (§4.4) is now the roles/permissions redesign's shared
+    # ladder field too (docs/roles-permissions/ROLES_PERMISSIONS.md §4, incl.
+    # the `restricted` value); `can_self_publish`/`can_edit_copy` remain
+    # CONTENT_PLATFORM.md §3/§12's original, unchanged flags.
     can_self_publish: bool = False
     can_edit_copy: bool = False
     account_status: str = "active"
+    # Roles/permissions redesign — Phase 5 addition. Previously NOT exposed
+    # here at all (flagged as a real, documented gap in `lib/use-permission.ts`'s
+    # own module docstring, point 1: the frontend had to re-derive an
+    # equivalent entity_kind/rank from role/account_type instead of reading
+    # the real stored values). Exposing them closes that gap — Phase 5's
+    # entity-scoped UI surfaces (team panel, delegation grants) need the
+    # real `entity_id` to scope requests correctly, which no derivation from
+    # role/account_type could ever produce (that FK isn't derivable from
+    # anything else on the user row). Nullable/None-default: safe for any
+    # row not yet touched by the Phase 1 migration or `entity_resolution`'s
+    # live fallback (those still resolve correctly server-side via `can()`;
+    # this field is what the client sees, not what's authoritative).
+    entity_kind: str | None = None
+    rank: int | None = None
+    entity_id: int | None = None
 
     model_config = {"from_attributes": True}
+
+
+class EmailVerificationRequestResponse(BaseModel):
+    """Phase 2 (docs/roles-permissions/phase0-decisions.md (g)).
+
+    No email-sending infrastructure exists in this codebase yet — the raw
+    token is returned directly in the response for local dev/testing. This
+    is explicitly a dev-only stand-in; wire up real email delivery (and stop
+    returning `token` here) before this reaches real users.
+    """
+
+    token: str
+    expires_at: datetime
+
+
+class EmailVerificationConfirmRequest(BaseModel):
+    token: str
+
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetRequestResponse(BaseModel):
+    """Constant-shape response regardless of whether the email exists, to
+    avoid leaking which addresses are registered. `token` is only present
+    (dev-only, see EmailVerificationRequestResponse's docstring) when the
+    account exists — absent otherwise, but the HTTP status/message are the
+    same either way.
+    """
+
+    message: str
+    token: str | None = None
+    expires_at: datetime | None = None
+
+
+class PasswordResetConfirmRequest(BaseModel):
+    token: str
+    new_password: str
+
+
+class SessionsRevokedResponse(BaseModel):
+    revoked_count: int
 
 
 class UserUpdate(BaseModel):

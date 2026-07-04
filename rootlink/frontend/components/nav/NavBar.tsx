@@ -132,7 +132,9 @@ export function NavBar() {
   const [mobileSheet, setMobileSheet] = useState<MobileSheet>(null);
 
   // Auth & roles
-  const isStaff = user && (user.role === "admin" || user.role === "moderator" || user.role === "contributor");
+  // TECH_DEBT.md §0 / user-logic-review.md §8-9 (was missing super_admin —
+  // the frontend mirror of the backend super_admin-not-superset bug).
+  const isStaff = user && (user.role === "admin" || user.role === "moderator" || user.role === "contributor" || user.role === "super_admin");
   const initial = user?.name?.[0]?.toUpperCase() ?? "U";
 
   return (

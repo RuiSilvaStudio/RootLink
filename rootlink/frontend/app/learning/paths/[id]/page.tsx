@@ -7,6 +7,7 @@ import { Library, BookOpen, Plus, Edit, Trash2, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useLocale } from "@/lib/locale-context";
+import { usePermission } from "@/lib/use-permission";
 
 export default function LearningPathDetailPage() {
   const { t } = useLocale();
@@ -46,7 +47,11 @@ export default function LearningPathDetailPage() {
     api.learning.courses.list("").then(setAllCourses);
   }, [showAdd]);
 
-  const canEdit = user && (user.role === "admin" || user.role === "moderator" || path?.created_by === user?.id);
+  // Phase 3 (frontend half): reuses "course.manage_any" (backend treats
+  // courses/paths identically today — see app/learning/paths/page.tsx's
+  // matching comment for the full reasoning).
+  const { can } = usePermission();
+  const canEdit = user && (can("course.manage_any") || path?.created_by === user?.id);
 
   const handleAddCourse = async (e: React.FormEvent) => {
     e.preventDefault();

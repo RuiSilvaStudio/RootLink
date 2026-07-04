@@ -3,6 +3,8 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.permissions import rank_at_least
+from app.core.permissions_registry import Rank
 from app.core.security import get_current_user
 from app.models.learning import (
     Course,
@@ -12,7 +14,7 @@ from app.models.learning import (
     Lesson,
     LessonProgress,
 )
-from app.models.user import User, UserRole
+from app.models.user import User
 from app.schemas.learning import (
     CourseCreate,
     CourseResponse,
@@ -32,11 +34,13 @@ router = APIRouter(prefix="/api/learning", tags=["learning"])
 
 
 def _can_manage(user: User, owner_id: int) -> bool:
-    return user.role in (UserRole.admin, UserRole.moderator) or user.id == owner_id
+    # TECH_DEBT.md §0 (was missing super_admin) — Phase 3 cutover.
+    return rank_at_least(user, Rank.moderator) or user.id == owner_id
 
 
 def _staff_only(user: User):
-    if user.role not in (UserRole.admin, UserRole.moderator, UserRole.contributor):
+    # TECH_DEBT.md §0 (was missing super_admin) — Phase 3 cutover.
+    if not rank_at_least(user, Rank.contributor):
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
 
@@ -146,7 +150,8 @@ async def my_courses(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if current_user.role in (UserRole.admin, UserRole.moderator):
+    # TECH_DEBT.md §0 (was missing super_admin) — Phase 3 cutover.
+    if rank_at_least(current_user, Rank.moderator):
         result = await db.execute(select(Course).order_by(Course.created_at.desc()))
     else:
         result = await db.execute(
@@ -340,7 +345,8 @@ async def my_paths(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if current_user.role in (UserRole.admin, UserRole.moderator):
+    # TECH_DEBT.md §0 (was missing super_admin) — Phase 3 cutover.
+    if rank_at_least(current_user, Rank.moderator):
         result = await db.execute(select(LearningPath).order_by(LearningPath.created_at.desc()))
     else:
         result = await db.execute(

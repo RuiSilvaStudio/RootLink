@@ -6,6 +6,7 @@ import Link from "next/link";
 import { BookOpen, Clock, Plus, Edit } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
+import { usePermission } from "@/lib/use-permission";
 
 function CoursesContent() {
   const { t, locale } = useLocale();
@@ -47,7 +48,13 @@ function CoursesContent() {
     }
   };
 
-  const isStaff = user && (user.role === "admin" || user.role === "moderator" || user.role === "contributor");
+  // Phase 3 (frontend half): wired onto the shared permissions registry via
+  // usePermission — first real consumer, proving the pattern on the exact
+  // bug fixed this session (was missing super_admin). Matches the backend's
+  // actual `_staff_only` floor for course creation (contributor+) exactly —
+  // see app/api/learning.py.
+  const { can } = usePermission();
+  const isStaff = user && can("course.create_edit_archive_own");
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -113,7 +120,10 @@ function CoursesContent() {
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {courses.map((course) => {
-            const canEditCourse = user && (user.role === "admin" || user.role === "moderator" || course.created_by === user?.id);
+            // Phase 3 (frontend half): "manage any course" matches the
+            // backend's `_can_manage` floor (moderator+) exactly, composed
+            // with ownership (never replaced by it) — see app/api/learning.py.
+            const canEditCourse = user && (can("course.manage_any") || course.created_by === user?.id);
             return (
               <Link key={course.id} href={`/learning/courses/${course.id}`} className="bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-700 hover:shadow-md transition overflow-hidden group">
                 {course.image_url && <img src={course.image_url} alt="" loading="lazy" className="w-full h-40 object-cover" />}

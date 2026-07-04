@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/locale-context";
 import { Menu, X, ChevronLeft } from "lucide-react";
 import {
@@ -23,6 +23,7 @@ import {
   Settings,
   Type,
   Scale,
+  ShieldCheck,
 } from "lucide-react";
 import { AdminSidebarSection, type AdminSection } from "./AdminSidebarSection";
 
@@ -48,6 +49,13 @@ function getAdminSections(t: (key: string) => string, isAdmin: boolean, canEditC
       items: [
         { href: "/admin/users", label: t("admin.users"), icon: Users },
         { href: "/admin/groups", label: t("admin.groups"), icon: Users },
+        // Roles/permissions redesign Phase 5 — platform-wide staff surface
+        // (entity self-registration review queue), stays under /admin per
+        // docs/roles-permissions/phase0-decisions.md (i)'s namespace split (entity-scoped surfaces
+        // live under /entity/[entityId]/*, never nested inside /admin/*;
+        // this is the reverse case — a genuinely platform-wide panel, so it
+        // belongs here, not under /entity/*).
+        ...(isAdmin ? [{ href: "/admin/entity-verification", label: "Entity Verification", icon: ShieldCheck }] : []),
       ],
     },
     {
@@ -76,21 +84,21 @@ export function AdminSidebar() {
   const { t } = useLocale();
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  // Reads the SAME shared auth state every other page uses (lib/auth-context.tsx),
+  // instead of independently fetching /api/auth/me into its own local copy on
+  // mount only. That old pattern meant a logout (or a session becoming
+  // invalid mid-use — ban/suspend/restrict/force-logout) happening anywhere
+  // else in the app never reached this component, since it never re-checked
+  // after its one-time mount fetch — see docs/roles-permissions/ for the bug
+  // this closes (an already-open admin page kept showing data after logout).
+  const { user, loading } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!loading && !user) {
       router.push("/auth/login");
-      return;
     }
-    api.auth.me().then(setUser).catch(() => {
-      localStorage.removeItem("token");
-      router.push("/auth/login");
-    }).finally(() => setLoading(false));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loading, user, router]);
 
   if (loading) {
     return (

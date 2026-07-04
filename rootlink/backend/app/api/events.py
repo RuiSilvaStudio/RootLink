@@ -6,6 +6,8 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.permissions import rank_at_least
+from app.core.permissions_registry import Rank
 from app.core.security import get_current_user, get_optional_user
 from app.models.event import (
     Event,
@@ -20,7 +22,7 @@ from app.models.event import (
 )
 from app.models.group import GroupMember
 from app.models.notification import Notification, NotificationType
-from app.models.user import User, UserRole
+from app.models.user import User
 from app.schemas.event import (
     AmenityCreate,
     AmenityResponse,
@@ -101,7 +103,8 @@ async def _check_event_owner(event_id: int, user: User, db: AsyncSession) -> Eve
     event = result.scalar_one_or_none()
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
-    if event.created_by != user.id and user.role not in (UserRole.admin, UserRole.moderator):
+    # TECH_DEBT.md §0 (was missing super_admin) — Phase 3 cutover.
+    if event.created_by != user.id and not rank_at_least(user, Rank.moderator):
         raise HTTPException(status_code=403, detail="Not authorized")
     return event
 
@@ -109,14 +112,16 @@ async def _check_event_owner(event_id: int, user: User, db: AsyncSession) -> Eve
 async def _can_view_event(event: Event, user: User | None, db: AsyncSession) -> bool:
     # Draft check FIRST — drafts only visible to creator + admin/mod,
     # regardless of visibility setting.
+    # TECH_DEBT.md §0 (was missing super_admin) — Phase 3 cutover.
     if event.status == "draft":
-        if user is None or (event.created_by != user.id and user.role not in (UserRole.admin, UserRole.moderator)):
+        if user is None or (event.created_by != user.id and not rank_at_least(user, Rank.moderator)):
             return False
     if event.visibility == "all":
         return True
     if user is None:
         return False
-    if event.created_by == user.id or user.role in (UserRole.admin, UserRole.moderator):
+    # TECH_DEBT.md §0 (was missing super_admin) — Phase 3 cutover.
+    if event.created_by == user.id or rank_at_least(user, Rank.moderator):
         return True
     if event.visibility == "registered":
         return True
@@ -181,7 +186,12 @@ async def list_events(
         visible = []
         for e in events:
             if e.visibility == "group_only":
-                if e.group_id in member_group_ids or e.created_by == current_user.id or current_user.role in (UserRole.admin, UserRole.moderator):
+                # TECH_DEBT.md §0 (was missing super_admin) — Phase 3 cutover.
+                if (
+                    e.group_id in member_group_ids
+                    or e.created_by == current_user.id
+                    or rank_at_least(current_user, Rank.moderator)
+                ):
                     visible.append(e)
                 continue
             if await _can_view_event(e, current_user, db):
@@ -508,7 +518,11 @@ async def list_sponsors(
     db: AsyncSession = Depends(get_db),
 ):
     query = select(EventSponsor).where(
-        EventSponsor.event_id == event_id, EventSponsor.is_active.is_(True)
+        EventSponsor.event_id == event_id,
+        EventSponsor.is_active.is_(True),
+        # Phase 4 cross-entity ban cascade (docs/roles-permissions/ROLES_PERMISSIONS.md §3) — independent
+        # overlay on top of the admin-controlled is_active flag above.
+        EventSponsor.cascade_hidden_at.is_(None),
     )
     if visible_only:
         query = query.where(EventSponsor.visible_to_attendees.is_(True))
@@ -581,7 +595,14 @@ async def list_vendors(
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(get_optional_user),
 ):
-    query = select(EventVendor).where(EventVendor.event_id == event_id)
+    query = select(EventVendor).where(
+        EventVendor.event_id == event_id,
+        # Phase 4 cross-entity ban cascade (docs/roles-permissions/ROLES_PERMISSIONS.md §3) — unlike
+        # `visible_only`, this is unconditional: a cascade-hidden vendor row
+        # must never show even in the default listing, since it isn't an
+        # admin-controlled visibility setting.
+        EventVendor.cascade_hidden_at.is_(None),
+    )
     if visible_only:
         query = query.where(EventVendor.visible_to_attendees.is_(True))
     result = await db.execute(query)

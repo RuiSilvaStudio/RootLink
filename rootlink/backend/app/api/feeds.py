@@ -5,6 +5,8 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.permissions import rank_at_least
+from app.core.permissions_registry import Rank
 from app.core.security import get_current_user
 from app.models.feed import FeedItem, FeedSource
 from app.models.points import PointBalance
@@ -123,7 +125,8 @@ async def feed_status(
     feed = await db.get(FeedSource, feed_id)
     if not feed:
         raise HTTPException(status_code=404, detail="Feed not found")
-    if feed.user_id != current_user.id and current_user.role not in ("admin", "moderator"):
+    # TECH_DEBT.md §0 (was missing super_admin) — Phase 3 cutover.
+    if feed.user_id != current_user.id and not rank_at_least(current_user, Rank.moderator):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     total = await db.scalar(select(func.count(FeedItem.id)).where(FeedItem.feed_source_id == feed_id)) or 0
@@ -157,7 +160,8 @@ async def refresh_feed(
     feed = await db.get(FeedSource, feed_id)
     if not feed:
         raise HTTPException(status_code=404, detail="Feed not found")
-    if feed.user_id != current_user.id and current_user.role not in ("admin", "moderator"):
+    # TECH_DEBT.md §0 (was missing super_admin) — Phase 3 cutover.
+    if feed.user_id != current_user.id and not rank_at_least(current_user, Rank.moderator):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     parsed = await fetch_and_parse(feed.feed_url)
@@ -200,7 +204,8 @@ async def disconnect_feed(
     feed = await db.get(FeedSource, feed_id)
     if not feed:
         raise HTTPException(status_code=404, detail="Feed not found")
-    if feed.user_id != current_user.id and current_user.role not in ("admin", "moderator"):
+    # TECH_DEBT.md §0 (was missing super_admin) — Phase 3 cutover.
+    if feed.user_id != current_user.id and not rank_at_least(current_user, Rank.moderator):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     await db.execute(delete(FeedItem).where(FeedItem.feed_source_id == feed_id))

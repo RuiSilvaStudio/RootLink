@@ -6,6 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.permissions import rank_at_least
+from app.core.permissions_registry import Rank
 from app.core.security import get_current_user, get_optional_user, get_writable_user
 from app.models.content import Content, ContentSource, ContentStatus, ContentType, VerificationStatus
 from app.models.moderation import ModerationAction
@@ -253,7 +255,11 @@ async def get_article(
     live = is_publicly_visible(article)
     if not live:
         is_owner = current_user and article.created_by == current_user.id
-        is_staff = current_user and current_user.role in ("admin", "moderator")
+        # TECH_DEBT.md §0 (was missing super_admin) — cut over to
+        # rank_at_least (Phase 3), see app/core/permissions.py's docstring
+        # for why this uses the rank-only helper rather than a literal
+        # can() registry action.
+        is_staff = current_user and rank_at_least(current_user, Rank.moderator)
         if not (is_owner or is_staff):
             raise HTTPException(status_code=404, detail="Article not found")
 
@@ -279,7 +285,9 @@ async def update_article(
     article = await db.get(Content, article_id)
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
-    if article.created_by != current_user.id and current_user.role not in ("super_admin", "admin", "moderator"):
+    # Already included super_admin explicitly before this cutover — migrated
+    # onto rank_at_least (Phase 3) for consistency with the rest of this file.
+    if article.created_by != current_user.id and not rank_at_least(current_user, Rank.moderator):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     was_published = article.status == ContentStatus.published
@@ -295,10 +303,14 @@ async def update_article(
     # Editing published content (CONTENT_PLATFORM.md §2.4): trusted authors/staff
     # keep it live; everyone else's edits return it to review until re-approved.
     if was_published:
+        # Phase 4 restriction rung (docs/roles-permissions/ROLES_PERMISSIONS.md §4): "Account status always
+        # overrides badges" — a restricted author's edits go back to review
+        # regardless of rank or can_self_publish, same as the publish
+        # endpoint below.
         trusted = (
-            current_user.role in ("super_admin", "admin", "moderator")
+            rank_at_least(current_user, Rank.moderator)
             or current_user.can_self_publish
-        )
+        ) and not current_user.is_restricted
         if not trusted:
             article.status = ContentStatus.in_review
             await log_moderation(
@@ -322,7 +334,8 @@ async def publish_article(
     article = await db.get(Content, article_id)
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
-    if article.created_by != current_user.id and current_user.role not in ("admin", "moderator"):
+    # TECH_DEBT.md §0 (was missing super_admin) — cut over to rank_at_least.
+    if article.created_by != current_user.id and not rank_at_least(current_user, Rank.moderator):
         raise HTTPException(status_code=403, detail="Not authorized")
     if article.status == ContentStatus.published:
         raise HTTPException(status_code=400, detail="Article is already published")
@@ -340,15 +353,24 @@ async def publish_article(
     if not article.image_url:
         article.image_url = default_cover_for(article.family, article.category)
 
-    # Trust-based publishing (CONTENT_PLATFORM.md §3): staff and trusted authors
-    # publish instantly; everyone else is pre-moderated into in_review. status is
-    # the single visibility gate, so in_review stays hidden until a moderator
-    # approves. We deliberately do NOT auto-cross-reference user articles — that
-    # is the auto-verification path for crawled multi-source content.
+    # Trust-based publishing (originally CONTENT_PLATFORM.md §3): staff and
+    # trusted authors publish instantly; everyone else is pre-moderated into
+    # in_review. status is the single visibility gate, so in_review stays
+    # hidden until a moderator approves. We deliberately do NOT
+    # auto-cross-reference user articles — that is the auto-verification
+    # path for crawled multi-source content.
+    # The staff half of this check (`rank_at_least`) is now the
+    # roles/permissions redesign's rank system (Phase 3 cutover, TECH_DEBT.md
+    # §0) — see docs/roles-permissions/ROLES_PERMISSIONS.md §7/§8. The
+    # `can_self_publish` half is still CONTENT_PLATFORM.md §3's original,
+    # unchanged trust flag (see models/user.py's field comment).
+    # Phase 4 restriction rung (docs/roles-permissions/ROLES_PERMISSIONS.md §4): forced back to `in_review`
+    # regardless of rank/trusted-publisher badge while restricted — "Account
+    # status always overrides badges."
     can_publish_live = (
-        current_user.role in ("super_admin", "admin", "moderator")
+        rank_at_least(current_user, Rank.moderator)
         or current_user.can_self_publish
-    )
+    ) and not current_user.is_restricted
     if can_publish_live:
         article.status = ContentStatus.published
         article.published_at = datetime.now(UTC)
@@ -415,7 +437,8 @@ async def delete_article(
     article = await db.get(Content, article_id)
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
-    if article.created_by != current_user.id and current_user.role not in ("admin", "moderator"):
+    # TECH_DEBT.md §0 (was missing super_admin) — cut over to rank_at_least.
+    if article.created_by != current_user.id and not rank_at_least(current_user, Rank.moderator):
         raise HTTPException(status_code=403, detail="Not authorized")
     await db.delete(article)
     await db.commit()

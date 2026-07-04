@@ -48,7 +48,9 @@ async def search_entities(
     if account_type:
         query = query.where(User.account_type == account_type)
     if entity_type:
-        query = query.where(User.entity_type == entity_type)
+        # `entity_type` stays the external query-param/field name; internally
+        # this reads the renamed `organization_kind` column (Phase 0(f)).
+        query = query.where(User.organization_kind == entity_type)
     if family:
         query = query.where(or_(User.interests.any(family), User.skills.any(family)))
     if region:
@@ -97,11 +99,12 @@ async def entity_stats(db: AsyncSession = Depends(get_db)):
         select(func.count(User.id)).where(User.account_type != "individual", User.is_verified.is_(True), User.visible_in_network.is_(True))
     ) or 0
 
-    # By entity type
+    # By entity type (organization sub-kind; external field name stays
+    # "entity_type" — see Phase 0(f) rename note above)
     et_result = await db.execute(
-        select(User.entity_type, func.count(User.id))
-        .where(User.account_type == "organization", User.visible_in_network.is_(True), User.entity_type.isnot(None))
-        .group_by(User.entity_type)
+        select(User.organization_kind, func.count(User.id))
+        .where(User.account_type == "organization", User.visible_in_network.is_(True), User.organization_kind.isnot(None))
+        .group_by(User.organization_kind)
     )
     by_entity_type = [{"type": t, "count": c} for t, c in et_result.all() if t]
 

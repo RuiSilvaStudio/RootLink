@@ -1,5 +1,15 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
 
+// Fired when a request that WAS sending a token gets rejected as
+// unauthenticated (401) — i.e. our session is gone (logged out elsewhere,
+// expired, or revoked — see docs/roles-permissions/ROLES_PERMISSIONS.md §1's
+// force-logout/session-revocation model), as opposed to a 401 from an
+// anonymous request that never claimed to be authenticated in the first
+// place (e.g. a login attempt with the wrong password). `auth-context.tsx`
+// listens for this to force everyone back to a safe, logged-out state,
+// instead of every individual page having to notice and handle it itself.
+export const SESSION_INVALID_EVENT = "rootlink:session-invalid";
+
 async function request<T>(
   path: string,
   options: RequestInit = {}
@@ -22,6 +32,21 @@ async function request<T>(
   });
 
   if (!res.ok) {
+    if (res.status === 401 && token && typeof window !== "undefined") {
+      // Our session is gone (revoked/expired/banned/suspended mid-use, or
+      // logged out in another tab) — a global, forced logout is about to
+      // happen (auth-context.tsx's listener does it). Deliberately don't
+      // throw here: every individual call site that isn't specifically
+      // handling auth (the vast majority — see the Plants admin page,
+      // which does none at all) would otherwise surface this as an
+      // "Unhandled Runtime Error" for a fraction of a second before the
+      // redirect completes. The page is unmounting imminently anyway, so
+      // there's nothing useful for the caller to do with this rejection —
+      // return a promise that never resolves rather than one that rejects.
+      window.dispatchEvent(new CustomEvent(SESSION_INVALID_EVENT));
+      return new Promise<T>(() => {});
+    }
+
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     const error: any = new Error(err.detail || "Request failed");
     error.status = res.status;
@@ -876,5 +901,99 @@ export const api = {
     status: (feedId: number) => request<any>(`/api/feeds/${feedId}/status`),
     refresh: (feedId: number) => request<{ new_items: number; total_parsed: number }>(`/api/feeds/${feedId}/refresh`, { method: "POST" }),
     disconnect: (feedId: number) => request<void>(`/api/feeds/${feedId}`, { method: "DELETE" }),
+  },
+
+  permissions: {
+    // Public, unauthenticated — app/api/permissions.py. See lib/use-permission.ts.
+    registry: () => request<any>("/api/permissions/registry"),
+  },
+
+  // Phase 5 — new UI surfaces (docs/roles-permissions/roadmap.md).
+  entityConversion: {
+    toProfessional: (data: { tax_registration_id: string; activity_registration_number: string }) =>
+      request<any>("/api/entity-conversion/to-professional", { method: "POST", body: JSON.stringify(data) }),
+    toOrganization: (data: { organization_name: string }) =>
+      request<any>("/api/entity-conversion/to-organization", { method: "POST", body: JSON.stringify(data) }),
+  },
+
+  entities: {
+    register: (data: { entity_type: string; name: string; tax_registration_id?: string; tax_registration_scheme?: string }) =>
+      request<any>("/api/entities/register", { method: "POST", body: JSON.stringify(data) }),
+    mine: () => request<any>("/api/entities/mine"),
+    get: (id: number) => request<any>(`/api/entities/${id}`),
+    verificationQueue: (status = "pending") =>
+      request<any[]>(`/api/entities/verification-queue?status=${status}`),
+    approveVerification: (id: number, reason?: string) =>
+      request<any>(`/api/entities/${id}/verification/approve`, { method: "POST", body: JSON.stringify({ reason }) }),
+    rejectVerification: (id: number, reason?: string) =>
+      request<any>(`/api/entities/${id}/verification/reject`, { method: "POST", body: JSON.stringify({ reason }) }),
+    requestMoreInfo: (id: number, reason?: string) =>
+      request<any>(`/api/entities/${id}/verification/request-more-info`, { method: "POST", body: JSON.stringify({ reason }) }),
+    // Documents
+    uploadDocument: async (entityId: number, file: File) => {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const formData = new FormData();
+      formData.append("file", file);
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+      const res = await fetch(`${API_URL}/api/entities/${entityId}/documents`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: "Upload failed" }));
+        throw new Error(err.detail || "Upload failed");
+      }
+      return res.json();
+    },
+    listDocuments: (entityId: number) => request<any[]>(`/api/entities/${entityId}/documents`),
+    documentServeUrl: (entityId: number, documentId: number) => {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+      return `${API_URL}/api/entities/${entityId}/documents/${documentId}/serve`;
+    },
+    // Team / roster
+    members: (entityId: number) => request<any[]>(`/api/entities/${entityId}/members`),
+    addRosterMember: (entityId: number, userId: number) =>
+      request<any>(`/api/entities/${entityId}/roster`, { method: "POST", body: JSON.stringify({ user_id: userId }) }),
+    removeRosterMember: (entityId: number, userId: number) =>
+      request<any>(`/api/entities/${entityId}/roster/${userId}`, { method: "DELETE" }),
+    // Dissolution
+    dissolve: (entityId: number, reason?: string) =>
+      request<any>(`/api/entities/${entityId}/dissolve`, { method: "POST", body: JSON.stringify({ reason }) }),
+    approveDissolution: (entityId: number, reason?: string) =>
+      request<any>(`/api/entities/${entityId}/dissolve/approve`, { method: "POST", body: JSON.stringify({ reason }) }),
+    rejectDissolution: (entityId: number, reason?: string) =>
+      request<any>(`/api/entities/${entityId}/dissolve/reject`, { method: "POST", body: JSON.stringify({ reason }) }),
+    reverseDissolution: (entityId: number, reason?: string) =>
+      request<any>(`/api/entities/${entityId}/reverse-dissolution`, { method: "POST", body: JSON.stringify({ reason }) }),
+    ban: (entityId: number, reason?: string) =>
+      request<any>(`/api/entities/${entityId}/ban`, { method: "POST", body: JSON.stringify({ reason }) }),
+    unban: (entityId: number, reason?: string) =>
+      request<any>(`/api/entities/${entityId}/unban`, { method: "POST", body: JSON.stringify({ reason }) }),
+  },
+
+  delegations: {
+    create: (data: { grantee_id: number; action: string; entity_id?: number | null }) =>
+      request<any>("/api/delegations", { method: "POST", body: JSON.stringify(data) }),
+    list: (params?: { entity_id?: number; mine?: boolean }) => {
+      const qs = new URLSearchParams();
+      if (params?.entity_id) qs.set("entity_id", String(params.entity_id));
+      if (params?.mine) qs.set("mine", "true");
+      return request<any[]>(`/api/delegations?${qs}`);
+    },
+    revoke: (id: number, reason?: string) =>
+      request<any>(`/api/delegations/${id}/revoke`, { method: "POST", body: JSON.stringify({ reason }) }),
+  },
+
+  roleRequests: {
+    submit: (data: { target_user_id: number; to_rank: number; reason?: string }) =>
+      request<any>("/api/role-requests", { method: "POST", body: JSON.stringify(data) }),
+    get: (id: number) => request<any>(`/api/role-requests/${id}`),
+    list: (scope: "mine" | "pending-approval" = "mine") =>
+      request<any[]>(`/api/role-requests?scope=${scope}`),
+    approve: (id: number, reason?: string) =>
+      request<any>(`/api/role-requests/${id}/approve`, { method: "POST", body: JSON.stringify({ reason }) }),
+    reject: (id: number, reason?: string) =>
+      request<any>(`/api/role-requests/${id}/reject`, { method: "POST", body: JSON.stringify({ reason }) }),
   },
 };

@@ -3,6 +3,8 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.permissions import rank_at_least
+from app.core.permissions_registry import Rank
 from app.core.security import get_current_user, get_optional_user
 from app.models.plant import Plant
 from app.models.user import User
@@ -183,7 +185,8 @@ async def create_plant(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if current_user.role not in ("admin", "moderator", "contributor"):
+    # TECH_DEBT.md §0 (was missing super_admin) — Phase 3 cutover.
+    if not rank_at_least(current_user, Rank.contributor):
         raise HTTPException(403, "Not authorized")
     existing = await db.execute(
         select(Plant).where(Plant.scientific_name == normalize_name(body.scientific_name))
@@ -205,7 +208,8 @@ async def update_plant(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if current_user.role not in ("admin", "moderator", "contributor"):
+    # TECH_DEBT.md §0 (was missing super_admin) — Phase 3 cutover.
+    if not rank_at_least(current_user, Rank.contributor):
         raise HTTPException(403, "Not authorized")
     plant = await db.get(Plant, plant_id)
     if not plant:
@@ -225,7 +229,9 @@ async def delete_plant(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if current_user.role != "admin":
+    # TECH_DEBT.md §0 (was missing super_admin; was also a bare exact-match
+    # on the string "admin", the worst-case pattern per TECH_DEBT.md §0) — Phase 3 cutover.
+    if not rank_at_least(current_user, Rank.admin):
         raise HTTPException(403, "Not authorized")
     plant = await db.get(Plant, plant_id)
     if not plant:
@@ -241,7 +247,8 @@ async def crawl_utad(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if current_user.role not in ("admin", "moderator", "contributor"):
+    # TECH_DEBT.md §0 (was missing super_admin) — Phase 3 cutover.
+    if not rank_at_least(current_user, Rank.contributor):
         raise HTTPException(403, "Not authorized")
     normalized = normalize_name(scientific_name)
     url_name = scientific_name.strip().replace(" ", "_")
@@ -280,7 +287,8 @@ async def crawl_utad_all(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if current_user.role not in ("admin", "moderator"):
+    # TECH_DEBT.md §0 (was missing super_admin) — Phase 3 cutover.
+    if not rank_at_least(current_user, Rank.moderator):
         raise HTTPException(403, "Not authorized")
     stmt = select(Plant).order_by(Plant.scientific_name)
     result = await db.execute(stmt)

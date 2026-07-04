@@ -32,7 +32,9 @@ export function MobileNav({ unread, moon, openSheet, onCloseSheet, drawerOpen, o
   const [notifs, setNotifs] = useState<any[]>([]);
   const [notifsLoaded, setNotifsLoaded] = useState(false);
 
-  const isStaff = user && (user.role === "admin" || user.role === "moderator" || user.role === "contributor");
+  // TECH_DEBT.md §0 / user-logic-review.md §8-9 (was missing super_admin —
+  // the frontend mirror of the backend super_admin-not-superset bug).
+  const isStaff = user && (user.role === "admin" || user.role === "moderator" || user.role === "contributor" || user.role === "super_admin");
   const initial = user?.name?.[0]?.toUpperCase() ?? "U";
 
   // Load notifications when sheet opens

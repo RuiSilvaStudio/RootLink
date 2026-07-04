@@ -16,6 +16,7 @@ from app.api import (
     admin,
     articles,
     auth,
+    auth_security,
     checklist,
     comments,
     content,
@@ -23,6 +24,9 @@ from app.api import (
     content_ui,
     copy,
     crawl,
+    delegations,
+    entities,
+    entity_conversion,
     events,
     external,
     farmers_guide,
@@ -35,9 +39,11 @@ from app.api import (
     messages,
     notifications,
     payments,
+    permissions,
     plants,
     points,
     ratings,
+    role_requests,
     self_publish,
     social,
     taxonomy,
@@ -48,8 +54,12 @@ from app.core.config import settings
 from app.core.database import async_session_factory, engine
 from app.core.logging import setup_logging
 from app.core.rate_limit import RateLimitMiddleware
+from app.models.auth_tokens import EmailVerificationToken, PasswordResetToken  # noqa: F401 - ensure table creation
 from app.models.base import Base
+from app.models.entity import DelegationGrant, Entity  # noqa: F401 - ensure table creation
 from app.models.image_asset import ImageAsset  # noqa: F401 - ensure table creation
+from app.models.role_request import RoleChangeRequest  # noqa: F401 - ensure table creation
+from app.models.session import Session  # noqa: F401 - ensure table creation
 from app.models.taxonomy import (  # noqa: F401
     CATEGORY_TO_FAMILY_MAP,
     SEED_CATEGORIES,
@@ -58,6 +68,7 @@ from app.models.taxonomy import (  # noqa: F401
     TaxonomyFamily,
 )
 from app.services.legal_seed import seed_legal_documents
+from app.services.roles_migration import migrate_legacy_delegations, migrate_users_to_entity_rank
 from app.services.template_seed import seed_content_templates
 
 
@@ -94,6 +105,88 @@ async def lifespan(app: FastAPI):
                 await conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {typedef}"))
             except Exception:
                 pass
+        # Roles/permissions redesign — Phase 1 first slice. Rename the
+        # organization sub-kind column (`entity_type`, added just above) to
+        # `organization_kind` so it stops colliding with the new "entity"
+        # concept introduced below (`entity_id`/`rank` on `users`, plus the
+        # new `entities` table). Phase 0 decision (f):
+        # docs/roles-permissions/phase0-decisions.md. Guarded/
+        # idempotent: only runs if the old column is still present and the
+        # new one isn't — a fresh DB's `create_all` above already creates
+        # `organization_kind` directly (the model attribute is renamed too),
+        # so this only fires once, on an existing dev DB, and no-ops on every
+        # later restart or on a second racing worker.
+        try:
+            info = await conn.execute(text("PRAGMA table_info(users)"))
+            user_cols = [r[1] for r in info.fetchall()]
+            if "entity_type" in user_cols and "organization_kind" not in user_cols:
+                await conn.execute(
+                    text("ALTER TABLE users RENAME COLUMN entity_type TO organization_kind")
+                )
+        except Exception as e:
+            print(f"users.entity_type -> organization_kind rename (skipped, will retry): {e}")
+        # Roles/permissions redesign — Phase 1 first slice: `entity_id` (FK to
+        # the new `entities` table) + `rank` (0-5, docs/roles-permissions/ROLES_PERMISSIONS.md §5) on User.
+        # Purely additive — left null for every existing row; no migration of
+        # existing users onto these fields yet (docs/roles-permissions/phase0-decisions.md (b) is
+        # the recorded design for that future step). `role` is untouched and
+        # remains authoritative until a later phase cuts enforcement over.
+        for col, typedef in [
+            ("entity_id", "INTEGER"),
+            ("rank", "INTEGER"),
+            ("entity_kind", "VARCHAR(20)"),
+        ]:
+            try:
+                await conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {typedef}"))
+            except Exception:
+                pass
+        # Roles/permissions redesign — Phase 2: "Verified user" fields
+        # (docs/roles-permissions/phase0-decisions.md (g)).
+        for col, typedef in [
+            ("email_verified", "BOOLEAN DEFAULT 0"),
+            ("email_verified_at", "TIMESTAMP"),
+        ]:
+            try:
+                await conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {typedef}"))
+            except Exception:
+                pass
+        # Roles/permissions redesign — Phase 4 (docs/roles-permissions/ROLES_PERMISSIONS.md §2 "Verified
+        # professional", §3 entity conversion). See
+        # app/services/entity_conversion.py's module docstring.
+        try:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN activity_registration_number VARCHAR(50)"))
+        except Exception:
+            pass
+        # Roles/permissions redesign — Phase 4 (docs/roles-permissions/ROLES_PERMISSIONS.md §3 "Entity
+        # dissolution" / entity-level ban, docs/roles-permissions/phase0-decisions.md addendum). The
+        # `entities` table itself already exists (Phase 1) — these are new
+        # columns on it, guarded the same way as every other lifespan ALTER.
+        for col, typedef in [
+            ("dissolution_requested_at", "TIMESTAMP"),
+            ("dissolution_requested_by", "INTEGER"),
+            ("dissolution_snapshot", "JSON"),
+            ("banned_at", "TIMESTAMP"),
+            ("ban_reason", "VARCHAR(500)"),
+            ("banned_by", "INTEGER"),
+            ("ban_cascade_grace_expires_at", "TIMESTAMP"),
+        ]:
+            try:
+                await conn.execute(text(f"ALTER TABLE entities ADD COLUMN {col} {typedef}"))
+            except Exception:
+                pass
+        # Roles/permissions redesign — Phase 4 (docs/roles-permissions/ROLES_PERMISSIONS.md §3 "Cross-entity
+        # ban cascade"). See app/services/entity_cascade.py's module
+        # docstring for why these two columns (and not GroupMember) are the
+        # real footprint mechanism today.
+        for table in ("event_sponsors", "event_vendors"):
+            for col, typedef in [
+                ("contributing_entity_id", "INTEGER"),
+                ("cascade_hidden_at", "TIMESTAMP"),
+            ]:
+                try:
+                    await conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {typedef}"))
+                except Exception:
+                    pass
         try:
             await conn.execute(
                 text("ALTER TABLE content ADD COLUMN verification_status VARCHAR DEFAULT 'unreviewed'")
@@ -205,7 +298,12 @@ async def lifespan(app: FastAPI):
         except Exception:
             pass
         # Content platform Phase 0: trust, editable-copy & enforcement-ladder fields
-        # (see docs/content-platform/CONTENT_PLATFORM.md §3, §4.4, §12)
+        # (see docs/content-platform/CONTENT_PLATFORM.md §3, §4.4, §12). The
+        # enforcement-ladder columns (`account_status` et al.) are reused,
+        # not replaced, by the roles/permissions redesign's own 4-rung ladder
+        # (docs/roles-permissions/ROLES_PERMISSIONS.md §4) — see the
+        # `AccountStatus.restricted` addition further down for where that
+        # ladder's 4th rung was added onto this same column.
         for col, typedef in [
             ("can_self_publish", "BOOLEAN DEFAULT 0"),
             ("self_publish_agreed_at", "TIMESTAMP"),
@@ -406,6 +504,24 @@ async def lifespan(app: FastAPI):
             await seed_legal_documents(session)
     except Exception as e:
         print(f"legal document seed: {e}")
+    # Roles/permissions redesign — Phase 1 data migration (idempotent; only
+    # processes rows not yet migrated). See
+    # docs/roles-permissions/phase0-decisions.md (b) for the mapping
+    # rules and app/services/roles_migration.py for the implementation.
+    try:
+        async with async_session_factory() as session:
+            entity_rank_stats = await migrate_users_to_entity_rank(session)
+            if entity_rank_stats["migrated"]:
+                print(f"roles migration (entity/rank backfill): {entity_rank_stats}")
+    except Exception as e:
+        print(f"roles migration (entity/rank backfill) failed: {e}")
+    try:
+        async with async_session_factory() as session:
+            delegation_stats = await migrate_legacy_delegations(session)
+            if delegation_stats["self_publish_grants_created"] or delegation_stats["edit_copy_grants_created"]:
+                print(f"roles migration (legacy delegation backfill): {delegation_stats}")
+    except Exception as e:
+        print(f"roles migration (legacy delegation backfill) failed: {e}")
     fcntl.flock(_migrate_lock, fcntl.LOCK_UN)
     _migrate_lock.close()
     yield
@@ -425,6 +541,7 @@ app.add_middleware(
 app.add_middleware(RateLimitMiddleware)
 
 app.include_router(auth.router)
+app.include_router(auth_security.router)
 app.include_router(content.router)
 app.include_router(groups.router)
 app.include_router(events.router)
@@ -455,6 +572,11 @@ app.include_router(account.router)
 app.include_router(copy.router)
 app.include_router(content_ui.router)
 app.include_router(legal.router)
+app.include_router(permissions.router)
+app.include_router(entity_conversion.router)
+app.include_router(entities.router)
+app.include_router(role_requests.router)
+app.include_router(delegations.router)
 
 # Serve uploaded media files.
 # Register image MIME types explicitly: the slim Docker image's mimetypes DB does

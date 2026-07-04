@@ -1,9 +1,11 @@
+from app.models.auth_tokens import EmailVerificationToken, PasswordResetToken
 from app.models.checklist import ChecklistItem
 from app.models.comment import Comment
 from app.models.content import Bookmark, Content, ContentStatus, SearchQueryLog, VerificationStatus
 from app.models.content_template import ContentTemplate
 from app.models.content_ui_override import ContentUIOverride
 from app.models.copy_override import CopyOverride
+from app.models.entity import DelegationGrant, Entity, EntityDocument, EntityKind, EntityVerificationStatus
 from app.models.event import (
     Event,
     EventAmenity,
@@ -32,6 +34,8 @@ from app.models.notification import Notification
 from app.models.plant import Plant
 from app.models.points import PointBalance, PointTransaction
 from app.models.rating import ContentRating
+from app.models.role_request import RoleChangeRequest
+from app.models.session import Session
 from app.models.setting import Setting
 from app.models.taxonomy import TaxonomyCategory, TaxonomyFamily
 from app.models.user import User
@@ -64,4 +68,7 @@ __all__ = [
     "ModerationAuditLog", "ModerationAction",
     "CopyOverride",
     "ContentUIOverride",
+    "Entity", "EntityKind", "EntityVerificationStatus", "DelegationGrant", "EntityDocument",
+    "Session", "EmailVerificationToken", "PasswordResetToken",
+    "RoleChangeRequest",
 ]

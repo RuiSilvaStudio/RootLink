@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { StatCounter } from "@/components/ui/StatCounter";
 import { EditableText } from "@/components/editor-mode/editable-text";
+import { usePermission } from "@/lib/use-permission";
 
 export default function LearningPage() {
   const { t } = useLocale();
@@ -52,7 +53,11 @@ export default function LearningPage() {
     }).finally(() => setLoading(false));
   }, [user]);
 
-  const isStaff = user && (user.role === "admin" || user.role === "moderator" || user.role === "contributor");
+  // Phase 3 (frontend half): wired onto the shared permissions registry
+  // (see app/learning/courses/page.tsx's matching comment for why
+  // "course.*" action keys cover both courses and paths here).
+  const { can } = usePermission();
+  const isStaff = user && can("course.create_edit_archive_own");
 
   if (loading) return <div className="flex items-center justify-center py-32 text-stone-00 dark:text-stone-500 font-light"><BookOpen className="w-5 h-5 animate-pulse mr-2" /> {t("common.loading")}</div>;
 
@@ -190,7 +195,7 @@ export default function LearningPage() {
                 {course.category && <Badge variant="sage" className="text-[10px]">{t("learning.category_" + course.category)}</Badge>}
                 {course.difficulty && <Badge variant="stone" className="text-[10px]">{course.difficulty}</Badge>}
                 {course.lesson_count > 0 && <span className="flex items-center gap-1 font-light"><BookOpen className="w-3 h-3" />{course.lesson_count}</span>}
-                {isStaff && (user?.role === "admin" || user?.role === "moderator" || course.created_by === user?.id) && (
+                {isStaff && (can("course.manage_any") || course.created_by === user?.id) && (
                   <Link href={`/learning/courses/${course.id}/edit`} className="ml-auto text-primary-600 opacity-0 group-hover:opacity-100 transition"><Edit className="w-3.5 h-3.5" /></Link>
                 )}
               </div>
@@ -215,7 +220,7 @@ export default function LearningPage() {
               )}
               <h3 className="font-semibold text-stone-800">{path.title}</h3>
               <p className="text-sm text-stone-500 mt-1 line-clamp-2 font-light">{path.description}</p>
-              {isStaff && (user?.role === "admin" || user?.role === "moderator" || path.created_by === user?.id) && (
+              {isStaff && (can("course.manage_any") || path.created_by === user?.id) && (
                 <Link href={`/learning/paths/${path.id}/edit`} className="inline-flex items-center gap-1 text-xs text-primary-600 mt-2 opacity-0 group-hover:opacity-100 transition font-medium"><Edit className="w-3 h-3" /> {t("learning.edit")}</Link>
               )}
             </Link>

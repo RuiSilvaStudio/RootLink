@@ -138,6 +138,19 @@ This satisfies the DSA "statement of reasons" and GDPR Art. 22 right to human re
 
 ## 3. Trust tiers & the publisher promotion flow
 
+> **Superseded:** the roles/entities/permissions model described in this
+> section (and §4 below) has been replaced by the roles/permissions
+> redesign. **Spec:**
+> [`docs/roles-permissions/ROLES_PERMISSIONS.md`](../roles-permissions/ROLES_PERMISSIONS.md)
+> is the current, implemented source of truth — see
+> [`docs/roles-permissions/IMPLEMENTATION_STATUS.md`](../roles-permissions/IMPLEMENTATION_STATUS.md)
+> for what's shipped. This section is kept as the historical record of what
+> was originally shipped here (per §11's own phase history) and is **not**
+> deleted, but no longer reflects the live system's roles/entities/rank
+> model. `can_self_publish` specifically is now migrated into the new
+> `delegation_grants` model (`ROLES_PERMISSIONS.md` §10) rather than the
+> standalone flag described below.
+
 ### 3.1 Tiers
 
 | Tier | Create | Publish own (Full Kinds) | Review others |
@@ -177,6 +190,18 @@ AND ≥3 approved items ──┴─> user is offered ─> user accepts the ─�
 ---
 
 ## 4. Roles, permissions & the enforcement ladder
+
+> **Superseded:** the flat 5-role hierarchy and the enforcement ladder
+> described in this section have been replaced by the roles/permissions
+> redesign's entity + rank model and its own 4-rung ladder (Active /
+> Restriction / Suspended / Banned). **Spec:**
+> [`docs/roles-permissions/ROLES_PERMISSIONS.md`](../roles-permissions/ROLES_PERMISSIONS.md)
+> §4 (account status / enforcement ladder), §5 (roles/ranking), §7–§8
+> (permission tables) is the current, implemented source of truth — see
+> [`docs/roles-permissions/IMPLEMENTATION_STATUS.md`](../roles-permissions/IMPLEMENTATION_STATUS.md).
+> This section is kept as the historical record of what was originally
+> shipped here and is **not** deleted, but no longer reflects the live
+> system's authorization model.
 
 ### 4.1 Hierarchy
 

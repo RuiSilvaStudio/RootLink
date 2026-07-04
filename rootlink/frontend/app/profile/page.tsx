@@ -926,6 +926,41 @@ function ProfilePage() {
               </Button>
             </form>
 
+            {/* Roles/permissions redesign Phase 5 — entity registration/team/
+                conversion entry points. Entity-scoped surfaces live under
+                /entity/[entityId]/*, kept architecturally separate from
+                /admin/* per docs/roles-permissions/phase0-decisions.md (i). */}
+            {profile.entity_id ? (
+              <Link href={`/entity/${profile.entity_id}`}
+                className="flex items-center gap-3 bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-700 p-4 hover:shadow-md transition group">
+                <Building className="w-5 h-5 text-primary-500 group-hover:text-primary-600" />
+                <div>
+                  <p className="text-sm font-medium text-stone-700 dark:text-stone-300">Manage my entity</p>
+                  <p className="text-xs text-stone-400 dark:text-stone-500 font-serif">View verification status, documents, team, and roster</p>
+                </div>
+              </Link>
+            ) : (
+              <Link href="/entity/register"
+                className="flex items-center gap-3 bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-700 p-4 hover:shadow-md transition group">
+                <Building className="w-5 h-5 text-primary-500 group-hover:text-primary-600" />
+                <div>
+                  <p className="text-sm font-medium text-stone-700 dark:text-stone-300">Register an organization / partner / supplier</p>
+                  <p className="text-xs text-stone-400 dark:text-stone-500 font-serif">Self-service registration, pending document verification</p>
+                </div>
+              </Link>
+            )}
+
+            {(profile.entity_kind === "individual" || profile.entity_kind === "professional" || !profile.entity_kind) && (
+              <Link href="/entity/convert"
+                className="flex items-center gap-3 bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-700 p-4 hover:shadow-md transition group">
+                <ArrowRightLeft className="w-5 h-5 text-primary-500 group-hover:text-primary-600" />
+                <div>
+                  <p className="text-sm font-medium text-stone-700 dark:text-stone-300">Convert account type</p>
+                  <p className="text-xs text-stone-400 dark:text-stone-500 font-serif">Individual → professional, or professional → organization</p>
+                </div>
+              </Link>
+            )}
+
             {/* Feed Settings */}
             <Link href="/settings/feeds"
               className="flex items-center gap-3 bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-700 p-4 hover:shadow-md transition group">

@@ -9,6 +9,7 @@ import { safeImageUrl } from "@/lib/image-url";
 import { videoThumbnail } from "@/lib/video";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useLocale } from "@/lib/locale-context";
+import { usePermission } from "@/lib/use-permission";
 
 export default function CourseDetailPage() {
   const { t } = useLocale();
@@ -62,7 +63,10 @@ export default function CourseDetailPage() {
     setEnrollment(enr);
   };
 
-  const canEdit = user && (user.role === "admin" || user.role === "moderator" || course?.created_by === user?.id);
+  // Phase 3 (frontend half): matches the backend's `_can_manage` floor
+  // (moderator+) exactly, composed with ownership — see app/api/learning.py.
+  const { can } = usePermission();
+  const canEdit = user && (can("course.manage_any") || course?.created_by === user?.id);
 
   const resetLessonForm = () => setLessonForm({ title: "", body: "", video_url: "", order: lessons.length + 1 });
 
