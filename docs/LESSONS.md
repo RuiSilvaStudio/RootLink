@@ -261,3 +261,23 @@
 15. **Dry-run schema/data migrations against a COPY of the real prod DB using the prod Docker
     image** before deploying. This is the only thing that catches issues bare-localhost can't
     (the 2-worker race, real data shape). `deploy.sh` also backs up the prod DB before every run.
+
+36. **`Celery.autodiscover_tasks(["app.tasks"])` does not do what it looks like it does when the
+    package name IS the tasks package itself.** By default `autodiscover_tasks` imports
+    `<package>.tasks` for each entry (Django-app-style discovery) — passing `["app.tasks"]` makes
+    it try to import `app.tasks.tasks`, which doesn't exist (the real modules are
+    `app.tasks.feed_crawler`, `point_decay`, `draft_cleanup`), so it silently finds and registers
+    **zero** tasks. Confirmed live on prod (2026-07-04, verifying the roles/permissions deploy):
+    `celery -A app.tasks.celery_app worker` starts cleanly, connects to Redis, and logs an empty
+    `[tasks]` block — no error, no crash — then every `celery-beat`-scheduled job (point decay, RSS
+    crawl priorities 1-3, draft cleanup) fails at dispatch time with `Received unregistered task of
+    type '...'` / `KeyError` in the worker log, **only surfacing whenever beat's schedule next
+    fires**, not at worker startup. This predates the roles/permissions redesign (celery_app.py
+    untouched by it, confirmed via `git log --follow`) — background jobs have likely never
+    actually executed in prod since Celery was introduced. Not fixed as part of the roles/
+    permissions deploy (out of scope, needs its own verified fix + test); the actual fix is
+    either explicit `import app.tasks.feed_crawler` / `point_decay` / `draft_cleanup` in
+    `celery_app.py`, or `autodiscover_tasks(["app"], related_name="tasks")`. To check if this is
+    happening: `docker compose exec celery-worker python3 -c "from app.tasks.celery_app import
+    celery_app; print(celery_app.tasks.keys())"` — if it only shows `celery.*` builtins, no real
+    tasks are registered.
