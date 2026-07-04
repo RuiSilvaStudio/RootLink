@@ -145,9 +145,9 @@ export default function GroupsPage() {
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("groups.family_label") || "Family"}</label>
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("groups.family_label")}</label>
               <select value={family} onChange={(e) => handleFamilyChange(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
-                <option value="">{t("groups.family_none") || "Select a family..."}</option>
+                <option value="">{t("groups.family_none")}</option>
                 {families.map((fam) => (
                   <option key={fam.value} value={fam.value}>{locale === "pt" ? fam.label_pt : fam.label}</option>
                 ))}
@@ -156,7 +156,7 @@ export default function GroupsPage() {
             <div>
               <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("groups.category_label")}</label>
               <select value={category} onChange={(e) => setCategory(e.target.value)} disabled={!family} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15 disabled:opacity-50">
-                <option value="">{t("groups.category_none") || "All categories"}</option>
+                <option value="">{t("groups.category_none")}</option>
                 {familyCategories.map((cat) => (
                   <option key={cat.value} value={cat.value}>{locale === "pt" ? cat.label_pt : cat.label}</option>
                 ))}

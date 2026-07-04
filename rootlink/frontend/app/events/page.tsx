@@ -212,7 +212,7 @@ export default function EventsPage() {
           </div>
           <div className="grid md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("groups.family_label") || "Family"}</label>
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.family_label")}</label>
               <select value={eventFamily} onChange={(e) => handleFormFamilyChange(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
                 <option value="">{t("events.category_none")}</option>
                 {families.map((fam) => (

@@ -105,7 +105,7 @@ export function SubmitForm() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("groups.family_label") || "Family"}</label>
+              <label className="block text-sm font-medium text-stone-700 mb-1">{t("submit.family_label")}</label>
               <select
                 value={family}
                 onChange={(e) => handleFamilyChange(e.target.value)}
@@ -158,7 +158,7 @@ export function SubmitForm() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t("groups.family_label") || "Family"}</label>
+              <label className="block text-sm font-medium text-stone-700 mb-1">{t("submit.family_label")}</label>
               <select
                 value={family}
                 onChange={(e) => handleFamilyChange(e.target.value)}

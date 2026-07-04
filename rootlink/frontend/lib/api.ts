@@ -48,7 +48,25 @@ async function request<T>(
     }
 
     const err = await res.json().catch(() => ({ detail: res.statusText }));
-    const error: any = new Error(err.detail || "Request failed");
+    // FastAPI's default validation-error shape sends `detail` as an ARRAY of
+    // `{loc, msg, type}` objects (422 responses), not a string — passing that
+    // straight into `new Error(...)` stringifies it via `String(array)`,
+    // which renders as the useless "[object Object]" (found in
+    // discovery/BUG-BACKLOG.md BUG-001, reproduced on /submit's 422s but
+    // really an app-wide gap in this one shared helper). Handle both shapes:
+    // a plain string `detail` (the common `HTTPException(detail="...")`
+    // case) passes through unchanged; an array of validation errors is
+    // joined into a single readable message instead.
+    let message = "Request failed";
+    if (typeof err.detail === "string" && err.detail) {
+      message = err.detail;
+    } else if (Array.isArray(err.detail) && err.detail.length > 0) {
+      message = err.detail
+        .map((e: any) => (e && typeof e.msg === "string" ? e.msg : null))
+        .filter(Boolean)
+        .join("; ") || message;
+    }
+    const error: any = new Error(message);
     error.status = res.status;
     throw error;
   }
