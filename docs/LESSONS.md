@@ -100,6 +100,23 @@
     Always confirm with `ss -ltnp | grep node` (or match the actual `next-server`/`uvicorn` PID)
     before trusting `localhost:<default-port>` in this environment.
 
+35. **`package.json`'s `dev:restart` script (`rm -rf .next .next-build && next dev`) does NOT
+    reproduce how the dev server is actually running if it was started with an explicit port
+    flag.** This repo's real dev server runs as `next dev -p 3001` (lesson #24) — running the bare
+    `npm run dev:restart` after a prod-build verification would start a *new* server on the
+    default port 3000 instead (which already has an unrelated process bound to it, see #24),
+    leaving the "real" 3001 server down and a second, differently-configured one up on the wrong
+    port. Always inspect the actual running command first (`ps -p <pid> -o cmd`, or
+    `pstree -ps <pid>`, to see the exact invocation, e.g. `sh -c "rm -rf .next .next-build &&
+    next dev -p 3001"`) and reproduce that exact command on restart, not just the generic
+    `package.json` script name. Relatedly, a backgrounded `setsid nohup sh -c "... && next dev
+    -p 3001"` can fail silently-ish with `sh: 1: next: not found` if `node_modules/.bin` isn't on
+    `PATH` in the tool's shell (it commonly isn't, outside an `npm run`/`npx` wrapper) — use the
+    explicit `./node_modules/.bin/next` path, or `npx next dev -p 3001`, and always check the
+    redirected log file a few seconds after backgrounding to confirm it actually started before
+    moving on. (Roles/permissions redesign deploy-prep, verifying the production build without
+    corrupting the live dev server, 2026-07-04.)
+
 28. **Seeding `localStorage` for a Playwright auth check via `page.goto()` → `page.evaluate(setItem)`
     → `page.reload()` is a race, not a reliable pattern** — under any real load (e.g. several pages
     open in the same browser instance back-to-back), the initial `goto()` navigation can still be
