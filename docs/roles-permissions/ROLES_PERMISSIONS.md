@@ -110,7 +110,7 @@ a plain `persona` until verification succeeds.
 | Entity | Highest reachable rank | Has its own super admin? | Notes |
 |---|---|---|---|
 | `individual` | contributor | No | Never reaches moderator/admin/super admin. Content is moderated by `platform` staff by default (see §7). |
-| `professional` | admin | No | The `platform` super admin is the override for anything beyond admin. Its `admin` is self-exempt from the promote/demote approval rule — see §6. |
+| `professional` | admin | No | The `platform` super admin is the override for anything beyond admin. **Professional entities never get entity-scoped promote/demote at all** — that workflow is organization-only (see §6). A professional's own rank changes go through the platform-wide `/admin/users` role-management page instead. |
 | `organization` | **super admin** | **Yes** | An organization's own super admin has full authority *within that organization* (entity-scoped table, §7) — but platform-wide/cross-entity actions (archiving a mixed-membership group, editing legal docs, etc.) are still `platform`-super-admin-only (§8). |
 | `platform` | super admin | Yes | The platform's super admin is the ultimate override for every entity. |
 | `partners` | persona + specific grants | No | No moderator/admin/super admin tier at all — extra permissions are hand-granted per user ID by the platform super admin (e.g. legal updates access). For entities with more than one associated user, see "Partners/suppliers: primary contact" below. |
@@ -165,26 +165,67 @@ places at once.
 
 ### Entity conversion (lifecycle)
 
-Entity-type conversion is one-way and request-based:
+Entity-type conversion is one-way and **self-service only** — every
+conversion endpoint acts on the authenticated caller's own account; there
+is no admin-triggered path and no way to target a different user (confirmed
+against the actual code, `app/services/entity_conversion.py` /
+`app/api/entity_conversion.py` — no function or endpoint takes a `user_id`
+parameter anywhere in this module).
+
+Three directions exist:
 
 - **`individual` → `professional`** — requires professional verification
   (§2's "Verified professional" criteria).
+- **`professional` → `individual`** — the reverse direction (added
+  post-Phase-6, see `phase0-decisions.md` Addendum 5). No eligibility
+  criteria beyond currently being `professional` — converting down never
+  needs re-verification.
 - **`professional` → `organization`** — requires forming a new
   `organization` entity. The converting user becomes that organization's
   first `super admin` via the same bootstrap rule as any new entity (see
-  "Bootstrapping a new entity" above).
+  "Bootstrapping a new entity" above). This direction's rank/bootstrap
+  behavior is unrelated to the rank rule below and unchanged.
 
 On conversion:
 
 - **Content ownership persists.** Ownership is tracked by user ID, not
   entity, so a user's previously authored content stays theirs regardless
   of which entity they convert into.
-- **Rank resets to `persona`** in the new entity. Rank is earned within an
-  entity's context and is not carried over from the old one.
-- **Badges are not carried over.** `verified` and `trusted publisher` must
-  be re-earned or re-verified under the new entity's criteria — a
-  professional's trust track record doesn't automatically transfer to a
-  brand-new organization, for example.
+- **Rank is preserved-or-capped, for `individual` ↔ `professional` only**
+  (decided post-Phase-6, `phase0-decisions.md` Addendum 5 — replaces the
+  original "always resets to persona" rule for these two directions
+  specifically): rank is preserved as-is if it already fits the
+  destination entity's ceiling (§3's ceilings table above), otherwise
+  capped DOWN to that ceiling — never reset to persona(1) outright. Since
+  `individual`'s ceiling is contributor(2) and `professional`'s ceiling is
+  admin(4), `individual` → `professional` always preserves rank unchanged
+  (1 or 2 always fits in 1-4). `professional` → `individual` preserves
+  rank 1 or 2 unchanged, but caps rank 3 (moderator) or 4 (admin) down to 2
+  (contributor). **`professional` → `organization` is unaffected by this
+  rule** — that direction keeps its own bootstrap-to-super-admin(5) logic
+  exactly as originally shipped (a brand-new entity being founded, not a
+  rank comparison between two existing ceilings).
+- **Badges are not carried over, in every direction.** `verified` and
+  `trusted publisher` must be re-earned or re-verified under the new
+  entity's criteria — a professional's trust track record doesn't
+  automatically transfer to a brand-new organization or back down to an
+  individual account, for example.
+- **A mandatory live, computed "before vs. after" comparison + explicit
+  consent gate, for the `individual` ↔ `professional` directions.** Before
+  either of these two conversions executes for real, the frontend must
+  call a read-only preview/dry-run endpoint
+  (`GET /api/entity-conversion/preview?to=individual|professional`) that
+  computes the caller's REAL current state (rank, entity, and every
+  relevant badge/flag — verified, trusted publisher/`can_self_publish`,
+  copy editor/`can_edit_copy`, email-verified, etc., not a static/hardcoded
+  example) and REAL projected post-conversion state (rank per the cap rule
+  above, badges cleared), render it as a comparison, and require the user
+  to explicitly confirm before calling the real conversion endpoint. If
+  the user does not confirm, nothing changes — they remain in their
+  current entity/rank exactly as before. (`professional` → `organization`
+  keeps its original static "this is one-way" messaging + checkbox — the
+  preview endpoint does not cover that direction, since its underlying
+  bootstrap logic is unrelated and untouched.)
 - The conversion itself is logged as an audit event, same as any other
   account status change.
 
@@ -294,23 +335,31 @@ it does not outrank a `moderator` in a different entity.
 
 ## 6. Promote / demote rules
 
+**This entity-scoped request+approval workflow is `organization`-only**
+(decided post-Phase-6, `phase0-decisions.md` Addendum 5). `individual`,
+`professional`, `partners`, and `suppliers` never have a real internal
+"team" to manage rank within — `individual`/`professional` never get an
+`entities` row linking their members together at all, and
+`partners`/`suppliers` are capped at "persona + specific grants" with no
+rank tier to promote/demote in the first place (§3). **Professional-kind
+users' rank changes are handled directly by the platform**, via the
+existing `/admin/users` role-management page — never through this
+workflow. The old "professional entity's admin is self-exempt from the
+approval rule" framing is therefore moot and has been removed: professional
+entities don't reach this workflow at all, exempt or otherwise.
+
 - **Promoting**: a rank can only promote someone to a rank *below* their own
   — never to their own rank or above.
 - **Demoting**: same rule — only ranks below the actor's own.
 - Every promotion/demotion is logged, with a reason.
 - Promotions/demotions require sign-off from the rank above the actor —
-  **except** the super admin, who needs no further approval.
-- **Exception for a capped entity's top rank**: in an entity whose ceiling
-  has no rank above it locally — e.g. `professional`, capped at `admin`
-  (§3) — that top rank is also exempt from needing approval, the same as
-  `super admin`. Routing every professional account's internal promotion or
-  demotion through the platform super admin doesn't scale, and professional
-  entities are typically small (1–5 people), so the risk of an unchecked
-  self-approved change is low. As a compensating control, these
-  self-approved actions are still logged like any other promotion/demotion
-  **and** flagged for periodic platform audit sampling — a random review of
-  a percentage of self-approved actions — so scalability doesn't come at
-  the cost of all oversight.
+  **except** the super admin, who needs no further approval. Since this
+  workflow only ever applies within `organization` (per the "organization-
+  only" note above), the only entity that ever exercises this exemption in
+  practice is an organization's own super admin — the ceilings table's
+  other capped entities either never reach this workflow (`individual`,
+  `professional`) or have no rank tier to exempt in the first place
+  (`partners`, `suppliers`).
 - Promotion/demotion is not a toggle; it's a request submitted for approval,
   not an instant action.
 

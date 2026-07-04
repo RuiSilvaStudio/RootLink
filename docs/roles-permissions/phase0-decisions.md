@@ -586,3 +586,183 @@ existing top-level-surfaces table, per this session's own scoped-pass
 instruction).
 
 See the session report for the full file list and test counts.
+
+---
+
+## Addendum 5 (post-Phase-6 session): two final product decisions —
+## professional entities never get promote/demote; conversion rank rule
+## changed + mandatory live preview
+
+The product owner made two decisions, both final (not open questions),
+closing two items this same folder had previously flagged as
+pending/blocked-on-a-decision (Addendum 3's professional-team-schema gap,
+and the `UI_BUILD_BACKLOG.md` entity-registration-vs-conversion ambiguity —
+that second item is addressed by decision 2 below being self-service-only,
+already the case; the registration-vs-conversion UX overlap itself is a
+separate, still-open item, not touched by this addendum).
+
+### Decision 1: professional entities never get promote/demote capability
+
+**Confirmed, not newly built — this was already structurally true, verified
+by reading the actual code and by new tests, not assumed:**
+
+- `app/services/role_requests.py` already blocked all
+  `professional`/`individual`-scoped role-change requests outright (Phase
+  4, Addendum 3) — re-confirmed by reading the code fresh and by
+  `tests/test_roles_decisions_professional_no_team_workflow.py`'s
+  `test_professional_admin_cannot_submit_role_change_request`.
+- Professional-kind `User` rows never get an `entity_id` (only
+  `organization`/`partners`/`suppliers` do, per `app/models/entity.py`'s own
+  docstring) — confirmed by
+  `test_professional_user_never_has_entity_id`. This is what makes
+  `/entity/[entityId]/team` structurally unreachable for a professional
+  user: there is no `entity_id` on their own account to build that URL
+  from, and `frontend/app/profile/page.tsx`'s "Manage my entity" link-out
+  card is already gated on `profile.entity_id` being present (professional
+  accounts fall into the `else` branch — "Register an organization…" —
+  never the entity-dashboard link).
+- Even a professional user who manually guesses/types another
+  organization's `/entity/{id}/team` URL is still denied server-side:
+  `app/services/entity_team.py`'s `can_view_team` requires either real
+  entity membership (`user.entity_id == entity.id`, impossible for a
+  professional) or being that specific entity's primary contact
+  (impossible for an org/partners/suppliers entity from a professional
+  account) — confirmed by
+  `test_professional_admin_cannot_view_any_organizations_team_roster`
+  (403) and `test_professional_admin_cannot_add_to_organization_roster`.
+- **No dangling UI found.** There is no nav link, button, or route anywhere
+  in the frontend that offers a professional-kind user a path into the
+  entity-scoped team/promote-demote workflow that would then 404 or error —
+  grepped every `/entity/` href in the frontend (`profile/page.tsx`,
+  `admin/entity-verification/page.tsx`, `entity/[entityId]/page.tsx`,
+  `entity/[entityId]/team/page.tsx`) and traced each one back to a real
+  `entity_id`, which a professional account never has. **No code fix was
+  needed** — this item was verification + doc closure only, per the
+  session's own framing, confirmed rather than assumed.
+- Doc closure: `ROLES_PERMISSIONS.md` §3's ceilings table and §6 both had
+  their "professional's admin is self-exempt from the approval rule"
+  language removed/revised — that framing is moot once professional never
+  reaches this workflow at all (exempt-from-a-rule-you-never-encounter
+  isn't a meaningful exemption). §6 now states the workflow is
+  `organization`-only outright. `role_requests.py`'s own docstring/error
+  message updated from "flagged gap, future phase should decide" to
+  "decided, permanent, by design" (still the same enforcement code — a
+  comment/doc-accuracy fix, not a behavior change).
+
+### Decision 2: entity conversion is self-service only, rank preserved-or-
+### capped, mandatory live preview + explicit consent
+
+**Self-service only — confirmed, not newly built.** Every function in
+`app/services/entity_conversion.py` and every endpoint in
+`app/api/entity_conversion.py` takes the acting user from
+`Depends(get_current_user)` only; there is no `user_id` parameter anywhere
+in this module's functions or its Pydantic request schemas
+(`app/schemas/entity.py`). Proven by
+`test_conversion_ignores_any_user_id_in_payload_acts_on_caller_only`: even a
+smuggled `user_id`/`target_user_id` key in the request body has no schema
+field to land in and the conversion always applies to the authenticated
+caller. This is now stated explicitly in the module's own docstring and in
+`ROLES_PERMISSIONS.md` §3, rather than left implicit.
+
+**New direction built: `professional` → `individual`.** Did not exist
+before this session (only `individual` → `professional` and
+`professional` → `organization` existed). New service function
+`convert_professional_to_individual`, new endpoint
+`POST /api/entity-conversion/to-individual`, new registry entry
+`entity.convert_professional_to_individual`
+(`app/core/permissions_registry.py` — entity-scoped, persona(1)+,
+non-delegable; `entity_scoped_actions()` 43→44, `REGISTRY` 67→68, both
+hardcoded-count tests in `test_permissions_registry.py`/
+`test_permissions_registry_endpoint.py` updated to match). No eligibility
+criteria beyond currently being `professional` — converting DOWN to a
+lower-ceiling entity never needs re-verification, unlike converting up.
+
+**Rank rule changed for `individual` ↔ `professional` (both directions),
+replacing "always resets to persona(1)" for these two directions only —
+`professional` → `organization`'s bootstrap-to-super-admin(5) logic is
+untouched, deliberately, per the briefing's own instruction (a brand-new
+entity being founded is a different case from a rank comparison between two
+existing ceilings):** rank is preserved as-is if it already fits the
+destination entity's ceiling, otherwise capped DOWN to that ceiling.
+`individual`'s ceiling is contributor(2), `professional`'s is admin(4), so
+`individual` → `professional` always preserves rank unchanged (1 or 2
+always fits in 1-4) — this is a genuine behavior change from the original
+Phase 4 code (which unconditionally set `rank = 1`), even though it happens
+to produce an identical result for the specific case of a starting rank of
+1 (which is why `test_individual_to_professional_success`, Phase 4's own
+rank=1 test, still passes unmodified). `professional` → `individual`
+preserves rank 1 or 2 unchanged, but caps rank 3 (moderator) or 4 (admin)
+down to 2 (contributor) — the exact "admin converting to individual" case
+named in the briefing. Implemented as one shared helper
+(`_preserve_or_cap_rank`) and one shared projection function
+(`_projected_state_individual_professional`) that BOTH the real conversion
+functions and the preview endpoint call, specifically so the two can never
+silently drift apart from each other. Badges (`is_verified`/"verified",
+`can_self_publish`/"trusted publisher") are still never carried over in
+either direction — that part of the original design is unchanged.
+
+**New mandatory live preview/dry-run endpoint:**
+`GET /api/entity-conversion/preview?to=individual|professional` — read-only
+(never mutates the DB, confirmed by
+`test_preview_does_not_mutate_anything`), computes the REAL current state
+and REAL projected post-conversion state for the authenticated caller.
+Response shape (`EntityConversionPreviewResponse`,
+`app/schemas/entity.py`): `to`, `current`
+(`EntityConversionStateSnapshot`), `projected` (same shape), `rank_capped`
+(bool convenience flag). Each snapshot carries `entity_kind`, `entity_id`,
+`rank`, `rank_label` (human-readable, §5's rank names), plus every
+badge/flag the decision named explicitly — `is_verified`/`verified_at`,
+`can_self_publish`/`self_publish_agreed_at`, `can_edit_copy`,
+`email_verified`, plus `registration_number`/`activity_registration_number`
+and `account_status` for completeness. **Judgment call:** the field list
+(`app.services.entity_conversion.PREVIEW_FIELDS`) is a plain list of real
+`User` attribute names, not a reflection-based "every column on the model"
+dump — chosen so a future field relevant to conversion can be added to this
+one list and immediately show up in both `current`/`projected` without
+touching the endpoint or the frontend's rendering logic, while avoiding
+leaking irrelevant/sensitive `User` columns (password hash, feed tokens,
+etc.) that a blind reflection approach would need its own exclusion list
+for anyway. Only supports `to=individual|professional`, matching the
+briefing's own endpoint signature — `professional` → `organization` is not
+covered (see the frontend note below).
+
+**Frontend (`app/entity/convert/page.tsx`, rewritten):** the
+individual→professional and (new) professional→individual sections now
+require: (1) filling in any required fields, (2) clicking "Show before /
+after comparison" (calls the preview endpoint live), (3) reviewing the
+rendered comparison table (current vs. after, with a visible "capped down,
+not reset" note when `rank_capped` is true), (4) checking an explicit "I
+have reviewed... and confirm" checkbox — only then does the real convert
+button become enabled. If the user never confirms, no request is ever sent
+and they remain exactly as before. **Judgment call:** `professional` →
+`organization` deliberately keeps its original static "one-way" messaging +
+checkbox, unchanged — the preview endpoint's signature is scoped to
+`individual|professional` per the briefing, and that direction's
+bootstrap-to-super-admin logic is explicitly out of scope for this change,
+so no live preview was built for it. A future session could extend the
+preview endpoint to cover it too if the product owner wants full UX parity
+across all three directions — not done here since it wasn't asked for and
+would mean previewing a direction whose actual logic this session was told
+not to touch.
+
+**Live-verified via Playwright against the running dev servers** (backend
+`:8001`, frontend `:3001`, both already running — neither restarted except
+the backend, which required a restart per `docs/LESSONS.md` #5 since this
+session changed backend code; the frontend was left running the whole
+time, changes verified via `tsc --noEmit`/`next lint` plus Playwright
+against the live dev server, not a rebuild): a real professional-kind test
+user at rank 4 (admin) converting to individual correctly showed
+Admin → Contributor in the live comparison table (capped, not reset to
+Persona), the confirm button was disabled until the checkbox was checked,
+and confirming actually resulted in rank 2 server-side (`GET /api/auth/me`
+after the click). A rank-2 (contributor) individual converting to
+professional correctly showed Contributor → Contributor (preserved
+unchanged) in the same live comparison. Screenshots taken at each step;
+test users removed from the dev DB after verification.
+
+**Test counts:** 213 → 233 (20 new tests: 15 in
+`tests/test_roles_decisions_entity_conversion_v2.py`, 5 in
+`tests/test_roles_decisions_professional_no_team_workflow.py`), all backend
+tests passing; `tsc --noEmit`/`next lint` both clean.
+
+See `IMPLEMENTATION_STATUS.md`'s own dated entry for the full file list.

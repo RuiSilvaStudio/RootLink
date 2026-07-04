@@ -18,7 +18,7 @@ async def test_registry_endpoint_matches_the_python_registry_exactly(client):
     assert set(body.keys()) == set(REGISTRY.keys())
     # Phase 4 added 6 new registry actions (entity conversion/dissolution) —
     # see test_permissions_registry.py's own updated count and its comment.
-    assert len(body) == 67
+    assert len(body) == 68
 
 
 async def test_registry_endpoint_entry_shape(client):

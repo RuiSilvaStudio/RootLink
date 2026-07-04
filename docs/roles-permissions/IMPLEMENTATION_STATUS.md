@@ -5,8 +5,10 @@ _width: wide
 
 # User Roles & Permissions — Implementation Status
 
-> **Status:** ✅ **COMPLETE** — all 7 phases (0–6) done, verified. This is
-> the final phase; this status doc is now the complete record.
+> **Status:** ✅ **COMPLETE** — all 7 phases (0–6) done, verified, plus one
+> post-Phase-6 product-decision session (2026-07-04, see its own dated
+> section below "Post-implementation fixes"). This status doc is the
+> complete record.
 > **Spec:** [`ROLES_PERMISSIONS.md`](./ROLES_PERMISSIONS.md) · **Gap analysis:** [`assessment.md`](./assessment.md) · **Plan:** [`roadmap.md`](./roadmap.md)
 > **Decisions made so far:** [`phase0-decisions.md`](./phase0-decisions.md)
 > **Read this file first if resuming cold** — it's the fastest path to
@@ -535,6 +537,87 @@ Both fixes: local, uncommitted, `tsc --noEmit`/`next lint` clean, 213
 backend tests still passing (backend untouched — both are frontend-only),
 neither dev server restarted (frontend hot-reloaded; no backend changes).
 
+## Post-Phase-6 product decisions (2026-07-04): professional entities never
+## get promote/demote; entity conversion self-service + rank-cap + mandatory
+## live preview
+
+Two final product decisions (`phase0-decisions.md` Addendum 5), closing two
+previously-flagged open items (Addendum 3's professional-team-schema gap,
+`UI_BUILD_BACKLOG.md`'s professional-promote/demote and
+entity-registration-vs-conversion rows).
+
+**Decision 1 — verification only, no code fix needed.** Confirmed (not
+assumed) that professional entities already had no path to entity-scoped
+promote/demote: `role_requests.py` already blocked
+professional/individual-scoped requests (Phase 4); professional-kind users
+never get an `entity_id`, so `/entity/[entityId]/team` is structurally
+unreachable (no URL to build); no dangling UI link exists anywhere in the
+frontend that would offer this path and then fail. New tests
+(`tests/test_roles_decisions_professional_no_team_workflow.py`, 5 tests)
+prove this with real requests, not just code-reading. Doc-only changes:
+`ROLES_PERMISSIONS.md` §3/§6 revised to state this outright (workflow is
+`organization`-only) instead of describing professional's admin as
+"self-exempt" from a rule it never actually reaches; `role_requests.py`'s
+own comments updated from "flagged gap, future phase decides" to "decided,
+permanent" (comment-only — the enforcement code itself is unchanged).
+
+**Decision 2 — entity conversion is self-service only (confirmed), a new
+`professional` → `individual` direction was built, the rank rule changed
+for `individual` ↔ `professional`, and a mandatory live preview + consent
+gate was added:**
+
+- **Self-service only, confirmed by reading the code + a new test**
+  (`test_conversion_ignores_any_user_id_in_payload_acts_on_caller_only`):
+  no `user_id` parameter anywhere in `entity_conversion.py`/its schemas —
+  every conversion always acts on the authenticated caller.
+- **New direction:** `professional` → `individual` — new service function,
+  new `POST /api/entity-conversion/to-individual` endpoint, new registry
+  action `entity.convert_professional_to_individual`
+  (`entity_scoped_actions()` 43→44, `REGISTRY` 67→68).
+- **Rank rule changed for `individual` ↔ `professional` only** (replacing
+  "always resets to persona(1)"): preserved as-is if it fits the
+  destination's ceiling, else capped DOWN to that ceiling.
+  `professional` → `organization`'s bootstrap-to-super-admin(5) logic is
+  untouched, per instruction — a different case (founding a brand-new
+  entity), not a rank comparison.
+- **New mandatory live preview endpoint:**
+  `GET /api/entity-conversion/preview?to=individual|professional` —
+  read-only dry-run computing the caller's REAL current + projected state
+  (rank, entity, `is_verified`, `can_self_publish`, `can_edit_copy`,
+  `email_verified`, etc.), shared logic with the real conversion so the two
+  can't drift apart.
+- **Frontend (`app/entity/convert/page.tsx`, rewritten):** the
+  individual→professional and new professional→individual sections now
+  require loading the live preview, reviewing a real comparison table, and
+  checking an explicit confirm checkbox before the convert button enables.
+  `professional` → `organization` keeps its original static messaging
+  (unchanged, out of scope for the preview endpoint per the briefing).
+- **Live-verified via Playwright** against the already-running dev servers
+  (`:8001`/`:3001`, backend restarted per `docs/LESSONS.md` #5 since this
+  session changed backend code, frontend left running throughout): a real
+  rank-4 (admin) professional test user converting to individual correctly
+  showed Admin → Contributor in the live comparison (capped, not reset to
+  Persona), confirm button disabled until the checkbox was checked, and
+  confirming produced rank 2 server-side; a rank-2 individual converting to
+  professional correctly showed Contributor → Contributor (preserved).
+  Screenshots taken; test users removed afterward.
+
+**Backend tests: 213 → 233** (20 new: 15 in
+`tests/test_roles_decisions_entity_conversion_v2.py`, 5 in
+`tests/test_roles_decisions_professional_no_team_workflow.py`), all
+passing. `tsc --noEmit`/`next lint` both clean.
+
+Files changed: `app/core/permissions_registry.py`,
+`app/services/entity_conversion.py`, `app/api/entity_conversion.py`,
+`app/schemas/entity.py`, `app/services/role_requests.py` (comments only),
+`tests/test_permissions_registry.py`,
+`tests/test_permissions_registry_endpoint.py` (hardcoded count updates),
+plus the 2 new test files above; `frontend/lib/api.ts`,
+`frontend/app/entity/convert/page.tsx` (rewritten),
+`frontend/app/profile/page.tsx` (one line of link-out copy). Docs:
+`ROLES_PERMISSIONS.md` (§3, §6), `phase0-decisions.md` (Addendum 5),
+`UI_BUILD_BACKLOG.md` (two rows closed), this file.
+
 ## New files this work has created (not yet committed)
 
 Backend (Phases 1–3): `app/models/entity.py`, `app/models/session.py`,
@@ -613,21 +696,25 @@ the system, not resume an in-progress build:
 
 1. Read this file, then `phase0-decisions.md` (for *why* things were built
    the way they were — several real judgment calls are documented there and
-   in code docstrings, not just in this status doc, across Addenda 1–4).
+   in code docstrings, not just in this status doc, across Addenda 1–5).
 2. Confirm current state matches this doc: `python -m pytest -q` in
-   `rootlink/backend` should show 213 passed; `tsc --noEmit`/`next lint` in
-   `rootlink/frontend` should both be clean. This folder itself should be at
-   `docs/roles-permissions/` (tracked in git), not `backlog/` — if you find
-   a `backlog/user-roles-permissions/` folder with real content in it again,
-   that's a regression of this phase's own promotion, not a second copy to
-   trust.
+   `rootlink/backend` should show 233 passed (213 through Phase 6, +20 from
+   the post-Phase-6 conversion/rank-cap/preview work — see that dated entry
+   above); `tsc --noEmit`/`next lint` in `rootlink/frontend` should both be
+   clean. This folder itself should be at `docs/roles-permissions/` (tracked
+   in git), not `backlog/` — if you find a `backlog/user-roles-permissions/`
+   folder with real content in it again, that's a regression of this
+   phase's own promotion, not a second copy to trust.
 3. Real, flagged gaps/judgment calls that were never fully closed (none of
    them are bugs, all are documented product/scope decisions a future
-   session may need to revisit): the registration-vs-conversion overlap for
-   professional→organization; delegation auto-void not wired into demotion;
-   the new Phase 5 pages' English-only copy (no i18n yet); `professional`
-   entities having no shared "team" schema (blocks `professional`-scoped
-   role-change requests); `can_self_publish`/`can_edit_copy` never actually
-   cut over to read from `delegation_grants` (the booleans remain
-   authoritative) — see `phase0-decisions.md` Addenda 3–4 for full reasoning
-   on all of these.
+   session may need to revisit): the registration-vs-conversion **UX
+   overlap** for professional→organization (two live entry points, no
+   explanatory copy distinguishing them — NOT the same thing as the
+   self-service-only question, which Addendum 5 closed); delegation
+   auto-void not wired into demotion; the new Phase 5 pages' English-only
+   copy (no i18n yet); `can_self_publish`/`can_edit_copy` never actually cut
+   over to read from `delegation_grants` (the booleans remain authoritative)
+   — see `phase0-decisions.md` Addenda 3–5 for full reasoning on all of
+   these. **Closed since Phase 6** (do not re-open without a new product
+   decision): `professional` entities having no "team" schema — confirmed
+   permanent/by-design, not a pending gap (Addendum 5).

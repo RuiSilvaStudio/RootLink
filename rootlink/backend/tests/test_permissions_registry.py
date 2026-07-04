@@ -39,12 +39,12 @@ def test_registry_covers_final_spec_sections_7_and_8():
     # which predates this phase's build — see docs/roles-permissions/phase0-decisions.md addendum):
     # entity.convert_individual_to_professional,
     # entity.convert_professional_to_organization, entity.request_dissolution.
-    assert len(entity_scoped_actions()) == 43
+    assert len(entity_scoped_actions()) == 44
     # docs/roles-permissions/ROLES_PERMISSIONS.md §8 has 21 distinct action rows. Phase 4 adds 3 more
     # platform-wide actions (same addendum): entity.reverse_dissolution,
     # entity.ban, entity.unban.
     assert len(platform_wide_actions()) == 24
-    assert len(REGISTRY) == 67
+    assert len(REGISTRY) == 68
 
 
 def test_every_entry_has_a_valid_rank_and_scope():

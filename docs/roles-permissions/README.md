@@ -24,23 +24,32 @@ to this tracked location once implementation was complete (Phase 6) — see
    Single source of truth for entities, roles/ranks, account status and
    the enforcement ladder, promote/demote rules, permission tables,
    delegation.
-2. **[assessment.md](./assessment.md)** — gap analysis: what has to change
+2. **[ACTION_UI_MAP.md](./ACTION_UI_MAP.md)** — manual QA cross-reference:
+   every one of the 67 `permissions_registry.py` actions mapped to the exact
+   production page/button/form that exercises it (or flagged as "no UI yet"
+   where none exists). Use this to click-test the live site.
+3. **[UI_BUILD_BACKLOG.md](./UI_BUILD_BACKLOG.md)** — forward-looking build
+   backlog derived from `ACTION_UI_MAP.md`'s gaps: every UI touchpoint that's
+   genuinely needed but doesn't exist yet (or exists in a degraded form),
+   with why-it-matters, suggested UI location, rough complexity, and
+   dependencies — for the product owner to prioritize what gets built next.
+4. **[assessment.md](./assessment.md)** — gap analysis: what has to change
    in the data model, backend, frontend, and docs to go from the live
    system to ROLES_PERMISSIONS.md, plus a "before you write any code" decision
    checklist.
-3. **[roadmap.md](./roadmap.md)** — phased implementation plan (Phase 0
+5. **[roadmap.md](./roadmap.md)** — phased implementation plan (Phase 0
    decisions → Phase 6 doc reconciliation), sequenced from assessment.md,
    architecture through UI. Nothing in assessment.md is left unmapped.
-4. **[phase0-decisions.md](./phase0-decisions.md)** — concrete answers to
+6. **[phase0-decisions.md](./phase0-decisions.md)** — concrete answers to
    all 9 Phase 0 decision items, including judgment calls made mid-build
    (e.g. why `rank_at_least` was used instead of the full registry for the
    Phase 3 bug-fix cutover) — read this to understand *why*, not just *what*.
-5. **[platform-user-guide.md](./platform-user-guide.md)** — plain-language
+7. **[platform-user-guide.md](./platform-user-guide.md)** — plain-language
    help-center draft for end users (not developers). Not live yet.
-6. **[contributor-guide.md](./contributor-guide.md)** — for developers
+8. **[contributor-guide.md](./contributor-guide.md)** — for developers
    building against or extending this system. Linked from the repo's
    `CONTRIBUTING.md`.
-7. **[IMPLEMENTATION_KICKOFF.md](./IMPLEMENTATION_KICKOFF.md)** — the original
+9. **[IMPLEMENTATION_KICKOFF.md](./IMPLEMENTATION_KICKOFF.md)** — the original
    Phase 0/1 kickoff briefing. Historical — kept for context on how the
    implementation work started; superseded by `IMPLEMENTATION_STATUS.md` for
    current state.

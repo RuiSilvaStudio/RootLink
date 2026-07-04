@@ -210,6 +210,16 @@ _ENTITY_SCOPED: dict[str, PermissionEntry] = {
         notes="Any professional-entity persona+ may request this — becomes the new organization's "
               "bootstrap super admin (§3 'Bootstrapping a new entity'), no approval step.",
     ),
+    # Post-Phase-6 product decision (docs/roles-permissions/phase0-decisions.md Addendum 5): the
+    # missing reverse direction. Rank is preserved-or-capped to individual's
+    # ceiling (contributor(2)), NOT reset to persona(1) — see
+    # app.services.entity_conversion for the shared cap-rule implementation.
+    "entity.convert_professional_to_individual": PermissionEntry(
+        Rank.persona, "entity", False,
+        notes="Any professional-entity persona+ may self-service convert back to individual — rank "
+              "preserved if already ≤2, else capped down to 2 (not reset to 1). Same self-service-"
+              "only, immediate, one-way shape as the other conversion directions.",
+    ),
     "entity.request_dissolution": PermissionEntry(
         Rank.super_admin, "entity", False,
         notes="The entity's own super admin may TRIGGER/REQUEST dissolution (organization/partners/"

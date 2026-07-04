@@ -956,7 +956,7 @@ function ProfilePage() {
                 <ArrowRightLeft className="w-5 h-5 text-primary-500 group-hover:text-primary-600" />
                 <div>
                   <p className="text-sm font-medium text-stone-700 dark:text-stone-300">Convert account type</p>
-                  <p className="text-xs text-stone-400 dark:text-stone-500 font-serif">Individual → professional, or professional → organization</p>
+                  <p className="text-xs text-stone-400 dark:text-stone-500 font-serif">Individual ↔ professional, or professional → organization</p>
                 </div>
               </Link>
             )}

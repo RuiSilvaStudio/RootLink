@@ -927,11 +927,20 @@ export const api = {
   },
 
   // Phase 5 — new UI surfaces (docs/roles-permissions/roadmap.md).
+  // Post-Phase-6 (docs/roles-permissions/phase0-decisions.md Addendum 5):
+  // `toIndividual` (the new professional->individual direction) and
+  // `preview` (the mandatory live before/after comparison, called BEFORE
+  // any of the three `to*` mutations above) were added — self-service
+  // only, no user_id param on any of these.
   entityConversion: {
     toProfessional: (data: { tax_registration_id: string; activity_registration_number: string }) =>
       request<any>("/api/entity-conversion/to-professional", { method: "POST", body: JSON.stringify(data) }),
+    toIndividual: () =>
+      request<any>("/api/entity-conversion/to-individual", { method: "POST" }),
     toOrganization: (data: { organization_name: string }) =>
       request<any>("/api/entity-conversion/to-organization", { method: "POST", body: JSON.stringify(data) }),
+    preview: (to: "individual" | "professional") =>
+      request<any>(`/api/entity-conversion/preview?to=${to}`),
   },
 
   entities: {

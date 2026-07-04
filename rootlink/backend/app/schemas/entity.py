@@ -12,6 +12,43 @@ class ConvertToOrganizationRequest(BaseModel):
     organization_name: str
 
 
+# --- Post-Phase-6 decision (docs/roles-permissions/phase0-decisions.md Addendum 5): the reverse
+# `professional` -> `individual` direction + the mandatory live preview. Note
+# there is deliberately no request body/`user_id` field on the conversion
+# itself — self-service only, always acts on the authenticated caller. ---
+
+class EntityConversionStateSnapshot(BaseModel):
+    """One side (current or projected) of the live conversion comparison —
+    real values read off (or computed for) the acting user, never a static
+    template. Field list: `app.services.entity_conversion.PREVIEW_FIELDS`
+    plus entity_kind/entity_id/rank(_label)."""
+
+    entity_kind: str | None = None
+    entity_id: int | None = None
+    rank: int | None = None
+    rank_label: str | None = None
+    is_verified: bool = False
+    verified_at: datetime | None = None
+    can_self_publish: bool = False
+    self_publish_agreed_at: datetime | None = None
+    can_edit_copy: bool = False
+    email_verified: bool = False
+    registration_number: str | None = None
+    activity_registration_number: str | None = None
+    account_status: str = "active"
+
+    model_config = {"from_attributes": True}
+
+
+class EntityConversionPreviewResponse(BaseModel):
+    to: str
+    current: EntityConversionStateSnapshot
+    projected: EntityConversionStateSnapshot
+    # Convenience flag the frontend can key its "your rank will be capped"
+    # messaging off directly, without re-deriving it from current/projected.
+    rank_capped: bool
+
+
 class EntityResponse(BaseModel):
     id: int
     entity_type: str

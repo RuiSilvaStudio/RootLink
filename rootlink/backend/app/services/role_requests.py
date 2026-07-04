@@ -30,18 +30,20 @@ which can never reach the required moderator/admin floor to submit a
 request in the first place, so it never actually exercises the exemption in
 practice; partners/suppliers, ceiling persona, same reasoning).
 
-**Judgment call — `professional`/`individual` entity_kind requests are
-rejected outright.** Only `organization`/`partners`/`suppliers` have a real
-`entities` row linking their members together; `professional` accounts have
-no schema-level "same professional business" concept at all (each is its
-own unlinked `User` row, per `app/models/entity.py`'s own docstring) — so
-"is this target the same professional entity as the requester" is
-unanswerable today. Rather than silently allow a professional's `admin` to
-promote/demote an unrelated professional user (a real privilege-escalation
-bug), this blocks all professional/individual-scoped requests with a clear
-error, flagged here and in docs/roles-permissions/phase0-decisions.md's addendum as a real,
-un-modeled gap for a future phase (a "professional team" concept doesn't
-exist yet to build against).
+**Decided, not a gap (docs/roles-permissions/phase0-decisions.md Addendum 5):
+`professional`/`individual` entity_kind requests are blocked outright,
+permanently — this workflow is organization-only by design.** Only
+`organization`/`partners`/`suppliers` have a real `entities` row linking
+their members together; `professional`/`individual` accounts never get one
+and never will (professional-kind users' rank changes are handled directly
+by the platform via the existing `/admin/users` role-management page, not
+through this entity-scoped request+approval workflow — there is no "team"
+to manage rank within for either of these two entity kinds). This was originally flagged (Phase 4, docs/roles-permissions/phase0-decisions.md
+Addendum 3) as a gap pending a future "professional team" schema decision;
+the product owner has since confirmed (Addendum 5) there will be no such
+schema — professional/individual entities never get this capability. The
+block implemented below is therefore permanent product behavior, not a
+placeholder for a future unblock.
 """
 
 from datetime import UTC, datetime
@@ -85,8 +87,10 @@ async def submit_role_change_request(
     if not is_platform_actor:
         if req_entity_kind in _NO_TEAM_MODEL_ENTITIES:
             raise RoleRequestError(
-                f"'{req_entity_kind}' entities have no shared team model in this phase — "
-                "role-change requests are not supported for them yet"
+                f"'{req_entity_kind}' entities have no shared team model and never will — "
+                "this workflow is organization-only by design (docs/roles-permissions/"
+                "phase0-decisions.md Addendum 5); rank changes for this entity kind are "
+                "handled directly via /admin/users instead"
             )
         if req_entity_kind != tgt_entity_kind:
             raise RoleRequestError("Requester and target must belong to the same entity")

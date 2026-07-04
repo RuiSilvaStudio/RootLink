@@ -281,3 +281,18 @@
     happening: `docker compose exec celery-worker python3 -c "from app.tasks.celery_app import
     celery_app; print(celery_app.tasks.keys())"` — if it only shows `celery.*` builtins, no real
     tasks are registered.
+
+37. **A bash tool call backgrounding a compound `source .venv/bin/activate && setsid nohup uvicorn
+    ... &` can report "terminated after exceeding timeout" even though the background process
+    started successfully** — don't treat that timeout message as a failure signal by itself.
+    Confirmed harmless: after the reported timeout, `ss -ltnp | grep 8001` already showed the new
+    uvicorn PID correctly bound and `curl`-ing a fresh endpoint on it worked immediately. Always
+    verify via `ss -ltnp`/a health-check request, not the tool call's own exit status, when
+    backgrounding a multi-command chain this way. Separately, re-confirmed lesson #9's own
+    "graceful shutdown hangs" behavior while restarting the backend for this same change: a plain
+    `kill <pid>` (SIGTERM) can leave the *old* uvicorn process listed as still `Ssl`-alive in
+    `ps aux` for a while even after the port has already been freed and a *new* process has
+    successfully bound to it — `kill -9` on the old PID is what actually reaped it. Don't assume a
+    freed port means the old process fully exited; check `ps -p <old_pid>` too before moving on.
+    (Roles/permissions post-Phase-6 decisions — professional promote/demote + entity-conversion
+    rank-cap/preview — restarting the backend dev server, 2026-07-04.)
