@@ -164,8 +164,9 @@ export default function AdminContent() {
     fetchContent();
   };
 
-  const handleReject = async (id: number) => {
-    await api.admin.rejectContent(id);
+  const handleRevertApproval = async (id: number) => {
+    const reason = window.prompt(t("admin.revert_reason_prompt")) || undefined;
+    await api.admin.revertApproval(id, reason);
     fetchContent();
   };
 
@@ -262,8 +263,8 @@ export default function AdminContent() {
               </div>
               <div className="flex items-center gap-1.5 shrink-0 mt-1">
                 {c.verification_status === "community_reviewed" ? (
-                  <button onClick={() => handleReject(c.id)} className="text-xs bg-stone-100/60 text-stone-600 border border-stone-200/40 px-2.5 py-1 rounded-lg hover:bg-stone-100 font-display font-medium transition">
-                    {t("admin.unreview")}
+                  <button onClick={() => handleRevertApproval(c.id)} className="text-xs bg-stone-100/60 text-stone-600 border border-stone-200/40 px-2.5 py-1 rounded-lg hover:bg-stone-100 font-display font-medium transition">
+                    {t("admin.revert_approval")}
                   </button>
                 ) : (
                   <button onClick={() => handleApprove(c.id)} className="text-xs bg-emerald-100/60 text-emerald-700 border border-emerald-200/40 px-2.5 py-1 rounded-lg hover:bg-emerald-100 font-display font-medium transition">

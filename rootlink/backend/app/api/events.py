@@ -110,6 +110,11 @@ async def _check_event_owner(event_id: int, user: User, db: AsyncSession) -> Eve
 
 
 async def _can_view_event(event: Event, user: User | None, db: AsyncSession) -> bool:
+    # Archived events are hidden from everyone except platform staff — same
+    # precedent as archived groups (api/groups.py get_group → 404 unless staff).
+    if event.status == "archived":
+        if user is None or not rank_at_least(user, Rank.moderator):
+            return False
     # Draft check FIRST — drafts only visible to creator + admin/mod,
     # regardless of visibility setting.
     # TECH_DEBT.md §0 (was missing super_admin) — Phase 3 cutover.
@@ -153,7 +158,11 @@ async def list_events(
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(get_optional_user),
 ):
-    query = select(Event)
+    # Archived events are excluded from the public list UNCONDITIONALLY (even
+    # for staff, and even if `status=archived` is explicitly requested) — same
+    # pattern as the public groups list (Group.status == active); staff use
+    # GET /api/admin/events, which includes them.
+    query = select(Event).where(Event.status != "archived")
     if upcoming:
         query = query.where(Event.date >= datetime.now()).order_by(Event.date.asc())
     else:

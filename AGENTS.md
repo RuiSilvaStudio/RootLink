@@ -22,6 +22,18 @@ it should be wired into the Content UI Editor — never assume either way.** See
 `.opencode/skills/platform-coherence/references/design-patterns.md` → "Content UI Editor" for the
 wiring pattern and pitfalls (click-conflict elements, static-array content).
 
+## UI work — required skills
+
+**Any time, in any session, when building or modifying UI for this project,
+always load and use both the `frontend-design` and `frontend-ui-guardian`
+skills** — invoke the `skill` tool for both before writing UI code, not just
+when explicitly asked. This applies to new pages, new components, and edits
+to existing UI alike. `frontend-design` guides aesthetic/typography choices
+so new UI doesn't read as templated defaults; `frontend-ui-guardian` is the
+constitution for RootLink's frontend (Invisible Infrastructure, accessibility,
+community autonomy) and should be treated as authoritative for any design
+decision that conflicts with a generic default.
+
 ## Directory Routing Map
 - `discovery/research/` Technical spikes, third-party API evaluation, and architectural ideas.
 - `discovery/assessment/` Stress test, security audits, and breaking/change impact report.

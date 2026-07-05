@@ -6,11 +6,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.entity_resolution import ROLE_RANK
-from app.core.permissions import rank_at_least
+from app.core.permissions import can, rank_at_least
 from app.core.security import get_current_user, hash_password
 from app.models.comment import Comment
 from app.models.content import Content, ContentStatus, SearchQueryLog, VerificationStatus
-from app.models.event import Event, EventDonation, EventSponsor, EventTicket, EventVendor
+from app.models.event import Event, EventDonation, EventRSVP, EventSponsor, EventTicket, EventVendor
 from app.models.group import Group, GroupMember, GroupStatus
 from app.models.learning import Course, Enrollment
 from app.models.moderation import ModerationAction
@@ -404,16 +404,62 @@ async def list_content(
     return result.scalars().all()
 
 
-@router.patch("/content/{content_id}/approve")
-async def approve_content(
+@router.patch("/content/{content_id}/review")
+async def review_content(
     content_id: int,
+    comment: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: User = require_contributor,
 ):
+    """First pass of the real two-step review/approve flow (docs/roles-permissions/
+    ROLES_PERMISSIONS.md §7: "Review article", contributor+). Marks the
+    submission `reviewed` — an optional waypoint a moderator can still skip
+    (approve works directly from `in_review` too, by product decision).
+    `comment` is an internal-only note for whoever approves next, never
+    shown to the article's author (see `review_note` for that)."""
     result = await db.execute(select(Content).where(Content.id == content_id))
     content = result.scalar_one_or_none()
     if not content:
         raise HTTPException(status_code=404, detail="Content not found")
+    if content.status != ContentStatus.in_review:
+        raise HTTPException(status_code=400, detail="Only in_review content can be marked reviewed")
+    content.status = ContentStatus.reviewed
+    if comment:
+        content.review_comment = comment
+    await log_moderation(
+        db,
+        action=ModerationAction.review,
+        target_type="content",
+        target_id=content.id,
+        actor_id=current_user.id,
+    )
+    await db.commit()
+    return {"ok": True, "status": "reviewed"}
+
+
+@router.patch("/content/{content_id}/approve")
+async def approve_content(
+    content_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = require_mod,
+):
+    """Approve requires moderator+ (docs/roles-permissions/ROLES_PERMISSIONS.md
+    §7 "Approve article") — previously this was reachable at contributor+,
+    a documented Phase 3 enforcement mismatch (ACTION_UI_MAP.md). Fixed here
+    as part of building the real two-step review/approve design: a
+    contributor-level "review" step is meaningless if any contributor can
+    also approve directly, bypassing the moderator floor entirely."""
+    result = await db.execute(select(Content).where(Content.id == content_id))
+    content = result.scalar_one_or_none()
+    if not content:
+        raise HTTPException(status_code=404, detail="Content not found")
+    if content.status not in (ContentStatus.in_review, ContentStatus.reviewed):
+        raise HTTPException(status_code=400, detail="Only in_review or reviewed content can be approved")
+    # Separation of duties (docs/roles-permissions/ROLES_PERMISSIONS.md §6):
+    # nobody — not even an entity's own super admin — may approve their own
+    # submission. Approval must always come from a different person.
+    if content.created_by is not None and content.created_by == current_user.id:
+        raise HTTPException(status_code=403, detail="You cannot approve your own submission")
     # Approve = go live (status is the visibility gate) AND earn the
     # community-reviewed quality badge (CONTENT_PLATFORM.md §2.3).
     content.status = ContentStatus.published
@@ -440,7 +486,10 @@ async def reject_content(
     current_user: User = require_mod,
 ):
     """Soft reject: never hard-deletes (CONTENT_PLATFORM.md §2.5). Records a reason
-    and leaves the content appealable by its author."""
+    and leaves the content appealable by its author. For an already-*approved*
+    article, use `revert_approval` instead — that goes back to `in_review`,
+    not `rejected` (this endpoint is for denying a submission that was never
+    approved in the first place)."""
     result = await db.execute(select(Content).where(Content.id == content_id))
     content = result.scalar_one_or_none()
     if not content:
@@ -459,6 +508,41 @@ async def reject_content(
     return {"ok": True, "status": "rejected"}
 
 
+@router.patch("/content/{content_id}/revert-approval")
+async def revert_approval(
+    content_id: int,
+    reason: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = require_mod,
+):
+    """Undo an already-approved article (docs/roles-permissions/ROLES_PERMISSIONS.md
+    §7 "Revert article approval", moderator+). Goes back to `in_review` for a
+    fresh pass through the two-step flow — deliberately NOT `rejected`
+    (that status is reserved for denying a submission that was never
+    approved; conflating the two would make the reject/appeal flow also
+    fire for a plain "undo," which isn't what happened here)."""
+    result = await db.execute(select(Content).where(Content.id == content_id))
+    content = result.scalar_one_or_none()
+    if not content:
+        raise HTTPException(status_code=404, detail="Content not found")
+    if content.status != ContentStatus.published:
+        raise HTTPException(status_code=400, detail="Only published content can have its approval reverted")
+    content.status = ContentStatus.in_review
+    content.verification_status = VerificationStatus.unreviewed
+    if reason:
+        content.review_note = reason
+    await log_moderation(
+        db,
+        action=ModerationAction.revert_approval,
+        target_type="content",
+        target_id=content.id,
+        actor_id=current_user.id,
+        reason=reason,
+    )
+    await db.commit()
+    return {"ok": True, "status": "in_review"}
+
+
 @router.get("/review-queue", response_model=list[ContentResponse])
 async def review_queue(
     limit: int = Query(50, ge=1, le=200),
@@ -468,7 +552,7 @@ async def review_queue(
 ):
     stmt = (
         select(Content)
-        .where(Content.status == ContentStatus.in_review)
+        .where(Content.status.in_([ContentStatus.in_review, ContentStatus.reviewed]))
         .order_by(Content.created_at.desc())
         .offset(offset)
         .limit(limit)
@@ -566,10 +650,20 @@ async def list_groups(
 async def archive_group(
     group_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = require_super_admin,
+    current_user: User = Depends(get_current_user),
 ):
-    """Soft-archive a group (super_admin only). Members are notified; the group is
-    hidden from public surfaces but NOT hard-deleted (data + activity preserved)."""
+    """Soft-archive a group (PLATFORM super_admin only — docs/roles-permissions/
+    ROLES_PERMISSIONS.md §8: an entity's own super admin never qualifies, since a
+    group can have members from multiple entities). Members are notified; the
+    group is hidden from public surfaces but NOT hard-deleted (data + activity
+    preserved).
+
+    Gate changed from the rank-only `require_super_admin` to the registry check
+    (2026-07-04, UI backlog batch 3): the rank-only check wrongly passed an
+    organization's own rank-5 super admin — same latent gap event.archive's new
+    endpoint avoided from day one."""
+    if not can(current_user, "group.archive"):
+        raise HTTPException(status_code=403, detail="Only a platform super admin can archive a group")
     group = await db.get(Group, group_id)
     if not group:
         raise HTTPException(status_code=404, detail="Group not found")
@@ -608,6 +702,96 @@ async def delete_group(
     await db.execute(delete(GroupMember).where(GroupMember.group_id == group_id))
     await db.execute(delete(Group).where(Group.id == group_id))
     await db.commit()
+
+
+# ── Events ──
+
+@router.get("/events")
+async def list_events_admin(
+    q: str | None = Query(None),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    _=require_mod,
+):
+    """Staff listing — unlike the public /api/events list, this INCLUDES archived
+    events (that's the whole point: the archive panel needs to show them)."""
+    stmt = (
+        select(Event, User.name)
+        .join(User, Event.created_by == User.id, isouter=True)
+        .order_by(Event.created_at.desc())
+    )
+    if q:
+        stmt = stmt.where(Event.title.ilike(f"%{q}%"))
+    stmt = stmt.offset(offset).limit(limit)
+    rows = (await db.execute(stmt)).all()
+    return [
+        {
+            "id": e.id,
+            "title": e.title,
+            "date": e.date,
+            "location": e.location,
+            "is_online": e.is_online,
+            "image_url": e.image_url,
+            "category": e.category,
+            "family": e.family,
+            "status": e.status,
+            "archived_at": e.archived_at,
+            "created_by": e.created_by,
+            "creator_name": creator_name,
+        }
+        for e, creator_name in rows
+    ]
+
+
+@router.post("/events/{event_id}/archive")
+async def archive_event(
+    event_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Soft-archive an event — PLATFORM super_admin only
+    (docs/roles-permissions/ROLES_PERMISSIONS.md §8 "Archive event").
+    Deliberately NOT the event's owner or an entity's own super admin: an event
+    can have attendees from multiple entities, so taking it down needs
+    platform-level judgment (same blast-radius reasoning as group.archive).
+    Attendees are notified; the event is hidden from public surfaces but NOT
+    hard-deleted (data + RSVPs preserved).
+
+    Gate: `can(user, "event.archive")` (registry entity_scope="platform", the
+    compost-hub-archive precedent) rather than the group archive's bare
+    `require_super_admin` rank check — the rank-only check would wrongly let an
+    organization's own super admin (rank 5, entity_kind="organization") through.
+    """
+    if not can(current_user, "event.archive"):
+        raise HTTPException(status_code=403, detail="Only a platform super admin can archive an event")
+
+    event = await db.get(Event, event_id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if event.status == "archived":
+        return {"ok": True, "status": "archived"}
+
+    event.status = "archived"
+    event.archived_at = datetime.now(UTC)
+
+    # Notify every attendee (RSVP) that the event is being retired.
+    rsvps = (await db.execute(select(EventRSVP).where(EventRSVP.event_id == event_id))).scalars().all()
+    for r in rsvps:
+        db.add(Notification(
+            user_id=r.user_id,
+            actor_id=current_user.id,
+            type=NotificationType.system,
+            message=f'The event "{event.title}" is being retired and will be archived. It will no longer appear in listings.',
+            link=f"/events/{event_id}",
+        ))
+
+    await log_moderation(
+        db, action="archive_event", target_type="event", target_id=event_id,
+        actor_id=current_user.id, meta={"attendee_count": len(rsvps)},
+    )
+    await db.commit()
+    return {"ok": True, "status": "archived", "notified": len(rsvps)}
 
 
 # ── Comments ──

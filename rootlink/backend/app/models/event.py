@@ -27,7 +27,12 @@ class Event(TimestampMixin, Base):
     # Visibility & access control
     visibility: Mapped[str] = mapped_column(String(50), default="all")
     visibility_roles: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    # Lifecycle: "draft" | "published" | "archived". Soft-archive mirrors the
+    # Group precedent (docs/roles-permissions/ROLES_PERMISSIONS.md §8 "Archive
+    # event" — platform super admin only): archived events are hidden from
+    # public surfaces but never hard-deleted (data + RSVPs preserved).
     status: Mapped[str] = mapped_column(String(50), default="published")
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Pricing
     ticket_type: Mapped[str] = mapped_column(String(50), default="free")

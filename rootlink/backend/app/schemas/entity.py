@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 
 class ConvertToProfessionalRequest(BaseModel):
@@ -102,12 +102,38 @@ class EntityMemberResponse(BaseModel):
     email: str
     entity_kind: str | None = None
     rank: int | None = None
+    # Surfaced so the entity team page can show/toggle the trusted-publisher
+    # state per member (entity-scoped grant/revoke endpoint).
+    can_self_publish: bool = False
 
     model_config = {"from_attributes": True}
 
 
 class TeamRosterAddRequest(BaseModel):
     user_id: int
+
+
+class EntityMemberPasswordResetRequest(BaseModel):
+    """Body for the entity-scoped member password reset. Min length matches
+    the platform-wide admin endpoint's validation (app/api/admin.py)."""
+
+    password: str = Field(min_length=6)
+
+
+class EntityNotifyMembersRequest(BaseModel):
+    """Body for the entity-scoped member notification broadcast
+    (`notification.send_to_entity_members`). Max length matches the
+    Notification.message column (String(500)) — the platform broadcast has
+    no explicit schema cap, but the same column enforces 500 there too."""
+
+    message: str = Field(min_length=1, max_length=500)
+
+    @field_validator("message")
+    @classmethod
+    def _not_blank(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("message must not be blank")
+        return v
 
 
 # --- Phase 5: delegation-grant CRUD (docs/roles-permissions/ROLES_PERMISSIONS.md §10) ---

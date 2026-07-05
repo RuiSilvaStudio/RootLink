@@ -93,6 +93,23 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify(data),
       }),
+    // Self-service force-logout: revokes EVERY active session for the current
+    // user, including the one making this call (app/api/auth_security.py).
+    revokeMySessions: () =>
+      request<{ revoked_count: number }>("/api/auth/sessions/revoke-mine", { method: "POST" }),
+    // Dev-mode password reset: no email infrastructure yet, so the request
+    // endpoint returns the raw token in the response (only when the account
+    // exists — absent otherwise, same message either way).
+    requestPasswordReset: (email: string) =>
+      request<{ message: string; token?: string | null; expires_at?: string | null }>(
+        "/api/auth/password/reset/request",
+        { method: "POST", body: JSON.stringify({ email }) }
+      ),
+    confirmPasswordReset: (data: { token: string; new_password: string }) =>
+      request<{ password_reset: boolean }>("/api/auth/password/reset/confirm", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
   },
   content: {
     search: (params: {
@@ -369,6 +386,11 @@ export const api = {
         method: "POST",
         body: JSON.stringify(data),
       }),
+    update: (id: number, body: string) =>
+      request<any>(`/api/comments/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ body }),
+      }),
     delete: (id: number) =>
       request<void>(`/api/comments/${id}`, { method: "DELETE" }),
   },
@@ -450,6 +472,28 @@ export const api = {
       request<any>(`/api/admin/users/${userId}/verify`, { method: "POST" }),
     unverifyUser: (userId: number) =>
       request<any>(`/api/admin/users/${userId}/unverify`, { method: "POST" }),
+    // Enforcement ladder (docs/roles-permissions/ROLES_PERMISSIONS.md §4):
+    // active → restricted → suspended → banned. Reasons land in the
+    // moderation audit log. `until` is an ISO datetime (SuspendRequest.until).
+    restrictUser: (userId: number, reason?: string) =>
+      request<any>(`/api/admin/users/${userId}/restrict`, { method: "POST", body: JSON.stringify({ reason: reason || null }) }),
+    liftRestriction: (userId: number) =>
+      request<any>(`/api/admin/users/${userId}/lift-restriction`, { method: "POST" }),
+    suspendUser: (userId: number, until: string, reason?: string) =>
+      request<any>(`/api/admin/users/${userId}/suspend`, { method: "POST", body: JSON.stringify({ until, reason: reason || null }) }),
+    liftSuspension: (userId: number) =>
+      request<any>(`/api/admin/users/${userId}/lift-suspension`, { method: "POST" }),
+    banUser: (userId: number, reason?: string) =>
+      request<any>(`/api/admin/users/${userId}/ban`, { method: "POST", body: JSON.stringify({ reason: reason || null }) }),
+    unbanUser: (userId: number) =>
+      request<any>(`/api/admin/users/${userId}/unban`, { method: "POST" }),
+    // Trusted publisher grant/revoke (SelfPublishGrant schema).
+    setSelfPublish: (userId: number, grant: boolean) =>
+      request<any>(`/api/admin/users/${userId}/self-publish`, { method: "PATCH", body: JSON.stringify({ grant }) }),
+    // Staff force-logout — lives on the auth-security router (prefix
+    // /api/auth, app/api/auth_security.py), NOT under /api/admin.
+    revokeUserSessions: (userId: number) =>
+      request<{ revoked_count: number }>(`/api/auth/sessions/${userId}/revoke`, { method: "POST" }),
     listContent: (params?: { q?: string; verification_status?: string; content_type?: string }) => {
       const qs = new URLSearchParams();
       if (params?.q) qs.set("q", params.q);
@@ -457,10 +501,14 @@ export const api = {
       if (params?.content_type) qs.set("content_type", params.content_type);
       return request<any[]>(`/api/admin/content?${qs}`);
     },
+    reviewContent: (id: number, comment?: string) =>
+      request<any>(`/api/admin/content/${id}/review${comment ? `?comment=${encodeURIComponent(comment)}` : ""}`, { method: "PATCH" }),
     approveContent: (id: number) =>
       request<any>(`/api/admin/content/${id}/approve`, { method: "PATCH" }),
-    rejectContent: (id: number) =>
-      request<any>(`/api/admin/content/${id}/reject`, { method: "PATCH" }),
+    rejectContent: (id: number, reason?: string) =>
+      request<any>(`/api/admin/content/${id}/reject${reason ? `?reason=${encodeURIComponent(reason)}` : ""}`, { method: "PATCH" }),
+    revertApproval: (id: number, reason?: string) =>
+      request<any>(`/api/admin/content/${id}/revert-approval${reason ? `?reason=${encodeURIComponent(reason)}` : ""}`, { method: "PATCH" }),
     reviewQueue: (params?: { limit?: number; offset?: number }) => {
       const qs = new URLSearchParams();
       if (params?.limit) qs.set("limit", String(params.limit));
@@ -490,6 +538,17 @@ export const api = {
       request<any>(`/api/admin/groups/${id}/archive`, { method: "POST" }),
     deleteGroup: (id: number) =>
       request<void>(`/api/admin/groups/${id}`, { method: "DELETE" }),
+    // Staff events listing — includes archived (unlike the public /api/events).
+    listEvents: (params?: { q?: string; limit?: number; offset?: number }) => {
+      const qs = new URLSearchParams();
+      if (params?.q) qs.set("q", params.q);
+      if (params?.limit) qs.set("limit", String(params.limit));
+      if (params?.offset) qs.set("offset", String(params.offset));
+      return request<any[]>(`/api/admin/events?${qs}`);
+    },
+    // Platform super admin only (event.archive, ROLES_PERMISSIONS.md §8).
+    archiveEvent: (id: number) =>
+      request<any>(`/api/admin/events/${id}/archive`, { method: "POST" }),
     listComments: (params?: { entity_type?: string }) => {
       const qs = new URLSearchParams();
       if (params?.entity_type) qs.set("entity_type", params.entity_type);
@@ -626,6 +685,8 @@ export const api = {
     },
     hub: (id: number) => request<any>(`/api/waste/hubs/${id}`),
     createHub: (data: any) => request<any>("/api/waste/hubs", { method: "POST", body: JSON.stringify(data) }),
+    updateHub: (id: number, data: any) => request<any>(`/api/waste/hubs/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    archiveHub: (id: number) => request<any>(`/api/waste/hubs/${id}/archive`, { method: "POST" }),
     joinHub: (id: number) => request<any>(`/api/waste/hubs/${id}/join`, { method: "POST" }),
     leaveHub: (id: number) => request<void>(`/api/waste/hubs/${id}/leave`, { method: "DELETE" }),
     deposit: (hubId: number, data: any) => request<any>(`/api/waste/hubs/${hubId}/deposit`, { method: "POST", body: JSON.stringify(data) }),
@@ -980,6 +1041,12 @@ export const api = {
     },
     // Team / roster
     members: (entityId: number) => request<any[]>(`/api/entities/${entityId}/members`),
+    resetMemberPassword: (entityId: number, userId: number, password: string) =>
+      request<{ ok: boolean }>(`/api/entities/${entityId}/members/${userId}/reset-password`, { method: "POST", body: JSON.stringify({ password }) }),
+    setMemberSelfPublish: (entityId: number, userId: number, grant: boolean) =>
+      request<{ ok: boolean; can_self_publish: boolean }>(`/api/entities/${entityId}/members/${userId}/self-publish`, { method: "PATCH", body: JSON.stringify({ grant }) }),
+    notifyMembers: (entityId: number, message: string) =>
+      request<{ sent_to: number }>(`/api/entities/${entityId}/notify-members`, { method: "POST", body: JSON.stringify({ message }) }),
     addRosterMember: (entityId: number, userId: number) =>
       request<any>(`/api/entities/${entityId}/roster`, { method: "POST", body: JSON.stringify({ user_id: userId }) }),
     removeRosterMember: (entityId: number, userId: number) =>

@@ -38,6 +38,13 @@
 > floor at those sites would have silently changed *who* is allowed, not just closed this named bug
 > — a real product decision for a later phase, out of scope for this fix.
 >
+> **Update 2026-07-04:** the marketplace pair of these floor mismatches (sites 18/19 below —
+> `PUT`/`DELETE /api/marketplace/listings/{id}` enforcing admin-only vs. the registry's
+> moderator(3) floor for `product.manage_any`) **is now fixed** to the registry floor, as part of
+> the roles/permissions UI-backlog P1 work (spec is source of truth; same class of fix as the
+> earlier `article.approve` floor — coverage in `tests/test_marketplace_manage_any.py`). The
+> plants/other floors remain deliberately unmigrated pending that product decision.
+>
 > Closure proof: `tests/test_tech_debt_0_super_admin_closure.py` — both a unit-level check (every
 > rank floor used across the cutover sites, `super_admin` passes each one `admin` does, for both
 > already-migrated and never-migrated/freshly-registered user shapes) and integration-level checks

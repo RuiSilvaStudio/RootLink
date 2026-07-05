@@ -182,8 +182,11 @@ async def update_listing(
     if not listing:
         raise HTTPException(status_code=404, detail="Listing not found")
     # TECH_DEBT.md §0 (was missing super_admin; was also a bare exact-match
-    # on the string "admin") — Phase 3 cutover.
-    if listing.seller_id != current_user.id and not rank_at_least(current_user, Rank.admin):
+    # on the string "admin") — Phase 3 cutover. Floor lowered admin -> moderator
+    # (2026-07-04, UI backlog batch 2): registry `product.manage_any` defines
+    # moderator(3) per ROLES_PERMISSIONS.md §7/§10, and the /marketplace/[id]
+    # UI gate now follows the registry — spec is the source of truth.
+    if listing.seller_id != current_user.id and not rank_at_least(current_user, Rank.moderator):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     for key, val in body.model_dump(exclude_unset=True).items():
@@ -206,8 +209,9 @@ async def delete_listing(
     if not listing:
         raise HTTPException(status_code=404, detail="Listing not found")
     # TECH_DEBT.md §0 (was missing super_admin; was also a bare exact-match
-    # on the string "admin") — Phase 3 cutover.
-    if listing.seller_id != current_user.id and not rank_at_least(current_user, Rank.admin):
+    # on the string "admin") — Phase 3 cutover. Floor lowered admin -> moderator
+    # (2026-07-04): same rationale as update_listing above.
+    if listing.seller_id != current_user.id and not rank_at_least(current_user, Rank.moderator):
         raise HTTPException(status_code=403, detail="Not authorized")
     listing.status = "removed"
     await db.commit()

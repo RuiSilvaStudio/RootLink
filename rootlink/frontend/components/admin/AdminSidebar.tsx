@@ -16,6 +16,7 @@ import {
   MessageSquare,
   Megaphone,
   Globe,
+  CalendarDays,
   Ticket,
   Heart,
   Award,
@@ -61,6 +62,7 @@ function getAdminSections(t: (key: string) => string, isAdmin: boolean, canEditC
     {
       labelKey: "admin.section_events_commerce",
       items: [
+        { href: "/admin/events", label: t("admin.events"), icon: CalendarDays },
         { href: "/admin/tickets", label: t("admin.tickets"), icon: Ticket },
         { href: "/admin/donations", label: t("admin.donations"), icon: Heart },
         { href: "/admin/sponsors", label: t("admin.sponsors"), icon: Award },

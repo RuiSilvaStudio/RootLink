@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Key, Users, UserMinus, UserPlus, ThumbsUp, ThumbsDown } from "lucide-react";
+import { ArrowLeft, Key, PenLine, Send, Users, UserMinus, UserPlus, ThumbsUp, ThumbsDown } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { useLocale } from "@/lib/locale-context";
 import { useToast } from "@/lib/toast-context";
 import { usePermission } from "@/lib/use-permission";
 import { Badge } from "@/components/ui/Badge";
@@ -17,6 +18,7 @@ export default function EntityTeamPage() {
   const entityId = Number(params.entityId);
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLocale();
   const { addToast } = useToast();
   const { my, loading: permLoading } = usePermission();
 
@@ -37,6 +39,9 @@ export default function EntityTeamPage() {
   // Delegation grant form
   const [delGrantee, setDelGrantee] = useState("");
   const [delAction, setDelAction] = useState("");
+  // Notify-members form
+  const [notifyMessage, setNotifyMessage] = useState("");
+  const [notifySending, setNotifySending] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -86,6 +91,15 @@ export default function EntityTeamPage() {
   const isRosterManaged = entity.entity_type === "partners" || entity.entity_type === "suppliers";
   const canManageRoster = isRosterManaged && (isPrimaryContact || isPlatformSuperAdmin);
   const canGrantDelegations = isOwnSuperAdmin || isPlatformSuperAdmin;
+  // Member account actions (password reset, trusted-publisher grant/revoke):
+  // the entity's OWN super admin, or platform — mirrors the backend guard.
+  const canManageMembers = isOwnSuperAdmin || isPlatformSuperAdmin;
+  // Notify members: registry floor for notification.send_to_entity_members
+  // is admin(4) — lower than the super-admin(5) member-account actions above
+  // — same entity or platform, mirroring the backend's can() gate.
+  const isOwnAdmin = entityKind === entity.entity_type && myEntityId === entity.id && rank >= 4;
+  const isPlatformAdmin = entityKind === "platform" && rank >= 4;
+  const canNotifyMembers = isOwnAdmin || isPlatformAdmin;
 
   const delegableActions = Object.entries(registry).filter(
     ([, entry]: [string, any]) => entry.delegable && entry.entity_scope === "entity"
@@ -112,6 +126,63 @@ export default function EntityTeamPage() {
       load();
     } catch (err: any) {
       addToast("error", err.message || "Failed to remove member");
+    }
+  };
+
+  const handleResetPassword = async (m: any) => {
+    const password = prompt(t("entity_team.password_prompt", { name: m.name }));
+    if (!password || password.length < 6) return;
+    if (!confirm(t("entity_team.password_confirm", { name: m.name }))) return;
+    try {
+      await api.entities.resetMemberPassword(entityId, m.id, password);
+      addToast("success", t("entity_team.password_success"));
+    } catch (err: any) {
+      addToast("error", err.message || "Failed to reset password");
+    }
+  };
+
+  const handleSelfPublish = async (m: any, grant: boolean) => {
+    const key = grant ? "entity_team.grant_self_publish_confirm" : "entity_team.revoke_self_publish_confirm";
+    if (!confirm(t(key, { name: m.name }))) return;
+    try {
+      await api.entities.setMemberSelfPublish(entityId, m.id, grant);
+      addToast("success", t(grant ? "entity_team.self_publish_granted" : "entity_team.self_publish_revoked"));
+      load();
+    } catch (err: any) {
+      addToast("error", err.message || "Failed to update trusted publisher status");
+    }
+  };
+
+  // Stale-delegation stopgap: flag any ACTIVE grant whose grantee's CURRENT
+  // rank (members list) is below the delegated action's registry min_rank —
+  // purely client-side visibility, no auto-void.
+  const staleDelegationInfo = (d: any): { rank: number; min: number } | null => {
+    if (d.revoked_at) return null;
+    const grantee = members.find((m) => m.id === d.grantee_id);
+    const minRank = registry[d.action]?.min_rank;
+    if (!grantee || typeof minRank !== "number") return null;
+    const granteeRank = grantee.rank ?? 0;
+    return granteeRank < minRank ? { rank: granteeRank, min: minRank } : null;
+  };
+
+  const NOTIFY_MAX = 500;
+
+  const handleNotifyMembers = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const msg = notifyMessage.trim();
+    if (!msg || notifySending) return;
+    // Audience = every member of this entity except the sender.
+    const recipientCount = members.filter((m) => m.id !== user?.id).length;
+    if (!confirm(t("entity_team.notify_confirm", { count: recipientCount }))) return;
+    setNotifySending(true);
+    try {
+      const res = await api.entities.notifyMembers(entityId, msg);
+      addToast("success", t("entity_team.notify_success", { count: res.sent_to }));
+      setNotifyMessage("");
+    } catch (err: any) {
+      addToast("error", err.message || t("entity_team.notify_error"));
+    } finally {
+      setNotifySending(false);
     }
   };
 
@@ -181,21 +252,51 @@ export default function EntityTeamPage() {
             <tr className="text-left text-xs text-stone-400 uppercase tracking-wide">
               <th className="pb-2">Name</th>
               <th className="pb-2">Rank</th>
-              {canManageRoster && <th className="pb-2 text-right">Actions</th>}
+              {(canManageRoster || canManageMembers) && <th className="pb-2 text-right">Actions</th>}
             </tr>
           </thead>
           <tbody>
             {members.map((m) => (
               <tr key={m.id} className="border-t border-stone-100 dark:border-stone-800">
-                <td className="py-2">{m.name} <span className="text-stone-400 text-xs">{m.email}</span></td>
+                <td className="py-2">
+                  {m.name} <span className="text-stone-400 text-xs">{m.email}</span>
+                  {m.can_self_publish && (
+                    <Badge variant="sage" className="ml-2">{t("entity_team.trusted_publisher")}</Badge>
+                  )}
+                </td>
                 <td className="py-2">{m.rank}{m.id === entity.primary_contact_user_id ? " (primary contact)" : ""}</td>
-                {canManageRoster && (
+                {(canManageRoster || canManageMembers) && (
                   <td className="py-2 text-right">
-                    {m.id !== entity.primary_contact_user_id && (
-                      <button onClick={() => handleRemoveRoster(m.id)} className="text-rust-600 hover:text-rust-700 inline-flex items-center gap-1 text-xs">
-                        <UserMinus className="w-3.5 h-3.5" /> Remove
-                      </button>
-                    )}
+                    <span className="inline-flex items-center gap-1">
+                      {/* Hidden on your own row: reset your own password via the
+                          normal account flow, and self-granting trusted publisher
+                          isn't a call you make about yourself. */}
+                      {canManageMembers && m.id !== user?.id && (
+                        <>
+                          <button
+                            onClick={() => handleSelfPublish(m, !m.can_self_publish)}
+                            className={`p-1.5 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800 transition ${m.can_self_publish ? "text-primary-600 hover:text-rust-600" : "text-stone-400 hover:text-primary-600"}`}
+                            title={t(m.can_self_publish ? "entity_team.revoke_self_publish" : "entity_team.grant_self_publish")}
+                            aria-label={t(m.can_self_publish ? "entity_team.revoke_self_publish" : "entity_team.grant_self_publish")}
+                          >
+                            <PenLine className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleResetPassword(m)}
+                            className="p-1.5 text-stone-400 hover:text-primary-600 rounded-lg hover:bg-primary-50 dark:hover:bg-stone-800 transition"
+                            title={t("entity_team.reset_password")}
+                            aria-label={t("entity_team.reset_password")}
+                          >
+                            <Key className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
+                      {canManageRoster && m.id !== entity.primary_contact_user_id && (
+                        <button onClick={() => handleRemoveRoster(m.id)} className="text-rust-600 hover:text-rust-700 inline-flex items-center gap-1 text-xs">
+                          <UserMinus className="w-3.5 h-3.5" /> Remove
+                        </button>
+                      )}
+                    </span>
                   </td>
                 )}
               </tr>
@@ -218,6 +319,45 @@ export default function EntityTeamPage() {
           <p className="text-xs text-stone-400 font-serif mt-3">Only this entity&apos;s primary contact can add/remove roster members.</p>
         )}
       </section>
+
+      {/* Notify members — registry floor admin(4), lower than the member
+          account actions above */}
+      {canNotifyMembers && (
+        <section className="mb-8 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6">
+          <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-1 flex items-center gap-2">
+            <Send className="w-4 h-4 text-primary-500" /> {t("entity_team.notify_members")}
+          </h2>
+          <p className="text-sm text-stone-500 dark:text-stone-400 font-serif mb-4">
+            {t("entity_team.notify_desc", { name: entity.name })}
+          </p>
+          <form onSubmit={handleNotifyMembers} className="space-y-3">
+            <div>
+              <label htmlFor="notify-message" className="block text-xs text-stone-500 mb-1">
+                {t("entity_team.notify_label")}
+              </label>
+              <textarea
+                id="notify-message"
+                value={notifyMessage}
+                onChange={(e) => setNotifyMessage(e.target.value)}
+                placeholder={t("entity_team.notify_placeholder")}
+                rows={3}
+                maxLength={NOTIFY_MAX}
+                className="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-500/15 focus:border-primary-400 transition"
+              />
+              <p
+                aria-live="polite"
+                className={`text-xs mt-1 text-right ${notifyMessage.length >= NOTIFY_MAX ? "text-amber-600" : "text-stone-400"}`}
+              >
+                {notifyMessage.length}/{NOTIFY_MAX}
+              </p>
+            </div>
+            <Button type="submit" size="sm" disabled={notifySending || !notifyMessage.trim()}>
+              <Send className="w-4 h-4" />{" "}
+              {notifySending ? t("entity_team.notify_sending") : t("entity_team.notify_send")}
+            </Button>
+          </form>
+        </section>
+      )}
 
       {/* Role-change requests */}
       <section className="mb-8 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6">
@@ -306,14 +446,24 @@ export default function EntityTeamPage() {
             <p className="text-sm text-stone-400 font-serif">No active delegations.</p>
           ) : (
             <ul className="space-y-1 text-sm">
-              {delegations.map((d) => (
-                <li key={d.id} className="flex items-center justify-between">
-                  <span>{d.action} → user #{d.grantee_id}</span>
-                  {canGrantDelegations && (
-                    <button onClick={() => handleRevoke(d.id)} className="text-rust-600 hover:text-rust-700 text-xs">Revoke</button>
-                  )}
-                </li>
-              ))}
+              {delegations.map((d) => {
+                const stale = staleDelegationInfo(d);
+                return (
+                  <li key={d.id} className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-2 flex-wrap">
+                      {d.action} → user #{d.grantee_id}
+                      {stale && (
+                        <span title={t("entity_team.stale_delegation_tip", { id: d.grantee_id, rank: stale.rank, min: stale.min })}>
+                          <Badge variant="amber">{t("entity_team.stale_delegation")}</Badge>
+                        </span>
+                      )}
+                    </span>
+                    {canGrantDelegations && (
+                      <button onClick={() => handleRevoke(d.id)} className="text-rust-600 hover:text-rust-700 text-xs">Revoke</button>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>

@@ -5,7 +5,11 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.entity_resolution import resolve_entity_and_rank
+from app.core.permissions import can
+from app.core.permissions_registry import Rank
 from app.core.security import get_current_user
+from app.models.entity import UserEntity
 from app.models.user import User
 from app.models.waste import (
     CompostingDeposit,
@@ -21,9 +25,12 @@ from app.schemas.waste import (
     DepositResponse,
     HubCreate,
     HubResponse,
+    HubUpdate,
     UpcyclingCreate,
     UpcyclingResponse,
 )
+
+_ORG_LIKE_KINDS = {UserEntity.organization, UserEntity.partners, UserEntity.suppliers}
 
 logger = logging.getLogger("app.waste")
 
@@ -41,11 +48,15 @@ async def list_hubs(
     db: AsyncSession = Depends(get_db),
 ):
     query = (
-        select(CompostingHub, User.name, func.count(CompostingMember.id))
+        select(CompostingHub, User.name, User.entity_id, func.count(CompostingMember.id))
         .join(User, CompostingHub.manager_id == User.id, isouter=True)
         .join(CompostingMember, CompostingMember.hub_id == CompostingHub.id, isouter=True)
-        .where(CompostingHub.is_public.is_(True), CompostingHub.status != "closed")
-        .group_by(CompostingHub.id, User.name)
+        .where(
+            CompostingHub.is_public.is_(True),
+            CompostingHub.status != "closed",
+            CompostingHub.status != "archived",
+        )
+        .group_by(CompostingHub.id, User.name, User.entity_id)
     )
     if q:
         query = query.where(or_(
@@ -59,13 +70,14 @@ async def list_hubs(
 
     result = await db.execute(query)
     hubs = []
-    for hub, manager_name, member_count in result.all():
+    for hub, manager_name, manager_entity_id, member_count in result.all():
         hubs.append(HubResponse(
             id=hub.id,
             name=hub.name,
             description=hub.description,
             manager_id=hub.manager_id,
             manager_name=manager_name,
+            manager_entity_id=manager_entity_id,
             location=hub.location,
             lat=hub.lat,
             lng=hub.lng,
@@ -85,19 +97,20 @@ async def list_hubs(
 @router.get("/hubs/{hub_id}", response_model=HubResponse)
 async def get_hub(hub_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(CompostingHub, User.name, func.count(CompostingMember.id))
+        select(CompostingHub, User.name, User.entity_id, func.count(CompostingMember.id))
         .join(User, CompostingHub.manager_id == User.id, isouter=True)
         .join(CompostingMember, CompostingMember.hub_id == CompostingHub.id, isouter=True)
         .where(CompostingHub.id == hub_id)
-        .group_by(CompostingHub.id, User.name)
+        .group_by(CompostingHub.id, User.name, User.entity_id)
     )
     row = result.first()
     if not row:
         raise HTTPException(status_code=404, detail="Composting hub not found")
-    hub, manager_name, member_count = row
+    hub, manager_name, manager_entity_id, member_count = row
     return HubResponse(
         id=hub.id, name=hub.name, description=hub.description,
         manager_id=hub.manager_id, manager_name=manager_name,
+        manager_entity_id=manager_entity_id,
         location=hub.location, lat=hub.lat, lng=hub.lng,
         capacity_kg_week=hub.capacity_kg_week,
         accepted_materials=hub.accepted_materials or [],
@@ -108,12 +121,104 @@ async def get_hub(hub_id: int, db: AsyncSession = Depends(get_db)):
     )
 
 
+def _can_edit_hub(current_user: User, hub: CompostingHub, manager_entity_id: int | None) -> bool:
+    """docs/roles-permissions/ROLES_PERMISSIONS.md §7 "Create/edit own compost
+    listing" (contributor+ own; entity's own super admin can edit a fellow
+    member's listing — no middle ☑️ tier for moderator/admin editing someone
+    else's)."""
+    is_owner = hub.manager_id == current_user.id
+    if is_owner:
+        # Individual/professional managers have no `entities` row — pass
+        # their own entity_id (None) straight through; org members pass
+        # their own, which trivially matches itself.
+        return can(current_user, "compost_listing.create_edit_own", entity_id=current_user.entity_id)
+
+    entity_kind, rank = resolve_entity_and_rank(current_user)
+    if entity_kind not in _ORG_LIKE_KINDS or rank < Rank.super_admin:
+        return False
+    return (
+        manager_entity_id is not None
+        and current_user.entity_id is not None
+        and current_user.entity_id == manager_entity_id
+    )
+
+
+@router.patch("/hubs/{hub_id}", response_model=HubResponse)
+async def update_hub(
+    hub_id: int,
+    body: HubUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(CompostingHub, User.entity_id)
+        .join(User, CompostingHub.manager_id == User.id, isouter=True)
+        .where(CompostingHub.id == hub_id)
+    )
+    row = result.first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Composting hub not found")
+    hub, manager_entity_id = row
+
+    if not _can_edit_hub(current_user, hub, manager_entity_id):
+        raise HTTPException(status_code=403, detail="Not authorized to edit this composting hub")
+
+    if body.status is not None and body.status not in ("active", "full", "closed"):
+        raise HTTPException(
+            status_code=400,
+            detail="status must be one of active/full/closed — archiving is a separate, platform-super-admin-only action",
+        )
+
+    for field in (
+        "name", "description", "location", "lat", "lng", "capacity_kg_week",
+        "accepted_materials", "operating_hours", "is_public", "status", "image_url",
+    ):
+        value = getattr(body, field)
+        if value is not None:
+            setattr(hub, field, value)
+
+    await db.commit()
+    await db.refresh(hub)
+    return await get_hub(hub_id, db)
+
+
+@router.post("/hubs/{hub_id}/archive", response_model=HubResponse)
+async def archive_hub(
+    hub_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Platform super_admin only (docs/roles-permissions/ROLES_PERMISSIONS.md
+    §8 "Archive compost listing") — deliberately NOT reachable by the hub's
+    own manager or by an entity's own super admin, since a composting
+    facility can be used by members of many different entities; taking it
+    offline needs platform-level judgment, not a unilateral owner action."""
+    if not can(current_user, "compost_listing.archive"):
+        raise HTTPException(status_code=403, detail="Only a platform super admin can archive a composting hub")
+
+    result = await db.execute(select(CompostingHub).where(CompostingHub.id == hub_id))
+    hub = result.scalar_one_or_none()
+    if not hub:
+        raise HTTPException(status_code=404, detail="Composting hub not found")
+
+    hub.status = "archived"
+    await db.commit()
+    return await get_hub(hub_id, db)
+
+
 @router.post("/hubs", response_model=HubResponse, status_code=201)
 async def create_hub(
     body: HubCreate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    # docs/roles-permissions/ROLES_PERMISSIONS.md §7 "Create/edit own compost
+    # listing" — contributor+ floor, same as editing (previously ungated:
+    # any logged-in user, even a brand-new persona-rank account, could
+    # create one).
+    if not can(current_user, "compost_listing.create_edit_own", entity_id=current_user.entity_id):
+        raise HTTPException(status_code=403, detail="You need contributor rank or above to create a composting hub")
+
     hub = CompostingHub(
         name=body.name,
         description=body.description,
@@ -139,6 +244,7 @@ async def create_hub(
     return HubResponse(
         id=hub.id, name=hub.name, description=hub.description,
         manager_id=hub.manager_id, manager_name=current_user.name,
+        manager_entity_id=current_user.entity_id,
         location=hub.location, lat=hub.lat, lng=hub.lng,
         capacity_kg_week=hub.capacity_kg_week,
         accepted_materials=hub.accepted_materials or [],

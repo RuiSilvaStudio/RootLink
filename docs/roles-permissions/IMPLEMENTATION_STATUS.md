@@ -691,17 +691,41 @@ sub-table).
 ## If you're resuming this cold
 
 **All 7 phases (0–6) are done.** This is the complete record — there is no
-"next phase" to pick up from this doc. If you're here to extend or modify
-the system, not resume an in-progress build:
+"next phase" to pick up from this doc.
+
+**If you're here to continue closing UI gaps** (the product owner is
+manually testing and wants full UI coverage before continuing): skip
+straight to `UI_BUILD_BACKLOG.md`'s **"Next steps (handoff)"** section at
+the bottom — it has the current state and the remaining work.
+**P0, P1 and P2 are now built too** ("UI backlog batches 1+2+3",
+2026-07-04 — restrict/suspend/ban ladder, session revoke x2, password
+reset x2, trusted-publisher grant/revoke x2,
+`product.manage_any`/`event.manage_any`, delegation auto-void stopgap
+badge, comment edit (`PATCH /api/comments/{id}` + inline edit UI),
+`event.archive` (`/admin/events`), `notification.send_to_entity_members`
+(entity-scoped broadcast + team-page card), plus a latent `group.archive`
+gate fix (rank-only `require_super_admin` → registry `can()`, see
+`docs/LESSONS.md` #38); backend suite now 295 passing), on top of the
+earlier `compost_listing.*` and `article.review`/`article.approve`
+builds (also 2026-07-04). What remains is P3 plus a deferred
+delegation-enforcement session and the entity-scoped
+`user.restrict_suspend_ban_lift` roster surface; the
+combined-production-deploy-vs-continue decision is pending with the
+product owner. Don't re-derive this from chat history; it's already
+written down there.
+
+If you're here to extend or modify the system for some other reason, not
+resume the UI backlog specifically:
 
 1. Read this file, then `phase0-decisions.md` (for *why* things were built
    the way they were — several real judgment calls are documented there and
    in code docstrings, not just in this status doc, across Addenda 1–5).
 2. Confirm current state matches this doc: `python -m pytest -q` in
-   `rootlink/backend` should show 233 passed (213 through Phase 6, +20 from
+   `rootlink/backend` should show 295 passed (213 through Phase 6, +20 from
    the post-Phase-6 conversion/rank-cap/preview work — see that dated entry
-   above); `tsc --noEmit`/`next lint` in `rootlink/frontend` should both be
-   clean. This folder itself should be at `docs/roles-permissions/` (tracked
+   above — and +62 from the 2026-07-04 UI backlog batches 1+2+3, recorded
+   in `UI_BUILD_BACKLOG.md`); `tsc --noEmit`/`next lint` in
+   `rootlink/frontend` should both be clean. This folder itself should be at `docs/roles-permissions/` (tracked
    in git), not `backlog/` — if you find a `backlog/user-roles-permissions/`
    folder with real content in it again, that's a regression of this
    phase's own promotion, not a second copy to trust.

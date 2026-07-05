@@ -20,9 +20,15 @@ class HubUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     location: str | None = None
+    lat: float | None = None
+    lng: float | None = None
     capacity_kg_week: float | None = None
     accepted_materials: list[str] | None = None
     operating_hours: str | None = None
+    is_public: bool | None = None
+    # Owner-settable states only (active/full/closed) — "archived" is a
+    # separate, platform-super-admin-only action (see /hubs/{id}/archive),
+    # never settable through this endpoint even by the hub's own manager.
     status: str | None = None
     image_url: str | None = None
 
@@ -33,6 +39,11 @@ class HubResponse(BaseModel):
     description: str | None = None
     manager_id: int
     manager_name: str | None = None
+    # Lets the frontend decide whether to show the "edit" affordance to an
+    # organization's own super admin editing a fellow member's listing
+    # (docs/roles-permissions/ROLES_PERMISSIONS.md §7's 🔑 tier) — null for
+    # individual/professional managers, who have no entity of subordinates.
+    manager_entity_id: int | None = None
     location: str
     lat: float | None = None
     lng: float | None = None

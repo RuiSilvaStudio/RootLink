@@ -9,8 +9,10 @@ from app.models.base import Base, TimestampMixin
 class ModerationAction(enum.StrEnum):
     # Content lifecycle transitions
     submit = "submit"
+    review = "review"  # contributor+ marks in_review -> reviewed (§7 first pass)
     approve = "approve"
     reject = "reject"
+    revert_approval = "revert_approval"  # moderator+ undoes an approval, back to in_review
     needs_changes = "needs_changes"
     appeal = "appeal"
     edit_any = "edit_any"  # super_admin editing content in any state
@@ -78,6 +80,16 @@ class ModerationAction(enum.StrEnum):
     revoke_delegation = "revoke_delegation"
     add_team_member = "add_team_member"
     remove_team_member = "remove_team_member"
+    # Entity-scoped member account admin (docs/roles-permissions/ROLES_PERMISSIONS.md §7
+    # "password.reset_entity_member") — an entity's own super admin resetting a
+    # fellow member's password. The trusted-publisher counterpart reuses the
+    # existing grant_self_publish/revoke_self_publish actions above.
+    reset_member_password = "reset_member_password"
+    # Entity-scoped notification broadcast (docs/roles-permissions/ROLES_PERMISSIONS.md
+    # §7 "notification.send_to_entity_members") — an entity's admin+ sending a
+    # notification to every member of their own entity (the entity-scoped
+    # sibling of the platform-wide /api/admin/broadcast).
+    notify_entity_members = "notify_entity_members"
 
 
 class ModerationAuditLog(TimestampMixin, Base):

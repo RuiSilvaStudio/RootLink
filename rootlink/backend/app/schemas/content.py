@@ -27,6 +27,7 @@ class ContentResponse(BaseModel):
     slug: str | None = None
     status: str = "draft"
     review_note: str | None = None
+    review_comment: str | None = None
     edited_at: datetime | None = None
     canonical_url: str | None = None
     feed_source_id: int | None = None

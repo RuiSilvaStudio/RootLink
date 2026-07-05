@@ -206,6 +206,16 @@ async def lifespan(app: FastAPI):
             await conn.execute(text("ALTER TABLE content ADD COLUMN review_note TEXT"))
         except Exception:
             pass
+        # Roles/permissions UI backlog — real two-step article review/approve
+        # (docs/roles-permissions/ROLES_PERMISSIONS.md §7). `review_comment` is
+        # the internal-only note for the new "mark reviewed" step, distinct
+        # from the author-facing `review_note`. `status` itself needs no
+        # migration — it's a plain VARCHAR, and "reviewed" is just a new
+        # allowed value, not a schema change.
+        try:
+            await conn.execute(text("ALTER TABLE content ADD COLUMN review_comment TEXT"))
+        except Exception:
+            pass
         # NOTE: authored vs crawled is discriminated by `url` (NULL for editor
         # articles, always set for crawled rows). We deliberately do NOT use
         # `body IS NULL`: SQLAlchemy's JSON column stores Python None as JSON
@@ -398,6 +408,12 @@ async def lifespan(app: FastAPI):
         # Event ticket tiers migration
         try:
             await conn.execute(text("ALTER TABLE events ADD COLUMN ticket_tiers JSON"))
+        except Exception:
+            pass
+        # Event soft-archive lifecycle (mirrors the groups archived_at column;
+        # events.status already exists from the Event Manager migrations above)
+        try:
+            await conn.execute(text("ALTER TABLE events ADD COLUMN archived_at TIMESTAMP"))
         except Exception:
             pass
         # Event recurrence migrations

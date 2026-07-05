@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useLocale } from "@/lib/locale-context";
+import { usePermission } from "@/lib/use-permission";
 import { useToast } from "@/lib/toast-context";
 
 const TABS = ["about", "schedule", "venue", "sponsors", "donations", "tickets", "attendees", "vendors", "discussion"] as const;
@@ -80,6 +81,7 @@ export default function EventDetailPage() {
   const router = useRouter();
   const { t } = useLocale();
   const { addToast } = useToast();
+  const { can } = usePermission();
 
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -125,6 +127,11 @@ export default function EventDetailPage() {
   const isOwner = userId === event?.created_by;
   // TECH_DEBT.md §0 / user-logic-review.md §9 (was missing super_admin).
   const isAdmin = userRole === "admin" || userRole === "moderator" || userRole === "super_admin";
+  // Same pattern as app/learning/courses/[id]/page.tsx: owner OR the
+  // registry's entity-wide manage action (`event.manage_any`, moderator+) —
+  // matches the backend's `_check_event_owner` (app/api/events.py), which
+  // every event/venue/amenity/schedule/sponsor/vendor mutation routes through.
+  const canManage = isOwner || can("event.manage_any");
 
   const loadEvent = useCallback(async () => {
     try {
@@ -355,10 +362,11 @@ export default function EventDetailPage() {
             ))}
           </div>
         </div>
-        {isOwner && (
-          <div className="flex gap-2 shrink-0">
-            <Button variant="ghost" size="sm" onClick={() => setEditing(true)}><Edit3 className="w-4 h-4" /></Button>
-            <Button variant="ghost" size="sm" onClick={handleDelete}><Trash2 className="w-4 h-4 text-red-500" /></Button>
+        {canManage && (
+          <div className="flex items-center gap-2 shrink-0">
+            {!isOwner && <Badge variant="stone">{t("events.moderation")}</Badge>}
+            <Button variant="ghost" size="sm" onClick={() => setEditing(true)} aria-label={t("events.edit_event")} title={t("events.edit_event")}><Edit3 className="w-4 h-4" /></Button>
+            <Button variant="ghost" size="sm" onClick={handleDelete} aria-label={t("common.delete")} title={t("common.delete")}><Trash2 className="w-4 h-4 text-red-500" /></Button>
           </div>
         )}
       </div>
@@ -551,7 +559,7 @@ export default function EventDetailPage() {
               </Card>
             ) : (
               <>
-                {isOwner && (
+                {canManage && (
               <div className="flex justify-end">
                 <Button variant="secondary" size="sm" onClick={() => setShowScheduleForm(!showScheduleForm)}>
                   <Plus className="w-4 h-4" /> {t("events.add_schedule_item")}
@@ -616,7 +624,7 @@ export default function EventDetailPage() {
                           {end && <p>— {end.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</p>}
                         </div>
                       </div>
-                      {isOwner && (
+                      {canManage && (
                         <button onClick={() => handleScheduleDelete(item.id)} className="text-xs text-red-400 hover:text-red-600 mt-2">Remove</button>
                       )}
                     </div>
@@ -632,9 +640,12 @@ export default function EventDetailPage() {
         {/* ── VENUE ─────────────────────────────────────────── */}
         {activeTab === "venue" && (
           <div className="space-y-6">
-            {isOwner && (
+            {canManage && (
               <Card variant="plain" className="p-4 space-y-3">
-                <h3 className="font-display font-bold text-stone-800 dark:text-stone-100">{t("events.venue_title")}</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-display font-bold text-stone-800 dark:text-stone-100">{t("events.venue_title")}</h3>
+                  {!isOwner && <Badge variant="stone">{t("events.moderation")}</Badge>}
+                </div>
                 <div className="grid md:grid-cols-2 gap-3">
                   <input placeholder={t("events.venue_name")} value={venueForm.venue_name || venue?.venue_name || ""} onChange={(e) => setVenueForm({ ...venueForm, venue_name: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
@@ -669,7 +680,7 @@ export default function EventDetailPage() {
                 <Button size="sm" onClick={handleVenueSave}>{t("events.save")}</Button>
               </Card>
             )}
-            {venue && !isOwner && (
+            {venue && !canManage && (
               <Card variant="plain" className="p-6">
                 <h3 className="font-display font-bold text-stone-800 dark:text-stone-100 mb-3">{venue.venue_name || t("events.venue_title")}</h3>
                 <div className="space-y-2 text-sm text-stone-600 dark:text-stone-300">
@@ -685,7 +696,7 @@ export default function EventDetailPage() {
                 </div>
               </Card>
             )}
-            {!venue && !isOwner && (
+            {!venue && !canManage && (
               <EmptyState icon={<MapPin className="w-7 h-7" />} title="No venue details yet." />
             )}
             {/* Amenities */}
@@ -702,7 +713,7 @@ export default function EventDetailPage() {
                         <p className="text-sm font-medium text-stone-700 dark:text-stone-200 truncate">{a.name}</p>
                         {a.time_start && <p className="text-xs text-stone-500 dark:text-stone-400">{a.time_start}{a.time_end ? ` — ${a.time_end}` : ""}</p>}
                       </div>
-                      {isOwner && (
+                      {canManage && (
                         <button onClick={() => handleAmenityDelete(a.id)} className="text-stone-300 dark:text-stone-600 hover:text-red-500 dark:hover:text-red-400"><X className="w-3 h-3" /></button>
                       )}
                     </div>
@@ -710,7 +721,7 @@ export default function EventDetailPage() {
                 </div>
               </div>
             )}
-            {isOwner && (
+            {canManage && (
               <div>
                 {!showAmenityForm ? (
                   <Button variant="ghost" size="sm" onClick={() => setShowAmenityForm(true)}>
@@ -738,7 +749,7 @@ export default function EventDetailPage() {
         {/* ── SPONSORS ──────────────────────────────────────── */}
         {activeTab === "sponsors" && (
           <div className="space-y-6">
-            {isOwner && (
+            {canManage && (
               <div className="flex justify-end">
                 <Button variant="secondary" size="sm" onClick={() => setShowSponsorForm(!showSponsorForm)}>
                   <Plus className="w-4 h-4" /> {t("events.add_sponsor")}
@@ -774,7 +785,7 @@ export default function EventDetailPage() {
             ) : (
               <div className="space-y-4">
                 {["platinum", "gold", "silver", "bronze", "media", "community"].map((tier) => {
-                  const tierSponsors = sponsors.filter((s) => s.tier === tier && (s.visible_to_attendees || isOwner));
+                  const tierSponsors = sponsors.filter((s) => s.tier === tier && (s.visible_to_attendees || canManage));
                   if (tierSponsors.length === 0) return null;
                   const tierColors: Record<string, string> = {
                     platinum: "from-slate-100 dark:from-slate-900/40 to-slate-50 dark:to-slate-800/40 border-slate-200 dark:border-slate-700",
@@ -796,7 +807,7 @@ export default function EventDetailPage() {
                               <div className="h-12 flex items-center justify-center text-stone-300 dark:text-stone-600"><Building className="w-6 h-6" /></div>
                             )}
                             <p className="font-medium text-stone-700 dark:text-stone-200 text-sm">{s.name}</p>
-                            {isOwner && (
+                            {canManage && (
                               <button onClick={() => handleSponsorDelete(s.id)} className="text-xs text-red-400 hover:text-red-600 mt-1">Remove</button>
                             )}
                           </div>
@@ -953,14 +964,14 @@ export default function EventDetailPage() {
         {/* ── VENDORS ───────────────────────────────────────── */}
         {activeTab === "vendors" && (
           <div className="space-y-4">
-            {isOwner && (
+            {canManage && (
               <div className="flex justify-end">
                 <Button variant="secondary" size="sm" onClick={() => setShowVendorForm(!showVendorForm)}>
                   <Plus className="w-4 h-4" /> {t("events.add_vendor")}
                 </Button>
               </div>
             )}
-            {showVendorForm && isOwner && (
+            {showVendorForm && canManage && (
               <Card variant="plain" className="p-4 space-y-3">
                 <div className="grid md:grid-cols-2 gap-3">
                   <input placeholder={t("events.vendor_name")} value={vendorForm.name || ""} onChange={(e) => setVendorForm({ ...vendorForm, name: e.target.value })}
@@ -1010,7 +1021,7 @@ export default function EventDetailPage() {
                         </div>
                         {v.service_type && <p className="text-xs text-stone-500 dark:text-stone-400">{v.service_type}</p>}
                       </div>
-                      {isOwner && (
+                      {canManage && (
                         <button onClick={() => handleVendorDelete(v.id)} className="text-stone-300 dark:text-stone-600 hover:text-red-500 dark:hover:text-red-400"><X className="w-3 h-3" /></button>
                       )}
                     </div>

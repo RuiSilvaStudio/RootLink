@@ -13,19 +13,25 @@ from app.core.database import get_db
 from app.core.entity_resolution import resolve_entity_and_rank
 from app.core.permissions import can
 from app.core.permissions_registry import Rank
-from app.core.security import get_current_user
+from app.core.security import get_current_user, hash_password
 from app.models.entity import Entity
+from app.models.moderation import ModerationAction
+from app.models.notification import Notification, NotificationType
 from app.models.user import User
 from app.schemas.entity import (
     DissolutionActionRequest,
     EntityBanRequest,
     EntityDocumentResponse,
+    EntityMemberPasswordResetRequest,
     EntityMemberResponse,
+    EntityNotifyMembersRequest,
     EntityRegisterRequest,
     EntityResponse,
     EntityVerificationDecisionRequest,
     TeamRosterAddRequest,
 )
+from app.schemas.moderation import SelfPublishGrant
+from app.services.audit import log_moderation
 from app.services.document_storage import storage as document_storage
 from app.services.entity_dissolution import (
     DissolutionError,
@@ -53,6 +59,8 @@ from app.services.entity_team import (
     list_members,
     remove_team_member,
 )
+from app.services.sessions import revoke_all_user_sessions
+from app.services.trust import self_publish_eligibility
 
 router = APIRouter(prefix="/api/entities", tags=["entities"])
 
@@ -313,6 +321,153 @@ async def remove_roster_member(
     await db.commit()
     await db.refresh(target)
     return target
+
+
+# --- Entity-scoped member account admin (docs/roles-permissions/ROLES_PERMISSIONS.md §7
+# "password.reset_entity_member" / "trusted_publisher.grant_revoke_entity").
+# Both paths start with `{entity_id}` so ordering relative to the catch-all
+# GET /{entity_id} below is safe (docs/LESSONS.md #31 only bites literal-path
+# first segments). ---
+
+
+def _require_member_admin_authority(current_user: User, entity: Entity, action: str) -> None:
+    """Same-entity super admin, or platform (via `can()`'s platform branch).
+
+    `can()` already enforces the registry floor + same-entity matching.
+    `trusted_publisher.grant_revoke_entity`'s registry floor is admin(4) —
+    its ☑️ tier, meaning "on below-rank users", a target-rank axis `can()`
+    can't express — so this surface additionally holds non-platform actors
+    to the 🔑 super-admin tier for both actions, matching
+    `password.reset_entity_member`'s floor.
+    """
+    if can(current_user, action, entity_id=entity.id):
+        entity_kind, rank = resolve_entity_and_rank(current_user)
+        if entity_kind == "platform" or rank >= Rank.super_admin:
+            return
+    raise HTTPException(status_code=403, detail="Entity super admin or platform super admin only")
+
+
+async def _get_entity_member(db: AsyncSession, entity_id: int, user_id: int) -> User:
+    """Target must belong to THIS entity — 404 either way (not found /
+    other entity) so membership elsewhere isn't leaked."""
+    target = await db.get(User, user_id)
+    if not target or target.entity_id != entity_id:
+        raise HTTPException(status_code=404, detail="User is not a member of this entity")
+    return target
+
+
+@router.post("/{entity_id}/members/{user_id}/reset-password")
+async def reset_member_password(
+    entity_id: int,
+    user_id: int,
+    body: EntityMemberPasswordResetRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    entity = await _get_entity(db, entity_id)
+    _require_member_admin_authority(current_user, entity, "password.reset_entity_member")
+    target = await _get_entity_member(db, entity_id, user_id)
+    target.password_hash = hash_password(body.password)
+    # Same rule as the self-service reset (app/api/auth_security.py): old
+    # sessions must not survive a password reset.
+    await revoke_all_user_sessions(db, target.id, reason=f"password reset by entity admin {current_user.id}")
+    await log_moderation(
+        db, action=ModerationAction.reset_member_password, target_type="user",
+        target_id=target.id, actor_id=current_user.id, meta={"entity_id": entity_id},
+    )
+    await db.commit()
+    return {"ok": True}
+
+
+@router.patch("/{entity_id}/members/{user_id}/self-publish")
+async def set_member_self_publish(
+    entity_id: int,
+    user_id: int,
+    body: SelfPublishGrant,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Entity-scoped grant/revoke of trusted-author self-publishing — mirrors
+    the platform endpoint (app/api/admin.py set_self_publish), including the
+    eligibility + agreement checks on grant; only a PLATFORM super admin may
+    override those, same as the template's super_admin override."""
+    entity = await _get_entity(db, entity_id)
+    _require_member_admin_authority(current_user, entity, "trusted_publisher.grant_revoke_entity")
+    target = await _get_entity_member(db, entity_id, user_id)
+    if body.grant:
+        entity_kind, rank = resolve_entity_and_rank(current_user)
+        is_platform_super = entity_kind == "platform" and rank >= Rank.super_admin
+        if not is_platform_super:
+            elig = await self_publish_eligibility(db, target)
+            if not elig["eligible"]:
+                raise HTTPException(status_code=400, detail="User is not eligible for self-publishing")
+            if not elig["agreed"]:
+                raise HTTPException(
+                    status_code=400,
+                    detail="User has not accepted the publisher responsibility agreement",
+                )
+        target.can_self_publish = True
+        action = ModerationAction.grant_self_publish
+    else:
+        target.can_self_publish = False
+        action = ModerationAction.revoke_self_publish
+    await log_moderation(
+        db, action=action, target_type="user", target_id=target.id,
+        actor_id=current_user.id, meta={"entity_id": entity_id, "scope": "entity"},
+    )
+    await db.commit()
+    return {"ok": True, "can_self_publish": target.can_self_publish}
+
+
+# --- Entity-scoped notification broadcast (docs/roles-permissions/ROLES_PERMISSIONS.md
+# §7 "notification.send_to_entity_members") — the entity-scoped sibling of the
+# platform-wide POST /api/admin/broadcast. Path starts with `{entity_id}`, so
+# ordering relative to the catch-all GET /{entity_id} is safe (docs/LESSONS.md
+# #31 only bites literal-path first segments). ---
+
+
+def _require_entity_notify_authority(current_user: User, entity: Entity) -> None:
+    """Same-entity admin(4)+, or platform admin(4)+ (via `can()`'s platform
+    branch). Unlike `_require_member_admin_authority` above — which holds
+    non-platform actors to the super-admin 🔑 tier because those actions'
+    registry floors demand it — the registry floor for
+    `notification.send_to_entity_members` is admin(4) with no higher ☑️/🔑
+    tier, so `can()` alone expresses this gate exactly."""
+    if not can(current_user, "notification.send_to_entity_members", entity_id=entity.id):
+        raise HTTPException(status_code=403, detail="Entity admin or platform admin only")
+
+
+@router.post("/{entity_id}/notify-members")
+async def notify_entity_members(
+    entity_id: int,
+    body: EntityNotifyMembersRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Send a notification to every member of this entity except the sender —
+    same Notification mechanics as the platform broadcast (app/api/admin.py
+    broadcast_notification), scoped to `User.entity_id == entity_id`."""
+    entity = await _get_entity(db, entity_id)
+    _require_entity_notify_authority(current_user, entity)
+    result = await db.execute(
+        select(User.id).where(User.entity_id == entity_id, User.id != current_user.id)
+    )
+    user_ids = result.scalars().all()
+    for uid in user_ids:
+        db.add(Notification(
+            user_id=uid,
+            actor_id=current_user.id,
+            type=NotificationType.system,
+            message=body.message,
+            link=f"/entity/{entity_id}",
+        ))
+    await log_moderation(
+        db, action=ModerationAction.notify_entity_members, target_type="entity",
+        target_id=entity_id, actor_id=current_user.id,
+        meta={"entity_id": entity_id, "sent_to": len(user_ids)},
+    )
+    await db.commit()
+    return {"sent_to": len(user_ids)}
 
 
 @router.get("/{entity_id}", response_model=EntityResponse)

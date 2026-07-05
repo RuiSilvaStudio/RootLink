@@ -46,9 +46,9 @@ _width: wide
 | `link.submit` | persona | entity | `/submit` and `/admin/submit` — **"Submit URL"** tab of the shared `SubmitForm` component (paste a URL, pick a category, "Submit") | Same form/component rendered on both routes; `/admin/submit` is just the admin-panel-chrome wrapper around it. |
 | `article.crawl` | contributor | entity | `/submit` and `/admin/submit` — **"Search & crawl"** tab of the same `SubmitForm` (search a topic, auto-crawl candidate results) | |
 | `article.create_edit_archive_own` | persona | entity | `/articles/new` (new article editor, "Publish"/"Save draft"), `/articles/edit/[id]` (same editor for an existing draft/article you own), `/articles/my` (your own list, links into edit) | "Archive" isn't a separate button — deleting your own draft is `DELETE /api/articles/{id}` (`api.articles.delete`); confirmed wired but no visible trash-icon found in a quick pass of `/articles/my` — verify manually if testing deletion specifically. |
-| `article.review` | contributor | entity | `/admin/review-queue` and `/admin/content` — **"Approve"** / **"Unreview"** buttons | The backend has no separate "review" step distinct from "approve/reject" — `article.review` and `article.approve` collapse into the exact same two buttons on these two pages. Treat them as one test, not two. |
-| `article.approve` | moderator | entity | Same as `article.review` above — `/admin/review-queue` "Approve", `/admin/content` "Approve" | **Enforcement mismatch:** the real endpoint (`PATCH /api/admin/content/{id}/approve`) only requires **contributor+**, not moderator+ as the registry states — a documented, deliberate Phase 3 non-migration (see module docstring). Testing as a contributor should succeed even though the registry table says moderator. |
-| `article.revert_approval` | moderator | entity | `/admin/content` — **"Unreview"** button (shown once an item's status is `community_reviewed`) | This is the practical "undo approval" action; it calls the same reject endpoint, which requires **moderator+** (matches registry). Not present on `/admin/review-queue` (items there haven't been approved yet). |
+| `article.review` | contributor | entity | `/admin/review-queue` — **"Mark reviewed"** button (only shown while status is `in_review`) | **Fixed 2026-07-04** (`UI_BUILD_BACKLOG.md`): now a real, distinct step (`PATCH /api/admin/content/{id}/review`), not collapsed into Approve. Sets status to `reviewed` — an optional waypoint, not a required gate (a moderator can still approve directly from `in_review`, no strict ordering). |
+| `article.approve` | moderator | entity | `/admin/review-queue` and `/admin/content` — **"Approve"** button, works from either `in_review` or `reviewed` | **Enforcement mismatch fixed 2026-07-04:** now genuinely requires moderator+ (previously reachable at contributor+, since a contributor-level "review" step is meaningless if any contributor can also approve directly). Also newly enforces the §6 separation-of-duties rule: 403 if the approver is the article's own author (previously ungated). |
+| `article.revert_approval` | moderator | entity | `/admin/content` — **"Revert approval"** button (shown once an item's status is `community_reviewed`) | **Fixed 2026-07-04:** now its own endpoint (`PATCH /api/admin/content/{id}/revert-approval`), split from `reject`/"Unreview" — goes back to `in_review` (fresh pass through the two-step flow), not `rejected` (that status is reserved for denying a submission that was never approved, and stays wired to the existing reject/appeal flow, untouched). |
 | `article.remove_crawled` *(platform)* | admin | platform | `/admin/content` — **"Delete"** button | See platform table below; repeated here because it's the same page as the entity-scoped review actions. |
 | `link.remove_submitted` *(platform)* | admin | platform | `/admin/content` — **"Delete"** button (same button as above) | `Content` rows for crawled articles and submitted links share one table/model and one Delete button — there is no separate UI distinguishing the two action names. Enforced at **moderator+** in the real endpoint (`require_mod`), not admin+ as the registry states. |
 
@@ -72,7 +72,7 @@ _width: wide
 |---|---|---|---|---|
 | `group.create_edit` | contributor | entity | `/groups` — **"+ New group"** button/form; `/groups/[id]` — pencil **"Edit"** icon (owner, or `canManage`) | The "+ New group" button has no client-side rank gate — any signed-in user sees it; the backend enforces contributor+. |
 | `group.manage_any` | moderator | entity | Same `/groups/[id]` **"Edit"** icon — rendered when `canManage` is true (`created_by === you`, OR your platform role is `super_admin`/`admin`/`moderator`, OR your **per-group** membership role is `admin`/`moderator`) | This is the delegable entity-wide "manage any group" tier, sharing its UI with the "own item" row above — there is no second, separate button. |
-| `group.archive` *(platform)* | super_admin | platform | `/admin/groups` — **"Archive"** button per row | Client-side gated strictly to `role === "super_admin"` (a non-super-admin sees "Super admin only" text instead of a button) — matches the registry exactly, one of the few rows where enforcement and UI agree precisely. |
+| `group.archive` *(platform)* | super_admin | platform | `/admin/groups` — **"Archive"** button per row | Client-side gated strictly to `role === "super_admin"` (a non-super-admin sees "Super admin only" text instead of a button). **Backend gate fixed 2026-07-04:** the endpoint used the rank-only `require_super_admin`, which wrongly passed an organization's *own* rank-5 super admin — spec §8 says platform-only. Now gated by `can(user, "group.archive")` (the registry check, `platform` scope), so an org's super admin correctly 403s. Surfaced while building `event.archive` with the registry gate; regression test `test_org_super_admin_cannot_archive_group` in `tests/test_groups_manage.py`. |
 | `group.join_rsvp` | persona | entity | `/groups/[id]` — **"Join"** / **"Leave"** button | |
 
 ### Products / Marketplace
@@ -80,9 +80,9 @@ _width: wide
 | Action | Min rank | Scope | UI location | Notes |
 |---|---|---|---|---|
 | `product.create_edit_archive` | persona | entity | `/marketplace/create` (new listing form), `/marketplace/edit/[id]` (edit form), `/marketplace/[id]` — **"Edit"** / **"Delete"** buttons (owner only) | |
-| `product.manage_any` | moderator | entity | **No discoverable button.** The backend (`PUT`/`DELETE /api/marketplace/listings/{id}`) does allow **admin+** to edit/delete someone else's listing, but `/marketplace/[id]` only ever renders the Edit/Delete buttons when `isOwner` is true — a moderator/admin has no click path to another user's listing's edit form; it's only reachable by manually typing `/marketplace/edit/{id}` into the address bar. | Flag this as a real UI gap when testing, not a "no UI" (the endpoint and page both work if navigated to directly) — but there is nothing to click. |
-| `compost_listing.create_edit_own` | contributor | entity | **No UI — API only** (and, more precisely, not even a real API: no backend endpoint or model named "compost listing" exists at all) | Grepped the whole backend for `compost_listing` — the only two hits are the registry's own two entries. The live composting feature is a different model, **composting hubs/deposits** (`/composting` — "Create a hub", "Join", log a deposit), which has no per-item create/edit/archive-by-someone-else's-item semantics matching this action's description. |
-| `compost_listing.archive` *(platform)* | super_admin | platform | **No UI — API only** (same finding as above — no backend implementation under this name) | |
+| `product.manage_any` | moderator | entity | `/marketplace/[id]` — the same **"Edit"** / **"Delete"** buttons, now rendered when `isOwner \|\| can("product.manage_any")`, with a stone **"Moderation"** badge/hint when acting as non-owner | **Built 2026-07-04** (`UI_BUILD_BACKLOG.md`). Also fixed the backend enforcement floor: `PUT`/`DELETE /api/marketplace/listings/{id}` previously required admin(4); lowered to moderator(3) to match the registry (spec is source of truth — same class of fix as the earlier `article.approve` floor). Covered by `tests/test_marketplace_manage_any.py`. |
+| `compost_listing.create_edit_own` | contributor | entity | `/composting` — inline **Edit** (pencil icon) on a hub card, own hub or (for org members) your organization's own super admin editing a fellow member's hub | **Built 2026-07-04** (`UI_BUILD_BACKLOG.md`): this action governs the existing `/composting` community hub feature (`CompostingHub`) — not a separate marketplace-style listing. `PATCH /api/waste/hubs/{id}` edits name/description/location/capacity/materials/hours/status(active-full-closed); creation (`POST /hubs`) also newly gated contributor+ (previously ungated for any logged-in user). |
+| `compost_listing.archive` *(platform)* | super_admin | platform | `/composting` — **Archive** icon, platform super admin only (`user.role === "super_admin"` client gate) | **Built 2026-07-04:** `POST /api/waste/hubs/{id}/archive` — deliberately unreachable by the hub's own manager or an entity's own super admin (same "blast radius crosses entities" reasoning as `group.archive`/`event.archive`). Archived hubs are excluded from the default `GET /hubs` listing. |
 
 ### Courses & Learning
 
@@ -97,17 +97,17 @@ _width: wide
 
 | Action | Min rank | Scope | UI location | Notes |
 |---|---|---|---|---|
-| `comment.add_edit_remove_own` | persona | entity | `CommentSection` component (embedded on articles, groups, events, plants, etc.) — comment box + **Send** icon to add, trash icon to remove your own | **"Edit" is not actually implemented anywhere** — there is no `PATCH` comment endpoint in the backend and no edit UI in `CommentSection.tsx`, only create (`POST`) and delete (`DELETE`). The registry name says "add/edit/remove" but only add+remove exist in practice. Moderator/admin cancelling someone else's comment (the ☑️/🔑 tier) uses the same trash icon, gated server-side by rank, not surfaced differently in the UI. |
+| `comment.add_edit_remove_own` | persona | entity | `CommentSection` component (embedded on articles, groups, events, plants, etc.) — comment box + **Send** icon to add, pencil **Edit** icon → inline edit mode (textarea + **Save**/**Cancel**) on your own comments (nested replies included), trash icon to remove your own | **"Edit" built 2026-07-04** (`UI_BUILD_BACKLOG.md`) — this row's former "degraded, not absent" status is fully resolved. New `PATCH /api/comments/{comment_id}` (owner-only — 403 otherwise, 404 missing, body `min_length=1`, refreshes `updated_at`; the comment response schema now includes `updated_at`). UI details: Escape cancels, textarea autofocuses, an **"(edited)"** marker shows when `updated_at − created_at` > 60s, and a failed save keeps edit mode open with an inline error (i18n `content.edit_failed`). Covered by `tests/test_comment_edit.py` (7 tests). Moderator/admin cancelling someone else's comment (the ☑️/🔑 tier) still uses the same trash icon, gated server-side by rank — edit remains strictly owner-only. |
 
 ### Events
 
 | Action | Min rank | Scope | UI location | Notes |
 |---|---|---|---|---|
 | `event.create_edit_cancel_own` | contributor | entity | `/events` — **"+ New event"** button; `/events/[id]` — Edit/Cancel/Delete controls (owner only, `isOwner` gate) | |
-| `event.manage_any` | moderator | entity | **No discoverable button.** `_check_event_owner` in `app/api/events.py` does let moderator+ update/delete any event server-side, but `/events/[id]` gates every edit/delete/venue/amenity/schedule control on `isOwner` only — the page's own `isAdmin` variable is used **only** for the ticket check-in action, never for event management. | Same shape of gap as `product.manage_any` — real backend support, zero UI entry point. |
+| `event.manage_any` | moderator | entity | `/events/[id]` — **all** owner-gated management controls now render when `isOwner \|\| can("event.manage_any")`: header **Edit**/**Delete** (now with aria-labels), schedule add/remove, venue form, amenities add/delete, sponsors add/remove/visibility-filter, vendors add/form/delete; a stone **"Moderation"** badge shows when acting as non-owner | **Built 2026-07-04** (`UI_BUILD_BACKLOG.md`). The backend (`_check_event_owner`) already allowed moderator+ — this was purely the render-condition fix, same pattern as `product.manage_any`. |
 | `event_sponsor.add_edit_cancel_own` | contributor | entity | `/events/[id]` — **Sponsors** tab, add/edit/remove controls (event owner only) | |
 | `event_vendor.add_edit_cancel_own` | contributor | entity | `/events/[id]` — **Vendors** tab, add/edit/remove controls (event owner only) | Renamed from "supplier" in the spec to avoid confusion with the `suppliers` platform entity — same UI either way. |
-| `event.archive` *(platform)* | super_admin | platform | **No UI — API only**, and more precisely **no distinct backend concept either** | There's no `/admin/events` page, no `archiveEvent` client method, and no super-admin-gated "archive" endpoint distinct from the existing owner/moderator+ `DELETE /api/events/{id}` used by `event.create_edit_cancel_own` above. |
+| `event.archive` *(platform)* | super_admin | platform | `/admin/events` — search/list table with a platform-super-admin-only rust **Archive** button per row (`can("event.archive")` client gate via `usePermission`, not a bare role check — an org's own super admin must not see it) | **Built 2026-07-04:** `POST /api/admin/events/{id}/archive`, gated by `can(user, "event.archive")` (the `compost_listing.archive` pattern, NOT a rank-only `require_super_admin` check, which would wrongly pass an org's own rank-5 super admin — the exact latent gap this build surfaced and fixed in `group.archive` itself the same day, see that row). Idempotent, soft (`status="archived"` + new `archived_at` column via idempotent lifespan migration, RSVPs preserved), notifies RSVP'd attendees, audit-logged as `archive_event`. Archived events are excluded unconditionally from the public `GET /api/events/` list and 404 on detail for non-staff; staff list them via `GET /api/admin/events` (moderator+, q/limit/offset, includes archived). Covered by `tests/test_event_archive.py` (6 tests). |
 
 ### Social — Follow, Like/Rate, Messages, Donations
 
@@ -145,7 +145,7 @@ action to a specific user ID. There's one shared UI for granting/revoking
 | Where | UI location | Notes |
 |---|---|---|
 | Grant a delegation | `/entity/[entityId]/team` — **"Delegated permissions"** section: user-ID input + a dropdown of every action the registry marks `delegable: true` (populated live from `GET /api/permissions/registry`) + **"Grant"** button | Shown only to that entity's own super admin or the platform super admin (`canGrantDelegations`). |
-| Revoke a delegation | Same section — **"Revoke"** link next to each active grant | |
+| Revoke a delegation | Same section — **"Revoke"** link next to each active grant | **Added 2026-07-04:** the delegations list flags (amber Badge **"Grantee below action rank"** + tooltip) any active grant whose grantee's current rank is below the action's registry `min_rank` — a client-side stopgap over already-fetched data, so a super admin can spot and manually revoke stale grants while the §10 auto-void-on-demotion rule remains an open design decision (see `UI_BUILD_BACKLOG.md`). |
 | Actions delegable through this UI | `article.review`, `article.approve`, `article.revert_approval`, `group.manage_any`, `product.manage_any`, `course.manage_any`, `event.manage_any`, `password.reset_entity_member` (entity-scoped, delegable ones), plus the platform-wide delegable ones (`legal.edit_update_content`, `platform_ui.edit_content`, `user.restrict_suspend_ban_lift_platform_wide`) | Cross-check against `permissions_registry.py`'s `delegable=True` entries — the dropdown is generated directly from the registry, so it will show exactly this list live; don't hand-maintain a separate list when testing. |
 
 Note: there is **no dedicated platform-wide delegation-granting page** distinct
@@ -165,15 +165,15 @@ entity for this purpose).
 
 | Action | Min rank | Scope | UI location | Notes |
 |---|---|---|---|---|
-| `password.reset_own` | persona | entity | **No UI — API only** | Backend has a full self-service flow (`POST /api/auth-security/password/reset/request`, `/confirm`) but `lib/api.ts` never calls either endpoint and no "Forgot password?" link exists on `/auth/login` or anywhere else. |
-| `password.reset_entity_member` | super_admin | entity | **No UI — API only** | No entity-scoped reset-password endpoint or button exists anywhere (checked `/entity/[entityId]/team` specifically — not there). Only the platform-wide admin version below has UI. |
+| `password.reset_own` | persona | entity | `/auth/login` — **"Forgot password?"** link → new page `/auth/forgot-password`: 3-step flow (email → token + new password → success) | **Built 2026-07-04** (`UI_BUILD_BACKLOG.md`). Calls `POST /api/auth/password/reset/request` then `/confirm` (the router in `app/api/auth_security.py` has prefix `/api/auth`, **not** `/api/auth-security` as earlier drafts of this doc said). Product-approved **dev-mode**: no email infrastructure exists, so the reset token is returned in the response and shown on-screen in a dev-note box (and pre-filled). 422 validation errors are mapped to friendly copy. |
+| `password.reset_entity_member` | super_admin | entity | `/entity/[entityId]/team` — key-icon **"Reset password"** button per member row (hidden on your own row) | **Built 2026-07-04**, including the previously-missing backend endpoint: `POST /api/entities/{entity_id}/members/{user_id}/reset-password` (min 6 chars; caller must be that entity's own super admin, rank 5, or the platform super admin via `can()`; target must be a member of that entity else 404; also revokes the target's sessions; audit action `reset_member_password`). Covered by `tests/test_entity_member_admin_actions.py`. |
 | `password.reset_other_platform_wide` *(platform)* | admin | platform | `/admin/users` — key-icon **"Reset password"** button (prompts for a new password, then confirms) | |
-| `session.revoke_own` | persona | entity | **No UI — API only** | `POST /api/auth-security/sessions/revoke-mine` exists server-side; no logout-all-devices button anywhere in the frontend. |
-| `session.revoke_other` | admin | entity | **No UI — API only** | `POST /api/auth-security/sessions/{user_id}/revoke` exists server-side; not called from admin ban/suspend or anywhere else. |
-| `user.restrict_suspend_ban_lift` | super_admin | entity | **No UI — API only** | Backend endpoints exist (`/api/admin/users/{id}/restrict`, `/lift-restriction`, `/suspend`, `/lift-suspension`, `/ban`, `/unban` — per `IMPLEMENTATION_STATUS.md` Phase 4), but `/admin/users` has no restrict/suspend/ban controls at all (only role dropdown, verify, and reset-password). |
-| `user.restrict_suspend_ban_lift_platform_wide` *(platform)* | super_admin | platform | **No UI — API only** | Same endpoints as above, same finding — no admin UI surfaces user-level restrict/suspend/ban anywhere. Do not confuse with `entity.ban`/`entity.unban` (organization-level ban), which **does** have UI at `/entity/[entityId]`. |
-| `trusted_publisher.grant_revoke_entity` | admin | entity | **No UI — API only** | No entity-scoped grant/revoke endpoint exists in the backend at all under this name. |
-| `trusted_publisher.grant_revoke_platform_default` *(platform)* | admin | platform | **No UI — API only** | `PATCH /api/admin/users/{id}/self-publish` exists server-side (grants/revokes `can_self_publish`); `lib/api.ts`'s `selfPublish` object only wires the **user's own** eligibility-check/accept endpoints (`/api/me/self-publish/...`), never the admin grant/revoke one — no button anywhere calls it. |
+| `session.revoke_own` | persona | entity | `/profile` — settings tab, new **Security** card: **"Log out of all devices"** button | **Built 2026-07-04.** Calls `POST /api/auth/sessions/revoke-mine` (router prefix `/api/auth`, not `/api/auth-security`). Copy deliberately says **all** devices (not "other") — the endpoint revokes every session including the current one; the UI then logs out locally. |
+| `session.revoke_other` | admin | entity | `/admin/users` — per-row **"Force logout"** button; also fired automatically after Suspend/Ban (see the restrict/suspend/ban rows below) | **Built 2026-07-04.** Real endpoint path is `POST /api/auth/sessions/{user_id}/revoke` — the router in `app/api/auth_security.py` has prefix `/api/auth`, **not** `/api/auth-security` (earlier drafts of this doc cited the wrong prefix). |
+| `user.restrict_suspend_ban_lift` | super_admin | entity | **No entity-scoped UI yet** — the controls built 2026-07-04 live on `/admin/users` (platform admin panel, see the row below); an entity's own super admin still has no restrict/suspend/ban controls on any entity roster view | The backend endpoints (`/api/admin/users/{id}/restrict`, `/lift-restriction`, `/suspend`, `/lift-suspension`, `/ban`, `/unban` — Phase 4) now have UI for the platform-wide sibling action; only this entity-scoped surface remains unbuilt. |
+| `user.restrict_suspend_ban_lift_platform_wide` *(platform)* | super_admin | platform | `/admin/users` — per-row **status ladder** `<select>` offering only the valid transitions from the row's current `account_status` (active→restrict/suspend/ban; restricted→lift/suspend/ban; suspended→lift/ban; banned→unban), reason captured via `prompt()`, suspend asks for a number of days (converted to an ISO `until`); plus a status Badge per row (amber restricted/suspended with an until-date tooltip, red banned) | **Built 2026-07-04** (`UI_BUILD_BACKLOG.md`). Suspend/Ban also automatically revoke the target's sessions (see `session.revoke_other` above). Do not confuse with `entity.ban`/`entity.unban` (organization-level ban), which has its own UI at `/entity/[entityId]`. |
+| `trusted_publisher.grant_revoke_entity` | admin | entity | `/entity/[entityId]/team` — **PenLine** toggle per member row + sage **"Trusted publisher"** badge (hidden on your own row) | **Built 2026-07-04**, including the previously-missing backend endpoint: `PATCH /api/entities/{entity_id}/members/{user_id}/self-publish` (same auth as the entity reset-password endpoint; eligibility + agreement **required** on grant unless the caller is a platform super admin). `EntityMemberResponse` now includes `can_self_publish`. Covered by `tests/test_entity_member_admin_actions.py`. |
+| `trusted_publisher.grant_revoke_platform_default` *(platform)* | admin | platform | `/admin/users` — per-row **PenLine** toggle | **Built 2026-07-04.** Calls `PATCH /api/admin/users/{id}/self-publish`. The platform admin grant is a manual override with **no** eligibility gate — intended: this is the fast-track/override path; the entity-scoped grant above is the one that enforces eligibility + agreement. |
 
 ### Platform Admin / Settings
 
@@ -183,9 +183,9 @@ entity for this purpose).
 | `platform_family.edit` | admin | platform | `/admin/config` — inline click-to-edit fields on each family row | |
 | `platform_family.archive` | super_admin | platform | `/admin/config` — trash-icon **"Delete"** per family | Hard delete (removes the family and its categories), not a soft archive — same naming looseness as `plants.archive`/`group.archive`. |
 | `platform.manage_settings_taxonomy` | super_admin | platform | `/admin/config` — the whole families/categories tree (add/edit/delete families and categories) | The **generic key-value Settings store** (`api.admin.listSettings/getSetting/updateSetting`) is a separate, real backend feature with **no UI at all** — grepped the whole frontend, nothing calls it. Only the taxonomy half of this action has a page. |
-| `platform_ui.edit_content` | super_admin | platform | Global floating **"Edit page"** button (bottom of every page, via `EditorModeChrome`) — toggles inline WYSIWYG editing of text/images/icons directly on the page; `/admin/copy` — bulk **"Site Text"** key-by-key editor for the same underlying content | The floating toggle is hard-coded to `role === "super_admin"` only in `editor-mode-provider.tsx` (its own comment says so explicitly) — the registry's note that this is delegable all the way down to persona(1) is **not** reflected in the current gate; a delegation grant alone won't be enough to see the button today. |
+| `platform_ui.edit_content` | super_admin | platform | Global floating **"Edit page"** button (bottom of every page, via `EditorModeChrome`) — toggles inline WYSIWYG editing of text/images/icons directly on the page; `/admin/copy` — bulk **"Site Text"** key-by-key editor for the same underlying content | The floating toggle is hard-coded to `role === "super_admin"` only in `editor-mode-provider.tsx` (its own comment says so explicitly) — the registry's note that this is delegable all the way down to persona(1) is **not** reflected in the current gate; a delegation grant alone won't be enough to see the button today. **Deferred to the delegation-enforcement session (product decision 2026-07-04):** honoring a delegation here requires the content-ui backend to actually check grants — the first-ever delegation enforcement — which belongs in that future platform-wide session, not a UI-only fix (see `UI_BUILD_BACKLOG.md`). |
 | `broadcast.send` *(platform)* | admin | platform | `/admin/notifications` — **"Broadcast"** message textarea + send button | Sends to literally every user platform-wide; there is no audience/segment picker. |
-| `notification.send_to_entity_members` | admin | entity | **No UI — API only**, and more precisely **no distinct backend endpoint either** | The only notification-broadcast endpoint (`POST /api/admin/broadcast`) sends to **all** users unconditionally — there is no entity-scoped variant to send only to one organization's members. |
+| `notification.send_to_entity_members` | admin | entity | `/entity/[entityId]/team` — **"Notify members"** card: message textarea (0/500 counter) + send button, confirm dialog shows the member count, success toast | **Built 2026-07-04** (`UI_BUILD_BACKLOG.md`), including the previously-missing backend endpoint: `POST /api/entities/{entity_id}/notify-members`, body `{message}` (1–500 chars), gated via `can()` at the registry floor admin(4) **same-entity** (or platform staff). Audience = every member of that entity except the sender; delivered as `NotificationType.system` with link `/entity/{id}`; response `{sent_to: n}`; audit-logged as `notify_entity_members` (new `ModerationAction`). Card visible to rank≥4 of that entity or platform admin+. Covered by `tests/test_entity_notify_members.py` (7 tests). Distinct from `broadcast.send`'s all-users broadcast on `/admin/notifications`. |
 
 ### Legal
 
@@ -203,41 +203,27 @@ click path in the current frontend** (verified by grepping every relevant
 `api.ts` client method and every page/component that might call it — not
 inferred from a plausible-sounding route):
 
-1. **`compost_listing.create_edit_own`** and **`compost_listing.archive`** —
-   no backend endpoint or model exists under this name at all; nearest
-   analog is `/composting` (hub deposits), which is a different feature.
-2. **`product.manage_any`** — backend allows admin+ to edit/delete another
-   user's marketplace listing; no button anywhere surfaces another user's
-   listing for a moderator/admin to manage (only reachable by manually
-   typing the edit URL).
-3. **`event.manage_any`** — same shape of gap as above, for events.
-4. **`event.archive`** *(platform)* — no admin events page, no archive
-   endpoint distinct from the existing owner/moderator delete.
-5. **`notification.send_to_entity_members`** — no entity-scoped broadcast
-   endpoint exists; only the all-users platform broadcast is implemented.
-6. **`password.reset_own`** — self-service "forgot password" backend flow
-   exists but is never called from the frontend; no "Forgot password?" link.
-7. **`password.reset_entity_member`** — no entity-scoped reset-password
-   endpoint or UI.
-8. **`session.revoke_own`** and **`session.revoke_other`** — force-logout
-   backend endpoints exist, unused by any frontend page.
-9. **`user.restrict_suspend_ban_lift`** (entity) and
-   **`user.restrict_suspend_ban_lift_platform_wide`** (platform) — the full
-   restrict/suspend/ban/lift backend (Phase 4) has no admin-panel controls
-   at all; do not confuse with entity-level `entity.ban`/`entity.unban`,
-   which **does** have UI.
-10. **`trusted_publisher.grant_revoke_entity`** — no entity-scoped
-    implementation exists.
-11. **`trusted_publisher.grant_revoke_platform_default`** *(platform)* — the
-    admin grant/revoke endpoint exists server-side; no button calls it (only
-    the end-user's own eligibility/accept flow is wired).
-12. **`platform.manage_settings_taxonomy`**'s generic key-value Settings
-    store half (as opposed to its taxonomy-families half, which **is**
-    covered at `/admin/config`) — no UI.
+1. **`user.restrict_suspend_ban_lift`** (entity scope) — the platform-wide
+   sibling now has full UI on `/admin/users` (built 2026-07-04, see its row),
+   but an entity's own super admin still has no restrict/suspend/ban
+   controls on any entity-scoped roster view.
+2. **`platform.manage_settings_taxonomy`**'s generic key-value Settings
+   store half (as opposed to its taxonomy-families half, which **is**
+   covered at `/admin/config`) — no UI.
 
-That's **12 of the 67** registry actions with no real click path today
-(several of them not even implemented as distinct backend endpoints). Two
-more are documented as **degraded, not absent** — `comment.add_edit_remove_own`
-(no "edit," only add/remove exist) and `article.review`/`article.approve`
-(collapsed into one pair of buttons, not two distinct steps) — see their
-rows above for detail.
+That's **2 of the 67** registry actions with no real click path today.
+The 2026-07-04 "UI backlog batches 1+2" build (P0+P1 — see
+`UI_BUILD_BACKLOG.md`) cleared most of the former 11-item list:
+the platform-wide restrict/suspend/ban ladder, `session.revoke_own`,
+`session.revoke_other`, `password.reset_own`, `password.reset_entity_member`,
+`trusted_publisher.grant_revoke_entity`,
+`trusted_publisher.grant_revoke_platform_default`, and the
+`product.manage_any`/`event.manage_any` render gaps — see their rows above
+for detail. (`compost_listing.create_edit_own`/`compost_listing.archive`
+and the `article.review`/`article.approve` collapse were built earlier the
+same day.) "UI backlog batch 3" (P2, also 2026-07-04) then cleared the
+last three: `event.archive` (`/admin/events`),
+`notification.send_to_entity_members` (team-page "Notify members" card),
+and the comment "edit" — the one item this list previously carried as
+**degraded, not absent** (`comment.add_edit_remove_own`) is now fully
+built, so no remaining action sits in that degraded-but-present category.

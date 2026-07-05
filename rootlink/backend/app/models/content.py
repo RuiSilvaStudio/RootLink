@@ -50,6 +50,13 @@ PUBLIC_VERIFICATION_STATUSES = (
 class ContentStatus(enum.StrEnum):
     draft = "draft"
     in_review = "in_review"
+    # Real two-step review/approve (docs/roles-permissions/ROLES_PERMISSIONS.md
+    # §7 "Review article" vs "Approve article", contributor+ vs moderator+):
+    # a contributor-rank reviewer can mark a submission `reviewed` as a
+    # first pass; a moderator can still approve directly from `in_review`
+    # too (no strict ordering enforced, by product decision) — `reviewed` is
+    # an optional waypoint, not a required gate.
+    reviewed = "reviewed"
     published = "published"
     needs_changes = "needs_changes"
     rejected = "rejected"
@@ -83,6 +90,11 @@ class Content(TimestampMixin, Base):
     status: Mapped[str] = mapped_column(String(20), default="draft")
     # Latest moderator note for needs_changes / rejected (surfaced to the author).
     review_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Internal-only note left by a contributor marking an article "reviewed"
+    # (docs/roles-permissions/ROLES_PERMISSIONS.md §7) — deliberately a
+    # separate column from `review_note`, which IS author-facing (reject/
+    # needs_changes reasons). Never surfaced to the article's author.
+    review_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     edited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     canonical_url: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     feed_source_id: Mapped[int | None] = mapped_column(ForeignKey("feed_sources.id"), nullable=True)

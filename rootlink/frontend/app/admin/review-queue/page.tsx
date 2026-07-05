@@ -50,13 +50,20 @@ export default function ReviewQueue() {
     } catch {}
   };
 
+  const handleMarkReviewed = async (id: number) => {
+    const comment = window.prompt(t("admin.review_comment_prompt")) || undefined;
+    await api.admin.reviewContent(id, comment);
+    fetchQueue();
+  };
+
   const handleApprove = async (id: number) => {
     await api.admin.approveContent(id);
     fetchQueue();
   };
 
   const handleReject = async (id: number) => {
-    await api.admin.rejectContent(id);
+    const reason = window.prompt(t("admin.reject_reason_prompt")) || undefined;
+    await api.admin.rejectContent(id, reason);
     fetchQueue();
   };
 
@@ -130,12 +137,21 @@ export default function ReviewQueue() {
           const isExpanded = expanded[c.id];
           const images = allImages(c);
           return (
-            <div key={c.id} className="bg-white rounded-2xl border border-stone-200/60 overflow-hidden">
-              <div className="p-4 sm:p-5 flex items-start gap-4">
+            <div
+              key={c.id}
+              className={`bg-white rounded-2xl border overflow-hidden border-l-4 ${
+                c.status === "reviewed" ? "border-l-sky-400 border-stone-200/60" : "border-l-stone-200 border-stone-200/60"
+              }`}
+            >
+              <div className="p-4 sm:p-5 flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 text-base">{c.title}</h3>
                     <Badge variant="stone" className="text-[10px]">{c.content_type}</Badge>
+                    <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium ${c.status === "reviewed" ? "text-sky-600" : "text-stone-400"}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${c.status === "reviewed" ? "bg-sky-400" : "bg-stone-300"}`} />
+                      {c.status === "reviewed" ? t("admin.status_reviewed_pending") : t("admin.status_awaiting_review")}
+                    </span>
                   </div>
                   <p className="text-sm text-stone-500 font-serif line-clamp-2">{c.summary || t("admin.no_summary")}</p>
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -173,21 +189,30 @@ export default function ReviewQueue() {
                     )}
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-2 shrink-0">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-col items-start sm:items-end gap-2 shrink-0 w-full sm:w-auto">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {c.status === "in_review" && (
+                      <button
+                        onClick={() => handleMarkReviewed(c.id)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-stone-600 border border-stone-200 rounded-xl hover:bg-stone-50 hover:border-stone-300 font-display font-medium transition"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        {t("admin.mark_reviewed")}
+                      </button>
+                    )}
                     <button
                       onClick={() => handleApprove(c.id)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-emerald-100/60 text-emerald-700 border border-emerald-200/40 rounded-xl hover:bg-emerald-100 font-display font-medium transition"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-emerald-600 text-cream hover:bg-emerald-700 rounded-xl font-display font-medium transition shadow-sm"
                     >
                       <Check className="w-3.5 h-3.5" />
                       {t("admin.approve")}
                     </button>
                     <button
                       onClick={() => handleReject(c.id)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-stone-100/60 text-stone-600 border border-stone-200/40 rounded-xl hover:bg-stone-100 font-display font-medium transition"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-stone-600 border border-stone-200 rounded-xl hover:bg-stone-50 hover:border-stone-300 font-display font-medium transition"
                     >
                       <AlertTriangle className="w-3.5 h-3.5" />
-                      {t("admin.unreview")}
+                      {t("admin.reject")}
                     </button>
                   </div>
                   <button

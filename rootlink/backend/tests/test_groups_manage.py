@@ -57,6 +57,20 @@ async def test_admin_cannot_archive_only_super(client, a_group, make_user):
     assert r.status_code == 403
 
 
+async def test_org_super_admin_cannot_archive_group(client, a_group, make_user):
+    """docs/roles-permissions/ROLES_PERMISSIONS.md §8: group.archive is PLATFORM-only.
+    An organization's own rank-5 super admin must NOT pass — the old rank-only
+    `require_super_admin` gate wrongly let them through (fixed 2026-07-04,
+    surfaced while building event.archive with the registry gate)."""
+    _, _, g = a_group
+    _, org_super = await make_user(
+        email="orgsuper-grouparch@example.com", role="admin",
+        entity_kind="organization", entity_id=77, rank=5,
+    )
+    r = await client.post(f"/api/admin/groups/{g['id']}/archive", headers=org_super)
+    assert r.status_code == 403
+
+
 async def test_super_admin_archive_hides_and_notifies(client, a_group, make_user, session_factory):
     owner, _, g = a_group
     _, su = await make_user(email="super2@example.com", role="super_admin")

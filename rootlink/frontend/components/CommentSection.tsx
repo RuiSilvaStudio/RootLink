@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { MessageSquare, Send, Trash2, User } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { MessageSquare, Pencil, Send, Trash2, User } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
 import { Button } from "@/components/ui/Button";
@@ -16,8 +16,18 @@ type Comment = {
   parent_id: number | null;
   body: string;
   created_at: string | null;
+  updated_at: string | null;
   replies: Comment[];
 };
+
+// A row update at creation can nudge updated_at a few seconds past created_at;
+// only treat a comment as edited when the gap is meaningful (>60s).
+function isEdited(comment: Comment): boolean {
+  if (!comment.created_at || !comment.updated_at) return false;
+  return (
+    new Date(comment.updated_at).getTime() - new Date(comment.created_at).getTime() > 60_000
+  );
+}
 
 function findComment(comments: Comment[], id: number): Comment | null {
   for (const c of comments) {
@@ -33,18 +43,57 @@ function findComment(comments: Comment[], id: number): Comment | null {
 function CommentThread({
   comment,
   onReply,
+  onEdit,
   onDelete,
   currentUserId,
   depth = 0,
 }: {
   comment: Comment;
   onReply: (parentId: number) => void;
+  onEdit: (id: number, body: string) => Promise<void>;
   onDelete: (id: number) => void;
   currentUserId: number | null;
   depth?: number;
 }) {
   const { t } = useLocale();
   const displayName = comment.user_name || `User #${comment.user_id}`;
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(comment.body);
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Focus must move in an effect after the textarea renders — setting it in the
+  // click handler targets an element that doesn't exist yet (docs/LESSONS.md #17).
+  useEffect(() => {
+    if (editing && textareaRef.current) {
+      const el = textareaRef.current;
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+    }
+  }, [editing]);
+
+  const startEditing = () => {
+    setDraft(comment.body);
+    setEditError("");
+    setEditing(true);
+  };
+
+  const handleSave = async () => {
+    if (!draft.trim() || saving) return;
+    setSaving(true);
+    setEditError("");
+    try {
+      await onEdit(comment.id, draft.trim());
+      setEditing(false);
+    } catch {
+      // Keep edit mode open so nothing typed is lost, and say what happened —
+      // a silent failed save looks identical to a successful one.
+      setEditError(t("content.edit_failed"));
+    }
+    setSaving(false);
+  };
+
   return (
     <div className={`${depth > 0 ? "ml-6 pl-4 border-l-2 border-primary-100 dark:border-primary-800/40" : ""}`}>
       <div className="py-4">
@@ -55,32 +104,86 @@ function CommentThread({
             <span className="text-xs text-stone-400 ml-2">
               {comment.created_at ? new Date(comment.created_at).toLocaleDateString() : ""}
             </span>
+            {isEdited(comment) && (
+              <span className="text-xs text-stone-400 italic ml-1.5">{t("content.edited")}</span>
+            )}
           </div>
         </div>
-        <p className="text-stone-700 dark:text-stone-300 text-sm ml-12">{comment.body}</p>
-        <div className="flex gap-3 ml-12 mt-1.5">
-          <button
-            onClick={() => onReply(comment.id)}
-            className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 font-medium transition"
-          >
-            {t("content.reply")}
-          </button>
-          {currentUserId === comment.user_id && (
-            <button
-              onClick={() => onDelete(comment.id)}
-              className="text-xs text-red-500 hover:text-red-600 font-medium transition"
-            >
-              <Trash2 className="w-3 h-3 inline mr-0.5" />
-              {t("content.delete")}
-            </button>
-          )}
-        </div>
+        {editing ? (
+          <div className="ml-12">
+            <textarea
+              ref={textareaRef}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  setEditing(false);
+                }
+              }}
+              rows={2}
+              aria-label={t("content.edit_comment")}
+              className="w-full px-4 py-2.5 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-sm text-stone-800 dark:text-stone-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15 transition-all font-serif resize-y"
+            />
+            {editError && (
+              <p role="alert" className="text-xs text-rust-600 dark:text-rust-400 mt-1.5">{editError}</p>
+            )}
+            <div className="flex gap-3 mt-1.5">
+              <button
+                onClick={handleSave}
+                disabled={saving || !draft.trim()}
+                className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 font-medium transition disabled:opacity-50"
+              >
+                {t("content.save")}
+              </button>
+              <button
+                onClick={() => setEditing(false)}
+                className="text-xs text-stone-400 hover:text-stone-600 font-medium transition"
+              >
+                {t("content.cancel")}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="text-stone-700 dark:text-stone-300 text-sm ml-12">{comment.body}</p>
+            <div className="flex gap-3 ml-12 mt-1.5">
+              <button
+                onClick={() => onReply(comment.id)}
+                className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 font-medium transition"
+              >
+                {t("content.reply")}
+              </button>
+              {currentUserId === comment.user_id && (
+                <>
+                  <button
+                    onClick={startEditing}
+                    aria-label={t("content.edit_comment")}
+                    className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 font-medium transition"
+                  >
+                    <Pencil className="w-3 h-3 inline mr-0.5" />
+                    {t("content.edit")}
+                  </button>
+                  <button
+                    onClick={() => onDelete(comment.id)}
+                    aria-label={t("content.delete_comment")}
+                    className="text-xs text-red-500 hover:text-red-600 font-medium transition"
+                  >
+                    <Trash2 className="w-3 h-3 inline mr-0.5" />
+                    {t("content.delete")}
+                  </button>
+                </>
+              )}
+            </div>
+          </>
+        )}
       </div>
       {comment.replies?.map((reply) => (
         <CommentThread
           key={reply.id}
           comment={reply}
           onReply={onReply}
+          onEdit={onEdit}
           onDelete={onDelete}
           currentUserId={currentUserId}
           depth={depth + 1}
@@ -154,6 +257,19 @@ export function CommentSection({ entityType, entityId, className = "" }: Props) 
       // error handled by toast in caller context
     }
     setSubmitting(false);
+  };
+
+  const handleEdit = async (commentId: number, body: string) => {
+    const updated = await api.comments.update(commentId, body);
+    setComments((prev) => {
+      const apply = (cmts: Comment[]): Comment[] =>
+        cmts.map((cm) =>
+          cm.id === commentId
+            ? { ...cm, body: updated.body, updated_at: updated.updated_at }
+            : { ...cm, replies: apply(cm.replies || []) }
+        );
+      return apply(prev);
+    });
   };
 
   const handleDelete = async (commentId: number) => {
@@ -240,6 +356,7 @@ export function CommentSection({ entityType, entityId, className = "" }: Props) 
               key={comment.id}
               comment={comment}
               onReply={(id) => setReplyTo(id)}
+              onEdit={handleEdit}
               onDelete={handleDelete}
               currentUserId={currentUser?.id ?? null}
               depth={0}

@@ -7,6 +7,7 @@ import { MapPin, CheckCircle, ArrowLeft, Tag, Gift, ArrowRightLeft, ShoppingCart
 import { api } from "@/lib/api";
 import { safeImageUrl } from "@/lib/image-url";
 import { useLocale } from "@/lib/locale-context";
+import { usePermission } from "@/lib/use-permission";
 import { useToast } from "@/lib/toast-context";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -23,6 +24,7 @@ export default function ListingDetailPage() {
   const router = useRouter();
   const { t, locale } = useLocale();
   const { addToast } = useToast();
+  const { can } = usePermission();
 
   const [listing, setListing] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -54,6 +56,9 @@ export default function ListingDetailPage() {
   }, [listingId]);
 
   const isOwner = currentUser && listing && currentUser.id === listing.seller_id;
+  // Same pattern as app/learning/courses/[id]/page.tsx: owner OR the
+  // registry's entity-wide manage action (`product.manage_any`, moderator+).
+  const canManage = isOwner || can("product.manage_any");
 
   const handlePurchase = async () => {
     if (!currentUser) {
@@ -235,9 +240,16 @@ export default function ListingDetailPage() {
               <p className="text-sm text-stone-500 dark:text-stone-400 font-serif">{t("marketplace.no_longer_available")}</p>
             </Card>
           )}
-          {isOwner && (
+          {canManage && (
             <Card variant="plain" className="p-4 bg-primary-50/30 dark:bg-primary-900/20">
-              <p className="text-sm text-stone-500 dark:text-stone-400 font-serif">{t("marketplace.your_listing")}</p>
+              {isOwner ? (
+                <p className="text-sm text-stone-500 dark:text-stone-400 font-serif">{t("marketplace.your_listing")}</p>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Badge variant="stone">{t("marketplace.moderation")}</Badge>
+                  <p className="text-sm text-stone-500 dark:text-stone-400 font-serif">{t("marketplace.moderation_hint")}</p>
+                </div>
+              )}
               <div className="flex gap-2 mt-2">
                 <Button variant="secondary" size="sm" onClick={() => router.push(`/marketplace/edit/${listing.id}`)}>
                   {t("marketplace.edit")}

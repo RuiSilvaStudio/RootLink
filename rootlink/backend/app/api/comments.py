@@ -12,7 +12,7 @@ from app.models.learning import Course, Lesson
 from app.models.notification import Notification, NotificationType
 from app.models.plant import Plant
 from app.models.user import User
-from app.schemas.comment import CommentCreate, CommentResponse
+from app.schemas.comment import CommentCreate, CommentResponse, CommentUpdate
 from app.services.sse import sse_manager
 
 router = APIRouter(prefix="/api/comments", tags=["comments"])
@@ -73,6 +73,7 @@ def _build_tree(comments: list[Comment], user_names: dict[int, str]) -> list[Com
             parent_id=c.parent_id,
             body=c.body,
             created_at=c.created_at,
+            updated_at=c.updated_at,
             replies=[],
         )
         comment_map[c.id] = cr
@@ -173,6 +174,39 @@ async def create_comment(
         parent_id=comment.parent_id,
         body=comment.body,
         created_at=comment.created_at,
+        updated_at=comment.updated_at,
+        replies=[],
+    )
+
+
+@router.patch("/{comment_id}", response_model=CommentResponse)
+async def update_comment(
+    comment_id: int,
+    body: CommentUpdate,
+    current_user: User = Depends(get_writable_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Edit own comment (ROLES_PERMISSIONS §7 `comment.add_edit_remove_own`). Owner only."""
+    comment = await db.get(Comment, comment_id)
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    if comment.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only edit your own comments")
+
+    comment.body = body.body
+    await db.commit()
+    await db.refresh(comment)
+
+    return CommentResponse(
+        id=comment.id,
+        entity_type=comment.entity_type,
+        entity_id=comment.entity_id,
+        user_id=comment.user_id,
+        user_name=current_user.name,
+        parent_id=comment.parent_id,
+        body=comment.body,
+        created_at=comment.created_at,
+        updated_at=comment.updated_at,
         replies=[],
     )
 

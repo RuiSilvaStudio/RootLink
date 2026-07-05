@@ -393,15 +393,15 @@ Where a cell has no symbol, that rank cannot perform the action at all.
 | Submit a link | | ✅ | ✅ | ✅ | ✅ | ✅ | |
 | Crawl articles | | | ✅ | ✅ | ✅ | ✅ | |
 | Create / edit / archive article | | ✅ | ✅ | ✅☑️ | ✅☑️ | ✅🔑 | |
-| Review article | | | ☑️ | ☑️ | ☑️ | ✅🔑 | |
-| Approve article | | | | ☑️ | ☑️ | 🔑 | No ✅ (own) on this row, on purpose — nobody approves their own submission, not even the entity's own super admin. See §6 Separation of duties. |
-| Revert article approval | | | | ☑️ | ☑️ | 🔑 | Same self-approval restriction as above. |
+| Review article | | | ☑️ | ☑️ | ☑️ | ✅🔑 | Real, distinct step from Approve (`PATCH /api/admin/content/{id}/review`) — marks `in_review` → `reviewed`, an optional waypoint (a moderator can still approve directly from `in_review` too, no strict ordering enforced, by product decision). Was previously collapsed into the same "Approve" button as Approve below — fixed in the roles/permissions UI backlog build (2026-07-04, see `UI_BUILD_BACKLOG.md`). |
+| Approve article | | | | ☑️ | ☑️ | 🔑 | No ✅ (own) on this row, on purpose — nobody approves their own submission, not even the entity's own super admin. See §6 Separation of duties (now actually enforced — 403 if `created_by == current_user.id`, closing a documented gap). Rank floor also fixed to genuinely require moderator+ (previously reachable at contributor+, a documented Phase 3 enforcement mismatch). |
+| Revert article approval | | | | ☑️ | ☑️ | 🔑 | Same self-approval restriction as above. Undoing an approval (`PATCH /api/admin/content/{id}/revert-approval`) goes back to `in_review` — deliberately its own endpoint now, split from "Reject" (`in_review`/`reviewed` → `rejected`, still appealable), so undoing an approval doesn't get conflated with denying a submission that was never approved in the first place. |
 | Add / archive own RSS feed | | ✅ | ✅ | ✅ | ✅ | ✅ | |
 | Create / edit plants | | | | ✅ | ✅ | ✅🔑 | |
 | Import plants | | | | | ✅ | ✅ | Requires admin — a step up from "create/edit," since importing pulls in unreviewed external data. |
 | Create / edit group | | | ✅ | ✅ | ✅☑️ | ✅🔑 | |
 | Create / edit / archive product | | ✅ | ✅ | ✅☑️ | ✅☑️ | ✅🔑 | |
-| Create / edit own compost listing | | | ✅ | ✅ | ✅ | ✅🔑 | No ☑️ tier — moderator/admin can't edit someone else's compost listing, only the entity super admin can. |
+| Create / edit own compost listing | | | ✅ | ✅ | ✅ | ✅🔑 | No ☑️ tier — moderator/admin can't edit someone else's compost listing, only the entity super admin can. This is a real-world composting **facility** (location, accepted materials/services, capacity, status) — the existing `/composting` community hub feature (`CompostingHub`), not a separate marketplace-style listing. Built 2026-07-04 (`PATCH /api/waste/hubs/{id}`, contributor+ gate added to creation too, previously ungated) — see `UI_BUILD_BACKLOG.md`. |
 | Add / edit / remove own comment | | ✅ | ✅ | ✅☑️ | ✅☑️ | ✅🔑 | Everyone can add/edit/remove their own comment. Moderator+ can also cancel (remove) someone else's — moderator/admin within their rank tier, super admin entity-wide. |
 | Create / edit / cancel own event | | | ✅ | ✅ | ✅ | ✅🔑 | Venue, amenities, and schedule sub-items follow the same tier. No ☑️ at moderator/admin — deliberately stricter than articles/products/groups, since one entity's event can have attendees from other entities (see §9, "why events/groups are platform-wide for archiving"). |
 | Add / edit / cancel own event sponsor | | | ✅ | ✅ | ✅ | ✅🔑 | |
@@ -466,7 +466,12 @@ everyone else.*
 §7, because their blast radius extends beyond one entity — a group or event
 created by one entity can include members/attendees from other entities,
 and dissolving an entity affects its members and its cross-entity footprint
-(§3) — only the platform can safely process these.*
+(§3) — only the platform can safely process these. "Archive compost listing"
+is here for the same reason: a composting facility can be used by members
+of many different entities, so taking it offline needs platform-level
+judgment, not a unilateral action by the facility's own manager or even
+their organization's own super admin. Built 2026-07-04
+(`POST /api/waste/hubs/{id}/archive`) — see `UI_BUILD_BACKLOG.md`.*
 
 ---
 
@@ -542,7 +547,8 @@ entity super admin by default.
 
 | Action | Visitor | Persona | Contributor | Moderator | Admin | Super Admin |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
-| Manage (review/approve/reject) any article in the entity | | | ✅ | ✅ | ✅ | ⬅️ |
+| Review any article in the entity (`article.review`) | | | ✅ | ✅ | ✅ | ⬅️ |
+| Approve any article in the entity (`article.approve`)¹ | | | ✅ | ✅ | ✅ | ⬅️ |
 | Manage any group in the entity | | | | ✅ | ✅ | ⬅️ |
 | Manage any product listing in the entity | | | | ✅ | ✅ | ⬅️ |
 | Manage any event in the entity | | | | ✅ | ✅ | ⬅️ |
@@ -550,6 +556,14 @@ entity super admin by default.
 | Reset a password for another entity member | | | | ✅ | ✅ | ⬅️ |
 | Restrict / suspend / ban / lift a user | | | | | | ⬅️ *(not delegable)* |
 | Promote / demote users | | | | | | ⬅️ *(not delegable)* |
+
+¹ `article.approve` is delegable down to contributor even though its own
+base `min_rank` is moderator (§7 above) — split into its own row here
+(previously combined with review/reject into a single "Manage
+(review/approve/reject)" row) now that review and approve are two real,
+distinct steps in the live product, not just in this spec. See
+`permissions_registry.py`'s module docstring point 3 for why the delegation
+floor is allowed to reach below the action's own base floor.
 
 Suspend/ban and promote/demote have no ✅ column anywhere on purpose — these
 tie directly into the approval-chain rules in §6 and the "log everything"

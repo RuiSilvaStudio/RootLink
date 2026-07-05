@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   User, MapPin, Save, LogOut, Users, UserPlus, UserMinus, Eye, EyeOff,
   FileText, Calendar, BookOpen, MessageSquare, Ticket, Heart, Bookmark,
-  Settings, Rss, Clock, CheckCircle, QrCode, Sprout, GraduationCap, Building,
+  Settings, Rss, Clock, CheckCircle, QrCode, Shield, Sprout, GraduationCap, Building,
   Package, Tag, Gift, ArrowRightLeft, ShoppingCart,
 } from "lucide-react";
 import { api } from "@/lib/api";
@@ -208,6 +208,21 @@ function ProfilePage() {
   const handleLogout = () => {
     logout();
     router.push("/");
+  };
+
+  const handleRevokeSessions = async () => {
+    // Backend revokes EVERY active session, including this one
+    // (app/api/auth_security.py revoke-mine → revoke_all_user_sessions),
+    // so be honest in the confirm and log out locally right after.
+    if (!confirm(t("profile.revoke_sessions_confirm"))) return;
+    try {
+      const res = await api.auth.revokeMySessions();
+      addToast("success", t("profile.revoke_sessions_done", { count: res.revoked_count }));
+      logout();
+      router.push("/auth/login");
+    } catch (err: any) {
+      addToast("error", err.message);
+    }
   };
 
   if (loading) return (
@@ -925,6 +940,23 @@ function ProfilePage() {
                 <Save className="w-4 h-4" /> {saving ? t("profile.saving") : t("profile.save_profile")}
               </Button>
             </form>
+
+            {/* Security: self-service force-logout (session.revoke_own) */}
+            <div className="bg-white dark:bg-stone-900 p-6 rounded-xl border border-stone-200 dark:border-stone-700">
+              <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-1 flex items-center gap-2">
+                <Shield className="w-4 h-4 text-primary-500" /> {t("profile.security")}
+              </h3>
+              <p className="text-sm text-stone-500 dark:text-stone-400 font-serif mb-4">
+                {t("profile.revoke_sessions_desc")}
+              </p>
+              <button
+                type="button"
+                onClick={handleRevokeSessions}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border border-red-300 dark:border-red-800/60 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition"
+              >
+                <LogOut className="w-4 h-4" /> {t("profile.revoke_sessions")}
+              </button>
+            </div>
 
             {/* Roles/permissions redesign Phase 5 — entity registration/team/
                 conversion entry points. Entity-scoped surfaces live under

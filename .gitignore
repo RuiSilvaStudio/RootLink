@@ -60,3 +60,9 @@ rootlink/backend/media/
 # --- Discovery / design workspace ---
 discovery/
 backlog/
+
+# --- Unrelated apps installed on the prod server inside the repo tree ---
+# (Immich/uptime-kuma composes live at /home/rui/RootLink/apps/ on the server,
+# placed there by a separate agent session. Ignored so a stray `git add -A`
+# on the server can never commit them into RootLink's repo.)
+apps/
