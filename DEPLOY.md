@@ -4,7 +4,7 @@
 > If anything here changes (server, domains, secrets, process, gotchas), UPDATE THIS FILE
 > in the same change. AGENTS.md instructs every agent to keep this current.
 >
-> Last verified working: 2026-07-02
+> Last verified working: 2026-07-05 (UI-backlog P0+P1+P2 combined deploy)
 
 ---
 
@@ -284,6 +284,24 @@ These cost real time. Read before debugging.
     verifying the roles/permissions deploy). Point decay / RSS crawl / draft cleanup have likely
     silently no-op'd since Celery was introduced. Not caused by, or fixed as part of, the
     roles/permissions deploy — needs its own fix + verification pass.
+13. **`deploy.sh`'s health check can report a FALSE `502` failure** (hit 2026-07-05, UI-backlog
+    deploy): the script sleeps only 12s between `up -d --build` and the curl, but a fresh
+    2-worker backend can take longer to finish the flock-serialized lifespan migrations. The
+    deploy itself had SUCCEEDED — re-curling `/api/health` a few seconds later returned 200 and
+    `docker logs rootlink-backend-1` showed both workers "Application startup complete" with no
+    errors. Before rolling anything back on a 502 from the script, re-check health manually and
+    read the backend logs first.
+14. **The server hosts UNRELATED apps installed by a separate agent session** (discovered
+    2026-07-05 during deploy pre-flight): Immich (4 containers, loopback :2283) and uptime-kuma
+    (loopback :3002) live INSIDE the repo working tree at `/home/rui/RootLink/apps/` (now
+    gitignored so a stray `git add -A` on the server can never commit them), and
+    `/etc/caddy/Caddyfile` gained two site blocks (`hub.ruisilvastudio.com` → uptime-kuma,
+    `photos.ruisilvastudio.com` → Immich). RootLink's `api.` block and Jellyfin's `media.` block
+    are untouched; no port conflicts. That same session also rewrote the server's checked-out
+    `AGENTS.md` (uncommitted) which BLOCKED `git pull` — resolved by `git checkout -- AGENTS.md`
+    on the server (a copy of the rogue version was saved off-server first). If a future deploy's
+    pull fails on "local changes would be overwritten", suspect server-side agent sessions and
+    inspect before discarding.
 
 ---
 
