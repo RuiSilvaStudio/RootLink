@@ -78,10 +78,10 @@ export default function EntityTeamPage() {
   }, [authLoading, user, load, router]);
 
   if (loading || authLoading || permLoading) {
-    return <div className="max-w-4xl mx-auto px-4 py-16 text-center text-stone-400 font-serif">Loading…</div>;
+    return <div className="max-w-4xl mx-auto px-4 py-16 text-center text-stone-400 font-serif">{t("common.loading")}</div>;
   }
   if (!entity) {
-    return <div className="max-w-4xl mx-auto px-4 py-16 text-center text-stone-400 font-serif">Entity not found, or you don&apos;t have access.</div>;
+    return <div className="max-w-4xl mx-auto px-4 py-16 text-center text-stone-400 font-serif">{t("entity_team.not_found")}</div>;
   }
 
   const { entityKind, rank, entityId: myEntityId } = my();
@@ -101,6 +101,25 @@ export default function EntityTeamPage() {
   const isPlatformAdmin = entityKind === "platform" && rank >= 4;
   const canNotifyMembers = isOwnAdmin || isPlatformAdmin;
 
+  // Role-change request submit form: `user.promote` floor is moderator(3),
+  // `user.demote` is admin(4) (registry) — a moderator can only ever
+  // request a promote, never a demote, but rank 0-2 can never submit
+  // either direction. Gate on the LOWER of the two floors so the form
+  // isn't shown to ranks that would always get a 400 from the backend
+  // (docs/roles-permissions/ROLES_PERMISSIONS.md §7; backend enforces the
+  // real per-direction floor either way — this is UX-only, not a new
+  // security boundary). "Awaiting my approval"/"My submitted requests"
+  // need no separate gate: both lists are already server-filtered to only
+  // what this user actually has.
+  const roleRequestFloor = Math.min(
+    registry["user.promote"]?.min_rank ?? 3,
+    registry["user.demote"]?.min_rank ?? 4,
+  );
+  const canSubmitRoleRequest =
+    (entityKind === entity.entity_type && myEntityId === entity.id && rank >= roleRequestFloor) ||
+    (entityKind === "platform" && rank >= roleRequestFloor);
+  const roleRequestCandidates = members.filter((m) => m.id !== user?.id);
+
   const delegableActions = Object.entries(registry).filter(
     ([, entry]: [string, any]) => entry.delegable && entry.entity_scope === "entity"
   );
@@ -110,22 +129,22 @@ export default function EntityTeamPage() {
     if (!uid) return;
     try {
       await api.entities.addRosterMember(entityId, uid);
-      addToast("success", "Member added to roster");
+      addToast("success", t("entity_team.roster_added"));
       setRosterUserId("");
       load();
     } catch (err: any) {
-      addToast("error", err.message || "Failed to add member");
+      addToast("error", err.message || t("entity_team.roster_add_failed"));
     }
   };
 
   const handleRemoveRoster = async (uid: number) => {
-    if (!confirm("Remove this member from the roster?")) return;
+    if (!confirm(t("entity_team.remove_roster_confirm"))) return;
     try {
       await api.entities.removeRosterMember(entityId, uid);
-      addToast("success", "Member removed");
+      addToast("success", t("entity_team.roster_removed"));
       load();
     } catch (err: any) {
-      addToast("error", err.message || "Failed to remove member");
+      addToast("error", err.message || t("entity_team.roster_remove_failed"));
     }
   };
 
@@ -137,7 +156,7 @@ export default function EntityTeamPage() {
       await api.entities.resetMemberPassword(entityId, m.id, password);
       addToast("success", t("entity_team.password_success"));
     } catch (err: any) {
-      addToast("error", err.message || "Failed to reset password");
+      addToast("error", err.message || t("entity_team.password_reset_failed"));
     }
   };
 
@@ -149,7 +168,7 @@ export default function EntityTeamPage() {
       addToast("success", t(grant ? "entity_team.self_publish_granted" : "entity_team.self_publish_revoked"));
       load();
     } catch (err: any) {
-      addToast("error", err.message || "Failed to update trusted publisher status");
+      addToast("error", err.message || t("entity_team.self_publish_update_failed"));
     }
   };
 
@@ -192,12 +211,12 @@ export default function EntityTeamPage() {
     if (!uid) return;
     try {
       await api.roleRequests.submit({ target_user_id: uid, to_rank: Number(toRank), reason: reqReason || undefined });
-      addToast("success", "Role-change request submitted");
+      addToast("success", t("entity_team.role_request_submitted"));
       setTargetUserId("");
       setReqReason("");
       load();
     } catch (err: any) {
-      addToast("error", err.message || "Failed to submit request");
+      addToast("error", err.message || t("entity_team.role_request_submit_failed"));
     }
   };
 
@@ -205,10 +224,10 @@ export default function EntityTeamPage() {
     try {
       if (approve) await api.roleRequests.approve(id);
       else await api.roleRequests.reject(id);
-      addToast("success", approve ? "Approved" : "Rejected");
+      addToast("success", approve ? t("entity_team.approved") : t("entity_team.rejected"));
       load();
     } catch (err: any) {
-      addToast("error", err.message || "Failed to decide");
+      addToast("error", err.message || t("entity_team.decision_failed"));
     }
   };
 
@@ -218,41 +237,41 @@ export default function EntityTeamPage() {
     if (!uid || !delAction) return;
     try {
       await api.delegations.create({ grantee_id: uid, action: delAction, entity_id: entityId });
-      addToast("success", "Delegation granted");
+      addToast("success", t("entity_team.delegation_granted"));
       setDelGrantee("");
       setDelAction("");
       load();
     } catch (err: any) {
-      addToast("error", err.message || "Failed to grant delegation");
+      addToast("error", err.message || t("entity_team.delegation_grant_failed"));
     }
   };
 
   const handleRevoke = async (id: number) => {
     try {
       await api.delegations.revoke(id);
-      addToast("success", "Delegation revoked");
+      addToast("success", t("entity_team.delegation_revoked"));
       load();
     } catch (err: any) {
-      addToast("error", err.message || "Failed to revoke");
+      addToast("error", err.message || t("entity_team.delegation_revoke_failed"));
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-8 py-12">
       <Link href={`/entity/${entityId}`} className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-primary-700 mb-4 font-serif">
-        <ArrowLeft className="w-4 h-4" /> Back to entity
+        <ArrowLeft className="w-4 h-4" /> {t("entity_team.back_to_entity")}
       </Link>
-      <PageHeader icon={<Users className="w-5 h-5 text-primary-500" />} title={`${entity.name} — Team`} />
+      <PageHeader icon={<Users className="w-5 h-5 text-primary-500" />} title={t("entity_team.team_title", { name: entity.name })} />
 
       {/* Members */}
       <section className="mt-8 mb-8 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6">
-        <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-4">Members &amp; ranks</h2>
+        <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-4">{t("entity_team.members_heading")}</h2>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-xs text-stone-400 uppercase tracking-wide">
-              <th className="pb-2">Name</th>
-              <th className="pb-2">Rank</th>
-              {(canManageRoster || canManageMembers) && <th className="pb-2 text-right">Actions</th>}
+              <th className="pb-2">{t("entity_team.col_name")}</th>
+              <th className="pb-2">{t("entity_team.col_rank")}</th>
+              {(canManageRoster || canManageMembers) && <th className="pb-2 text-right">{t("entity_team.col_actions")}</th>}
             </tr>
           </thead>
           <tbody>
@@ -264,7 +283,7 @@ export default function EntityTeamPage() {
                     <Badge variant="sage" className="ml-2">{t("entity_team.trusted_publisher")}</Badge>
                   )}
                 </td>
-                <td className="py-2">{m.rank}{m.id === entity.primary_contact_user_id ? " (primary contact)" : ""}</td>
+                <td className="py-2">{m.rank}{m.id === entity.primary_contact_user_id ? ` (${t("entity_team.primary_contact")})` : ""}</td>
                 {(canManageRoster || canManageMembers) && (
                   <td className="py-2 text-right">
                     <span className="inline-flex items-center gap-1">
@@ -293,7 +312,7 @@ export default function EntityTeamPage() {
                       )}
                       {canManageRoster && m.id !== entity.primary_contact_user_id && (
                         <button onClick={() => handleRemoveRoster(m.id)} className="text-rust-600 hover:text-rust-700 inline-flex items-center gap-1 text-xs">
-                          <UserMinus className="w-3.5 h-3.5" /> Remove
+                          <UserMinus className="w-3.5 h-3.5" /> {t("entity_team.remove")}
                         </button>
                       )}
                     </span>
@@ -309,14 +328,14 @@ export default function EntityTeamPage() {
             <input
               value={rosterUserId}
               onChange={(e) => setRosterUserId(e.target.value)}
-              placeholder="User ID to add"
+              placeholder={t("entity_team.user_id_add_placeholder")}
               className="px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm w-40"
             />
-            <Button size="sm" onClick={handleAddRoster}><UserPlus className="w-4 h-4" /> Add to roster</Button>
+            <Button size="sm" onClick={handleAddRoster}><UserPlus className="w-4 h-4" /> {t("entity_team.add_to_roster")}</Button>
           </div>
         )}
         {isRosterManaged && !canManageRoster && (
-          <p className="text-xs text-stone-400 font-serif mt-3">Only this entity&apos;s primary contact can add/remove roster members.</p>
+          <p className="text-xs text-stone-400 font-serif mt-3">{t("entity_team.roster_hint")}</p>
         )}
       </section>
 
@@ -360,90 +379,106 @@ export default function EntityTeamPage() {
       )}
 
       {/* Role-change requests */}
-      <section className="mb-8 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6">
-        <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-4">Promote / demote requests</h2>
+      {(canSubmitRoleRequest || mineRequests.length > 0 || pendingApproval.length > 0) && (
+        <section className="mb-8 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6">
+          <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-1">{t("entity_team.role_requests_title")}</h2>
 
-        <form onSubmit={handleSubmitRequest} className="flex flex-wrap gap-2 mb-5 items-end">
-          <div>
-            <label className="block text-xs text-stone-500 mb-1">Target user ID</label>
-            <input value={targetUserId} onChange={(e) => setTargetUserId(e.target.value)} className="px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm w-32" />
-          </div>
-          <div>
-            <label className="block text-xs text-stone-500 mb-1">New rank (0-5)</label>
-            <input type="number" min={0} max={5} value={toRank} onChange={(e) => setToRank(e.target.value)} className="px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm w-24" />
-          </div>
-          <div className="flex-1 min-w-[160px]">
-            <label className="block text-xs text-stone-500 mb-1">Reason</label>
-            <input value={reqReason} onChange={(e) => setReqReason(e.target.value)} className="px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm w-full" />
-          </div>
-          <Button type="submit" size="sm">Submit request</Button>
-        </form>
+          {canSubmitRoleRequest && (
+            <>
+              <p className="text-sm text-stone-500 dark:text-stone-400 font-serif mb-4">{t("entity_team.role_requests_hint")}</p>
+              <form onSubmit={handleSubmitRequest} className="flex flex-wrap gap-2 mb-5 items-end">
+                <div className="flex-1 min-w-[180px]">
+                  <label className="block text-xs text-stone-500 mb-1">{t("entity_team.role_requests_target")}</label>
+                  <select
+                    value={targetUserId}
+                    onChange={(e) => setTargetUserId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm"
+                  >
+                    <option value="">{t("entity_team.role_requests_select_member")}</option>
+                    {roleRequestCandidates.map((m) => (
+                      <option key={m.id} value={m.id}>{m.name} ({t("entity_team.role_requests_rank_label", { rank: m.rank })})</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-stone-500 mb-1">{t("entity_team.role_requests_new_rank")}</label>
+                  <input type="number" min={0} max={5} value={toRank} onChange={(e) => setToRank(e.target.value)} className="px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm w-24" />
+                </div>
+                <div className="flex-1 min-w-[160px]">
+                  <label className="block text-xs text-stone-500 mb-1">{t("entity_team.role_requests_reason")}</label>
+                  <input value={reqReason} onChange={(e) => setReqReason(e.target.value)} className="px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm w-full" />
+                </div>
+                <Button type="submit" size="sm" disabled={!targetUserId}>{t("entity_team.role_requests_submit")}</Button>
+              </form>
+            </>
+          )}
 
-        <div className="grid sm:grid-cols-2 gap-6">
-          <div>
-            <h3 className="text-xs font-display font-semibold text-stone-400 uppercase tracking-wide mb-2">My submitted requests</h3>
-            {mineRequests.length === 0 ? (
-              <p className="text-sm text-stone-400 font-serif">None yet.</p>
-            ) : (
-              <ul className="space-y-1 text-sm">
-                {mineRequests.map((r) => (
-                  <li key={r.id} className="flex justify-between">
-                    <span>#{r.target_user_id} → rank {r.to_rank}</span>
-                    <Badge variant={r.status === "approved" ? "green" : r.status === "rejected" ? "red" : "amber"}>{r.status}</Badge>
-                  </li>
-                ))}
-              </ul>
-            )}
+          <div className="grid sm:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-xs font-display font-semibold text-stone-400 uppercase tracking-wide mb-2">{t("entity_team.role_requests_mine")}</h3>
+              {mineRequests.length === 0 ? (
+                <p className="text-sm text-stone-400 font-serif">{t("entity_team.role_requests_none")}</p>
+              ) : (
+                <ul className="space-y-1 text-sm">
+                  {mineRequests.map((r) => (
+                    <li key={r.id} className="flex justify-between">
+                      <span>#{r.target_user_id} → rank {r.to_rank}</span>
+                      <Badge variant={r.status === "approved" ? "green" : r.status === "rejected" ? "red" : "amber"}>{r.status}</Badge>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div>
+              <h3 className="text-xs font-display font-semibold text-stone-400 uppercase tracking-wide mb-2">{t("entity_team.role_requests_pending")}</h3>
+              {pendingApproval.length === 0 ? (
+                <p className="text-sm text-stone-400 font-serif">{t("entity_team.role_requests_none")}</p>
+              ) : (
+                <ul className="space-y-2 text-sm">
+                  {pendingApproval.map((r) => (
+                    <li key={r.id} className="flex items-center justify-between">
+                      <span>#{r.target_user_id} → rank {r.to_rank} ({r.direction})</span>
+                      <span className="flex gap-1">
+                        <button onClick={() => decide(r.id, true)} className="text-emerald-600 hover:text-emerald-700"><ThumbsUp className="w-4 h-4" /></button>
+                        <button onClick={() => decide(r.id, false)} className="text-rust-600 hover:text-rust-700"><ThumbsDown className="w-4 h-4" /></button>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
-          <div>
-            <h3 className="text-xs font-display font-semibold text-stone-400 uppercase tracking-wide mb-2">Awaiting my approval</h3>
-            {pendingApproval.length === 0 ? (
-              <p className="text-sm text-stone-400 font-serif">None yet.</p>
-            ) : (
-              <ul className="space-y-2 text-sm">
-                {pendingApproval.map((r) => (
-                  <li key={r.id} className="flex items-center justify-between">
-                    <span>#{r.target_user_id} → rank {r.to_rank} ({r.direction})</span>
-                    <span className="flex gap-1">
-                      <button onClick={() => decide(r.id, true)} className="text-emerald-600 hover:text-emerald-700"><ThumbsUp className="w-4 h-4" /></button>
-                      <button onClick={() => decide(r.id, false)} className="text-rust-600 hover:text-rust-700"><ThumbsDown className="w-4 h-4" /></button>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Delegations */}
       {(canGrantDelegations || delegations.length > 0) && (
         <section className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6">
           <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-4 flex items-center gap-2">
-            <Key className="w-4 h-4 text-primary-500" /> Delegated permissions
+            <Key className="w-4 h-4 text-primary-500" /> {t("entity_team.delegated_permissions_heading")}
           </h2>
 
           {canGrantDelegations && (
             <form onSubmit={handleGrantDelegation} className="flex flex-wrap gap-2 mb-5 items-end">
               <div>
-                <label className="block text-xs text-stone-500 mb-1">User ID</label>
+                <label className="block text-xs text-stone-500 mb-1">{t("entity_team.delegation_user_id_label")}</label>
                 <input value={delGrantee} onChange={(e) => setDelGrantee(e.target.value)} className="px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm w-32" />
               </div>
               <div className="flex-1 min-w-[220px]">
-                <label className="block text-xs text-stone-500 mb-1">Action</label>
+                <label className="block text-xs text-stone-500 mb-1">{t("entity_team.delegation_action_label")}</label>
                 <select value={delAction} onChange={(e) => setDelAction(e.target.value)} className="px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm w-full">
-                  <option value="">Select an action…</option>
+                  <option value="">{t("entity_team.delegation_select_action")}</option>
                   {delegableActions.map(([key]) => (
                     <option key={key} value={key}>{key}</option>
                   ))}
                 </select>
               </div>
-              <Button type="submit" size="sm">Grant</Button>
+              <Button type="submit" size="sm">{t("entity_team.grant")}</Button>
             </form>
           )}
 
           {delegations.length === 0 ? (
-            <p className="text-sm text-stone-400 font-serif">No active delegations.</p>
+            <p className="text-sm text-stone-400 font-serif">{t("entity_team.no_active_delegations")}</p>
           ) : (
             <ul className="space-y-1 text-sm">
               {delegations.map((d) => {
@@ -459,7 +494,7 @@ export default function EntityTeamPage() {
                       )}
                     </span>
                     {canGrantDelegations && (
-                      <button onClick={() => handleRevoke(d.id)} className="text-rust-600 hover:text-rust-700 text-xs">Revoke</button>
+                      <button onClick={() => handleRevoke(d.id)} className="text-rust-600 hover:text-rust-700 text-xs">{t("entity_team.revoke")}</button>
                     )}
                   </li>
                 );

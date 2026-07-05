@@ -697,9 +697,9 @@ sub-table).
 manually testing and wants full UI coverage before continuing): skip
 straight to `UI_BUILD_BACKLOG.md`'s **"Next steps (handoff)"** section at
 the bottom — it has the current state and the remaining work.
-**P0, P1 and P2 are now built too** ("UI backlog batches 1+2+3",
-2026-07-04 — restrict/suspend/ban ladder, session revoke x2, password
-reset x2, trusted-publisher grant/revoke x2,
+**P0, P1 and P2 are built AND DEPLOYED to production** ("UI backlog
+batches 1+2+3", 2026-07-04 — restrict/suspend/ban ladder, session revoke
+x2, password reset x2, trusted-publisher grant/revoke x2,
 `product.manage_any`/`event.manage_any`, delegation auto-void stopgap
 badge, comment edit (`PATCH /api/comments/{id}` + inline edit UI),
 `event.archive` (`/admin/events`), `notification.send_to_entity_members`
@@ -707,11 +707,17 @@ badge, comment edit (`PATCH /api/comments/{id}` + inline edit UI),
 gate fix (rank-only `require_super_admin` → registry `can()`, see
 `docs/LESSONS.md` #38); backend suite now 295 passing), on top of the
 earlier `compost_listing.*` and `article.review`/`article.approve`
-builds (also 2026-07-04). What remains is P3 plus a deferred
-delegation-enforcement session and the entity-scoped
-`user.restrict_suspend_ban_lift` roster surface; the
-combined-production-deploy-vs-continue decision is pending with the
-product owner. Don't re-derive this from chat history; it's already
+builds (also 2026-07-04). Deployed to production 2026-07-05 (see
+`DEPLOY.md`). A follow-up cleanup pass the same day closed three more
+items: the i18n backfill (P3's only remaining row — 5 Phase 5 pages, 134
+keys/language), the team-page promote/demote form's rank gating, and a
+real production bug where Celery background jobs never ran at all
+(`docs/LESSONS.md` #36) — all fixed and deployed. **What remains is three
+explicitly product-scoped-out future projects, not open gaps**: (1) the
+settings key-value editor + anything Content-UI-Editor-related, (2) the
+admin panel's mobile/UI overhaul, (3) the delegation-enforcement session —
+plus one small leftover, the entity-scoped `user.restrict_suspend_ban_lift`
+roster surface. Don't re-derive this from chat history; it's already
 written down there.
 
 If you're here to extend or modify the system for some other reason, not

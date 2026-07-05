@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Building, FileText, ShieldCheck, ShieldAlert, Upload, Users, AlertTriangle } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { useLocale } from "@/lib/locale-context";
 import { useToast } from "@/lib/toast-context";
 import { usePermission } from "@/lib/use-permission";
 import { Badge } from "@/components/ui/Badge";
@@ -23,6 +24,7 @@ export default function EntityDashboardPage() {
   const params = useParams();
   const entityId = Number(params.entityId);
   const router = useRouter();
+  const { t } = useLocale();
   const { user, loading: authLoading } = useAuth();
   const { addToast } = useToast();
   const { can, my, loading: permLoading } = usePermission();
@@ -57,10 +59,10 @@ export default function EntityDashboardPage() {
   }, [authLoading, user, load, router]);
 
   if (loading || authLoading || permLoading) {
-    return <div className="max-w-3xl mx-auto px-4 py-16 text-center text-stone-400 font-serif">Loading…</div>;
+    return <div className="max-w-3xl mx-auto px-4 py-16 text-center text-stone-400 font-serif">{t("common.loading")}</div>;
   }
   if (!entity) {
-    return <div className="max-w-3xl mx-auto px-4 py-16 text-center text-stone-400 font-serif">Entity not found, or you don&apos;t have access to view it.</div>;
+    return <div className="max-w-3xl mx-auto px-4 py-16 text-center text-stone-400 font-serif">{t("entity_detail.not_found")}</div>;
   }
 
   const { entityKind, rank, entityId: myEntityId } = my();
@@ -72,10 +74,10 @@ export default function EntityDashboardPage() {
     setUploading(true);
     try {
       await api.entities.uploadDocument(entityId, file);
-      addToast("success", "Document uploaded");
+      addToast("success", t("entity_detail.document_uploaded"));
       load();
     } catch (err: any) {
-      addToast("error", err.message || "Upload failed");
+      addToast("error", err.message || t("entity_detail.upload_failed"));
     } finally {
       setUploading(false);
     }
@@ -88,7 +90,7 @@ export default function EntityDashboardPage() {
       setReason("");
       load();
     } catch (err: any) {
-      addToast("error", err.message || "Action failed");
+      addToast("error", err.message || t("entity_detail.action_failed"));
     }
   };
 
@@ -108,25 +110,25 @@ export default function EntityDashboardPage() {
         <Badge variant={STATUS_VARIANT[entity.verification_status] || "stone"}>
           {entity.verification_status.replace(/_/g, " ")}
         </Badge>
-        {dissolutionPending && <Badge variant="amber">Dissolution pending review</Badge>}
-        {dissolved && <Badge variant="red">Dissolved — grace period until {entity.dissolution_grace_expires_at ? new Date(entity.dissolution_grace_expires_at).toLocaleDateString() : "?"}</Badge>}
-        {banned && <Badge variant="red">Banned — cascade grace until {entity.ban_cascade_grace_expires_at ? new Date(entity.ban_cascade_grace_expires_at).toLocaleDateString() : "?"}</Badge>}
+        {dissolutionPending && <Badge variant="amber">{t("entity_detail.dissolution_pending")}</Badge>}
+        {dissolved && <Badge variant="red">{t("entity_detail.dissolved_badge", { date: entity.dissolution_grace_expires_at ? new Date(entity.dissolution_grace_expires_at).toLocaleDateString() : "?" })}</Badge>}
+        {banned && <Badge variant="red">{t("entity_detail.banned_badge", { date: entity.ban_cascade_grace_expires_at ? new Date(entity.ban_cascade_grace_expires_at).toLocaleDateString() : "?" })}</Badge>}
         <Link href={`/entity/${entityId}/team`} className="ml-auto">
-          <Button variant="secondary" size="sm"><Users className="w-4 h-4" /> Manage team</Button>
+          <Button variant="secondary" size="sm"><Users className="w-4 h-4" /> {t("entity_detail.manage_team")}</Button>
         </Link>
       </div>
 
       {entity.verification_status === "more_info_requested" && (
         <div className="mb-6 p-4 rounded-xl border border-amber-200 bg-amber-50/60 dark:bg-amber-900/20 dark:border-amber-700/40 text-sm text-amber-700 dark:text-amber-300 font-serif flex gap-2">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-          Platform staff requested more information — please upload additional supporting documents below.
+          {t("entity_detail.more_info_banner")}
         </div>
       )}
 
       {/* Documents */}
       <section className="mb-8 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6">
         <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-4 flex items-center gap-2">
-          <FileText className="w-4 h-4 text-primary-500" /> Verification documents
+          <FileText className="w-4 h-4 text-primary-500" /> {t("entity_detail.documents_heading")}
         </h2>
 
         {entity.verification_status !== "verified" && (
@@ -143,13 +145,13 @@ export default function EntityDashboardPage() {
               }}
             />
             <span className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-xl border border-primary-300/60 text-primary-700 hover:bg-primary-50 dark:border-primary-600/60 dark:text-primary-300 transition">
-              <Upload className="w-4 h-4" /> {uploading ? "Uploading…" : "Upload document"}
+              <Upload className="w-4 h-4" /> {uploading ? t("entity_detail.uploading") : t("entity_detail.upload_document")}
             </span>
           </label>
         )}
 
         {documents.length === 0 ? (
-          <p className="text-sm text-stone-400 font-serif">No documents uploaded yet.</p>
+          <p className="text-sm text-stone-400 font-serif">{t("entity_detail.no_documents")}</p>
         ) : (
           <ul className="space-y-2">
             {documents.map((d) => (
@@ -173,24 +175,24 @@ export default function EntityDashboardPage() {
       {isPlatformAdmin && entity.verification_status !== "verified" && (
         <section className="mb-8 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6">
           <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-4 flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-primary-500" /> Staff review
+            <ShieldCheck className="w-4 h-4 text-primary-500" /> {t("entity_detail.staff_review_heading")}
           </h2>
           <textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Reason / note (optional)"
+            placeholder={t("entity_detail.review_reason_placeholder")}
             className="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm mb-3"
             rows={2}
           />
           <div className="flex gap-2 flex-wrap">
-            <Button size="sm" onClick={() => act(() => api.entities.approveVerification(entityId, reason || undefined), "Entity verified")}>
-              Approve
+            <Button size="sm" onClick={() => act(() => api.entities.approveVerification(entityId, reason || undefined), t("entity_detail.entity_verified"))}>
+              {t("entity_detail.approve")}
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => act(() => api.entities.requestMoreInfo(entityId, reason || undefined), "More info requested")}>
-              Request more info
+            <Button size="sm" variant="secondary" onClick={() => act(() => api.entities.requestMoreInfo(entityId, reason || undefined), t("entity_detail.more_info_requested"))}>
+              {t("entity_detail.request_more_info")}
             </Button>
-            <Button size="sm" variant="danger" onClick={() => act(() => api.entities.rejectVerification(entityId, reason || undefined), "Verification rejected")}>
-              Reject
+            <Button size="sm" variant="danger" onClick={() => act(() => api.entities.rejectVerification(entityId, reason || undefined), t("entity_detail.verification_rejected"))}>
+              {t("entity_detail.reject")}
             </Button>
           </div>
         </section>
@@ -201,33 +203,31 @@ export default function EntityDashboardPage() {
         entity.verification_status === "verified" && !dissolved && (
           <section className="mb-8 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6">
             <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-2 flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-rust-500" /> Dissolution
+              <ShieldAlert className="w-4 h-4 text-rust-500" /> {t("entity_detail.dissolution_heading")}
             </h2>
             <p className="text-xs text-stone-400 font-serif mb-3">
-              One-way (with a 30-day grace period to reverse). All members convert to individual accounts and
-              this entity&apos;s published content is archived. Requires platform super admin approval regardless of
-              who triggers it.
+              {t("entity_detail.dissolution_hint")}
             </p>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Reason (optional)"
+              placeholder={t("entity_detail.dissolution_reason_placeholder")}
               className="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm mb-3"
               rows={2}
             />
             <div className="flex gap-2 flex-wrap">
               {(isOwnSuperAdmin || isPlatformSuperAdmin) && !dissolutionPending && (
-                <Button size="sm" variant="danger" onClick={() => act(() => api.entities.dissolve(entityId, reason || undefined), isPlatformSuperAdmin ? "Entity dissolved" : "Dissolution requested")}>
-                  {isPlatformSuperAdmin ? "Dissolve now" : "Request dissolution"}
+                <Button size="sm" variant="danger" onClick={() => act(() => api.entities.dissolve(entityId, reason || undefined), isPlatformSuperAdmin ? t("entity_detail.entity_dissolved") : t("entity_detail.dissolution_requested"))}>
+                  {isPlatformSuperAdmin ? t("entity_detail.dissolve_now") : t("entity_detail.request_dissolution")}
                 </Button>
               )}
               {isPlatformSuperAdmin && dissolutionPending && (
                 <>
-                  <Button size="sm" variant="danger" onClick={() => act(() => api.entities.approveDissolution(entityId, reason || undefined), "Dissolution approved")}>
-                    Approve dissolution
+                  <Button size="sm" variant="danger" onClick={() => act(() => api.entities.approveDissolution(entityId, reason || undefined), t("entity_detail.dissolution_approved"))}>
+                    {t("entity_detail.approve_dissolution")}
                   </Button>
-                  <Button size="sm" variant="secondary" onClick={() => act(() => api.entities.rejectDissolution(entityId, reason || undefined), "Dissolution request rejected")}>
-                    Reject request
+                  <Button size="sm" variant="secondary" onClick={() => act(() => api.entities.rejectDissolution(entityId, reason || undefined), t("entity_detail.dissolution_request_rejected"))}>
+                    {t("entity_detail.reject_dissolution_request")}
                   </Button>
                 </>
               )}
@@ -237,25 +237,25 @@ export default function EntityDashboardPage() {
 
       {dissolved && isPlatformSuperAdmin && (
         <section className="mb-8 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6">
-          <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-2">Reverse dissolution</h2>
-          <p className="text-xs text-stone-400 font-serif mb-3">Only possible within the 30-day grace period.</p>
-          <Button size="sm" variant="secondary" onClick={() => act(() => api.entities.reverseDissolution(entityId, reason || undefined), "Dissolution reversed")}>
-            Reverse dissolution
+          <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-2">{t("entity_detail.reverse_dissolution_heading")}</h2>
+          <p className="text-xs text-stone-400 font-serif mb-3">{t("entity_detail.reverse_dissolution_hint")}</p>
+          <Button size="sm" variant="secondary" onClick={() => act(() => api.entities.reverseDissolution(entityId, reason || undefined), t("entity_detail.dissolution_reversed"))}>
+            {t("entity_detail.reverse_dissolution")}
           </Button>
         </section>
       )}
 
       {isPlatformSuperAdmin && (
         <section className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6">
-          <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-2">Entity ban</h2>
+          <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-2">{t("entity_detail.ban_heading")}</h2>
           <div className="flex gap-2">
             {!banned ? (
-              <Button size="sm" variant="danger" onClick={() => act(() => api.entities.ban(entityId, reason || undefined), "Entity banned")}>
-                Ban entity
+              <Button size="sm" variant="danger" onClick={() => act(() => api.entities.ban(entityId, reason || undefined), t("entity_detail.entity_banned"))}>
+                {t("entity_detail.ban_entity")}
               </Button>
             ) : (
-              <Button size="sm" variant="secondary" onClick={() => act(() => api.entities.unban(entityId, reason || undefined), "Entity unbanned")}>
-                Unban entity
+              <Button size="sm" variant="secondary" onClick={() => act(() => api.entities.unban(entityId, reason || undefined), t("entity_detail.entity_unbanned"))}>
+                {t("entity_detail.unban_entity")}
               </Button>
             )}
           </div>

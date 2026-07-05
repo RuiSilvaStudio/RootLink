@@ -22,10 +22,25 @@ _width: wide
 > `docs/roles-permissions/phase0-decisions.md` Addendum 5): the
 > professional-entity promote/demote row and the entity-registration-vs-
 > conversion-ambiguity row, both under P1 below, read "RESOLVED"; and
-> (2) two P2 items built earlier on 2026-07-04 — `compost_listing.*`
+ > (2) two P2 items built earlier on 2026-07-04 — `compost_listing.*`
 > (extends `/composting`) and the real `article.review`/`article.approve`
 > two-step flow — both read "BUILT."
-> Still unbuilt: P3 only (plus the deferred items in "Next steps" below).
+> **Update 2026-07-05 (cleanup pass):** the i18n backfill row of P3 is now
+> **BUILT** too (134 keys/language across 5 Phase 5 pages), plus two
+> incidental fixes surfaced along the way — the team-page promote/demote
+> form gating (see "Items intentionally NOT included here") and a
+> long-standing production bug where Celery background jobs (point decay,
+> RSS crawl, draft cleanup) never actually ran at all (`docs/LESSONS.md`
+> #36) — both fixed and deployed. **By product decision, the remaining P3
+> item (settings key-value editor) and anything Content-UI-Editor-related
+> are explicitly set aside for a separate, larger future project** — not
+> scheduled here, not abandoned. The admin panel's mobile/UI layout is
+> likewise agreed to be its own separate future project (needs more than a
+> patch — search/filter, tables, and the whole shell need real mobile
+> design work). See "Next steps" below for the updated state.
+> Still unbuilt here: nothing blocking — everything left is explicitly
+> deferred to one of those three future projects (settings/Content-UI-Editor,
+> admin mobile/UI, delegation enforcement).
 > **Companion doc:** `ACTION_UI_MAP.md` (what exists today, backward-looking).
 > This doc is forward-looking: for every action with no UI (or a degraded
 > one), what should actually get built, why it matters, roughly how big the
@@ -91,7 +106,7 @@ tickets.
 | ~~`notification.send_to_entity_members`~~ — **BUILT 2026-07-04 (backend + UI)** | ~~The only notification-broadcast endpoint (`POST /api/admin/broadcast`) sends to literally every user platform-wide — there's no entity-scoped variant.~~ **Built, including the previously-missing backend endpoint: `POST /api/entities/{entity_id}/notify-members`, body `{message}` (1–500 chars), gated via `can()` at the registry floor admin(4) same-entity (or platform staff); audience = every member of that entity except the sender, delivered as `NotificationType.system` with link `/entity/{id}`; response `{sent_to: n}`; audit action `notify_entity_members` (new `ModerationAction`).** | Built — "Notify members" card on `/entity/[entityId]/team` (textarea + 0/500 counter, confirm dialog showing the member count, success toast), visible to rank≥4 of that entity or platform admin+ — modeled on `/admin/notifications`'s broadcast form, as suggested. | Done. | Closed — see `tests/test_entity_notify_members.py` (7 tests) for coverage. |
 | **P3 — Platform admin/settings & polish** |
 | `platform.manage_settings_taxonomy` — generic key-value Settings store half | `/admin/config` fully covers the taxonomy-families half of this action (add/edit/delete families and categories) — but the separate, real generic key-value Settings store (`api.admin.listSettings`/`getSetting`/`updateSetting`, backed by `GET/PUT /api/admin/settings[/{key}]`) has **no UI at all**; nothing in the frontend calls it, so any platform-wide config value meant to live in this store today can only be read/written via direct API calls. | Add a new tab or sibling section on `/admin/config` (keep it visually adjacent to the taxonomy tree, since it's the same registry action) — a simple key/value list-and-edit table: list all settings (`listSettings()`), inline edit value + description per row (click-to-edit, matching `/admin/config`'s existing inline-edit-field pattern for family rows), Save calling `updateSetting`. | **Large** — no existing key-value editor pattern anywhere in the codebase to copy verbatim; needs its own list/edit/validate UI, and settings values may be typed (string/number/bool/JSON) with no existing schema-driven form generator in this codebase to reuse. | None blocking (endpoints are fully built) — but worth scoping down first (does every setting need a rich editor, or is a plain textarea-per-key acceptable for v1?) before committing to the Large estimate. |
-| Phase 5 UI surfaces — missing i18n | `phase0-decisions.md` Addendum 4 flags that all ~7 new Phase 5 pages (entity registration, `/entity/convert`, `/entity/[entityId]` dissolution/ban section, `/entity/[entityId]/team`, the verification review queue, and related forms) use hardcoded English copy instead of the `t()`/`messages/{locale}.json` pattern every other page in this codebase follows. Not broken (the `t()` fallback returns the raw key, nothing crashes) but these pages are the only ones on the platform not localized, which will read as an inconsistency to any non-English user who reaches them. | Extract the hardcoded strings from those ~7 pages into `messages/en.json`/`messages/pt.json` following the existing `t("namespace.key")` convention used everywhere else, and swap the JSX over. | Medium — mechanical but touches every string on 7 pages; no design work needed, just following the existing i18n pattern. | None — purely additive, can be done incrementally page-by-page. |
+| ~~Phase 5 UI surfaces — missing i18n~~ — **BUILT 2026-07-05** | ~~`phase0-decisions.md` Addendum 4 flags that all ~7 new Phase 5 pages use hardcoded English copy...~~ **Resolved**: all 5 actual Phase 5 pages found (`entity/register`, `entity/convert`, `entity/[entityId]`, `entity/[entityId]/team`, `admin/entity-verification`) fully extracted to `t()` — 134 new keys per language (`entity_register.*`, `entity_convert.*`, `entity_detail.*`, `entity_team.*` continued, `admin.entity_verification_*`), en/pt key parity verified, `tsc`/lint clean, live-verified with Playwright (register + convert pages screenshotted, byte-identical rendering to the pre-i18n version). | Built — strings-only extraction, no layout/logic changes. | Done. | Closed. |
 
 ---
 
@@ -106,14 +121,19 @@ tickets.
   They belong on a backend tech-debt list (see `TECH_DEBT.md`), not this one.
   (`article.approve` and marketplace's `product.manage_any` floors were fixed
   2026-07-04 as part of building their UI; the rest remain.)
-- **Team-page promote/demote form shown to low-rank members** (flagged by live
-  verification 2026-07-04, pre-existing Phase 5 UI): `/entity/[entityId]/team`
-  renders the full "Promote / demote requests" form (raw target-user-ID + rank
-  inputs) to rank 1–2 members, while every other management control on the page
-  is gated. The backend gates the actual submission, so this is a UX
-  inconsistency, not an authorization hole. Product owner decision 2026-07-04:
-  log for later, don't fix now. Same pass should also replace the page's raw
-  user-ID number inputs with a member picker.
+- ~~Team-page promote/demote form shown to low-rank members~~ — **FIXED
+  2026-07-05** (flagged by live verification 2026-07-04, pre-existing Phase 5
+  UI): the submit form on `/entity/[entityId]/team` is now gated on
+  `min(registry["user.promote"].min_rank, registry["user.demote"].min_rank)`
+  (moderator+, since a moderator can at least promote even though demote needs
+  admin+) — ranks below that never saw a form that would always 400 anyway.
+  "My submitted requests"/"Awaiting my approval" needed no new gate (both
+  lists are already server-filtered to what each user actually has). The raw
+  "Target user ID" number input was replaced with a `<select>` of this
+  entity's own members (excluding yourself, matching the backend's "cannot
+  request about yourself" rule and its same-entity constraint). Live-verified:
+  hidden for a rank-2 member, visible with a working member picker for a
+  rank-4 admin.
 
 ---
 
@@ -127,58 +147,60 @@ and `trusted_publisher.grant_revoke_entity`, and the P2 trio —
 `comment.add_edit_remove_own`'s `PATCH /api/comments/{id}`,
 `event.archive`'s archive + staff-listing endpoints, and
 `notification.send_to_entity_members`' entity-scoped broadcast — see their
-rows above. P3's settings key-value editor is pure frontend (its
-`GET/PUT /api/admin/settings` endpoints have been fully built all along),
-and the i18n backfill is frontend-only by nature. This section is kept so
-future additions to the backlog remember to flag backend-required items
-explicitly rather than scheduling them as pure frontend tickets.
+rows above. The i18n backfill (built 2026-07-05) was frontend-only, as
+expected. The one remaining P3 item, the settings key-value editor, is also
+pure frontend (its `GET/PUT /api/admin/settings` endpoints have been fully
+built all along) but is set aside for a separate future project by product
+decision — see "Next steps." This section is kept so future additions to
+the backlog remember to flag backend-required items explicitly rather than
+scheduling them as pure frontend tickets.
 
 ---
 
 ## Next steps (handoff — read this if resuming cold)
 
-**Current state (updated 2026-07-04, after "UI backlog batch 3"):**
-**P0, P1 and P2 are done.** Batch 1 (all seven P0 rows: the platform-wide
-restrict/suspend/ban status ladder, session revoke x2, password reset x2,
-trusted-publisher grant/revoke x2 — including the two new entity-scoped
-backend endpoints) and Batch 2 (the `product.manage_any`/`event.manage_any`
-render fixes + a marketplace backend-floor fix, and the delegation
-auto-void stopgap badge) took the suite from 257 to 274. Batch 3 (the last
-three P2 rows: comment edit — new `PATCH /api/comments/{id}` + inline edit
-UI in `CommentSection.tsx`; `event.archive` — new archive/staff-listing
-endpoints + `/admin/events` page; `notification.send_to_entity_members` —
-new entity-scoped broadcast endpoint + team-page "Notify members" card) is
-built, tested (295 backend tests passing, up from 274: +7
-`tests/test_comment_edit.py`, +6 `tests/test_event_archive.py`, +7
-`tests/test_entity_notify_members.py`, +1 `group.archive` regression in
-`tests/test_groups_manage.py`), and live-verified with Playwright (5/5
-flows). Batch 3 also fixed a latent `group.archive` authorization gap it
-surfaced: the endpoint's rank-only `require_super_admin` wrongly passed an
-organization's own rank-5 super admin (spec §8 says platform-only) — now
-the registry `can(user, "group.archive")` check (see `docs/LESSONS.md`
-#38). The `platform_ui.edit_content` delegation-gate row remains
-**deferred by product decision (2026-07-04)** to a future platform-wide
-delegation-enforcement session — see its row. The earlier closures stand:
-`compost_listing.*` and the `article.review`/`article.approve` two-step
-flow (built 2026-07-04), and the two Addendum-5 product-decision
-resolutions (professional promote/demote, entity-conversion
-self-service-only).
+**Current state (updated 2026-07-05, after the post-deploy cleanup pass):**
+**P0, P1, and P2 are done AND deployed to production** (deployed 2026-07-05
+— see `DEPLOY.md`, "Last verified working"). After that deploy, a follow-up
+cleanup pass closed three more small items:
 
-**What remains:**
+- **i18n backfill** (was P3's only still-open row) — all 5 real Phase 5
+  pages (not ~7 — `entity/register`, `entity/convert`, `entity/[entityId]`,
+  `entity/[entityId]/team`, `admin/entity-verification`) fully extracted to
+  `t()`, 134 keys/language, live-verified.
+- **Team-page promote/demote form gating** — was logged as a known
+  inconsistency in "Items intentionally NOT included here"; now fixed (see
+  that entry).
+- **Celery background jobs never actually running in prod** — an
+  unrelated-to-this-backlog but real production bug found during Phase 3
+  verification (`docs/LESSONS.md` #36); fixed (explicit task imports
+  replacing a broken `autodiscover_tasks` call) and deployed.
 
-- **P3 only** (settings key-value editor, i18n backfill on the ~7 Phase 5
-  pages) — worth explicitly confirming with the product owner whether this
-  is even wanted before scheduling; no backend work needed for either.
-- The **deferred delegation-enforcement session** (`platform_ui.edit_content`
-  gate + first-ever backend grant-checking), a separate future session.
-- The entity-scoped roster surface for `user.restrict_suspend_ban_lift`
-  (the platform-wide surface is built; there is no entity roster view yet).
+Backend suite: 295 passing throughout this pass (no backend logic changed
+by these three items — Celery fix and i18n are non-test-covered by nature;
+the team-page gate is a frontend-only render condition over existing data).
 
-**Deployment plan — decision pending with the product owner:** either do
-one combined production deploy of everything built so far (P0 + P1 + P2 +
-the earlier compost/review-approve work), OR continue to P3 first and
-deploy once at the very end. Neither has been chosen yet; nothing from
-these batches is deployed to production at the time of this update.
+**What remains — three explicitly-scoped-out future projects, not gaps:**
+
+1. **Settings key-value editor + anything Content-UI-Editor-related** — by
+   product decision (2026-07-05), set aside for a separate, larger future
+   project. Not abandoned, not urgent (endpoints are fully built, zero
+   current consumers of the store).
+2. **Admin panel mobile/UI overhaul** — by product decision (2026-07-05),
+   its own separate future project. `app/admin/layout.tsx`'s `<main>` is
+   `hidden lg:block` by deliberate (if undocumented) original choice, not an
+   accidental bug; fixing it properly needs real mobile design work across
+   the whole admin shell (sidebar, tables, forms), not a patch.
+3. **The deferred delegation-enforcement session** — wiring delegation
+   grants into `can()` platform-wide (52 rank-only call sites across 12
+   backend files, per `TECH_DEBT.md` §0), plus the `platform_ui.edit_content`
+   gate that depends on it, plus resolving the still-open "does a grant
+   survive partial demotion" design question first. Large, cross-cutting,
+   deliberately its own session — agreed 2026-07-05.
+4. The entity-scoped roster surface for `user.restrict_suspend_ban_lift`
+   (the platform-wide surface is built; there is no entity roster view yet)
+   — small leftover gap, not yet scheduled into any of the three projects
+   above.
 
 If resuming: same discipline as every batch so far (fresh session reads
 `IMPLEMENTATION_STATUS.md` + this doc + `ROLES_PERMISSIONS.md` → implements

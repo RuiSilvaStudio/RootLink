@@ -289,13 +289,14 @@
     type '...'` / `KeyError` in the worker log, **only surfacing whenever beat's schedule next
     fires**, not at worker startup. This predates the roles/permissions redesign (celery_app.py
     untouched by it, confirmed via `git log --follow`) — background jobs have likely never
-    actually executed in prod since Celery was introduced. Not fixed as part of the roles/
-    permissions deploy (out of scope, needs its own verified fix + test); the actual fix is
-    either explicit `import app.tasks.feed_crawler` / `point_decay` / `draft_cleanup` in
-    `celery_app.py`, or `autodiscover_tasks(["app"], related_name="tasks")`. To check if this is
-    happening: `docker compose exec celery-worker python3 -c "from app.tasks.celery_app import
-    celery_app; print(celery_app.tasks.keys())"` — if it only shows `celery.*` builtins, no real
-    tasks are registered.
+    actually executed in prod since Celery was introduced.
+    **FIXED 2026-07-05** (UI-backlog cleanup pass): replaced `autodiscover_tasks(["app.tasks"])`
+    with explicit `from app.tasks import draft_cleanup, feed_crawler, point_decay` in
+    `celery_app.py` (verified locally: `celery_app.tasks.keys()` now lists all three registered
+    names before this fix it listed none). Deployed and confirmed live — see DEPLOY.md gotcha #12.
+    To check if this ever regresses: `docker compose exec celery-worker python3 -c "from
+    app.tasks.celery_app import celery_app; print(celery_app.tasks.keys())"` — if it only shows
+    `celery.*` builtins, no real tasks are registered.
 
 37. **A bash tool call backgrounding a compound `source .venv/bin/activate && setsid nohup uvicorn
     ... &` can report "terminated after exceeding timeout" even though the background process

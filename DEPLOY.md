@@ -279,11 +279,14 @@ These cost real time. Read before debugging.
     orthogonal risk, would need to be a deliberate `git checkout main` on the server done outside
     a deploy window) — flagged here so a future session doesn't assume the server is on a branch
     literally called `main`.
-12. **Celery never actually runs any background job in prod** — see `docs/LESSONS.md` #36
-    (`autodiscover_tasks(["app.tasks"])` registers zero tasks; found live 2026-07-04 while
-    verifying the roles/permissions deploy). Point decay / RSS crawl / draft cleanup have likely
-    silently no-op'd since Celery was introduced. Not caused by, or fixed as part of, the
-    roles/permissions deploy — needs its own fix + verification pass.
+12. **Celery never actually ran any background job in prod, until 2026-07-05** — see
+    `docs/LESSONS.md` #36 (`autodiscover_tasks(["app.tasks"])` registered zero tasks; found live
+    2026-07-04 while verifying the roles/permissions deploy). Point decay / RSS crawl / draft
+    cleanup had likely silently no-op'd since Celery was introduced. **Fixed and deployed
+    2026-07-05** (explicit task imports in `celery_app.py`). After any future deploy that touches
+    `celery_app.py`, re-verify with `docker compose -f docker-compose.prod.yml exec celery-worker
+    python3 -c "from app.tasks.celery_app import celery_app; print(celery_app.tasks.keys())"` —
+    should list all three `app.tasks.*` names, not just `celery.*` builtins.
 13. **`deploy.sh`'s health check can report a FALSE `502` failure** (hit 2026-07-05, UI-backlog
     deploy): the script sleeps only 12s between `up -d --build` and the curl, but a fresh
     2-worker backend can take longer to finish the flock-serialized lifespan migrations. The

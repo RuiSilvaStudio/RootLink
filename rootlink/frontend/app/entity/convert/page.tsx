@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRightLeft, AlertTriangle, ArrowDown } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { useLocale } from "@/lib/locale-context";
 import { useToast } from "@/lib/toast-context";
 import { usePermission } from "@/lib/use-permission";
 import { Button } from "@/components/ui/Button";
@@ -27,13 +28,13 @@ type PreviewState = {
   rank_capped: boolean;
 } | null;
 
-const FIELD_LABELS: Record<string, string> = {
-  entity_kind: "Account type",
-  rank_label: "Rank",
-  is_verified: "Verified",
-  can_self_publish: "Trusted publisher (self-publish)",
-  can_edit_copy: "Copy editor",
-  email_verified: "Email verified",
+const FIELD_LABEL_KEYS: Record<string, string> = {
+  entity_kind: "entity_convert.field_entity_kind",
+  rank_label: "entity_convert.field_rank_label",
+  is_verified: "entity_convert.field_is_verified",
+  can_self_publish: "entity_convert.field_can_self_publish",
+  can_edit_copy: "entity_convert.field_can_edit_copy",
+  email_verified: "entity_convert.field_email_verified",
 };
 
 // Fields shown in the comparison table, in order. Deliberately a display
@@ -41,21 +42,23 @@ const FIELD_LABELS: Record<string, string> = {
 // endpoint's `current`/`projected` objects, never hardcoded here.
 const COMPARISON_ROWS = ["entity_kind", "rank_label", "is_verified", "can_self_publish", "can_edit_copy", "email_verified"];
 
-function formatValue(v: any): string {
-  if (v === null || v === undefined) return "—";
-  if (typeof v === "boolean") return v ? "Yes" : "No";
-  return String(v);
-}
-
 function ComparisonTable({ preview }: { preview: NonNullable<PreviewState> }) {
+  const { t } = useLocale();
+
+  const formatValue = (v: any): string => {
+    if (v === null || v === undefined) return "—";
+    if (typeof v === "boolean") return v ? t("common.yes") : t("common.no");
+    return String(v);
+  };
+
   return (
     <div className="rounded-xl border border-stone-200 dark:border-stone-700 overflow-hidden">
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-stone-50 dark:bg-stone-800 text-left text-xs text-stone-500 uppercase tracking-wide">
-            <th className="px-3 py-2">Field</th>
-            <th className="px-3 py-2">Now</th>
-            <th className="px-3 py-2">After conversion</th>
+            <th className="px-3 py-2">{t("entity_convert.col_field")}</th>
+            <th className="px-3 py-2">{t("entity_convert.col_now")}</th>
+            <th className="px-3 py-2">{t("entity_convert.col_after")}</th>
           </tr>
         </thead>
         <tbody>
@@ -65,7 +68,7 @@ function ComparisonTable({ preview }: { preview: NonNullable<PreviewState> }) {
             const changed = before !== after;
             return (
               <tr key={field} className="border-t border-stone-100 dark:border-stone-800">
-                <td className="px-3 py-2 text-stone-500">{FIELD_LABELS[field] || field}</td>
+                <td className="px-3 py-2 text-stone-500">{t(FIELD_LABEL_KEYS[field] || field)}</td>
                 <td className="px-3 py-2">{before}</td>
                 <td className={`px-3 py-2 ${changed ? "font-semibold" : ""} ${field === "rank_label" && preview.rank_capped ? "text-amber-600 dark:text-amber-400" : ""}`}>
                   {after}
@@ -78,7 +81,7 @@ function ComparisonTable({ preview }: { preview: NonNullable<PreviewState> }) {
       {preview.rank_capped && (
         <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50/60 dark:bg-amber-900/20 px-3 py-2 font-serif flex items-center gap-1">
           <ArrowDown className="w-3.5 h-3.5 shrink-0" />
-          Your rank is above what this account type allows — it will be capped down, not reset.
+          {t("entity_convert.rank_capped_note")}
         </p>
       )}
     </div>
@@ -87,6 +90,7 @@ function ComparisonTable({ preview }: { preview: NonNullable<PreviewState> }) {
 
 export default function EntityConvertPage() {
   const router = useRouter();
+  const { t } = useLocale();
   const { user, loading: authLoading, refresh } = useAuth();
   const { addToast } = useToast();
   const { my, loading: permLoading } = usePermission();
@@ -116,7 +120,7 @@ export default function EntityConvertPage() {
   }, [authLoading, user, router]);
 
   if (authLoading || permLoading || !user) {
-    return <div className="max-w-2xl mx-auto px-4 py-16 text-center text-stone-400 font-serif">Loading…</div>;
+    return <div className="max-w-2xl mx-auto px-4 py-16 text-center text-stone-400 font-serif">{t("common.loading")}</div>;
   }
 
   const { entityKind } = my();
@@ -131,7 +135,7 @@ export default function EntityConvertPage() {
       const p = await api.entityConversion.preview("professional");
       setPreviewProf(p);
     } catch (err: any) {
-      addToast("error", err.message || "Could not load comparison");
+      addToast("error", err.message || t("entity_convert.preview_error"));
       setPreviewProf(null);
     } finally {
       setPreviewProfLoading(false);
@@ -145,7 +149,7 @@ export default function EntityConvertPage() {
       const p = await api.entityConversion.preview("individual");
       setPreviewInd(p);
     } catch (err: any) {
-      addToast("error", err.message || "Could not load comparison");
+      addToast("error", err.message || t("entity_convert.preview_error"));
       setPreviewInd(null);
     } finally {
       setPreviewIndLoading(false);
@@ -158,11 +162,11 @@ export default function EntityConvertPage() {
       await api.entityConversion.toProfessional({
         tax_registration_id: taxId, activity_registration_number: activityRegNumber,
       });
-      addToast("success", "Converted to professional");
+      addToast("success", t("entity_convert.to_professional_success"));
       await refresh();
       router.push("/profile");
     } catch (err: any) {
-      addToast("error", err.message || "Conversion failed");
+      addToast("error", err.message || t("entity_convert.conversion_failed"));
     } finally {
       setSubmittingProf(false);
     }
@@ -172,11 +176,11 @@ export default function EntityConvertPage() {
     setSubmittingInd(true);
     try {
       await api.entityConversion.toIndividual();
-      addToast("success", "Converted to individual");
+      addToast("success", t("entity_convert.to_individual_success"));
       await refresh();
       router.push("/profile");
     } catch (err: any) {
-      addToast("error", err.message || "Conversion failed");
+      addToast("error", err.message || t("entity_convert.conversion_failed"));
     } finally {
       setSubmittingInd(false);
     }
@@ -186,11 +190,11 @@ export default function EntityConvertPage() {
     setSubmittingOrg(true);
     try {
       const updated = await api.entityConversion.toOrganization({ organization_name: orgName });
-      addToast("success", "Organization created — you&apos;re its first super admin");
+      addToast("success", t("entity_convert.to_organization_success"));
       await refresh();
       router.push(updated.entity_id ? `/entity/${updated.entity_id}` : "/profile");
     } catch (err: any) {
-      addToast("error", err.message || "Conversion failed");
+      addToast("error", err.message || t("entity_convert.conversion_failed"));
     } finally {
       setSubmittingOrg(false);
     }
@@ -199,46 +203,41 @@ export default function EntityConvertPage() {
   if (!canConvertToProfessional && !canConvertToIndividual && !canConvertToOrganization) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16 text-center text-stone-400 font-serif">
-        Entity conversion isn&apos;t available for your current account type
-        ({entityKind}). Only individual accounts (→ professional) and
-        professional accounts (→ individual or → organization) can convert.
+        {t("entity_convert.not_available", { kind: entityKind })}
       </div>
     );
   }
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-8 py-12 space-y-6">
-      <PageHeader icon={<ArrowRightLeft className="w-5 h-5 text-primary-500" />} title="Convert account type" />
+      <PageHeader icon={<ArrowRightLeft className="w-5 h-5 text-primary-500" />} title={t("entity_convert.title")} />
 
       <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/60 dark:bg-amber-900/20 dark:border-amber-700/40 text-sm text-amber-700 dark:text-amber-300 font-serif flex gap-2">
         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
         <div>
-          <p className="font-semibold mb-1">This is a one-way action.</p>
+          <p className="font-semibold mb-1">{t("entity_convert.one_way_title")}</p>
           <p>
-            Your previously authored content stays yours (ownership persists). Everything
-            else — rank, verification, and other flags — is shown in a live comparison below,
-            specific to your account right now, before you confirm.
+            {t("entity_convert.one_way_body")}
           </p>
         </div>
       </div>
 
       {canConvertToProfessional && (
         <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6 space-y-4">
-          <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100">Individual → Professional</h2>
+          <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100">{t("entity_convert.to_professional_title")}</h2>
           <p className="text-xs text-stone-400 font-serif">
-            Requires a verified email plus a tax/business registration ID and an activity registration number
-            (ROLES_PERMISSIONS.md §2&apos;s &quot;Verified professional&quot; criteria).
+            {t("entity_convert.to_professional_hint")}
           </p>
           <input
             value={taxId}
             onChange={(e) => setTaxId(e.target.value)}
-            placeholder="Tax/business registration ID (e.g. NIF)"
+            placeholder={t("entity_convert.tax_id_placeholder")}
             className="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm"
           />
           <input
             value={activityRegNumber}
             onChange={(e) => setActivityRegNumber(e.target.value)}
-            placeholder="Activity registration number"
+            placeholder={t("entity_convert.activity_reg_placeholder")}
             className="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm"
           />
 
@@ -249,14 +248,14 @@ export default function EntityConvertPage() {
               loading={previewProfLoading}
               onClick={loadPreviewProfessional}
             >
-              Show before / after comparison
+              {t("entity_convert.show_comparison")}
             </Button>
           ) : (
             <>
               <ComparisonTable preview={previewProf} />
               <label className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-300">
                 <input type="checkbox" checked={confirmedProf} onChange={(e) => setConfirmedProf(e.target.checked)} className="w-4 h-4" />
-                I have reviewed the comparison above and confirm this one-way change.
+                {t("entity_convert.confirm_reviewed")}
               </label>
               <div className="flex gap-2">
                 <Button
@@ -264,10 +263,10 @@ export default function EntityConvertPage() {
                   loading={submittingProf}
                   onClick={submitToProfessional}
                 >
-                  Confirm &amp; convert to professional
+                  {t("entity_convert.confirm_to_professional")}
                 </Button>
                 <Button variant="secondary" disabled={submittingProf} onClick={() => setPreviewProf(null)}>
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </div>
             </>
@@ -277,30 +276,28 @@ export default function EntityConvertPage() {
 
       {canConvertToIndividual && (
         <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6 space-y-4">
-          <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100">Professional → Individual</h2>
+          <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100">{t("entity_convert.to_individual_title")}</h2>
           <p className="text-xs text-stone-400 font-serif">
-            No eligibility requirements to convert down. Your rank is preserved if it already fits
-            an individual account (contributor or below) — otherwise it&apos;s capped down to
-            contributor, not reset to persona.
+            {t("entity_convert.to_individual_hint")}
           </p>
 
           {!previewInd ? (
             <Button variant="secondary" disabled={previewIndLoading} loading={previewIndLoading} onClick={loadPreviewIndividual}>
-              Show before / after comparison
+              {t("entity_convert.show_comparison")}
             </Button>
           ) : (
             <>
               <ComparisonTable preview={previewInd} />
               <label className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-300">
                 <input type="checkbox" checked={confirmedInd} onChange={(e) => setConfirmedInd(e.target.checked)} className="w-4 h-4" />
-                I have reviewed the comparison above and confirm this one-way change.
+                {t("entity_convert.confirm_reviewed")}
               </label>
               <div className="flex gap-2">
                 <Button disabled={!confirmedInd || submittingInd} loading={submittingInd} onClick={submitToIndividual}>
-                  Confirm &amp; convert to individual
+                  {t("entity_convert.confirm_to_individual")}
                 </Button>
                 <Button variant="secondary" disabled={submittingInd} onClick={() => setPreviewInd(null)}>
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </div>
             </>
@@ -310,25 +307,22 @@ export default function EntityConvertPage() {
 
       {canConvertToOrganization && (
         <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6 space-y-4">
-          <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100">Professional → Organization</h2>
+          <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100">{t("entity_convert.to_organization_title")}</h2>
           <p className="text-xs text-stone-400 font-serif">
-            Creates a brand-new organization entity. You become its first super admin immediately (bootstrap
-            rule — no approval step for a new entity&apos;s first assignment). Rank resets as part of that
-            bootstrap (you become rank 5, super admin, of the new organization) — this direction is unrelated
-            to the individual/professional rank-cap rule above.
+            {t("entity_convert.to_organization_hint")}
           </p>
           <input
             value={orgName}
             onChange={(e) => setOrgName(e.target.value)}
-            placeholder="Organization name"
+            placeholder={t("entity_convert.org_name_placeholder")}
             className="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm"
           />
           <label className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-300">
             <input type="checkbox" checked={confirmedOrg} onChange={(e) => setConfirmedOrg(e.target.checked)} className="w-4 h-4" />
-            I understand this is one-way and my badges (verified, trusted publisher) reset.
+            {t("entity_convert.confirm_org_reset")}
           </label>
           <Button disabled={!confirmedOrg || !orgName.trim() || submittingOrg} loading={submittingOrg} onClick={submitToOrganization}>
-            Convert to organization
+            {t("entity_convert.convert_to_organization")}
           </Button>
         </div>
       )}

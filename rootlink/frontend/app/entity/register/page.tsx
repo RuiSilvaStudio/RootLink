@@ -10,17 +10,17 @@ import { useToast } from "@/lib/toast-context";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 
-const ENTITY_TYPES = [
-  { value: "organization", label: "Organization" },
-  { value: "partners", label: "Partner" },
-  { value: "suppliers", label: "Supplier" },
-];
-
 export default function EntityRegisterPage() {
   const router = useRouter();
   const { t } = useLocale();
   const { user, loading: authLoading } = useAuth();
   const { addToast } = useToast();
+
+  const ENTITY_TYPES = [
+    { value: "organization", label: t("entity_register.type_organization") },
+    { value: "partners", label: t("entity_register.type_partner") },
+    { value: "suppliers", label: t("entity_register.type_supplier") },
+  ];
 
   const [entityType, setEntityType] = useState("organization");
   const [name, setName] = useState("");
@@ -43,10 +43,10 @@ export default function EntityRegisterPage() {
         tax_registration_id: taxId || undefined,
         tax_registration_scheme: taxId ? taxScheme : undefined,
       });
-      addToast("success", "Registration submitted — pending verification");
+      addToast("success", t("entity_register.success"));
       router.push(`/entity/${entity.id}`);
     } catch (err: any) {
-      addToast("error", err.message || "Registration failed");
+      addToast("error", err.message || t("entity_register.error"));
     } finally {
       setSubmitting(false);
     }
@@ -56,13 +56,13 @@ export default function EntityRegisterPage() {
     <div className="max-w-2xl mx-auto px-4 sm:px-8 py-12">
       <PageHeader
         icon={<Building className="w-5 h-5 text-primary-500" />}
-        title="Register your organization"
-        subtitle="Organizations, partners, and suppliers are registered here and then reviewed by platform staff before they're verified. You&apos;ll be able to upload supporting documents on the next screen."
+        title={t("entity_register.title")}
+        subtitle={t("entity_register.subtitle")}
       />
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-5 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6">
         <div>
-          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Entity type</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t("entity_register.entity_type_label")}</label>
           <div className="flex gap-2 flex-wrap">
             {ENTITY_TYPES.map((et) => (
               <button
@@ -82,11 +82,11 @@ export default function EntityRegisterPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Name</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t("entity_register.name_label")}</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Green Valley Cooperative"
+            placeholder={t("entity_register.name_placeholder")}
             required
             className="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
@@ -94,16 +94,16 @@ export default function EntityRegisterPage() {
 
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Tax/business registration ID (optional now)</label>
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t("entity_register.tax_id_label")}</label>
             <input
               value={taxId}
               onChange={(e) => setTaxId(e.target.value)}
-              placeholder="e.g. NIF 123456789"
+              placeholder={t("entity_register.tax_id_placeholder")}
               className="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Scheme</label>
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t("entity_register.scheme_label")}</label>
             <input
               value={taxScheme}
               onChange={(e) => setTaxScheme(e.target.value)}
@@ -114,12 +114,11 @@ export default function EntityRegisterPage() {
         </div>
 
         <p className="text-xs text-stone-400 dark:text-stone-500 font-serif">
-          You&apos;ll be able to upload proof documents (business registration certificate, etc.) right after
-          submitting. Until a platform admin verifies this entity, you remain a regular individual account.
+          {t("entity_register.footer_note")}
         </p>
 
         <Button type="submit" disabled={submitting} loading={submitting}>
-          Submit registration
+          {t("entity_register.submit")}
         </Button>
       </form>
     </div>

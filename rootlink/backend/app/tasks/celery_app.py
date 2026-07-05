@@ -22,7 +22,18 @@ celery_app.conf.update(
     worker_prefetch_multiplier=1,
 )
 
-celery_app.autodiscover_tasks(["app.tasks"])
+# `autodiscover_tasks(["app.tasks"])` does NOT do what it looks like — by
+# default it does Django-app-style discovery, importing `<package>.tasks`
+# for each entry, so `["app.tasks"]` tries to import `app.tasks.tasks`
+# (doesn't exist) and silently registers zero tasks. Confirmed live in prod
+# 2026-07-04 (docs/LESSONS.md #36): point decay / RSS crawl / draft cleanup
+# have likely never actually executed since Celery was introduced — the
+# worker starts cleanly, connects to Redis, and logs an empty `[tasks]`
+# block, then every beat-scheduled job fails at dispatch with "Received
+# unregistered task" only when its schedule next fires. Explicit imports
+# are the fix (task modules self-register via the `@celery_app.task`
+# decorator on import) — no discovery magic to get wrong again.
+from app.tasks import draft_cleanup, feed_crawler, point_decay  # noqa: E402,F401
 
 celery_app.conf.beat_schedule = {
     "point-decay-daily": {
