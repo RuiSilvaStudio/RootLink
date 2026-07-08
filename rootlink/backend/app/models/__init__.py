@@ -6,6 +6,7 @@ from app.models.content import Bookmark, Content, ContentStatus, SearchQueryLog,
 from app.models.content_template import ContentTemplate
 from app.models.content_ui_override import ContentUIOverride
 from app.models.copy_override import CopyOverride
+from app.models.element_schema import ElementSchema
 from app.models.entity import DelegationGrant, Entity, EntityDocument, EntityKind, EntityVerificationStatus
 from app.models.event import (
     Event,
@@ -19,6 +20,7 @@ from app.models.event import (
     EventVenue,
 )
 from app.models.feed import FeedItem, FeedSource
+from app.models.font import Font
 from app.models.group import Follow, Group, GroupMember
 from app.models.learning import (
     Course,
@@ -41,8 +43,8 @@ from app.models.role_request import RoleChangeRequest
 from app.models.session import Session
 from app.models.setting import Setting
 from app.models.taxonomy import TaxonomyCategory, TaxonomyFamily
-from app.models.theme_override import ThemeOverride
 from app.models.theme import Theme, ThemeToken
+from app.models.theme_override import ThemeOverride
 from app.models.user import User
 from app.models.waste import (
     CompostingDeposit,
@@ -76,6 +78,8 @@ __all__ = [
     "ThemeOverride",
     "Theme",
     "ThemeToken",
+    "ElementSchema",
+    "Font",
     "OverrideLog",
     "PageDraft",
     "BlockPage", "BlockSection",

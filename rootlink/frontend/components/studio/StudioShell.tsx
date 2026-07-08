@@ -29,6 +29,8 @@ import {
   ExternalLink,
   Moon,
   Sun,
+  BookOpen,
+  Library,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/locale-context";
@@ -46,6 +48,8 @@ const SECTIONS: StudioSection[] = [
   { label: "Content", href: "/studio/content", icon: Type, status: "active" },
   { label: "Theming", href: "/studio/theming", icon: Palette, status: "active" },
   { label: "Blocks", href: "/studio/blocks", icon: Boxes, status: "active" },
+  { label: "Catalog", href: "/studio/catalog", icon: Library, status: "active" },
+  { label: "Fonts", href: "/studio/fonts", icon: BookOpen, status: "active" },
 ];
 
 function ThemeToggle() {

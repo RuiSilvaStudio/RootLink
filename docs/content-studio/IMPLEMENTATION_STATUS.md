@@ -95,7 +95,19 @@ Built the dashboard CMS with form editors, theming panels, block canvas, and mig
 - `rootlink/frontend/lib/theme-context.tsx` (rewritten — active theme + light/dark injection)
 - `rootlink/frontend/app/studio/theming/page.tsx` (rewritten — theme manager dashboard)
 
-### v2 Phase 5 — Dashboard element catalog + property curation + font library (next)
+### v2 Phase 5 — Dashboard element catalog + property curation + font library (in progress — backend complete)
+
+- ✅ **Backend** (this slice): `ElementSchema` + `Font` models, `/api/element-schemas` (public GET grouped-by-type, public GET by type, super_admin POST upsert / PUT / DELETE) + `/api/fonts` (public GET active list, super_admin POST / PUT / DELETE) router, `element_catalog_seed.py` (idempotent — seeds 21 default element schemas across heading/card/button/section + 2 default fonts Fraunces & Source Serif 4). 18 tests passing. Mirrors `theme_manager.py`/`blocks.py`: public reads, strict `super_admin` writes via `require_role`, audit-logged POST/DELETE via `log_moderation`, no `can_edit_copy` delegation. Registered in `app/models/__init__.py` + `app/main.py` (router + lifespan seed).
+- ⬜ **Frontend** (next): `/studio` element catalog page (curate element types + property schemas — intrinsic/extrinsic, control type, visibility) + font library page (import/manage fonts). API client `api.elementSchemas.{list,byType,upsert,update,remove}` + `api.fonts.{list,create,update,remove}`.
+
+**Files changed (backend slice):**
+- `rootlink/backend/app/models/element_schema.py` (new)
+- `rootlink/backend/app/models/font.py` (new)
+- `rootlink/backend/app/api/element_catalog.py` (new)
+- `rootlink/backend/app/services/element_catalog_seed.py` (new)
+- `rootlink/backend/app/models/__init__.py` (registered ElementSchema, Font)
+- `rootlink/backend/app/main.py` (registered element_catalog router + lifespan seed)
+- `rootlink/backend/tests/test_element_catalog.py` (new, 18 tests)
 
 ---
 

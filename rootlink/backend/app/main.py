@@ -26,6 +26,7 @@ from app.api import (
     copy,
     crawl,
     delegations,
+    element_catalog,
     entities,
     entity_conversion,
     events,
@@ -61,7 +62,9 @@ from app.core.rate_limit import RateLimitMiddleware
 from app.models.auth_tokens import EmailVerificationToken, PasswordResetToken  # noqa: F401 - ensure table creation
 from app.models.base import Base
 from app.models.block_page import BlockPage, BlockSection  # noqa: F401 - ensure table creation
+from app.models.element_schema import ElementSchema  # noqa: F401 - ensure table creation
 from app.models.entity import DelegationGrant, Entity  # noqa: F401 - ensure table creation
+from app.models.font import Font  # noqa: F401 - ensure table creation
 from app.models.image_asset import ImageAsset  # noqa: F401 - ensure table creation
 from app.models.override_log import OverrideLog  # noqa: F401 - ensure table creation
 from app.models.page_draft import PageDraft  # noqa: F401 - ensure table creation
@@ -74,8 +77,9 @@ from app.models.taxonomy import (  # noqa: F401
     TaxonomyCategory,
     TaxonomyFamily,
 )
-from app.models.theme_override import ThemeOverride  # noqa: F401 - ensure table creation
 from app.models.theme import Theme, ThemeToken  # noqa: F401 - ensure table creation
+from app.models.theme_override import ThemeOverride  # noqa: F401 - ensure table creation
+from app.services.element_catalog_seed import seed_default_element_catalog
 from app.services.legal_seed import seed_legal_documents
 from app.services.roles_migration import migrate_legacy_delegations, migrate_users_to_entity_rank
 from app.services.template_seed import seed_content_templates
@@ -538,6 +542,15 @@ async def lifespan(app: FastAPI):
             await seed_default_theme(session)
     except Exception as e:
         print(f"theme seed: {e}")
+    # Seed the Content Studio default element schemas + fonts
+    # (CONTENT_STUDIO.md §5 element catalog, §3.1 font library) — idempotent.
+    # The element_schemas/fonts tables are created by the create_all above
+    # (the models are imported up top for that purpose).
+    try:
+        async with async_session_factory() as session:
+            await seed_default_element_catalog(session)
+    except Exception as e:
+        print(f"element catalog seed: {e}")
     # Roles/permissions redesign — Phase 1 data migration (idempotent; only
     # processes rows not yet migrated). See
     # docs/roles-permissions/phase0-decisions.md (b) for the mapping
@@ -607,6 +620,7 @@ app.include_router(copy.router)
 app.include_router(content_ui.router)
 app.include_router(theme.router)
 app.include_router(theme_manager.router)
+app.include_router(element_catalog.router)
 app.include_router(overrides.router)
 app.include_router(blocks.router)
 app.include_router(legal.router)

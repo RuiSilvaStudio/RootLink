@@ -1001,6 +1001,32 @@ export const api = {
       request<any>(`/api/themes/tokens/${tokenId}`, { method: "DELETE" }),
   },
 
+  elementSchemas: {
+    // Element property schema catalog (docs/content-studio/CONTENT_STUDIO.md §5)
+    all: () =>
+      request<Record<string, { id: number; property_name: string; property_type: string; control_type: string; default_value: string | null; options: any; is_visible: boolean }[]>>("/api/element-schemas"),
+    byType: (elementType: string) =>
+      request<{ id: number; property_name: string; property_type: string; control_type: string; default_value: string | null; options: any; is_visible: boolean }[]>(`/api/element-schemas/${encodeURIComponent(elementType)}`),
+    upsert: (data: { element_type: string; property_name: string; property_type: string; control_type: string; default_value?: string; options?: any; is_visible?: boolean }) =>
+      request<any>("/api/element-schemas", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: number, data: { property_type?: string; control_type?: string; default_value?: string; options?: any; is_visible?: boolean }) =>
+      request<any>(`/api/element-schemas/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    remove: (id: number) =>
+      request<any>(`/api/element-schemas/${id}`, { method: "DELETE" }),
+  },
+
+  fonts: {
+    // Font library (docs/content-studio/CONTENT_STUDIO.md §3.1)
+    list: () =>
+      request<{ id: number; name: string; family: string; url: string | null; is_active: boolean }[]>("/api/fonts"),
+    create: (data: { name: string; family: string; url?: string }) =>
+      request<any>("/api/fonts", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: number, data: { name?: string; family?: string; url?: string; is_active?: boolean }) =>
+      request<any>(`/api/fonts/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    remove: (id: number) =>
+      request<any>(`/api/fonts/${id}`, { method: "DELETE" }),
+  },
+
   drafts: {
     // Per-page draft→publish (docs/content-studio/CONTENT_STUDIO.md §7)
     get: (page: string) =>
