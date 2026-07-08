@@ -5,50 +5,29 @@
 
 ---
 
-## Current phase: Phase 4+ — Page migration to blocks (next)
+## Current phase: Phase 5+ — Continue page migration (next)
 
 ### Phase 0 — Foundation & contract ✅ COMPLETE
-- ✅ Spec + status doc + AGENTS.md rule.
-- ✅ `frontend-ui-guardian` skill reconciled (earth-brown/Fraunces).
-- ✅ `--token` CSS-variable layer (zero visual change).
-
 ### Phase 1 — Studio shell + Content/Copy ✅ COMPLETE
-- ✅ `/studio` route-group, `StudioShell` (responsive, super_admin gate), Content module (namespace-tree + PT/EN editor, reuses `/api/copy`).
-- ✅ Playwright: 10/10 checks passed.
-
 ### Phase 2 — Theming module ✅ COMPLETE
-- ✅ Backend: `theme_override` model + `api/theme.py` (10 tests passing).
-- ✅ Frontend: `ThemeProvider` (runtime CSS-var injection), `/studio/theming` (color pickers, fonts, radius, live preview, save/revert).
-- ✅ Playwright: 10/10 checks passed (override → reload → CSS var injected → revert).
-
 ### Phase 3 — Block model ✅ COMPLETE
-- ✅ **Backend** (subagent-built): `block_page.py` model (BlockPage + BlockSection) + `api/blocks.py` (public GET, super_admin CRUD, audit-logged) + `tests/test_blocks.py` (12 tests passing).
-- ✅ **Block registry** (`lib/block-registry.ts`): 4 starter block types (Hero, Text section, Card grid, CTA) with typed fields + defaults + React components.
-- ✅ **BlockRenderer** (`components/blocks/BlockRenderer.tsx`): renders section tree by looking up block types in the registry.
-- ✅ **Block components** (`components/blocks/BlockComponents.tsx`): HeroBlock, TextBlock, CardGridBlock, CtaBlock — all using the platform's CSS-var token layer.
-- ✅ **Studio block canvas** (`/studio/blocks`): page list + block palette + section composer (add/reorder/edit/delete/publish) with live preview via BlockRenderer.
-- ✅ **Live block-composed page** (`/p/[slug]`): public route that fetches a BlockPage and renders its sections.
-- ✅ API client: `api.blocks.{listPages,getPage,createPage,updatePage,addSection,updateSection,deleteSection,adminListPages}`.
-- ✅ Studio shell + overview: Blocks is now "active".
-- ✅ Fixed circular import (registry → BlockComponents directly, not via index.ts).
-- ✅ Fixed auto-select of newly created page in the block canvas.
-- ✅ Playwright: 10/10 checks passed (create page → add 3 block types → edit props → publish → live page at /p/{slug} renders all sections → mobile viewport).
 
-**Files changed (Phase 3):**
-- `rootlink/backend/app/models/block_page.py` (new)
-- `rootlink/backend/app/api/blocks.py` (new)
-- `rootlink/backend/app/models/__init__.py` (registered BlockPage, BlockSection)
-- `rootlink/backend/app/main.py` (registered blocks router + table creation)
-- `rootlink/backend/tests/test_blocks.py` (new, 12 tests)
-- `rootlink/frontend/lib/block-registry.ts` (new)
-- `rootlink/frontend/lib/api.ts` (blocks namespace)
-- `rootlink/frontend/components/blocks/BlockComponents.tsx` (new)
-- `rootlink/frontend/components/blocks/BlockRenderer.tsx` (new)
-- `rootlink/frontend/components/blocks/index.ts` (new)
-- `rootlink/frontend/app/studio/blocks/page.tsx` (new — block canvas)
-- `rootlink/frontend/app/p/[slug]/page.tsx` (new — live block page)
-- `rootlink/frontend/components/studio/StudioShell.tsx` (Blocks → active)
-- `rootlink/frontend/app/studio/page.tsx` (Blocks → active)
+### Phase 4 — Homepage migration to blocks ✅ COMPLETE
+
+- ✅ **6 homepage block components** (`components/blocks/HomeBlocks.tsx`): HomeHeroBlock (search + stats, fetches `publicStats`), HomeCategoriesBlock (fetches `taxonomy.families`), HomeToolsBlock (3 tool cards), HomeCommunityBlock (4 community links), HomeRecentBlock (fetches `content.recent`), HomeCtaBlock. All self-contained — each fetches its own dynamic data; static copy (badges, headings, subtitles) is editable via block props in the studio.
+- ✅ **Block registry extended** — 6 new block types registered (`home-hero`, `home-categories`, `home-tools`, `home-community`, `home-recent`, `home-cta`) with editable fields for badge/heading/subtitle overrides.
+- ✅ **`app/page.tsx` migrated** — now fetches the `home` BlockPage from `/api/blocks/pages/home` and renders via BlockRenderer. Falls back to the 6 block components with default (i18n) props if the backend page doesn't exist — the homepage never breaks.
+- ✅ **`home` BlockPage seeded** in the backend (slug=`home`, 6 sections in order, published).
+- ✅ **Playwright-verified:** homepage renders all 6 sections via the block model (hero with search + live stats, categories from taxonomy, tools, community links, recent content, CTA). Mobile viewport works. Studio shows the Homepage in its page list with all 6 sections visible/editable.
+- ✅ Build: `tsc` clean, `lint` 0 errors, `next build` succeeds.
+
+**Files changed (Phase 4):**
+- `rootlink/frontend/components/blocks/HomeBlocks.tsx` (new — 6 homepage block components)
+- `rootlink/frontend/lib/block-registry.ts` (6 new block types registered)
+- `rootlink/frontend/components/blocks/index.ts` (export HomeBlocks)
+- `rootlink/frontend/app/page.tsx` (migrated to BlockRenderer + fallback)
+
+**What this means:** The homepage is now **composable in the studio** — a super_admin can go to `/studio/blocks`, select "Homepage", reorder sections, edit section copy (badges/headings/subtitles), add new blocks, and publish. Changes go live on the real homepage without a deploy.
 
 ---
 

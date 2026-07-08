@@ -19,6 +19,7 @@
 
 import type { ComponentType } from "react";
 import { HeroBlock, TextBlock, CardGridBlock, CtaBlock } from "@/components/blocks/BlockComponents";
+import { HomeHeroBlock, HomeCategoriesBlock, HomeToolsBlock, HomeCommunityBlock, HomeRecentBlock, HomeCtaBlock } from "@/components/blocks/HomeBlocks";
 
 export type BlockFieldType = "text" | "textarea" | "color" | "image" | "number" | "select";
 
@@ -87,6 +88,73 @@ export const BLOCK_REGISTRY: BlockType[] = [
       { name: "button_href", label: "Button link", type: "text", default: "/auth/sign-in" },
     ],
     Component: CtaBlock,
+  },
+  // ── Homepage blocks (Phase 4) ──────────────────────────
+  // These are self-contained sections that fetch their own dynamic data
+  // (stats, taxonomy families, recent content). Static copy (badges,
+  // headings, subtitles) is editable via props in the studio.
+  {
+    id: "home-hero",
+    label: "Home: Hero",
+    category: "layout",
+    fields: [
+      { name: "badge", label: "Badge text", type: "text" },
+      { name: "title", label: "Title (overrides i18n)", type: "text" },
+      { name: "subtitle", label: "Subtitle (overrides i18n)", type: "textarea" },
+    ],
+    Component: HomeHeroBlock,
+  },
+  {
+    id: "home-categories",
+    label: "Home: Categories",
+    category: "layout",
+    fields: [
+      { name: "badge", label: "Badge text", type: "text" },
+      { name: "heading", label: "Heading (overrides i18n)", type: "text" },
+    ],
+    Component: HomeCategoriesBlock,
+  },
+  {
+    id: "home-tools",
+    label: "Home: Tools",
+    category: "content",
+    fields: [
+      { name: "badge", label: "Badge text", type: "text" },
+      { name: "heading", label: "Heading (overrides i18n)", type: "text" },
+      { name: "subtitle", label: "Subtitle (overrides i18n)", type: "textarea" },
+    ],
+    Component: HomeToolsBlock,
+  },
+  {
+    id: "home-community",
+    label: "Home: Community",
+    category: "content",
+    fields: [
+      { name: "badge", label: "Badge text", type: "text" },
+      { name: "heading", label: "Heading (overrides i18n)", type: "text" },
+    ],
+    Component: HomeCommunityBlock,
+  },
+  {
+    id: "home-recent",
+    label: "Home: Recent content",
+    category: "content",
+    fields: [
+      { name: "badge", label: "Badge text", type: "text" },
+      { name: "heading", label: "Heading (overrides i18n)", type: "text" },
+    ],
+    Component: HomeRecentBlock,
+  },
+  {
+    id: "home-cta",
+    label: "Home: CTA",
+    category: "content",
+    fields: [
+      { name: "badge", label: "Badge text", type: "text" },
+      { name: "heading", label: "Heading (overrides i18n)", type: "text" },
+      { name: "subtitle", label: "Subtitle (overrides i18n)", type: "textarea" },
+    ],
+    Component: HomeCtaBlock,
   },
 ];
 
