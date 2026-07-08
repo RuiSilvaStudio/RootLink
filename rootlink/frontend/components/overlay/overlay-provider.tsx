@@ -1,51 +1,68 @@
 "use client";
 
 /**
- * Content Studio — Visual Overlay Provider.
+ * Content Studio — Visual Overlay Provider (Phase 3).
  *
- * Spec: docs/content-studio/CONTENT_STUDIO.md §3.2 (visual overlay).
+ * Spec: docs/content-studio/CONTENT_STUDIO.md §3.2, §6 (override guardrail),
+ * §7 (draft→publish).
  *
- * Manages the overlay's edit-mode state. When active (super_admin, desktop
- * only), the current page renders inside an iframe with a selection agent
- * injected, and the inspector panel docks beside it.
- *
- * The overlay replaces the old inline Content UI Editor
- * (components/editor-mode/) — same concept (edit on the live site) but
- * solves the click-conflict problem with an iframe (complete JS isolation
- * from the page's own handlers).
+ * Extended in Phase 3 with:
+ *   - Draft change tracking (all changes to a page are one draft)
+ *   - Override deviation detection + pending prompt state
+ *   - Preview-as-visitor mode
+ *   - Save/publish/discard actions
  */
 
 import { createContext, useCallback, useContext, useState, ReactNode, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { api } from "@/lib/api";
 
 export interface SelectedElement {
-  /** A unique path describing the element's position in the DOM tree */
   path: string;
-  /** The element's tag name (h1, div, button, etc.) */
   tagName: string;
-  /** A human-readable label (derived from tag + class + text) */
   label: string;
-  /** The computed styles snapshot (sent from the iframe's selection agent) */
   computedStyles: Record<string, string>;
-  /** The breadcrumb hierarchy (array of {path, label} from root to this element) */
   hierarchy: { path: string; label: string; tagName: string }[];
 }
 
+/** A single style change in the current draft. */
+export interface DraftChange {
+  elementPath: string;
+  property: string;
+  value: string;
+  oldValue: string;
+}
+
+/** A pending override prompt (awaiting user confirm/cancel). */
+export interface PendingPrompt {
+  elementPath: string;
+  property: string;
+  oldValue: string;
+  newValue: string;
+  elementLabel: string;
+}
+
 interface OverlayContextType {
-  /** Whether the overlay is active (edit mode on) */
   active: boolean;
-  /** Whether the user is allowed to use the overlay (super_admin + desktop) */
   canEdit: boolean;
-  /** Toggle the overlay on/off */
   toggle: () => void;
-  /** The currently selected element (null = nothing selected) */
   selected: SelectedElement | null;
-  /** Select an element (called from the iframe via postMessage) */
   select: (el: SelectedElement | null) => void;
-  /** The URL currently loaded in the iframe */
   iframeUrl: string;
-  /** Set the iframe URL (when entering edit mode on a page) */
   setIframeUrl: (url: string) => void;
+  // Phase 3: draft + override
+  draftChanges: DraftChange[];
+  pendingPrompt: PendingPrompt | null;
+  requestChange: (elementPath: string, property: string, oldValue: string, newValue: string, elementLabel: string) => void;
+  confirmOverride: () => void;
+  cancelOverride: () => void;
+  previewMode: boolean;
+  setPreviewMode: (v: boolean) => void;
+  saveDraft: () => Promise<void>;
+  publishDraft: () => Promise<void>;
+  discardDraft: () => Promise<void>;
+  draftSaving: boolean;
+  pageSlug: string;
 }
 
 const OverlayContext = createContext<OverlayContextType | null>(null);
@@ -56,22 +73,23 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
   const [selected, setSelected] = useState<SelectedElement | null>(null);
   const [iframeUrl, setIframeUrl] = useState("");
   const [isDesktop, setIsDesktop] = useState(true);
+  const [draftChanges, setDraftChanges] = useState<DraftChange[]>([]);
+  const [pendingPrompt, setPendingPrompt] = useState<PendingPrompt | null>(null);
+  const [previewMode, setPreviewMode] = useState(false);
+  const [draftSaving, setDraftSaving] = useState(false);
+  // The change awaiting prompt confirmation (held so confirm can apply it)
+  const [, setPendingChange] = useState<DraftChange | null>(null);
 
-  // Detect mobile — overlay is desktop-only (mobile = preview, not editing)
   useEffect(() => {
-    const checkDesktop = () => {
-      setIsDesktop(window.matchMedia("(min-width: 1024px)").matches);
-    };
+    const checkDesktop = () => setIsDesktop(window.matchMedia("(min-width: 1024px)").matches);
     checkDesktop();
     window.matchMedia("(min-width: 1024px)").addEventListener("change", checkDesktop);
     return () => window.matchMedia("(min-width: 1024px)").removeEventListener("change", checkDesktop);
   }, []);
 
-  // The rank-based super_admin check (mirrors StudioShell)
   const isSuperAdmin = !!user && (user.role === "super_admin" || (user.rank != null && user.rank >= 5));
   const canEdit = !loading && isSuperAdmin && isDesktop;
 
-  // Deactivate if the user loses super_admin or switches to mobile
   useEffect(() => {
     if (active && !canEdit) {
       setActive(false);
@@ -83,7 +101,12 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
     if (!canEdit) return;
     setActive((prev) => {
       const next = !prev;
-      if (!next) setSelected(null);
+      if (!next) {
+        setSelected(null);
+        setDraftChanges([]);
+        setPendingPrompt(null);
+        setPreviewMode(false);
+      }
       return next;
     });
   }, [canEdit]);
@@ -92,7 +115,44 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
     setSelected(el);
   }, []);
 
-  // Listen for postMessage from the iframe's selection agent
+  const pageSlug = iframeUrl ? new URL(iframeUrl).pathname.slice(1) || "home" : "home";
+
+  /** Apply a change (after prompt confirmed or no deviation). */
+  const applyChange = useCallback((elementPath: string, property: string, value: string, oldValue: string) => {
+    const iframe = document.querySelector("iframe");
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.postMessage({ type: "overlay:apply-style", property, value }, "*");
+    }
+    setDraftChanges((prev) => {
+      const filtered = prev.filter(
+        (c) => !(c.elementPath === elementPath && c.property === property)
+      );
+      return [...filtered, { elementPath, property, value, oldValue }];
+    });
+    api.overrides.log({
+      page_slug: pageSlug,
+      element_path: elementPath,
+      property,
+      old_value: oldValue,
+      new_value: value,
+    }).catch(() => {});
+  }, [pageSlug]);
+
+  /** Request a style change — the provider checks for deviation and prompts if needed. */
+  const requestChange = useCallback((elementPath: string, property: string, oldValue: string, newValue: string, elementLabel: string) => {
+    const existing = draftChanges.find(
+      (c) => c.elementPath === elementPath && c.property === property
+    );
+    const originalDefault = existing ? existing.oldValue : oldValue;
+    if (newValue !== originalDefault) {
+      setPendingChange({ elementPath, property, value: newValue, oldValue: originalDefault });
+      setPendingPrompt({ elementPath, property, oldValue: originalDefault, newValue, elementLabel });
+    } else {
+      applyChange(elementPath, property, newValue, originalDefault);
+    }
+  }, [draftChanges, applyChange]);
+
+  // Listen for postMessage from the iframe
   useEffect(() => {
     if (!active) return;
     const handler = (e: MessageEvent) => {
@@ -107,8 +167,61 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("message", handler);
   }, [active, select]);
 
+  const confirmOverride = useCallback(() => {
+    if (!pendingPrompt) return;
+    applyChange(pendingPrompt.elementPath, pendingPrompt.property, pendingPrompt.newValue, pendingPrompt.oldValue);
+    setPendingPrompt(null);
+    setPendingChange(null);
+  }, [pendingPrompt, applyChange]);
+
+  const cancelOverride = useCallback(() => {
+    // Don't apply the change — the iframe keeps the pre-change value
+    setPendingPrompt(null);
+    setPendingChange(null);
+  }, []);
+
+  const saveDraft = useCallback(async () => {
+    if (draftChanges.length === 0) return;
+    setDraftSaving(true);
+    try {
+      await api.drafts.save({ page_slug: pageSlug, changes: draftChanges });
+    } finally {
+      setDraftSaving(false);
+    }
+  }, [draftChanges, pageSlug]);
+
+  const publishDraft = useCallback(async () => {
+    setDraftSaving(true);
+    try {
+      await api.drafts.save({ page_slug: pageSlug, changes: draftChanges });
+      await api.drafts.publish(pageSlug);
+      setDraftChanges([]);
+    } finally {
+      setDraftSaving(false);
+    }
+  }, [draftChanges, pageSlug]);
+
+  const discardDraft = useCallback(async () => {
+    try {
+      await api.drafts.discard(pageSlug);
+    } catch {}
+    setDraftChanges([]);
+    // Reload the iframe to revert visual changes
+    setIframeUrl((url) => url);
+    const iframe = document.querySelector("iframe");
+    if (iframe) iframe.src = iframe.src;
+  }, [pageSlug]);
+
   return (
-    <OverlayContext.Provider value={{ active, canEdit, toggle, selected, select, iframeUrl, setIframeUrl }}>
+    <OverlayContext.Provider
+      value={{
+        active, canEdit, toggle, selected, select, iframeUrl, setIframeUrl,
+        draftChanges, pendingPrompt, requestChange,
+        confirmOverride, cancelOverride,
+        previewMode, setPreviewMode,
+        saveDraft, publishDraft, discardDraft, draftSaving, pageSlug,
+      }}
+    >
       {children}
     </OverlayContext.Provider>
   );

@@ -961,6 +961,32 @@ export const api = {
       request<any>(`/api/theme/${encodeURIComponent(token)}`, { method: "DELETE" }),
   },
 
+  overrides: {
+    // Override guardrail log (docs/content-studio/CONTENT_STUDIO.md §6)
+    list: (page: string) =>
+      request<{ id: number; element_path: string; property: string; old_value: string; new_value: string; is_stale: boolean }[]>(`/api/overrides?page=${encodeURIComponent(page)}`),
+    all: () =>
+      request<{ id: number; page_slug: string; element_path: string; property: string; old_value: string; new_value: string; is_stale: boolean }[]>("/api/overrides/all"),
+    log: (data: { page_slug: string; element_path: string; property: string; old_value: string; new_value: string }) =>
+      request<any>("/api/overrides", { method: "POST", body: JSON.stringify(data) }),
+    remove: (id: number) =>
+      request<any>(`/api/overrides/${id}`, { method: "DELETE" }),
+    markStale: (id: number) =>
+      request<any>(`/api/overrides/${id}/stale`, { method: "PUT" }),
+  },
+
+  drafts: {
+    // Per-page draft→publish (docs/content-studio/CONTENT_STUDIO.md §7)
+    get: (page: string) =>
+      request<{ id: number; page_slug: string; status: string; changes: any[]; created_by: number | null; created_at: string; published_at: string | null } | null>(`/api/drafts?page=${encodeURIComponent(page)}`),
+    save: (data: { page_slug: string; changes: any[] }) =>
+      request<any>("/api/drafts", { method: "POST", body: JSON.stringify(data) }),
+    publish: (slug: string) =>
+      request<any>(`/api/drafts/${encodeURIComponent(slug)}/publish`, { method: "POST" }),
+    discard: (slug: string) =>
+      request<any>(`/api/drafts/${encodeURIComponent(slug)}`, { method: "DELETE" }),
+  },
+
   blocks: {
     // Block-composed pages for the Content Studio block model
     // (docs/content-studio/CONTENT_STUDIO.md §6).

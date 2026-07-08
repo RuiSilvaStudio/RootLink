@@ -67,13 +67,18 @@ Built the dashboard CMS with form editors, theming panels, block canvas, and mig
 - `rootlink/frontend/components/overlay/selection-agent.ts` (applyStyle + undo + mapTokenToCssVar + message listener + Ctrl+Z)
 - `rootlink/frontend/components/overlay/inspector-panel.tsx` (rewired — constrained controls replace read-only text)
 
-### v2 Phase 3 — Override guardrail + draft/publish (next)
-- ⏳ Deviation detection (when a property changes from its default)
-- ⏳ Inline prompt (not modal): "This deviates from the default. [Confirm] [Cancel]"
-- ⏳ Badge on elements with overrides
-- ⏳ Override log (backend table + API)
-- ⏳ Per-page drafts (save without publish, preview-as-visitor, publish, discard)
-- ⏳ Stale-override warnings
+### v2 Phase 3 — Override guardrail + draft/publish ✅ COMPLETE
+
+- ✅ **Backend** (subagent): `OverrideLog` + `PageDraft` models, `/api/overrides` (public GET per-page, super_admin GET `/all`, POST upsert, DELETE revert, PUT `/stale`), `/api/drafts` (GET, POST save, POST publish, DELETE discard). 24 tests passing.
+- ✅ **API client**: `api.overrides.{list,all,log,remove,markStale}` + `api.drafts.{get,save,publish,discard}`.
+- ✅ **OverlayProvider**: `requestChange()` — checks deviation from default → if deviates, shows inline prompt; if confirmed, applies change + logs override + tracks in draft. Draft state, preview mode, save/publish/discard.
+- ✅ **OverlayShell**: override prompt bar (inline, not modal), draft controls (unsaved count, Save, Publish, Discard), preview toggle with banner.
+- ✅ **InspectorPanel**: calls `requestChange()` (provider intercepts for deviation check).
+- ✅ **Playwright-verified (11/11)**: overlay → select → change color → prompt → confirm → unsaved counter → Save/Publish → preview → exit. tsc + lint clean.
+
+### v2 Phase 4 — Dashboard theme manager (next)
+- ⏳ Backend: `themes` + `theme_tokens` tables (named tokens with light+dark pairs, multiple themes)
+- ⏳ Frontend: /studio theme settings — define named tokens, create themes, draft→publish, activate, full palette swap
 
 ---
 

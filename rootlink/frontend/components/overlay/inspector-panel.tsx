@@ -166,14 +166,13 @@ const PROPERTY_GROUPS: { label: string; properties: string[] }[] = [
 const BORING_VALUES = new Set(["normal", "none", "auto", "0px", "0", "static", "start", "0.25rem", "0.5rem"]);
 
 export function InspectorPanel() {
-  const { selected, iframeUrl } = useOverlay();
+  const { selected, requestChange } = useOverlay();
 
-  /** Send a style change to the iframe (live preview) */
-  const applyStyle = (property: string, value: string) => {
-    const iframe = document.querySelector("iframe");
-    if (iframe && iframe.contentWindow) {
-      iframe.contentWindow.postMessage({ type: "overlay:apply-style", property, value }, "*");
-    }
+  /** Request a style change (the provider handles deviation check + prompt + apply) */
+  const handleChange = (property: string, value: string) => {
+    if (!selected) return;
+    const oldValue = selected.computedStyles[property] || "";
+    requestChange(selected.path, property, oldValue, value, selected.label);
   };
 
   /** Send undo to the iframe */
@@ -192,7 +191,7 @@ export function InspectorPanel() {
       return <span className="text-stone-400 font-mono text-right truncate text-xs">{value}</span>;
     }
 
-    const commonProps = { value, onChange: (v: string) => applyStyle(propertyName, v) };
+    const commonProps = { value, onChange: (v: string) => handleChange(propertyName, v) };
 
     switch (config.control) {
       case "slider":

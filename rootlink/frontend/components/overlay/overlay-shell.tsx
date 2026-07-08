@@ -1,33 +1,34 @@
 "use client";
 
 /**
- * Content Studio — Overlay Shell.
+ * Content Studio — Overlay Shell (Phase 3).
  *
- * Spec: docs/content-studio/CONTENT_STUDIO.md §3.2 (visual overlay).
+ * Spec: docs/content-studio/CONTENT_STUDIO.md §3.2, §6 (override guardrail),
+ * §7 (draft→publish).
  *
- * When edit mode is active (super_admin + desktop), this component:
- *   1. Renders the current page URL inside an iframe (complete JS isolation).
- *   2. Injects the selection agent into the iframe after load.
- *   3. Docks the inspector panel on the right.
- *   4. Shows a slim top bar with the edit/preview toggle + exit button.
- *
- * When NOT active, renders nothing — zero overhead for regular visitors.
+ * Extended in Phase 3 with:
+ *   - Override prompt (inline, not modal) when a change deviates from default
+ *   - Draft controls (change count, save, publish, discard, preview-as-visitor)
  */
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { PenLine, Eye, X, ExternalLink } from "lucide-react";
+import { PenLine, Eye, X, ExternalLink, AlertTriangle, Check, Undo2, Save, Upload, Trash2 } from "lucide-react";
 import { useOverlay } from "./overlay-provider";
 import { InspectorPanel } from "./inspector-panel";
 import { injectSelectionAgent } from "./selection-agent";
 
 export function OverlayShell() {
-  const { active, canEdit, toggle, iframeUrl, setIframeUrl } = useOverlay();
+  const {
+    active, canEdit, toggle, iframeUrl, setIframeUrl,
+    pendingPrompt, confirmOverride, cancelOverride,
+    draftChanges, previewMode, setPreviewMode,
+    saveDraft, publishDraft, discardDraft, draftSaving, pageSlug,
+  } = useOverlay();
   const pathname = usePathname();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [iframeLoaded, setIframeLoaded] = useState(false);
 
-  // Set the iframe URL when entering edit mode (use the current pathname)
   useEffect(() => {
     if (active && !iframeUrl) {
       const base = window.location.origin;
@@ -39,23 +40,18 @@ export function OverlayShell() {
     }
   }, [active, pathname, iframeUrl, setIframeUrl]);
 
-  // Inject the selection agent into the iframe after it loads
   useEffect(() => {
     if (!active || !iframeLoaded || !iframeRef.current) return;
     const iframe = iframeRef.current;
     try {
       const iframeWindow = iframe.contentWindow;
       if (!iframeWindow) return;
-      // Inject the selection agent script into the iframe
       const script = iframeWindow.document.createElement("script");
       script.textContent = `(${injectSelectionAgent.toString()})()`;
       iframeWindow.document.body.appendChild(script);
-    } catch {
-      // Cross-origin — can't inject (shouldn't happen since same-origin)
-    }
+    } catch {}
   }, [active, iframeLoaded]);
 
-  // Reload the iframe when the URL changes
   useEffect(() => {
     if (iframeRef.current && iframeUrl) {
       iframeRef.current.src = iframeUrl;
@@ -63,8 +59,7 @@ export function OverlayShell() {
     }
   }, [iframeUrl]);
 
-  if (!canEdit) return null;
-  if (!active) return null;
+  if (!canEdit || !active) return null;
 
   return (
     <div className="fixed inset-0 z-[9999] flex flex-col bg-stone-950">
@@ -81,22 +76,92 @@ export function OverlayShell() {
             Content Studio — Edit Mode
           </span>
         </div>
+
         <div className="flex items-center gap-2">
+          {/* Preview toggle */}
+          <button
+            onClick={() => setPreviewMode(!previewMode)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition ${
+              previewMode
+                ? "bg-amber-600 text-white"
+                : "text-stone-400 hover:text-stone-200 hover:bg-stone-800"
+            }`}
+            title="Preview as visitor"
+          >
+            <Eye className="w-3.5 h-3.5" /> {previewMode ? "Previewing" : "Preview"}
+          </button>
+
+          {/* Draft controls */}
+          {draftChanges.length > 0 && (
+            <>
+              <span className="text-xs text-rust-400 font-medium">
+                {draftChanges.length} unsaved
+              </span>
+              <button
+                onClick={saveDraft}
+                disabled={draftSaving}
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-stone-300 hover:bg-stone-800 transition"
+                title="Save draft"
+              >
+                <Save className="w-3.5 h-3.5" /> Save
+              </button>
+              <button
+                onClick={publishDraft}
+                disabled={draftSaving}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-primary-600 hover:bg-primary-700 text-cream transition disabled:opacity-50"
+                title="Publish"
+              >
+                {draftSaving ? "..." : <Upload className="w-3.5 h-3.5" />} Publish
+              </button>
+              <button
+                onClick={discardDraft}
+                disabled={draftSaving}
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-stone-400 hover:text-red-400 transition"
+                title="Discard"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </>
+          )}
+
           {iframeUrl && (
-            <a
-              href={iframeUrl}
-              target="_blank"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-stone-400 hover:text-stone-200 transition"
-            >
-              <ExternalLink className="w-3.5 h-3.5" /> Open in new tab
+            <a href={iframeUrl} target="_blank" className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-stone-400 hover:text-stone-200 transition">
+              <ExternalLink className="w-3.5 h-3.5" />
             </a>
           )}
         </div>
       </header>
 
+      {/* ── Override prompt (inline, not modal) ────────── */}
+      {pendingPrompt && (
+        <div className="shrink-0 px-4 py-2.5 border-b border-rust-800 bg-rust-950/30 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-sm text-stone-300">
+            <AlertTriangle className="w-4 h-4 text-rust-400 shrink-0" />
+            <span>
+              This deviates from the default{" "}
+              <code className="text-rust-300 font-mono">{pendingPrompt.property}</code>{" "}
+              (was <code className="text-stone-400 font-mono">{pendingPrompt.oldValue}</code>).
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={cancelOverride}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium text-stone-400 hover:text-stone-200 hover:bg-stone-800 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmOverride}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rust-600 hover:bg-rust-700 text-cream transition"
+            >
+              <Check className="w-3.5 h-3.5" /> Confirm override
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Iframe + Inspector ──────────────────────────── */}
       <div className="flex-1 flex min-h-0">
-        {/* Iframe — the real page */}
         <div className="flex-1 relative bg-white">
           {iframeUrl && (
             <iframe
@@ -111,9 +176,15 @@ export function OverlayShell() {
               <div className="animate-pulse-soft text-stone-400 font-serif">Loading page…</div>
             </div>
           )}
+          {/* Preview overlay — dims the iframe edge when previewing */}
+          {previewMode && (
+            <div className="absolute top-2 left-2 z-10 px-3 py-1.5 rounded-full bg-amber-600 text-white text-xs font-medium shadow-lg">
+              Preview as visitor — draft changes hidden
+            </div>
+          )}
         </div>
 
-        {/* Inspector panel — docked on the right */}
+        {/* Inspector panel */}
         <aside className="w-96 shrink-0 border-l border-stone-800 bg-stone-950 overflow-hidden flex flex-col">
           <InspectorPanel />
         </aside>

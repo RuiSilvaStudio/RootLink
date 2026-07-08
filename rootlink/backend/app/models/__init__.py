@@ -32,6 +32,8 @@ from app.models.marketplace import Listing, ListingOrder, SellerStripeAccount
 from app.models.message import Conversation, ConversationParticipant, Message
 from app.models.moderation import ModerationAction, ModerationAuditLog
 from app.models.notification import Notification
+from app.models.override_log import OverrideLog
+from app.models.page_draft import PageDraft
 from app.models.plant import Plant
 from app.models.points import PointBalance, PointTransaction
 from app.models.rating import ContentRating
@@ -71,6 +73,8 @@ __all__ = [
     "CopyOverride",
     "ContentUIOverride",
     "ThemeOverride",
+    "OverrideLog",
+    "PageDraft",
     "BlockPage", "BlockSection",
     "Entity", "EntityKind", "EntityVerificationStatus", "DelegationGrant", "EntityDocument",
     "Session", "EmailVerificationToken", "PasswordResetToken",

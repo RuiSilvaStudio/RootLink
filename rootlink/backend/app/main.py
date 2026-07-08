@@ -39,6 +39,7 @@ from app.api import (
     marketplace,
     messages,
     notifications,
+    overrides,
     payments,
     permissions,
     plants,
@@ -61,6 +62,8 @@ from app.models.base import Base
 from app.models.block_page import BlockPage, BlockSection  # noqa: F401 - ensure table creation
 from app.models.entity import DelegationGrant, Entity  # noqa: F401 - ensure table creation
 from app.models.image_asset import ImageAsset  # noqa: F401 - ensure table creation
+from app.models.override_log import OverrideLog  # noqa: F401 - ensure table creation
+from app.models.page_draft import PageDraft  # noqa: F401 - ensure table creation
 from app.models.role_request import RoleChangeRequest  # noqa: F401 - ensure table creation
 from app.models.session import Session  # noqa: F401 - ensure table creation
 from app.models.taxonomy import (  # noqa: F401
@@ -592,6 +595,7 @@ app.include_router(account.router)
 app.include_router(copy.router)
 app.include_router(content_ui.router)
 app.include_router(theme.router)
+app.include_router(overrides.router)
 app.include_router(blocks.router)
 app.include_router(legal.router)
 app.include_router(permissions.router)
