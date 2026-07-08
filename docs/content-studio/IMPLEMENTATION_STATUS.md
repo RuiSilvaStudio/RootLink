@@ -95,19 +95,33 @@ Built the dashboard CMS with form editors, theming panels, block canvas, and mig
 - `rootlink/frontend/lib/theme-context.tsx` (rewritten — active theme + light/dark injection)
 - `rootlink/frontend/app/studio/theming/page.tsx` (rewritten — theme manager dashboard)
 
-### v2 Phase 5 — Dashboard element catalog + property curation + font library (in progress — backend complete)
+### v2 Phase 5 — Dashboard element catalog + property curation + font library ✅ COMPLETE
 
-- ✅ **Backend** (this slice): `ElementSchema` + `Font` models, `/api/element-schemas` (public GET grouped-by-type, public GET by type, super_admin POST upsert / PUT / DELETE) + `/api/fonts` (public GET active list, super_admin POST / PUT / DELETE) router, `element_catalog_seed.py` (idempotent — seeds 21 default element schemas across heading/card/button/section + 2 default fonts Fraunces & Source Serif 4). 18 tests passing. Mirrors `theme_manager.py`/`blocks.py`: public reads, strict `super_admin` writes via `require_role`, audit-logged POST/DELETE via `log_moderation`, no `can_edit_copy` delegation. Registered in `app/models/__init__.py` + `app/main.py` (router + lifespan seed).
-- ⬜ **Frontend** (next): `/studio` element catalog page (curate element types + property schemas — intrinsic/extrinsic, control type, visibility) + font library page (import/manage fonts). API client `api.elementSchemas.{list,byType,upsert,update,remove}` + `api.fonts.{list,create,update,remove}`.
+- ✅ **Backend** (subagent, 18 tests): `ElementSchema` + `Font` models, `/api/element-schemas` + `/api/fonts`. Seed: 20 schemas + 2 fonts.
+- ✅ **Frontend**: `/studio/catalog` (element type list + property table with control type selectors + visibility toggles + add/remove), `/studio/fonts` (font card grid with live previews, add via Google Fonts URL, activate/deactivate). Studio sidebar updated.
+- ✅ Playwright-verified: 4 element types, 7 heading properties, 12 selectors, 2 font previews. tsc + lint clean.
 
-**Files changed (backend slice):**
-- `rootlink/backend/app/models/element_schema.py` (new)
-- `rootlink/backend/app/models/font.py` (new)
-- `rootlink/backend/app/api/element_catalog.py` (new)
-- `rootlink/backend/app/services/element_catalog_seed.py` (new)
-- `rootlink/backend/app/models/__init__.py` (registered ElementSchema, Font)
-- `rootlink/backend/app/main.py` (registered element_catalog router + lifespan seed)
-- `rootlink/backend/tests/test_element_catalog.py` (new, 18 tests)
+### v2 Phase 6 — Override report + stale warnings ✅ COMPLETE
+
+- ✅ **Override report** (`/studio/overrides`): dashboard page — all deviations across the site (page, element path, property, old/new value, stale flag). Filter tabs (all/active/stale). Revert + mark-stale actions.
+- ✅ **Stale-override warning in overlay**: inspector fetches page overrides, shows warning bar when selected element has stale overrides.
+- ✅ Studio sidebar updated with Overrides section.
+- ✅ Playwright-verified: report loads, filter tabs, override list, sidebar link, overlay inspector works with override awareness. tsc + lint clean.
+
+---
+
+## All v2 phases complete ✅
+
+| Phase | Delivers | Verified |
+|---|---|---|
+| **1** | Visual overlay shell (iframe + inspector), selection agent, edit-mode toggle | Playwright 8/8 |
+| **2** | 7 constrained controls, live preview, undo | Playwright 8/8 |
+| **3** | Override guardrail (prompt + badge + log + revert), per-page drafts (save/publish/discard/preview) | Playwright 11/11 |
+| **4** | Dashboard theme manager (named tokens light+dark, multi-theme, activate, full palette swap) | Playwright 8/8 |
+| **5** | Element catalog (property schema, control type, visibility), font library (import/preview/activate) | Playwright 7/7 |
+| **6** | Override report (all deviations, filter, revert), stale-override warnings in overlay | Playwright 5/5 |
+
+**Backend:** 68+ Content Studio tests. **Frontend:** tsc + lint + build clean. **Graphify:** 3678+ nodes.
 
 ---
 

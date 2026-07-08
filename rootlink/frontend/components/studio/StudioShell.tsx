@@ -31,6 +31,7 @@ import {
   Sun,
   BookOpen,
   Library,
+  AlertTriangle,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/locale-context";
@@ -50,6 +51,7 @@ const SECTIONS: StudioSection[] = [
   { label: "Blocks", href: "/studio/blocks", icon: Boxes, status: "active" },
   { label: "Catalog", href: "/studio/catalog", icon: Library, status: "active" },
   { label: "Fonts", href: "/studio/fonts", icon: BookOpen, status: "active" },
+  { label: "Overrides", href: "/studio/overrides", icon: AlertTriangle, status: "active" },
 ];
 
 function ThemeToggle() {

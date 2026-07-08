@@ -21,7 +21,9 @@ import {
   TypeScaleButtons,
   InlineTextEditor,
 } from "./constrained-controls";
-import { MousePointer2, ChevronRight, Undo2 } from "lucide-react";
+import { MousePointer2, ChevronRight, Undo2, AlertTriangle } from "lucide-react";
+import { api } from "@/lib/api";
+import { useState, useEffect } from "react";
 
 // ── Property → control mapping ────────────────────────────────
 // Each property knows which control to use and what options to offer.
@@ -166,7 +168,18 @@ const PROPERTY_GROUPS: { label: string; properties: string[] }[] = [
 const BORING_VALUES = new Set(["normal", "none", "auto", "0px", "0", "static", "start", "0.25rem", "0.5rem"]);
 
 export function InspectorPanel() {
-  const { selected, requestChange } = useOverlay();
+  const { selected, requestChange, pageSlug } = useOverlay();
+  const [staleOverrides, setStaleOverrides] = useState<any[]>([]);
+
+  // Fetch overrides for the current page to check for stale ones on the selected element
+  useEffect(() => {
+    if (!pageSlug) return;
+    api.overrides.list(pageSlug).then((data) => {
+      setStaleOverrides(data.filter((o) => o.is_stale));
+    }).catch(() => setStaleOverrides([]));
+  }, [pageSlug]);
+
+  const selectedStale = selected ? staleOverrides.filter((o) => o.element_path === selected.path) : [];
 
   /** Request a style change (the provider handles deviation check + prompt + apply) */
   const handleChange = (property: string, value: string) => {
@@ -265,6 +278,16 @@ export function InspectorPanel() {
           <Undo2 className="w-3.5 h-3.5" /> Undo
         </button>
       </div>
+
+      {/* ── Stale-override warning ──────────────────────── */}
+      {selectedStale.length > 0 && (
+        <div className="shrink-0 px-4 py-2 border-b border-amber-800/40 bg-amber-950/20">
+          <div className="flex items-center gap-2 text-xs text-amber-400">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+            <span>{selectedStale.length} override{selectedStale.length !== 1 ? "s" : ""} on this element may be stale (the default changed). Review in the dashboard.</span>
+          </div>
+        </div>
+      )}
 
       {/* ── Editable properties (constrained controls) ──── */}
       <div className="flex-1 overflow-y-auto">
