@@ -9,6 +9,9 @@ import { ToastProvider } from "@/lib/toast-context";
 import { EditorModeProvider } from "@/components/editor-mode/editor-mode-provider";
 import { EditorModeChrome } from "@/components/editor-mode/editor-mode-chrome";
 import { ThemeProvider } from "@/lib/theme-context";
+import { OverlayProvider } from "@/components/overlay/overlay-provider";
+import { OverlayShell } from "@/components/overlay/overlay-shell";
+import { OverlayToggle } from "@/components/overlay/overlay-toggle";
 import { CommandPalette } from "@/components/CommandPalette";
 import { NavBar } from "@/components/nav/NavBar";
 import { Footer } from "@/components/Footer";
@@ -82,6 +85,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 {!isStudio && <EditorModeChrome />}
               </EditorModeProvider>
               </ThemeProvider>
+              {/* Content Studio v2 — visual overlay (replaces the old inline editor).
+                  Renders nothing unless super_admin + desktop + edit mode toggled on. */}
+              <OverlayProvider>
+                <OverlayShell />
+                <OverlayToggle />
+              </OverlayProvider>
             </ToastProvider>
           </AuthProvider>
         </LocaleProvider>

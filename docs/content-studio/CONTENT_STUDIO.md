@@ -1,212 +1,222 @@
 # RootLink Content Studio — Specification
 
-> **Status:** Approved — north-star contract (2026-07-08)
+> **Status:** Approved v2 — visual overlay paradigm (2026-07-08)
 > **Owner:** Platform / Rui
 > **Companion:** [`IMPLEMENTATION_STATUS.md`](./IMPLEMENTATION_STATUS.md) (updated every phase)
-> **Supersedes for site-chrome editing:** the inline Content UI Editor (`components/editor-mode/`), which is retired into the studio across Phases 1–2.
+> **Supersedes:** v1 (dashboard CMS paradigm) and the inline Content UI Editor (`components/editor-mode/`)
 
 ---
 
 ## 1. Vision
 
-Build **one** Content Studio — a CMS-like tool that manages the RootLink platform's **UI** and **Content** — designed for expansion and scale, not a closed view of what exists today.
+A **visual site editor** that lives on top of the actual live RootLink site, plus a **dashboard control room** for defining the theme, font library, CSS variables, element catalog, and structural composition. You see the real site while editing — changes preview live — with constrained controls that make it impossible to break the site.
 
 ### What the studio manages
 
 | Domain | Scope |
 |--------|-------|
-| **UI** | themes, dark mode, sections, blocks, components, elements, and all CSS properties related to them — applied **globally** (theme-wide) or **locally** (per-element adjustment), in a standardized way |
-| **Content** | marketing and flat copy: menus, labels, buttons, warnings, page headers, footer copy |
+| **UI** | themes (named color tokens with light+dark pairs), dark mode, CSS properties — applied globally (theme) or locally (per-element), in a standardized way |
+| **Content** | marketing and flat copy: menus, labels, buttons, warnings, page headers, footer copy — edited inline on the live page |
+| **Structure** | blocks, sections, elements — composed in the dashboard's page builder (add/reorder/delete), customized visually in the overlay |
 
 ### Design principles (non-negotiable)
 
-1. **One studio, not two.** A single product surface manages both UI and Content. No parallel inline-editor + dashboard split.
-2. **Mobile-first AND desktop-first, no compromise.** The studio's own UX is excellent on both. This is not "responsive afterthought" — both breakpoints are designed deliberately. The studio must *reflect the excellence it's trying to manage.*
-3. **Built for expansion and scale.** The architecture supports (without requiring them today): adding blocks/sections/elements to existing pages, grid adjustments, per-user theme selection, new block types, new content kinds.
-4. **Foundation-first, each primitive live immediately.** No "build in a sandbox then wire later" phases — every foundation primitive is proven end-to-end against a real live surface the moment it's built. This is the structural anti-drift mechanism.
-5. **Standardized.** Theming/CSS/block editing uses one token model, one override model, one block schema — not per-page ad-hoc patterns.
-6. **Studio built first, platform refactored to integrate after.** The CMS tool is built as a first-class product; the existing platform is then adjusted to consume the studio's output (runtime token injection, copy overrides, block rendering).
+1. **Visual, not dashboard forms.** The primary editing surface is a visual overlay on the live site. You see the real page, click on real elements, and changes preview immediately. No separate form pages where you have to imagine the result.
+2. **Constrained controls — never free-text where a purpose-built control exists.** Sliders with pre-defined stops (not free-range), palette color pickers (pick from named tokens, not raw hex), toggles for booleans, button groups for enums, "Aa" type-scale buttons at real scale, inline text editing, visual image pickers. Typos can't break the site.
+3. **Theme-driven choices.** The dashboard defines the palette (named tokens with light+dark values), font library, CSS variables. The overlay only lets you pick FROM those — you can't invent new values.
+4. **Dark mode is never breakable.** Every color is a named token with a light value AND a dark value. Overrides pick token names, not raw hex. Dark mode just swaps the token's dark values. You can never set a raw value that only works in one mode.
+5. **Override guardrail.** When a local edit deviates from the default, the user is prompted (inline, not modal), the deviation is logged, a badge shows on the element, and revert is one click. When the default changes later, the override stays but a stale-override warning appears.
+6. **Draft → Publish.** Nothing goes live without an explicit publish. Per-page drafts (all changes to a page are one draft). Preview as visitor. Publish to go live. Discard to throw away. Undo works before save; after save, revert is the only way back.
+7. **Two surfaces with distinct roles:**
+   - **Dashboard (`/studio`)** = the control room: define theme tokens, manage fonts, define CSS variables, curate element property schemas, manage block/element/component catalog, page builder (structural composition), override report.
+   - **Visual overlay** = the editing surface: activate edit mode on the live site, select any visible element, edit content inline + style in inspector, with constrained controls. Desktop-only editing; mobile = preview.
+8. **Block composition is dashboard-only.** Add/reorder/delete blocks happens in the dashboard's page builder. The overlay is for customizing content/style of existing elements, not structural changes.
+9. **Dynamic pages: edit the template.** Dynamic pages (article detail, group detail) have a template you can edit — changes apply to all instances of that page type. Individual record content is not editable here.
+10. **Multi-theme.** Multiple named themes (Default, Christmas, Halloween). Each is a full palette swap. Publishing a theme activates it. Overrides persist across theme changes (they reference token names, and tokens now resolve to the new theme's values).
 
 ---
 
 ## 2. Historical context
 
-An earlier attempt — the **inline Content UI Editor** (`components/editor-mode/`, deployed 2026-07-02) — provided super_admin WYSIWYG editing of text/image/icon overrides directly on the live page. It hit roadblocks:
+### v1 (dashboard CMS — superseded)
 
-- Its scope was limited to scalar overrides (one string / one image / one icon per key), not the full UI/CSS/block model needed.
-- It was coupled to `t()` i18n keys, so editor reach was gated on a manual per-namespace migration.
-- Its own UI had accessibility gaps (modal focus-traps, keyboard nav, no `Dialog` primitive, no undo).
-- There was no runtime CSS-token layer — colors/radii/fonts lived only build-time in `tailwind.config.ts`.
+Built a `/studio` route with namespace-tree form editors, tabbed color-picker panels, and a block canvas. This was the dashboard paradigm the user rejected (same as the earlier Payload CMS attempt). The forms took you away from the live site — you had to imagine changes instead of seeing them.
 
-**Decision:** start over with a proper CMS-like tool. The inline editor's text/image/icon capabilities are **retired into the studio** across Phases 1–2 (deprecate, don't delete; cut cleanly once the studio equivalent is live). The inline editor's `/api/copy` and `/api/content-ui` backends are **reused** — they are production-tested and the studio builds on them.
+### Inline Content UI Editor (superseded)
 
----
+An earlier inline WYSIWYG editor (`components/editor-mode/`) that overlaid the live site. It was closer to the visual paradigm but: (a) limited to text/image/icon scalar overrides, (b) hit click-conflict roadblocks on interactive elements (tabs, filters, dropdowns), (c) had no constrained controls or override guardrails. Retired.
 
-## 3. Architectural decisions
+### v2 (visual overlay — this spec)
 
-### 3.1 Studio surface — `/studio` route-group, same Next.js app
-
-The Content Studio lives at `/studio` inside the existing Next.js frontend, as a **peer to `/admin`** (not inside it):
-
-- **Own layout, own sidebar/inspector, own responsive shell** — designed mobile-first+desktop-first from day one. The studio is a first-class product surface, not a sub-page constrained by the admin shell.
-- **Shares** `auth-context`, `locale-context`, `lib/api.ts`, and can **directly import** the platform's components/tokens for live preview.
-- **Single Vercel deploy** stays single. The phase-2 integration (studio writes tokens that the live platform consumes) is trivial when they share a process.
-- **Gated on `super_admin`** (mirrors the inline editor's gate).
-
-**Rejected:**
-- *Extend `/admin`* — admin shell constrains the studio's UX, contradicts "no compromise."
-- *Separate repo/app* — doubles deploy/auth/i18n infra, severs the studio from the platform it must theme.
-
-### 3.2 Sequencing — vertical-slice foundation, each primitive live on a real surface immediately
-
-Every foundation primitive is proven end-to-end against one real live surface the moment it's built. No "built but not wired" phases. This is the **structural anti-drift fix** — too-small increments that don't connect to the live site lose their thread across sessions.
-
-### 3.3 Block model — schema-first from day 1; new surfaces compose in blocks; existing pages migrated one-at-a-time
-
-- The **block/section/element schema + registry** is a foundational decision made **once** (never re-litigated later).
-- The studio has a **block canvas** for composing *new* surfaces from day 1 (proves the model live).
-- **Existing pages migrate one at a time** — homepage first, each migration a self-contained shippable phase.
-- Full composability is the **destination**, not the day-1 scope, but the **architecture** is composable from day 1 so the path is always open.
-
-### 3.4 CSS token layer — `--token` CSS-variable layer on Tailwind v3
-
-The runtime theming substrate. See §4.
+Solves the click-conflict problem with an **iframe + inspector** architecture: the real page renders in an iframe (complete JS isolation — the page's own click handlers never conflict with the editor's selection). A selection agent inside the iframe handles hover/click/computed-styles. The inspector panel docks outside the iframe. Inline text editing works via the selection agent making text `contentEditable` inside the iframe.
 
 ---
 
-## 4. The token model (runtime theming substrate)
+## 3. The two surfaces
 
-### Problem
+### 3.1 Dashboard (`/studio`) — the control room
 
-Colors, radii, and fonts live **only** in `tailwind.config.ts` (build-time). There is no runtime-writable surface. "Configure all CSS properties with real-time preview" is **impossible** without rebuilds.
+| Section | What it does |
+|---|---|
+| **Theme manager** | Define named color tokens (each with light + dark values), create multiple themes (Default, Christmas, Halloween), draft→publish a theme, activate. Full palette swaps. Overrides persist. |
+| **Font library** | Import/manage fonts (Google Fonts URL or uploaded), assign to font-family tokens. |
+| **CSS variable manager** | Define/edit CSS variables (the token registry). |
+| **Element catalog** | Manage element types (heading, card, button, etc.), their property schemas (intrinsic vs extrinsic, control type per property), curate which properties show in the inspector. |
+| **Page builder** | Structural composition — add/reorder/delete blocks per page. Already exists as `/studio/blocks`. |
+| **Override report** | View all deviations across the site (what's overriding what, which are stale). |
 
-### Solution — CSS custom properties as the single token source
+### 3.2 Visual overlay — the editing surface
 
-1. **Define tokens as CSS custom properties** in `app/globals.css` (`:root { --color-primary-600: #634d33; ... }`), mirroring the existing mockup at `discovery/mockups/handoff-to-basecode/styles/tokens.css`.
-2. **Repoint `tailwind.config.ts`** to reference the vars: `primary: { 600: 'var(--color-primary-600)' }`. Tailwind classes (`bg-primary-600`) now resolve to `var(--color-primary-600)` — overridable at runtime.
-3. **Zero visual change in Phase 0** — values are identical to current hex defaults. This is a pure substrate addition.
-4. **The studio writes overrides** to these vars (global theme on `:root`, local on a scoped container) → live theming with real-time preview, no rebuild.
+**Architecture:** iframe + inspector. The real page renders in a same-origin iframe. A "selection agent" script runs inside the iframe. The inspector docks outside. Communication via `postMessage`.
 
-### Token categories (the standardized surface)
+**Activation:** an "Edit mode" toggle (visible to super_admin only, desktop only). When activated:
+1. The current page renders inside an iframe.
+2. The inspector panel docks on the right.
+3. The selection agent activates inside the iframe.
 
-| Category | Examples | Scope |
-|----------|----------|-------|
-| **Colors** | `--color-primary-*`, `--color-earth-*`, `--color-rust-*`, `--color-cream`, `--color-stone-*` | Global + local |
-| **Fonts** | `--font-display` (Fraunces), `--font-serif` (Source Serif 4) | Global |
-| **Radius** | `--radius-xl2`, plus standard scale | Global + local |
-| **Spacing** | (future — standardized spacing scale) | Global + local |
-| **Dark mode** | `.dark` overrides on `:root` vars | Global |
+**Selection:** any visible element is selectable. Hover shows an outline + label (element type). Click selects. A breadcrumb at the top of the inspector shows the hierarchy (Page > Section > Card > Heading) — click any level to select it. Double-click selects the parent. Keyboard: Esc goes up, Tab goes down.
 
-### Override resolution
+**Inspector:** shows grouped properties for the selected element (Content, Typography, Color, Spacing, etc.). Initially derived from the element's **computed styles** at runtime. The dashboard can curate which properties show per element type (add/remove).
 
-```
-:root (default theme)  →  .dark (dark overrides)  →  [scoped container] (local per-element overrides)
-```
+**Content vs style:** text/copy is edited inline on the page (click text, type, it updates live). Images are clicked to open a visual picker. Style properties (color, font, spacing) are in the inspector panel, grouped.
 
-The studio's theming module writes to any of these layers; the cascade resolves. Global edits write to `:root`/`.dark`; local edits write to a scoped `style` attribute or a `[data-studio-scope]` container.
-
----
-
-## 5. The content/copy model
-
-Reuses the **existing** `copy_overrides` backend (`/api/copy`) and `content_ui_overrides` backend (`/api/content-ui`) — both production-tested. The studio provides a first-class CMS UI over them:
-
-- **Sitemap-of-namespaces** navigation (not a flat key grid) — groups i18n keys by page/section, mirroring the site structure.
-- **Per-locale editor** (PT + EN side-by-side), with revert-to-default.
-- **Live preview** — edits reflect in a preview frame before save.
-- **Retires** the ad-hoc `/admin/copy` grid and the inline editor's text piece into one surface.
+**Mobile:** preview only. The overlay doesn't activate on mobile — you see the published page as a visitor would. Editing is desktop-only.
 
 ---
 
-## 6. The block model
+## 4. Constrained controls (the control vocabulary)
 
-### Schema
+Never free-text where a purpose-built control exists. Each property type maps to a specific control:
 
-```
-BlockType (registry)     →  id, label, fields schema, render component, default props
-Section                 →  a positioned block instance on a page (block_type_id, props, order, page_id)
-Page                    →  a composed surface (slug, sections[])
-Element                 →  a field within a block (rendered via the token layer for CSS props)
-```
-
-- **Block registry** lives in code (TypeScript declarations) — new block types are added by developers and appear in the studio's palette.
-- **Block instances** (sections) are data — props, order, page assignment — stored in DB, editable in the studio without a deploy.
-- **Render** — the platform consumes the block tree: `Page → Sections → BlockType.render(props)`.
-
-### Scope on day 1
-
-- Schema + registry + a block canvas in the studio (compose new surfaces).
-- One new block-composed surface ships live (proves the model).
-- Existing pages untouched (migrated in Phase 4+).
+| Property type | Control | Example |
+|---|---|---|
+| Numeric (spacing, padding, margin, radius, letter-spacing) | **Slider with pre-defined stops** — drag between named stops (e.g., xs/sm/md/lg/xl), not free-range | Padding: sm ↔ md ↔ lg |
+| Color (element/component) | **Palette color picker** — list of named palette colors with swatches + names (e.g., "primary-50", "rust-500"), NOT a free-form color wheel | Card background: primary-50 / earth-100 / rust-500 |
+| Color (theme definition, dashboard only) | **Full color picker** — hex/RGB wheel, for defining the palette itself | Theme's primary-600: #634d33 |
+| Boolean (on/off, dark mode, show/hide) | **Toggle switch** | Show border: on/off |
+| Enumeration (font family, border style, text-align) | **Button group or visual dropdown** | Font: Fraunces / Source Serif 4 / ... |
+| Type scale (font size) | **"Aa" button group at real scale** — buttons showing "Aa" at the actual size with a label (H1, H2, H3, ..., Body, Small) | Heading size: Aa(H1) Aa(H2) Aa(H3) |
+| Text/copy | **Inline text editor** — click the text on the page, type, it updates live | Headline: "Find what feeds your land" |
+| Image | **Visual image picker** — thumbnail grid of existing assets + upload dropzone | Hero image: [grid of assets] |
+| Structural position | **Drag handle** (dashboard page builder only) | Section order: drag to reorder |
 
 ---
 
-## 7. Anti-drift mechanism
+## 5. Element property schema
 
-This project is multi-session by nature. The following survives context loss and prevents path drift:
+Each element type has a schema defining:
+
+- **Intrinsic properties** — part of the component's definition (e.g., a button's variant: primary/secondary/ghost; a card's layout: grid/flex)
+- **Extrinsic properties** — styling defaults from the theme, overridable per-instance (e.g., a card's background color — defaults to the theme's "card-bg" token but can be changed to another token per-instance)
+- **Control type** per property — which constrained control to use (slider/toggle/palette/button-group/type-scale/inline-text/image-picker)
+- **Default value** — the theme's default for this property on this element type
+- **Visibility** — whether the property shows in the inspector (curated from the dashboard)
+
+**Initial property set:** derived from the element's **computed styles** at runtime (what CSS the element actually uses). The dashboard then curates which properties show per element type.
+
+**Schema ownership:** hybrid — developers register element types and intrinsic properties in code; the dashboard can add extrinsic properties and curate visibility.
+
+---
+
+## 6. Override guardrail
+
+### When it triggers
+
+When an element's property deviates from its **default value** (the theme's default for that property on that element type).
+
+### What happens
+
+1. **Inline prompt** (not a modal): "This deviates from the default [property: old_value]. [Confirm] [Cancel]"
+2. If confirmed → the override is **logged** (element_path, property, old_value, new_value, user, timestamp)
+3. A **badge** appears on the element showing it has an override
+4. Click the badge → **revert** to the default value
+
+### Override persistence
+
+- Overrides **attach to structural position** (e.g., "3rd card in the category grid"). If the list re-renders with different data, the override stays on the 3rd position.
+- Overrides **persist across theme changes**. When a new theme is published, overrides keep their token names — the tokens just resolve to the new theme's values.
+- **Stale-override warning:** if the default value changes in the dashboard (e.g., the theme's default card-bg changes from primary-50 to earth-100), existing overrides stay but a warning shows: "This element's default changed. The override may no longer be intentional."
+
+---
+
+## 7. Draft → Publish
+
+### Per-page drafts (overlay)
+
+- All changes to a page (content edits, style overrides, property changes) are one **page-level draft**.
+- In edit mode, you see your draft changes live. Visitors see the published version.
+- **Preview as visitor** — toggle to see the published version (draft hidden).
+- **Publish page** — the draft goes live for all visitors.
+- **Discard draft** — throw away all uncommitted changes on that page.
+- **Undo** — Ctrl+Z works before saving to draft. After save, revert (per-element) is the only way back.
+
+### Theme revisions (dashboard)
+
+- Theme changes in the dashboard go through their own draft→publish flow.
+- A theme can be drafted, previewed, then published to activate.
+- Publishing a theme does NOT reset element overrides (they persist).
+
+---
+
+## 8. Dark mode safety
+
+Every color in the palette is a **named token with a light value AND a dark value.**
+
+| Token name | Light mode | Dark mode |
+|---|---|---|
+| `card-bg` | `primary-50` (#f3f0eb) | `stone-900` (#1c1917) |
+| `card-text` | `stone-800` (#292524) | `stone-100` (#f5f5f4) |
+| `accent` | `rust-500` (#a8643d) | `rust-400` (#c07d53) |
+
+When you override a card's background in the overlay, you pick a **token name** (e.g., "rust-500"), not a raw hex. The token itself has a dark-mode variant. In dark mode, the card automatically gets the dark variant. **You can never break dark mode** because you can never set a raw value that only works in one mode.
+
+The dashboard's theme settings are where you define these light+dark pairs.
+
+---
+
+## 9. Multi-theme (seasonal)
+
+Multiple named themes exist (Default, Christmas, Halloween). Each is a **full palette swap** — all color tokens get new light+dark values.
+
+- Publishing a theme swaps the active palette.
+- **Overrides persist** because they reference token names, and the tokens now resolve to the new theme's colors.
+- After a seasonal period, publish the default theme back.
+
+---
+
+## 10. Anti-drift mechanism
 
 1. **This spec** (`CONTENT_STUDIO.md`) — the north star. Edited lightly; it's the contract.
-2. **`IMPLEMENTATION_STATUS.md`** — updated **in the same change** as every phase's work. A phase is not done until its status entry is written.
-3. **`AGENTS.md` rule** — "Before any Content Studio work, read `docs/content-studio/CONTENT_STUDIO.md`."
-4. **Hard rule:** no phase starts that isn't documented here; no phase ends without (a) updating status and (b) confirming it advanced a named north-star capability.
-5. **Phases sized to be coherent, not micro** — each delivers one visible live capability.
+2. **`IMPLEMENTATION_STATUS.md`** — updated in the same change as every phase's work.
+3. **`AGENTS.md` rule** — "Before any Content Studio work, read this spec first."
+4. **Hard rule:** no phase starts that isn't documented here; no phase ends without (a) updating status and (b) confirming it advanced a named capability.
+5. **Phases sized to be coherent** — each delivers one visible live capability.
 6. **`graphify`** keeps architectural context warm across sessions.
 
 ---
 
-## 8. Phase plan
+## 11. Phase plan
 
-| Phase | Delivers (vertical slice, live on real site) | North-star capability |
-|-------|----------------------------------------------|----------------------|
-| **0 — Foundation & contract** | This spec + status doc. Reconcile the `frontend-ui-guardian` token conflict. Introduce `--token` CSS-variable layer (read-only, zero visual change). Repoint `tailwind.config.ts` + `globals.css`. | Contract + token substrate |
-| **1 — Studio shell + Content/Copy** | `/studio` responsive shell (mobile+desktop). Content module: CMS UI over `/api/copy` — sitemap-of-namespaces + per-locale editor + live preview. Retires inline editor's text piece + `/admin/copy` grid. | Content (copy/menus/labels/buttons/warnings) |
-| **2 — Theming module** | Studio writes to `--token` vars: global theme editor (colors/radii/fonts/darkmode) + per-element local override + live preview. Live on homepage. Retires inline editor's image/icon pieces into studio asset management. | UI: themes, darkmode, CSS properties (global + local) |
-| **3 — Block model** | Block/section/element schema + registry + block canvas. One new block-composed surface live. | UI: blocks/sections/elements (composition) |
-| **4+ — Page migration to blocks** | One page at a time, homepage first. Each migration = one phase. | Expansion: add blocks to existing pages, grid adjustments |
-| **N — User theme selection** | Per-user theme override (user-facing picker writing to a user-scoped token-override layer). Only after theming is mature. | Expansion: user-customizable experience |
-
----
-
-## 9. Prerequisites resolved in Phase 0
-
-1. **`frontend-ui-guardian` token conflict** — the guardian "constitution" specifies emerald/sage + Inter font; the real platform runs earth-brown + Fraunces. **Resolution:** update the guardian skill to match the real platform tokens (earth-brown/Fraunces are the source of truth; the studio manages what exists, not an aspirational palette).
-2. **No Alembic** (inline `ALTER TABLE` in `main.py`) — the studio's schema will evolve across phases. Alembic is introduced as a parallel infrastructure task (not blocking Phase 0; the inline-migration pattern is reused for the studio's first tables, Alembic tracked as a follow-up).
+| Phase | Delivers (live, visible) | North-star capability |
+|---|---|---|
+| **1 — Overlay shell + selection** | Edit-mode toggle on the live site (desktop). iframe + inspector dock. Hover/click to select any element. Breadcrumb navigation. Inspector shows computed styles (read-only). | Visual selection + inspection |
+| **2 — Constrained controls + live editing** | All constrained control components wired to the inspector. Changes preview live in the iframe. Undo before save. | Visual editing with constrained controls |
+| **3 — Override guardrail + draft/publish** | Deviation detection + inline prompt + badge + log + revert. Per-page drafts, preview-as-visitor, publish, discard. | Safe editing with draft→publish |
+| **4 — Dashboard theme manager** | Named tokens with light/dark pairs. Multiple themes. Draft→publish a theme. Activate. Full palette swap. Overrides persist. | Theme definition + multi-theme |
+| **5 — Dashboard element catalog + property curation** | Element type registry. Property schema (intrinsic/extrinsic, control type). Curate which properties show in the inspector. Font library. CSS variable manager. | Element/schema/font management |
+| **6 — Override report + stale warnings + dynamic templates** | Dashboard report of all deviations. Stale-override warnings. Dynamic page template editing. | Full guardrail + template editing |
 
 ---
 
-## 10. Non-goals (explicit)
+## 12. What's reusable from prior work
 
-- **Not a website builder.** The studio configures the existing RootLink UI and content; it does not let users create arbitrary new websites.
-- **No multi-tenant theming** (v1). One platform, one theme (+ dark mode + local overrides). Per-user theme selection is Phase N only.
-- **No editing of DB-backed content records** (articles/events/listings). The studio manages site chrome and flat copy, not authored entity content.
-- **No free-form CSS injection.** Theming edits structured token values, not arbitrary CSS strings (avoids XSS and keeps standardization).
+| Infrastructure | Status | Reuse |
+|---|---|---|
+| Token CSS-variable layer (`globals.css` + `tailwind.config.ts`) | ✅ Live | Foundation for named tokens — extend with light/dark pairs |
+| Backend APIs (`/api/theme`, `/api/copy`, `/api/blocks`) | ✅ Live | Extend for multi-theme + drafts + override logs |
+| Block registry + BlockRenderer + block components | ✅ Live | Reuse for the dashboard's page builder |
+| `/studio` dashboard shell (StudioShell) | ✅ Live | Repurpose as the control room |
+| `editor-mode` components | ✅ Live | Patterns reusable (portal-to-body, dirty-guard); components retired |
+| 6 seeded BlockPages | ✅ Live | Keep |
 
----
-
-## 11. Design tokens (canonical, from `tailwind.config.ts`)
-
-| Token | Value | Notes |
-|-------|-------|-------|
-| `--font-display` | `"Fraunces", Georgia, serif` | Display/headings |
-| `--font-serif` | `"Source Serif 4", Georgia, serif` | Body |
-| `--color-primary-600` | `#634d33` | Main brand (earth brown) |
-| `--color-primary-700` | `#4f3d2a` | |
-| `--color-rust-500` | `#a8643d` | Terracotta emphasis |
-| `--color-cream` | `#f8f6f2` | Surface |
-| `--radius-xl2` | `16px` | Custom radius |
-
-Full scale (50–900 for primary, earth, rust, stone) defined in `discovery/mockups/handoff-to-basecode/styles/tokens.css` and migrated to `globals.css` in Phase 0.
-
----
-
-## 12. Tech stack (for the studio)
-
-| Layer | Choice | Rationale |
-|-------|--------|----------|
-| Framework | Next.js 14 (App Router) | Same as platform; shares deploy |
-| Styling | Tailwind v3 + CSS custom properties | Token substrate for runtime theming |
-| UI primitives | Hand-rolled `components/ui/` + a new `Dialog` primitive (fixes the inline editor's a11y gap) | On-brand; no new component-lib dependency |
-| State | React Context (Phase 1) → evaluate Zustand if inspector complexity grows | |
-| i18n | Reuse existing `locale-context` | |
-| Backend | FastAPI + SQLAlchemy (reuse existing `/api/copy`, `/api/content-ui`; add studio-specific endpoints) | |
-| Migrations | Inline `ALTER TABLE` (Phase 0–3); Alembic as follow-up | |
+**Scrapped:** `/studio/content` (namespace-tree form), `/studio/theming` (tabbed color panel). These are the dashboard-CMS forms the user rejected. Replace with the visual overlay + dashboard theme manager.
