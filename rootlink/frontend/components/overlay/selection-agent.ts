@@ -206,6 +206,87 @@ export function injectSelectionAgent() {
     }
   }, true);
 
+  // ── Undo stack (before-save undo) ───────────────────────
+  // Each entry is { el, property, oldValue } — we restore oldValue on undo.
+  const undoStack: { el: HTMLElement; property: string; oldValue: string }[] = [];
+
+  function applyStyle(property: string, value: string) {
+    if (!selected) return;
+    // Save the old value for undo (only the first change to this property
+    // in the current session — so undo goes back to the ORIGINAL, not the
+    // previous intermediate value).
+    const existing = undoStack.find((e) => e.el === selected && e.property === property);
+    if (!existing) {
+      undoStack.push({
+        el: selected,
+        property,
+        oldValue: selected.style.getPropertyValue(property) || getComputedStyle(selected).getPropertyValue(property),
+      });
+    }
+    // Map token names to CSS var references (e.g., "primary-600" → "var(--color-primary-600)")
+    const cssValue = mapTokenToCssVar(value);
+    selected.style.setProperty(property, cssValue);
+    // Re-capture computed styles and send updated selection to parent
+    selectElement(selected);
+  }
+
+  function undo() {
+    const entry = undoStack.pop();
+    if (!entry) return;
+    if (entry.oldValue) {
+      entry.el.style.setProperty(entry.property, entry.oldValue);
+    } else {
+      entry.el.style.removeProperty(entry.property);
+    }
+    if (selected === entry.el) {
+      selectElement(selected);
+    }
+  }
+
+  /** Map a palette token name (e.g., "primary-600") to its CSS var reference. */
+  function mapTokenToCssVar(value: string): string {
+    // If it's already a CSS value (px, rem, etc.), return as-is
+    if (value.match(/(px|rem|em|%|vh|vw|deg|fr|auto|none|flex|block|inline|grid|hidden|visible|static|relative|absolute|fixed|sticky|row|column|wrap|nowrap|center|start|end|stretch|space|baseline|normal|solid|dashed|dotted|double|groove|ridge|inherit|initial|unset)/)) {
+      return value;
+    }
+    // If it's a palette token name, map to the CSS var
+    if (value.match(/^(primary|earth|rust|cream|stone)-\d+$/) || value === "cream") {
+      return `var(--color-${value})`;
+    }
+    // If it's a font token
+    if (value.startsWith("font-")) {
+      return `var(--${value})`;
+    }
+    return value;
+  }
+
+  // ── Listen for messages from the parent (inspector) ────
+  window.addEventListener("message", (e: MessageEvent) => {
+    if (!e.data || typeof e.data !== "object") return;
+    switch (e.data.type) {
+      case "overlay:apply-style":
+        applyStyle(e.data.property, e.data.value);
+        break;
+      case "overlay:undo":
+        undo();
+        break;
+      case "overlay:select-path":
+        // Select an ancestor by CSS path (breadcrumb click)
+        const el = document.querySelector(e.data.path) as HTMLElement;
+        if (el) selectElement(el);
+        break;
+    }
+  });
+
+  // ── Keyboard: Ctrl+Z for undo ───────────────────────────
+  document.addEventListener("keydown", (e: KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+      undo();
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+
   createOverlayElements();
   console.log("[Content Studio] Selection agent active");
 }

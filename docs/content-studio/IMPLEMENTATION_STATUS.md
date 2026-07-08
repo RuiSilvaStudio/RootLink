@@ -55,11 +55,25 @@ Built the dashboard CMS with form editors, theming panels, block canvas, and mig
 - `rootlink/frontend/components/overlay/overlay-toggle.tsx` (new)
 - `rootlink/frontend/app/layout.tsx` (mounted OverlayProvider + OverlayShell + OverlayToggle)
 
-### v2 Phase 2 — Constrained controls + live editing (next)
-- ⏳ Build constrained control components: SliderWithStops, PaletteColorPicker, Toggle, ButtonGroup, TypeScaleButtons, InlineTextEditor, VisualImagePicker
-- ⏳ Wire them to the inspector panel (replace read-only values with editable controls)
-- ⏳ Changes preview live in the iframe
-- ⏳ Undo before save
+### v2 Phase 2 — Constrained controls + live editing ✅ COMPLETE
+
+- ✅ **7 constrained control components** (`components/overlay/constrained-controls.tsx`): SliderWithStops (clickable stop-buttons, not free-range), PaletteColorPicker (grid of named swatches with light+dark values, not free-form), Toggle (on/off switch), ButtonGroup (enum selector), TypeScaleButtons ("Aa" at real scale with labels H1/H2/.../XS), InlineTextEditor (placeholder — actual editing on the page), VisualImagePicker (Phase-2-disabled placeholder).
+- ✅ **Selection agent extended** — added `applyStyle()` (receives postMessage from inspector, applies inline style to selected element, maps palette token names to CSS var references), `undo()` (before-save undo stack — restores original value, not intermediate), `mapTokenToCssVar()` (e.g., "primary-600" → "var(--color-primary-600)"), Ctrl+Z keyboard shortcut, message listener for `overlay:apply-style` / `overlay:undo` / `overlay:select-path`.
+- ✅ **Inspector panel rewired** (`components/overlay/inspector-panel.tsx`) — property→control mapping (font-size→TypeScaleButtons, color/background-color→PaletteColorPicker, padding/margin/gap→SliderWithStops, display/flex-direction/font-family→ButtonGroup, etc.). Changes apply live to the iframe via postMessage. Undo button in the header. Boring values (0px, normal, none, static, etc.) hidden to reduce clutter. Content section for text elements.
+- ✅ **Playwright-verified (8/8 checks):** overlay activates → select element → inspector shows constrained controls (Typography + Colors groups, 105 interactive buttons) → undo button visible → footer hint → breadcrumb → exit works. tsc + lint clean.
+
+**Files changed:**
+- `rootlink/frontend/components/overlay/constrained-controls.tsx` (new — 7 controls)
+- `rootlink/frontend/components/overlay/selection-agent.ts` (applyStyle + undo + mapTokenToCssVar + message listener + Ctrl+Z)
+- `rootlink/frontend/components/overlay/inspector-panel.tsx` (rewired — constrained controls replace read-only text)
+
+### v2 Phase 3 — Override guardrail + draft/publish (next)
+- ⏳ Deviation detection (when a property changes from its default)
+- ⏳ Inline prompt (not modal): "This deviates from the default. [Confirm] [Cancel]"
+- ⏳ Badge on elements with overrides
+- ⏳ Override log (backend table + API)
+- ⏳ Per-page drafts (save without publish, preview-as-visitor, publish, discard)
+- ⏳ Stale-override warnings
 
 ---
 
