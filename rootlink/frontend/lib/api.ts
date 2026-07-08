@@ -944,6 +944,44 @@ export const api = {
       request<any>(`/api/content-ui/${encodeURIComponent(key)}`, { method: "DELETE" }),
   },
 
+  theme: {
+    // Theme token overrides for the Content Studio theming module
+    // (docs/content-studio/CONTENT_STUDIO.md §4). Writes to CSS custom
+    // properties — the runtime theming substrate.
+    get: () =>
+      request<Record<string, string>>("/api/theme"),
+    all: () =>
+      request<{ token: string; value: string; scope: string; updated_by: number | null; updated_at: string }[]>("/api/theme/all"),
+    set: (token: string, value: string, scope?: string) =>
+      request<any>(`/api/theme/${encodeURIComponent(token)}`, {
+        method: "PUT",
+        body: JSON.stringify({ value, scope: scope || "global" }),
+      }),
+    revert: (token: string) =>
+      request<any>(`/api/theme/${encodeURIComponent(token)}`, { method: "DELETE" }),
+  },
+
+  blocks: {
+    // Block-composed pages for the Content Studio block model
+    // (docs/content-studio/CONTENT_STUDIO.md §6).
+    listPages: () =>
+      request<{ id: number; slug: string; label: string }[]>("/api/blocks/pages"),
+    getPage: (slug: string) =>
+      request<{ id: number; slug: string; label: string; is_published: boolean; sections: { id: number; block_type: string; props: Record<string, string>; order: number }[] }>(`/api/blocks/pages/${encodeURIComponent(slug)}`),
+    createPage: (data: { slug: string; label: string }) =>
+      request<any>("/api/blocks/pages", { method: "POST", body: JSON.stringify(data) }),
+    updatePage: (id: number, data: { slug?: string; label?: string; is_published?: boolean }) =>
+      request<any>(`/api/blocks/pages/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    addSection: (pageId: number, data: { block_type: string; props: Record<string, string>; order: number }) =>
+      request<any>(`/api/blocks/pages/${pageId}/sections`, { method: "POST", body: JSON.stringify(data) }),
+    updateSection: (id: number, data: { block_type?: string; props?: Record<string, string>; order?: number }) =>
+      request<any>(`/api/blocks/sections/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    deleteSection: (id: number) =>
+      request<any>(`/api/blocks/sections/${id}`, { method: "DELETE" }),
+    adminListPages: () =>
+      request<{ id: number; slug: string; label: string; is_published: boolean; sections: { id: number; block_type: string; props: Record<string, string>; order: number }[] }[]>("/api/blocks/admin/pages"),
+  },
+
   ratings: {
     rate: (contentId: number, data: { reaction: string; tags?: string[] }) =>
       request<any>(`/api/content/${contentId}/rate`, { method: "POST", body: JSON.stringify(data) }),

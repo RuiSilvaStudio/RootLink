@@ -8,6 +8,7 @@ import { LocaleProvider, useLocale } from "@/lib/locale-context";
 import { ToastProvider } from "@/lib/toast-context";
 import { EditorModeProvider } from "@/components/editor-mode/editor-mode-provider";
 import { EditorModeChrome } from "@/components/editor-mode/editor-mode-chrome";
+import { ThemeProvider } from "@/lib/theme-context";
 import { CommandPalette } from "@/components/CommandPalette";
 import { NavBar } from "@/components/nav/NavBar";
 import { Footer } from "@/components/Footer";
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/admin");
   const isAuth = pathname.startsWith("/auth");
+  const isStudio = pathname.startsWith("/studio");
   return (
     <html lang="pt" className="noise-bg" suppressHydrationWarning>
       <head>
@@ -47,11 +49,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <LangUpdater />
           <AuthProvider>
             <ToastProvider>
-              <EditorModeProvider>
+              <ThemeProvider>
+                <EditorModeProvider>
                 <CommandPalette />
-                {/* NavBar renders MobileNav (drawer+sheets) and MobileBottomBar internally */}
-                <NavBar />
-                {isAdmin ? (
+                {/* NavBar renders MobileNav (drawer+sheets) and MobileBottomBar internally.
+                    Studio routes have their own chrome (components/studio/StudioShell.tsx). */}
+                {!isStudio && <NavBar />}
+                {(isAdmin || isStudio) ? (
                   <main className="flex-1">{children}</main>
                 ) : (
                   <AnimatePresence mode="wait">
@@ -71,11 +75,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     can use useEditorMode() — moved from outside the provider
                     tree, see briefing-to-build-local.md "Phase 2". Providers
                     render no DOM, so this is layout/CSS-safe. */}
-                {!isAdmin && !isAuth && <Footer />}
+                {!isAdmin && !isAuth && !isStudio && <Footer />}
                 {/* Content UI Editor toggle/save/reset chrome — renders nothing
-                    unless the signed-in user is super_admin (briefing-to-build-local.md) */}
-                <EditorModeChrome />
+                    unless the signed-in user is super_admin (briefing-to-build-local.md).
+                    Suppressed on /studio routes — the studio is the successor surface. */}
+                {!isStudio && <EditorModeChrome />}
               </EditorModeProvider>
+              </ThemeProvider>
             </ToastProvider>
           </AuthProvider>
         </LocaleProvider>

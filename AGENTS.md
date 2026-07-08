@@ -14,6 +14,12 @@ changes; multi-worker lifespan migration races; SQLite/JSON-null pitfalls). When
 gotcha bites, add it there in the same change. The content-platform work is documented in
 `docs/content-platform/` (spec `CONTENT_PLATFORM.md`, status `IMPLEMENTATION_STATUS.md`).
 
+**The Content Studio** (the unified CMS-like tool managing RootLink's UI theming + content/copy)
+is documented in `docs/content-studio/` (spec `CONTENT_STUDIO.md`, status
+`IMPLEMENTATION_STATUS.md`). **Before any Content Studio work, read the spec first** — it is the
+north-star contract and anti-drift mechanism. The inline Content UI Editor is being retired into
+the studio across Phases 1–2; until then, see below for the legacy inline-editor wiring rules.
+
 **The Content UI Editor** (super_admin inline text/image/icon editor) is documented in
 `discovery/mockups/content-ui-editor/briefing-to-build-local.md` (design + per-phase coverage of
 which pages are wired). Coverage is added page by page, not automatically. **Whenever you add a

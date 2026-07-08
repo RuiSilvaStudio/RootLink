@@ -17,6 +17,7 @@ from app.api import (
     articles,
     auth,
     auth_security,
+    blocks,
     checklist,
     comments,
     content,
@@ -47,6 +48,7 @@ from app.api import (
     self_publish,
     social,
     taxonomy,
+    theme,
     users,
     waste,
 )
@@ -56,6 +58,7 @@ from app.core.logging import setup_logging
 from app.core.rate_limit import RateLimitMiddleware
 from app.models.auth_tokens import EmailVerificationToken, PasswordResetToken  # noqa: F401 - ensure table creation
 from app.models.base import Base
+from app.models.block_page import BlockPage, BlockSection  # noqa: F401 - ensure table creation
 from app.models.entity import DelegationGrant, Entity  # noqa: F401 - ensure table creation
 from app.models.image_asset import ImageAsset  # noqa: F401 - ensure table creation
 from app.models.role_request import RoleChangeRequest  # noqa: F401 - ensure table creation
@@ -67,6 +70,7 @@ from app.models.taxonomy import (  # noqa: F401
     TaxonomyCategory,
     TaxonomyFamily,
 )
+from app.models.theme_override import ThemeOverride  # noqa: F401 - ensure table creation
 from app.services.legal_seed import seed_legal_documents
 from app.services.roles_migration import migrate_legacy_delegations, migrate_users_to_entity_rank
 from app.services.template_seed import seed_content_templates
@@ -587,6 +591,8 @@ app.include_router(self_publish.router)
 app.include_router(account.router)
 app.include_router(copy.router)
 app.include_router(content_ui.router)
+app.include_router(theme.router)
+app.include_router(blocks.router)
 app.include_router(legal.router)
 app.include_router(permissions.router)
 app.include_router(entity_conversion.router)

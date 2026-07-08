@@ -1,4 +1,5 @@
 from app.models.auth_tokens import EmailVerificationToken, PasswordResetToken
+from app.models.block_page import BlockPage, BlockSection
 from app.models.checklist import ChecklistItem
 from app.models.comment import Comment
 from app.models.content import Bookmark, Content, ContentStatus, SearchQueryLog, VerificationStatus
@@ -38,6 +39,7 @@ from app.models.role_request import RoleChangeRequest
 from app.models.session import Session
 from app.models.setting import Setting
 from app.models.taxonomy import TaxonomyCategory, TaxonomyFamily
+from app.models.theme_override import ThemeOverride
 from app.models.user import User
 from app.models.waste import (
     CompostingDeposit,
@@ -68,6 +70,8 @@ __all__ = [
     "ModerationAuditLog", "ModerationAction",
     "CopyOverride",
     "ContentUIOverride",
+    "ThemeOverride",
+    "BlockPage", "BlockSection",
     "Entity", "EntityKind", "EntityVerificationStatus", "DelegationGrant", "EntityDocument",
     "Session", "EmailVerificationToken", "PasswordResetToken",
     "RoleChangeRequest",
