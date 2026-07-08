@@ -11,11 +11,10 @@ import { useDirtyGuard } from "@/lib/use-dirty-guard";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
-import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardSkeleton } from "@/components/ui/LoadingSkeleton";
 import { ImageUpload } from "@/components/ui/ImageUpload";
-import { EditableText } from "@/components/editor-mode/editable-text";
+import { BlockRenderer, type BlockSectionData } from "@/components/blocks";
 
 export default function GroupsPage() {
   const [groups, setGroups] = useState<any[]>([]);
@@ -31,6 +30,7 @@ export default function GroupsPage() {
   const [familyCategories, setFamilyCategories] = useState<any[]>([]);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [suggesting, setSuggesting] = useState(false);
+  const [headerSections, setHeaderSections] = useState<BlockSectionData[] | null>(null);
   const dirty = !!(name || slug || description);
   useDirtyGuard(dirty);
   const { t, locale } = useLocale();
@@ -40,6 +40,10 @@ export default function GroupsPage() {
     api.groups.list().then(setGroups).catch(() => {}).finally(() => setLoading(false));
     api.taxonomy.families().then(setFamilies).catch(() => {});
     if (new URLSearchParams(window.location.search).get("new") === "1") setShowForm(true);
+    // Fetch block-composed header sections (Phase 9)
+    api.blocks.getPage("groups")
+      .then((p) => p?.sections?.length ? setHeaderSections(p.sections) : setHeaderSections([]))
+      .catch(() => setHeaderSections([]));
   }, []);
 
   const handleFamilyChange = (famValue: string) => {
@@ -85,49 +89,23 @@ export default function GroupsPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-8 py-12">
-      <PageHeader
-        icon={<Users className="w-5 h-5 text-primary-500" />}
-        title={<EditableText k="groups.title" as="span" />}
-        subtitle={<EditableText k="groups.subtitle" as="span" />}
-        action={
-          <Button variant="primary" size="sm" onClick={() => setShowForm(!showForm)}>
-            <Plus className="w-4 h-4" /> {t("groups.new_group")}
-          </Button>
-        }
-      />
+      {/* Block-composed header (Phase 9) — renders groups-header + groups-hero */}
+      {headerSections && headerSections.length > 0 && (
+        <BlockRenderer sections={headerSections} />
+      )}
 
-      {/* Hero description */}
-      <Card variant="plain" className="p-6 mb-8 bg-gradient-to-br from-primary-50 to-white dark:from-primary-900/20 dark:to-stone-900 border-primary-100 dark:border-stone-700">
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center shrink-0">
-              <MessageCircle className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-            </div>
-            <div>
-              <EditableText k="groups.hero_discuss" as="h3" defaultText="Discuss & Share" className="font-semibold text-stone-800 dark:text-stone-100 text-sm" />
-              <EditableText k="groups.hero_discuss_desc" as="p" defaultText="Exchange tips, ask questions, and share your projects with like-minded people." className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-light leading-relaxed" />
-            </div>
+      {/* Fallback header when no block page exists in the backend */}
+      {headerSections && headerSections.length === 0 && (
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center">
+            <Users className="w-5 h-5 text-primary-500" />
           </div>
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-earth-100 dark:bg-earth-900/30 flex items-center justify-center shrink-0">
-              <Calendar className="w-5 h-5 text-earth-600 dark:text-earth-400" />
-            </div>
-            <div>
-              <EditableText k="groups.hero_events" as="h3" defaultText="Group Events" className="font-semibold text-stone-800 dark:text-stone-100 text-sm" />
-              <EditableText k="groups.hero_events_desc" as="p" defaultText="Organise workshops, meetups, and gatherings for your community." className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-light leading-relaxed" />
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
-              <Users className="w-5 h-5 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <EditableText k="groups.hero_network" as="h3" defaultText="Grow Together" className="font-semibold text-stone-800 dark:text-stone-100 text-sm" />
-              <EditableText k="groups.hero_network_desc" as="p" defaultText="Connect with fellow gardeners, woodworkers, and homesteaders in your region." className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-light leading-relaxed" />
-            </div>
+          <div>
+            <h1 className="text-3xl font-serif font-bold text-stone-800">{t("groups.title")}</h1>
+            <p className="text-stone-500 font-light">{t("groups.subtitle")}</p>
           </div>
         </div>
-      </Card>
+      )}
 
       {showForm && (
         <Card variant="plain" className="p-6 mb-8 space-y-4">

@@ -20,6 +20,13 @@
 import type { ComponentType } from "react";
 import { HeroBlock, TextBlock, CardGridBlock, CtaBlock } from "@/components/blocks/BlockComponents";
 import { HomeHeroBlock, HomeCategoriesBlock, HomeToolsBlock, HomeCommunityBlock, HomeRecentBlock, HomeCtaBlock } from "@/components/blocks/HomeBlocks";
+import {
+  DonateHeroBlock, DonateBalanceBlock, DonateTiersBlock, DonateLeaderboardBlock, DonateHowItWorksBlock,
+  LeaderboardHeroBlock, LeaderboardListBlock,
+  RankingHeroBlock, RankingDetailsBlock,
+  ToolsHeaderBlock, ToolsGridBlock,
+  GroupsHeaderBlock, GroupsHeroBlock,
+} from "@/components/blocks/PageBlocks";
 
 export type BlockFieldType = "text" | "textarea" | "color" | "image" | "number" | "select";
 
@@ -155,6 +162,133 @@ export const BLOCK_REGISTRY: BlockType[] = [
       { name: "subtitle", label: "Subtitle (overrides i18n)", type: "textarea" },
     ],
     Component: HomeCtaBlock,
+  },
+  // ── Donate page blocks (Phase 5) ───────────────────────
+  {
+    id: "donate-hero",
+    label: "Donate: Hero",
+    category: "content",
+    fields: [
+      { name: "title", label: "Title (overrides i18n)", type: "text" },
+      { name: "subtitle", label: "Subtitle (overrides i18n)", type: "textarea" },
+    ],
+    Component: DonateHeroBlock,
+  },
+  {
+    id: "donate-balance",
+    label: "Donate: Balance",
+    category: "content",
+    fields: [],
+    Component: DonateBalanceBlock,
+  },
+  {
+    id: "donate-tiers",
+    label: "Donate: Tiers",
+    category: "content",
+    fields: [
+      { name: "heading", label: "Heading (overrides i18n)", type: "text" },
+    ],
+    Component: DonateTiersBlock,
+  },
+  {
+    id: "donate-leaderboard",
+    label: "Donate: Top donors",
+    category: "content",
+    fields: [
+      { name: "heading", label: "Heading (overrides i18n)", type: "text" },
+    ],
+    Component: DonateLeaderboardBlock,
+  },
+  {
+    id: "donate-how-it-works",
+    label: "Donate: How it works",
+    category: "content",
+    fields: [
+      { name: "heading", label: "Heading (overrides i18n)", type: "text" },
+    ],
+    Component: DonateHowItWorksBlock,
+  },
+  // ── Leaderboard page blocks (Phase 6) ──────────────────
+  {
+    id: "leaderboard-hero",
+    label: "Leaderboard: Hero",
+    category: "content",
+    fields: [
+      { name: "title", label: "Title (overrides i18n)", type: "text" },
+      { name: "subtitle", label: "Subtitle (overrides i18n)", type: "textarea" },
+    ],
+    Component: LeaderboardHeroBlock,
+  },
+  {
+    id: "leaderboard-list",
+    label: "Leaderboard: List",
+    category: "content",
+    fields: [],
+    Component: LeaderboardListBlock,
+  },
+  // ── Ranking page blocks (Phase 7) ──────────────────────
+  {
+    id: "ranking-hero",
+    label: "Ranking: Hero",
+    category: "content",
+    fields: [
+      { name: "title", label: "Title (overrides i18n)", type: "text" },
+      { name: "subtitle", label: "Subtitle (overrides i18n)", type: "textarea" },
+    ],
+    Component: RankingHeroBlock,
+  },
+  {
+    id: "ranking-details",
+    label: "Ranking: Details",
+    category: "content",
+    fields: [
+      { name: "formula_heading", label: "Formula heading", type: "text" },
+      { name: "details_heading", label: "Details heading", type: "text" },
+    ],
+    Component: RankingDetailsBlock,
+  },
+  // ── Tools page blocks (Phase 8) ────────────────────────
+  {
+    id: "tools-header",
+    label: "Tools: Header",
+    category: "content",
+    fields: [
+      { name: "title", label: "Title (overrides i18n)", type: "text" },
+      { name: "subtitle", label: "Subtitle (overrides i18n)", type: "text" },
+    ],
+    Component: ToolsHeaderBlock,
+  },
+  {
+    id: "tools-grid",
+    label: "Tools: Grid",
+    category: "layout",
+    fields: [],
+    Component: ToolsGridBlock,
+  },
+  // ── Groups page blocks (Phase 9) ───────────────────────
+  {
+    id: "groups-header",
+    label: "Groups: Header",
+    category: "content",
+    fields: [
+      { name: "title", label: "Title (overrides i18n)", type: "text" },
+      { name: "subtitle", label: "Subtitle (overrides i18n)", type: "text" },
+    ],
+    Component: GroupsHeaderBlock,
+  },
+  {
+    id: "groups-hero",
+    label: "Groups: Hero cards",
+    category: "content",
+    fields: [
+      { name: "card1_title", label: "Card 1 title", type: "text" },
+      { name: "card1_desc", label: "Card 1 description", type: "textarea" },
+      { name: "card2_title", label: "Card 2 title", type: "text" },
+      { name: "card2_desc", label: "Card 2 description", type: "textarea" },
+      { name: "card3_title", label: "Card 3 title", type: "text" },
+      { name: "card3_desc", label: "Card 3 description", type: "textarea" },
+    ],
+    Component: GroupsHeroBlock,
   },
 ];
 

@@ -5,7 +5,41 @@
 
 ---
 
-## Current phase: Phase 5+ — Continue page migration (next)
+## Current phase: Phase N — User theme selection (future)
+
+### Phase 0 — Foundation & contract ✅ COMPLETE
+### Phase 1 — Studio shell + Content/Copy ✅ COMPLETE
+### Phase 2 — Theming module ✅ COMPLETE
+### Phase 3 — Block model ✅ COMPLETE
+### Phase 4 — Homepage migration to blocks ✅ COMPLETE
+
+### Phase 5-9 — Content-heavy page migrations to blocks ✅ COMPLETE
+
+- ✅ **13 new block components** (`components/blocks/PageBlocks.tsx`, 691 lines):
+  - Donate (5): DonateHero, DonateBalance, DonateTiers, DonateLeaderboard, DonateHowItWorks
+  - Leaderboard (2): LeaderboardHero, LeaderboardList
+  - Ranking (2): RankingHero, RankingDetails
+  - Tools (2): ToolsHeader, ToolsGrid
+  - Groups (2): GroupsHeader, GroupsHero
+- ✅ **13 new block types registered** in `lib/block-registry.ts`.
+- ✅ **5 page routes migrated**: `donate`, `leaderboard`, `ranking`, `tools`, `groups` — each fetches `/api/blocks/pages/{slug}` → BlockRenderer, with fallback to block components with default i18n props.
+- ✅ **5 BlockPages seeded** in the backend (all published).
+- ✅ **Playwright-verified**: all 5 pages render correctly via the block model.
+- ✅ Build: `tsc` clean, `lint` 0 errors, `next build` succeeds.
+
+### Phase 10 — Remaining pages assessment
+
+The remaining public pages (`composting`, `upcycling`, `feed`, `entities`, `events`, `marketplace`, `network`, `notifications`) are **data-listing pages** with just a PageHeader + dynamic content (filter chips, data grids, forms). Their headers are already editable via the Content Studio's Content module (the `/api/copy` override layer + EditableText wrappers from the Content UI Editor). Their bodies are dynamic data that doesn't fit the block model (they're not static marketing content). These pages can be migrated to blocks later when there's a design reason to do so (e.g., if a page gains new static marketing sections). The architecture is composable — the block registry, BlockRenderer, and studio canvas are all ready.
+
+**Files changed (Phase 5-9):**
+- `rootlink/frontend/components/blocks/PageBlocks.tsx` (new — 13 block components)
+- `rootlink/frontend/components/blocks/index.ts` (export PageBlocks)
+- `rootlink/frontend/lib/block-registry.ts` (13 new block types registered)
+- `rootlink/frontend/app/donate/page.tsx` (migrated to BlockRenderer + fallback)
+- `rootlink/frontend/app/leaderboard/page.tsx` (migrated)
+- `rootlink/frontend/app/ranking/page.tsx` (migrated)
+- `rootlink/frontend/app/tools/page.tsx` (migrated)
+- `rootlink/frontend/app/groups/page.tsx` (header/hero migrated, form + data list unchanged)
 
 ### Phase 0 — Foundation & contract ✅ COMPLETE
 ### Phase 1 — Studio shell + Content/Copy ✅ COMPLETE
