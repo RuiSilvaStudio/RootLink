@@ -79,10 +79,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     tree, see briefing-to-build-local.md "Phase 2". Providers
                     render no DOM, so this is layout/CSS-safe. */}
                 {!isAdmin && !isAuth && !isStudio && <Footer />}
-                {/* Content UI Editor toggle/save/reset chrome — renders nothing
-                    unless the signed-in user is super_admin (briefing-to-build-local.md).
-                    Suppressed on /studio routes — the studio is the successor surface. */}
-                {!isStudio && <EditorModeChrome />}
+                {/* Legacy inline Content UI Editor chrome — superseded by the
+                    visual overlay (OverlayShell + OverlayToggle below). The
+                    EditorModeProvider stays mounted so legacy EditableText/
+                    EditableImage/EditableIcon components don't crash, but the
+                    chrome (the old "Edit page" button) is no longer rendered. */}
               </EditorModeProvider>
               </ThemeProvider>
               {/* Content Studio v2 — visual overlay (replaces the old inline editor).
