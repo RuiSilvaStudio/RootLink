@@ -76,9 +76,26 @@ Built the dashboard CMS with form editors, theming panels, block canvas, and mig
 - ✅ **InspectorPanel**: calls `requestChange()` (provider intercepts for deviation check).
 - ✅ **Playwright-verified (11/11)**: overlay → select → change color → prompt → confirm → unsaved counter → Save/Publish → preview → exit. tsc + lint clean.
 
-### v2 Phase 4 — Dashboard theme manager (next)
-- ⏳ Backend: `themes` + `theme_tokens` tables (named tokens with light+dark pairs, multiple themes)
-- ⏳ Frontend: /studio theme settings — define named tokens, create themes, draft→publish, activate, full palette swap
+### v2 Phase 4 — Dashboard theme manager ✅ COMPLETE
+
+- ✅ **Backend** (subagent): `Theme` + `ThemeToken` models, `/api/themes` router (11 endpoints: list, active, admin list, create, update, activate, delete, get tokens, upsert token, update token, delete token), `theme_seed.py` (idempotent — seeds "Default" theme with 33 tokens: 30 colors as RGB channels, 2 fonts, 1 radius). 16 tests passing.
+- ✅ **API client**: `api.themes.{list,active,adminList,create,update,activate,remove,tokens,upsertToken,updateToken,removeToken}`.
+- ✅ **ThemeProvider updated** (`lib/theme-context.tsx`): fetches `/api/themes/active`, injects light values on `:root` + dark values on `.dark` (via a `<style>` tag for the `.dark` class). `refresh()` re-fetches when a new theme is activated — site re-themes without rebuild.
+- ✅ **Theme Manager page** (`/studio/theming`): theme list (sidebar), tabbed token editor (Colors/Fonts/Radius). Color tokens show light + dark color pickers (full hex picker — this is the dashboard, not the overlay). Font tokens show font-family input + preview. Radius tokens show slider + preview box. Create new themes (draft), publish, activate, duplicate.
+- ✅ **Playwright-verified (8/8)**: page loads → Default theme visible → 31 color tokens with 62 light/dark pickers → font tab → radius tab → create seasonal theme → active theme injected on live site (`--color-primary-600: 99 77 51`). tsc + lint clean.
+
+**Files changed:**
+- `rootlink/backend/app/models/theme.py` (new)
+- `rootlink/backend/app/api/theme_manager.py` (new)
+- `rootlink/backend/app/services/theme_seed.py` (new)
+- `rootlink/backend/app/models/__init__.py` (registered Theme, ThemeToken)
+- `rootlink/backend/app/main.py` (registered theme_manager router + seed)
+- `rootlink/backend/tests/test_theme_manager.py` (new, 16 tests)
+- `rootlink/frontend/lib/api.ts` (themes namespace)
+- `rootlink/frontend/lib/theme-context.tsx` (rewritten — active theme + light/dark injection)
+- `rootlink/frontend/app/studio/theming/page.tsx` (rewritten — theme manager dashboard)
+
+### v2 Phase 5 — Dashboard element catalog + property curation + font library (next)
 
 ---
 

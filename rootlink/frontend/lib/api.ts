@@ -975,6 +975,32 @@ export const api = {
       request<any>(`/api/overrides/${id}/stale`, { method: "PUT" }),
   },
 
+  themes: {
+    // Theme manager (docs/content-studio/CONTENT_STUDIO.md §8, §9)
+    list: () =>
+      request<{ id: number; name: string; description: string | null; is_active: boolean }[]>("/api/themes"),
+    active: () =>
+      request<{ id: number; name: string; tokens: { token_name: string; light_value: string; dark_value: string | null; category: string }[] }>("/api/themes/active"),
+    adminList: () =>
+      request<{ id: number; name: string; description: string | null; is_active: boolean; is_published: boolean }[]>("/api/themes/admin"),
+    create: (data: { name: string; description?: string }) =>
+      request<any>("/api/themes", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: number, data: { name?: string; description?: string; is_published?: boolean }) =>
+      request<any>(`/api/themes/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    activate: (id: number) =>
+      request<any>(`/api/themes/${id}/activate`, { method: "POST" }),
+    remove: (id: number) =>
+      request<any>(`/api/themes/${id}`, { method: "DELETE" }),
+    tokens: (id: number) =>
+      request<{ id: number; token_name: string; light_value: string; dark_value: string | null; category: string }[]>(`/api/themes/${id}/tokens`),
+    upsertToken: (themeId: number, data: { token_name: string; light_value: string; dark_value?: string; category: string }) =>
+      request<any>(`/api/themes/${themeId}/tokens`, { method: "POST", body: JSON.stringify(data) }),
+    updateToken: (tokenId: number, data: { light_value?: string; dark_value?: string; category?: string }) =>
+      request<any>(`/api/themes/tokens/${tokenId}`, { method: "PUT", body: JSON.stringify(data) }),
+    removeToken: (tokenId: number) =>
+      request<any>(`/api/themes/tokens/${tokenId}`, { method: "DELETE" }),
+  },
+
   drafts: {
     // Per-page draft→publish (docs/content-studio/CONTENT_STUDIO.md §7)
     get: (page: string) =>

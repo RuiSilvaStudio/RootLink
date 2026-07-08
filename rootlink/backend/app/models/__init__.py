@@ -42,6 +42,7 @@ from app.models.session import Session
 from app.models.setting import Setting
 from app.models.taxonomy import TaxonomyCategory, TaxonomyFamily
 from app.models.theme_override import ThemeOverride
+from app.models.theme import Theme, ThemeToken
 from app.models.user import User
 from app.models.waste import (
     CompostingDeposit,
@@ -73,6 +74,8 @@ __all__ = [
     "CopyOverride",
     "ContentUIOverride",
     "ThemeOverride",
+    "Theme",
+    "ThemeToken",
     "OverrideLog",
     "PageDraft",
     "BlockPage", "BlockSection",

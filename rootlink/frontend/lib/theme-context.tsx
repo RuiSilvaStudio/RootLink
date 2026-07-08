@@ -1,60 +1,77 @@
 "use client";
 
 /**
- * Runtime theme-override provider.
+ * Runtime theme provider (Phase 4).
  *
- * Fetches token overrides from `/api/theme` and injects them as CSS custom
- * property values on `:root` — so every component that uses
- * `bg-primary-600` / `var(--color-primary-600)` immediately reflects the
- * studio's theme edits, site-wide, without a rebuild.
+ * Spec: docs/content-studio/CONTENT_STUDIO.md §8 (dark mode safety), §9 (multi-theme).
  *
- * Spec: docs/content-studio/CONTENT_STUDIO.md §4 (the token model).
+ * Fetches the active theme from /api/themes/active and injects tokens as CSS
+ * custom properties: light values on :root, dark values on .dark. When a new
+ * theme is activated (via the dashboard), a refresh() call re-fetches and
+ * re-injects — the whole site re-themes without a rebuild.
  *
- * Fetches once on mount (like locale-context fetches /api/copy). The studio's
- * theming page writes overrides through `api.theme.set()`; after save, a
- * refetch (or the page's own local state) updates the live preview.
+ * Named tokens with light+dark pairs ensure dark mode is never broken: every
+ * color token has both values, and the cascade resolves correctly.
  */
 
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
 import { api } from "@/lib/api";
 
-type ThemeOverrides = Record<string, string>;
+interface ThemeToken {
+  token_name: string;
+  light_value: string;
+  dark_value: string | null;
+  category: string;
+}
 
 interface ThemeContextType {
-  overrides: ThemeOverrides;
+  activeThemeId: number | null;
+  activeThemeName: string | null;
+  tokens: ThemeToken[];
   loading: boolean;
   refresh: () => Promise<void>;
 }
 
 const ThemeContext = createContext<ThemeContextType | null>(null);
 
-/** Apply a set of token overrides to `:root` as CSS custom properties. */
-function applyOverrides(overrides: ThemeOverrides) {
+function applyTokens(tokens: ThemeToken[]) {
   const root = document.documentElement;
-  for (const [token, value] of Object.entries(overrides)) {
-    root.style.setProperty(token, value);
+  // Light values on :root
+  for (const token of tokens) {
+    root.style.setProperty(token.token_name, token.light_value);
   }
-}
-
-/** Remove all overridden tokens (revert to static defaults). */
-function clearOverrides(overrides: ThemeOverrides) {
-  const root = document.documentElement;
-  for (const token of Object.keys(overrides)) {
-    root.style.removeProperty(token);
+  // Dark values on .dark (via a <style> tag, since we can't set properties
+  // on a class selector via inline styles)
+  let darkCss = "";
+  for (const token of tokens) {
+    if (token.dark_value) {
+      darkCss += `    ${token.token_name}: ${token.dark_value};\n`;
+    }
   }
+  let styleEl = document.getElementById("theme-dark-overrides");
+  if (!styleEl) {
+    styleEl = document.createElement("style");
+    styleEl.id = "theme-dark-overrides";
+    document.head.appendChild(styleEl);
+  }
+  styleEl.textContent = `.dark {\n${darkCss}}`;
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [overrides, setOverrides] = useState<ThemeOverrides>({});
+  const [activeThemeId, setActiveThemeId] = useState<number | null>(null);
+  const [activeThemeName, setActiveThemeName] = useState<string | null>(null);
+  const [tokens, setTokens] = useState<ThemeToken[]>([]);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     try {
-      const data = await api.theme.get();
-      setOverrides(data);
-      applyOverrides(data);
+      const data = await api.themes.active();
+      setActiveThemeId(data.id);
+      setActiveThemeName(data.name);
+      setTokens(data.tokens);
+      applyTokens(data.tokens);
     } catch {
-      // Non-fatal — defaults remain
+      // Non-fatal — static CSS defaults remain
     } finally {
       setLoading(false);
     }
@@ -65,7 +82,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   return (
-    <ThemeContext.Provider value={{ overrides, loading, refresh }}>
+    <ThemeContext.Provider value={{ activeThemeId, activeThemeName, tokens, loading, refresh }}>
       {children}
     </ThemeContext.Provider>
   );

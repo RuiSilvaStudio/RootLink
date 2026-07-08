@@ -50,6 +50,7 @@ from app.api import (
     social,
     taxonomy,
     theme,
+    theme_manager,
     users,
     waste,
 )
@@ -74,9 +75,11 @@ from app.models.taxonomy import (  # noqa: F401
     TaxonomyFamily,
 )
 from app.models.theme_override import ThemeOverride  # noqa: F401 - ensure table creation
+from app.models.theme import Theme, ThemeToken  # noqa: F401 - ensure table creation
 from app.services.legal_seed import seed_legal_documents
 from app.services.roles_migration import migrate_legacy_delegations, migrate_users_to_entity_rank
 from app.services.template_seed import seed_content_templates
+from app.services.theme_seed import seed_default_theme
 
 
 @asynccontextmanager
@@ -527,6 +530,14 @@ async def lifespan(app: FastAPI):
             await seed_legal_documents(session)
     except Exception as e:
         print(f"legal document seed: {e}")
+    # Seed the Content Studio default theme + its named tokens (CONTENT_STUDIO.md
+    # §8/§9) — idempotent. The themes/theme_tokens tables are created by the
+    # create_all above (the models are imported up top for that purpose).
+    try:
+        async with async_session_factory() as session:
+            await seed_default_theme(session)
+    except Exception as e:
+        print(f"theme seed: {e}")
     # Roles/permissions redesign — Phase 1 data migration (idempotent; only
     # processes rows not yet migrated). See
     # docs/roles-permissions/phase0-decisions.md (b) for the mapping
@@ -595,6 +606,7 @@ app.include_router(account.router)
 app.include_router(copy.router)
 app.include_router(content_ui.router)
 app.include_router(theme.router)
+app.include_router(theme_manager.router)
 app.include_router(overrides.router)
 app.include_router(blocks.router)
 app.include_router(legal.router)
