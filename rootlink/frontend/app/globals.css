@@ -1,59 +1,100 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..900,0..100,0..1&family=Source+Serif+4:opsz,wght@8..60,300..700&display=swap');
 
 /* ============================================================
-   RootLink Design Tokens — CSS Custom Properties
+   RootLink Design Tokens — Tailwind v4 @theme
    Content Studio token substrate (docs/content-studio/CONTENT_STUDIO.md §4).
 
-   Values are RGB channels (not hex) so Tailwind's opacity modifiers
-   (bg-primary-600/50, ring-primary-500/40, etc.) compose via
-   rgb(var(--token) / <alpha-value>). Values mirror tailwind.config.ts
-   exactly — zero visual change. The studio's theming module writes
-   overrides to these vars at runtime (Phase 2).
+   Colors stored as hex (readable). Tailwind v4 generates utility classes
+   (bg-primary-600, text-cream, etc.) from these @theme variables natively,
+   and handles opacity modifiers (bg-primary-600/50) without any RGB-channel
+   hack. CSS variables are first-class — runtime theming works natively.
    ============================================================ */
-:root {
+@theme {
   --font-display: "Fraunces", Georgia, serif;
   --font-serif: "Source Serif 4", Georgia, serif;
 
-  --color-primary-50: 243 240 235;
-  --color-primary-100: 227 221 208;
-  --color-primary-200: 202 189 166;
-  --color-primary-300: 173 154 122;
-  --color-primary-400: 145 122 86;
-  --color-primary-500: 122 96 64;
-  --color-primary-600: 99 77 51;
-  --color-primary-700: 79 61 42;
-  --color-primary-800: 61 47 33;
-  --color-primary-900: 41 31 22;
+  --color-primary-50: #f3f0eb;
+  --color-primary-100: #e3ddd0;
+  --color-primary-200: #cabda6;
+  --color-primary-300: #ad9a7a;
+  --color-primary-400: #917a56;
+  --color-primary-500: #7a6040;
+  --color-primary-600: #634d33;
+  --color-primary-700: #4f3d2a;
+  --color-primary-800: #3d2f21;
+  --color-primary-900: #291f16;
 
-  --color-earth-50: 245 240 234;
-  --color-earth-100: 232 221 208;
-  --color-earth-200: 212 192 168;
-  --color-earth-300: 187 160 128;
-  --color-earth-400: 166 132 94;
-  --color-earth-500: 140 107 72;
-  --color-earth-600: 112 85 58;
-  --color-earth-700: 90 67 46;
-  --color-earth-800: 69 51 36;
-  --color-earth-900: 46 34 24;
+  --color-earth-50: #f5f0ea;
+  --color-earth-100: #e8ddd0;
+  --color-earth-200: #d4c0a8;
+  --color-earth-300: #bba080;
+  --color-earth-400: #a6845e;
+  --color-earth-500: #8c6b48;
+  --color-earth-600: #70553a;
+  --color-earth-700: #5a432e;
+  --color-earth-800: #453324;
+  --color-earth-900: #2e2218;
 
-  --color-cream: 248 246 242;
+  --color-cream: #f8f6f2;
 
-  --color-rust-50: 249 240 236;
-  --color-rust-100: 240 220 209;
-  --color-rust-200: 224 190 168;
-  --color-rust-300: 207 155 122;
-  --color-rust-400: 192 125 83;
-  --color-rust-500: 168 100 61;
-  --color-rust-600: 139 80 50;
-  --color-rust-700: 113 64 41;
-  --color-rust-800: 92 52 34;
-  --color-rust-900: 74 42 28;
+  --color-rust-50: #f9f0ec;
+  --color-rust-100: #f0dcd1;
+  --color-rust-200: #e0bea8;
+  --color-rust-300: #cf9b7a;
+  --color-rust-400: #c07d53;
+  --color-rust-500: #a8643d;
+  --color-rust-600: #8b5032;
+  --color-rust-700: #714029;
+  --color-rust-800: #5c3422;
+  --color-rust-900: #4a2a1c;
 
   --radius-xl2: 16px;
+
+  --animate-fade-in: fade-in 0.6s ease-out forwards;
+  --animate-fade-in-up: fade-in-up 0.7s ease-out forwards;
+  --animate-slide-in-left: slide-in-left 0.5s ease-out forwards;
+  --animate-scale-in: scale-in 0.4s ease-out forwards;
+  --animate-pulse-soft: pulse-soft 2s ease-in-out infinite;
+  --animate-count-up: count-up 0.3s ease-out;
+  --animate-reveal-line: reveal-line 1s ease-out 0.3s forwards;
+  --animate-shimmer: shimmer 1.8s ease-in-out infinite;
+
+  @keyframes fade-in {
+    0% { opacity: 0; transform: translateY(16px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fade-in-up {
+    0% { opacity: 0; transform: translateY(32px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slide-in-left {
+    0% { opacity: 0; transform: translateX(-20px); }
+    100% { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes scale-in {
+    0% { opacity: 0; transform: scale(0.95); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+  @keyframes count-up {
+    0% { opacity: 0.5; }
+    100% { opacity: 1; }
+  }
+  @keyframes reveal-line {
+    0% { transform: scaleX(0); }
+    100% { transform: scaleX(1); }
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
 }
 
 @layer base {
@@ -254,15 +295,15 @@
   }
 }
 
+/* Non-@theme keyframes (for classes that aren't theme-driven animations) */
 @keyframes fade-in-dropdown {
   from { opacity: 0; transform: translateY(4px) scale(0.98); }
   to   { opacity: 1; transform: translateY(0)   scale(1); }
 }
-.animate-fade-in {
+.animate-fade-in-dropdown {
   animation: fade-in-dropdown 0.15s ease-out;
 }
 
-/* Mobile sheet slide-up */
 @keyframes sheet-slide-up {
   from { transform: translateY(100%); }
   to   { transform: translateY(0); }
@@ -271,7 +312,6 @@
   animation: sheet-slide-up 0.3s ease-out;
 }
 
-/* Mobile drawer slide-in */
 @keyframes drawer-slide-in {
   from { transform: translateX(-100%); }
   to   { transform: translateX(0); }
@@ -280,11 +320,8 @@
   animation: drawer-slide-in 0.25s ease-out;
 }
 
-/* CSS variable for mobile bar height — used by Footer padding */
 :root { --mobile-bar-h: 64px; }
 
-/* Content UI Editor: scan-line sweep on entering editor mode
-   (components/editor-mode/editor-mode-chrome.tsx) */
 @keyframes editor-scan {
   0%   { top: 0;     opacity: 1; }
   100% { top: 100vh; opacity: 0; }
@@ -294,8 +331,7 @@
   animation: editor-scan 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
-/* Content UI Editor: editable element affordances (editor mode, super_admin
-   only — components/editor-mode/editable-{text,image,icon}.tsx) */
+/* Content UI Editor affordances */
 .rl-editable-text {
   position: relative;
   cursor: text;
@@ -312,9 +348,6 @@
   outline: 2px solid #a8643d !important;
   background-color: rgba(168, 100, 61, 0.08);
 }
-/* Per-element "revert to default" — only rendered when a committed override
-   exists for the key (see editable-text.tsx); mirrors .rl-editable-media__badge's
-   hover-reveal treatment for a consistent affordance across text/image/icon. */
 .rl-editable-text__revert {
   position: absolute;
   top: -8px;

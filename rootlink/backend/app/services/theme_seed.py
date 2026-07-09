@@ -1,12 +1,12 @@
 """Idempotent seed for the Content Studio default theme (CONTENT_STUDIO.md §9).
 
 Creates the "Default" theme — `is_active=True`, `is_published=True` — and seeds
-its `ThemeToken` rows from the CSS custom-property values in
-`discovery/mockups/handoff-to-basecode/styles/tokens.css`. Colors are stored as
-bare RGB channels (e.g. "99 77 51"), consumed by the frontend as
-`rgb(var(--color-primary-600) / <alpha-value>)`. `dark_value` is left null: dark
-mode is handled by the existing `.dark` overrides in `globals.css` initially,
-and the dark palette is authored later in the dashboard theme manager.
+its `ThemeToken` rows from the `@theme` values in `app/globals.css`. Colors are
+stored as hex (e.g. "#634d33"), consumed by the frontend as CSS custom
+properties. Tailwind v4 handles opacity modifiers natively — no RGB-channel
+hack. `dark_value` is left null: dark mode is handled by the existing `.dark`
+overrides in `globals.css` initially, and the dark palette is authored later
+in the dashboard theme manager.
 
 Called from `app.main.lifespan()` after `Base.metadata.create_all`, the same way
 `seed_content_templates` / `seed_legal_documents` are. Idempotent: skips
@@ -21,44 +21,45 @@ from app.models.theme import Theme, ThemeToken
 
 DEFAULT_THEME_NAME = "Default"
 
-# (token_name, light_value, category). Colors are RGB channels (hex → "R G B")
-# from tokens.css. dark_value is null for all (authored later).
+# (token_name, light_value, category). Colors are hex (readable, matches
+# the @theme directive in globals.css). dark_value is null for all
+# (authored later in the dashboard theme manager).
 _DEFAULT_TOKENS: list[tuple[str, str, str]] = [
     # ── Primary (earth-brown) ──
-    ("--color-primary-50", "243 240 235", "color"),
-    ("--color-primary-100", "227 221 208", "color"),
-    ("--color-primary-200", "202 189 166", "color"),
-    ("--color-primary-300", "173 154 122", "color"),
-    ("--color-primary-400", "145 122 86", "color"),
-    ("--color-primary-500", "122 96 64", "color"),
-    ("--color-primary-600", "99 77 51", "color"),
-    ("--color-primary-700", "79 61 42", "color"),
-    ("--color-primary-800", "61 47 33", "color"),
-    ("--color-primary-900", "41 31 22", "color"),
+    ("--color-primary-50", "#f3f0eb", "color"),
+    ("--color-primary-100", "#e3ddd0", "color"),
+    ("--color-primary-200", "#cabda6", "color"),
+    ("--color-primary-300", "#ad9a7a", "color"),
+    ("--color-primary-400", "#917a56", "color"),
+    ("--color-primary-500", "#7a6040", "color"),
+    ("--color-primary-600", "#634d33", "color"),
+    ("--color-primary-700", "#4f3d2a", "color"),
+    ("--color-primary-800", "#3d2f21", "color"),
+    ("--color-primary-900", "#291f16", "color"),
     # ── Earth (warm tan) ──
-    ("--color-earth-50", "245 240 234", "color"),
-    ("--color-earth-100", "232 221 208", "color"),
-    ("--color-earth-200", "212 192 168", "color"),
-    ("--color-earth-300", "187 160 128", "color"),
-    ("--color-earth-400", "166 132 94", "color"),
-    ("--color-earth-500", "140 107 72", "color"),
-    ("--color-earth-600", "112 85 58", "color"),
-    ("--color-earth-700", "90 67 46", "color"),
-    ("--color-earth-800", "69 51 36", "color"),
-    ("--color-earth-900", "46 34 24", "color"),
+    ("--color-earth-50", "#f5f0ea", "color"),
+    ("--color-earth-100", "#e8ddd0", "color"),
+    ("--color-earth-200", "#d4c0a8", "color"),
+    ("--color-earth-300", "#bba080", "color"),
+    ("--color-earth-400", "#a6845e", "color"),
+    ("--color-earth-500", "#8c6b48", "color"),
+    ("--color-earth-600", "#70553a", "color"),
+    ("--color-earth-700", "#5a432e", "color"),
+    ("--color-earth-800", "#453324", "color"),
+    ("--color-earth-900", "#2e2218", "color"),
     # ── Cream ──
-    ("--color-cream", "248 246 242", "color"),
+    ("--color-cream", "#f8f6f2", "color"),
     # ── Rust (terracotta) ──
-    ("--color-rust-50", "249 240 236", "color"),
-    ("--color-rust-100", "240 220 209", "color"),
-    ("--color-rust-200", "224 190 168", "color"),
-    ("--color-rust-300", "207 155 122", "color"),
-    ("--color-rust-400", "192 125 83", "color"),
-    ("--color-rust-500", "168 100 61", "color"),
-    ("--color-rust-600", "139 80 50", "color"),
-    ("--color-rust-700", "113 64 41", "color"),
-    ("--color-rust-800", "92 52 34", "color"),
-    ("--color-rust-900", "74 42 28", "color"),
+    ("--color-rust-50", "#f9f0ec", "color"),
+    ("--color-rust-100", "#f0dcd1", "color"),
+    ("--color-rust-200", "#e0bea8", "color"),
+    ("--color-rust-300", "#cf9b7a", "color"),
+    ("--color-rust-400", "#c07d53", "color"),
+    ("--color-rust-500", "#a8643d", "color"),
+    ("--color-rust-600", "#8b5032", "color"),
+    ("--color-rust-700", "#714029", "color"),
+    ("--color-rust-800", "#5c3422", "color"),
+    ("--color-rust-900", "#4a2a1c", "color"),
     # ── Fonts ──
     ("--font-display", '"Fraunces", Georgia, serif', "font"),
     ("--font-serif", '"Source Serif 4", Georgia, serif', "font"),

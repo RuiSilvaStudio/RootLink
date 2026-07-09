@@ -62,7 +62,7 @@ export function injectSelectionAgent() {
     label.style.display = "block";
     label.style.left = rect.left + "px";
     label.style.top = (rect.top - 20) + "px";
-    label.textContent = el.tagName.toLowerCase() + (el.className ? "." + el.className.split(" ")[0] : "");
+    label.textContent = el.tagName.toLowerCase() + (el.getAttribute("class") ? "." + el.getAttribute("class")!.split(" ")[0] : "");
   }
 
   function hideOutline() {
@@ -73,7 +73,8 @@ export function injectSelectionAgent() {
   // ── Build a label for an element ────────────────────────
   function elementLabel(el: HTMLElement): string {
     const tag = el.tagName.toLowerCase();
-    const cls = el.className && typeof el.className === "string" ? el.className.split(" ")[0] : "";
+    const cls = el.getAttribute("class");
+    const firstCls = cls ? cls.split(" ")[0] : "";
     const id = el.id ? "#" + el.id : "";
     return tag + (id || (cls ? "." + cls : ""));
   }
@@ -212,9 +213,6 @@ export function injectSelectionAgent() {
 
   function applyStyle(property: string, value: string) {
     if (!selected) return;
-    // Save the old value for undo (only the first change to this property
-    // in the current session — so undo goes back to the ORIGINAL, not the
-    // previous intermediate value).
     const existing = undoStack.find((e) => e.el === selected && e.property === property);
     if (!existing) {
       undoStack.push({
@@ -223,10 +221,9 @@ export function injectSelectionAgent() {
         oldValue: selected.style.getPropertyValue(property) || getComputedStyle(selected).getPropertyValue(property),
       });
     }
-    // Map token names to CSS var references (e.g., "primary-600" → "var(--color-primary-600)")
-    const cssValue = mapTokenToCssVar(value);
-    selected.style.setProperty(property, cssValue);
-    // Re-capture computed styles and send updated selection to parent
+    // In Tailwind v4, CSS variables are native — hex values and token names
+    // can be set directly as CSS custom properties. No mapTokenToCssVar needed.
+    selected.style.setProperty(property, value);
     selectElement(selected);
   }
 
@@ -241,23 +238,6 @@ export function injectSelectionAgent() {
     if (selected === entry.el) {
       selectElement(selected);
     }
-  }
-
-  /** Map a palette token name (e.g., "primary-600") to its CSS var reference. */
-  function mapTokenToCssVar(value: string): string {
-    // If it's already a CSS value (px, rem, etc.), return as-is
-    if (value.match(/(px|rem|em|%|vh|vw|deg|fr|auto|none|flex|block|inline|grid|hidden|visible|static|relative|absolute|fixed|sticky|row|column|wrap|nowrap|center|start|end|stretch|space|baseline|normal|solid|dashed|dotted|double|groove|ridge|inherit|initial|unset)/)) {
-      return value;
-    }
-    // If it's a palette token name, map to the CSS var
-    if (value.match(/^(primary|earth|rust|cream|stone)-\d+$/) || value === "cream") {
-      return `var(--color-${value})`;
-    }
-    // If it's a font token
-    if (value.startsWith("font-")) {
-      return `var(--${value})`;
-    }
-    return value;
   }
 
   // ── Listen for messages from the parent (inspector) ────
