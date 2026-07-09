@@ -42,14 +42,17 @@ interface TokenInfo {
 }
 
 /** Normalize a color value to hex for display in a color picker.
- *  Handles both hex ("#634d33") and RGB channels ("99 77 51") — the latter
- *  from legacy v3 data. Returns hex or #000000 if unparseable. */
+ *  In v4 all values are hex — this is a pass-through with a safety
+ *  fallback for any legacy data. */
 function toDisplayHex(value: string): string {
   if (!value) return "#000000";
   if (value.startsWith("#")) return value;
+  // Legacy fallback for any old RGB-channel data
   const parts = value.trim().split(/\s+/).map(Number);
-  if (parts.length < 3 || parts.some(isNaN)) return "#000000";
-  return "#" + parts.map((n) => n.toString(16).padStart(2, "0")).join("");
+  if (parts.length >= 3 && !parts.some(isNaN)) {
+    return "#" + parts.map((n) => n.toString(16).padStart(2, "0")).join("");
+  }
+  return "#000000";
 }
 
 const CATEGORIES = ["color", "font", "radius"] as const;
@@ -108,7 +111,7 @@ export default function ThemeManagerPage() {
     setSaving(token.id);
     try {
       // For color tokens, convert hex to RGB channels
-      const storedValue = value; // v4: store hex directly, no conversion needed
+      const storedValue = value; // v4: store hex directly
       await api.themes.updateToken(token.id, { [field]: storedValue });
       await fetchTokens();
     } catch (e: any) {

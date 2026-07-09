@@ -96,47 +96,103 @@ export function SliderWithStops({ value, onChange, label }: ControlProps) {
 // onChange is called with the token name (e.g. "primary-600"). If the current
 // value isn't a known palette token, a "Custom" line shows at the top.
 
-const PALETTE = [
-  { name: "primary-50", light: "#f3f0eb", dark: "#291f16" },
-  { name: "primary-100", light: "#e3ddd0", dark: "#3d2f21" },
-  { name: "primary-300", light: "#ad9a7a", dark: "#ad9a7a" },
-  { name: "primary-500", light: "#7a6040", dark: "#7a6040" },
-  { name: "primary-600", light: "#634d33", dark: "#634d33" },
-  { name: "primary-700", light: "#4f3d2a", dark: "#917a56" },
-  { name: "earth-500", light: "#8c6b48", dark: "#8c6b48" },
-  { name: "earth-600", light: "#70553a", dark: "#a6845e" },
-  { name: "rust-500", light: "#a8643d", dark: "#a8643d" },
-  { name: "rust-600", light: "#8b5032", dark: "#c07d53" },
-  { name: "cream", light: "#f8f6f2", dark: "#1c1917" },
-  { name: "stone-100", light: "#f5f5f4", dark: "#292524" },
-  { name: "stone-300", light: "#d6d3d1", dark: "#57534e" },
-  { name: "stone-500", light: "#78716c", dark: "#a8a29e" },
-  { name: "stone-700", light: "#44403c", dark: "#44403c" },
-  { name: "stone-900", light: "#1c1917", dark: "#fafaf9" },
-];
+interface PaletteEntry {
+  name: string;   // e.g. "primary-600"
+  light: string;  // hex e.g. "#634d33"
+  dark: string;   // hex (may equal light if no dark override)
+}
+
+let _paletteCache: PaletteEntry[] | null = null;
+
+/**
+ * Dynamically build the color palette from the @theme CSS variables at
+ * runtime. Reads all --color-* variables from getComputedStyle on :root
+ * (light values) and on a .dark element (dark values). This ensures the
+ * palette is always in sync with the theme — any color added to @theme
+ * automatically appears in the palette picker. No manual maintenance.
+ */
+function getPalette(): PaletteEntry[] {
+  if (_paletteCache) return _paletteCache;
+
+  const root = document.documentElement;
+  const rootStyles = getComputedStyle(root);
+  const entries: PaletteEntry[] = [];
+
+  // Read dark-mode values from a temp .dark element
+  const darkEl = document.createElement("div");
+  darkEl.className = "dark";
+  darkEl.style.display = "none";
+  document.body.appendChild(darkEl);
+  const darkStyles = getComputedStyle(darkEl);
+
+  // Iterate all CSS custom properties on :root
+  const styleSheets = Array.from(document.styleSheets);
+  const tokenNames = new Set<string>();
+
+  for (const sheet of styleSheets) {
+    try {
+      for (const rule of Array.from(sheet.cssRules)) {
+        if (rule instanceof CSSStyleRule) {
+          const style = rule.style;
+          for (let i = 0; i < style.length; i++) {
+            const prop = style.item(i);
+            if (prop && prop.startsWith("--color-")) {
+              tokenNames.add(prop);
+            }
+          }
+        }
+      }
+    } catch { /* cross-origin stylesheet — skip */ }
+  }
+
+  // Also scan :root inline styles (ThemeProvider injects via style attr)
+  for (let i = 0; i < root.style.length; i++) {
+    const prop = root.style.item(i);
+    if (prop && prop.startsWith("--color-")) {
+      tokenNames.add(prop);
+    }
+  }
+
+  for (const tokenName of Array.from(tokenNames)) {
+    // tokenName is like "--color-primary-600"
+    const name = tokenName.replace("--color-", "");
+    const light = rootStyles.getPropertyValue(tokenName).trim();
+    const dark = darkStyles.getPropertyValue(tokenName).trim() || light;
+    if (light) {
+      entries.push({ name, light: light.startsWith("#") ? light : normalizeToHex(light) || light, dark: dark.startsWith("#") ? dark : normalizeToHex(dark) || dark });
+    }
+  }
+
+  // Sort: primary, earth, rust, cream, stone — then by shade number
+  const familyOrder = ["primary", "earth", "rust", "cream", "stone"];
+  entries.sort((a, b) => {
+    const aFam = familyOrder.findIndex((f) => a.name.startsWith(f));
+    const bFam = familyOrder.findIndex((f) => b.name.startsWith(f));
+    if (aFam !== bFam) return aFam - bFam;
+    const aNum = parseInt(a.name.match(/\d+/)?.[0] || "0");
+    const bNum = parseInt(b.name.match(/\d+/)?.[0] || "0");
+    return aNum - bNum;
+  });
+
+  document.body.removeChild(darkEl);
+  _paletteCache = entries;
+  return entries;
+}
 
 /**
  * Convert any CSS color string (oklch, rgb, hex, named) to a normalized
- * lowercase hex string for comparison. getComputedStyle in Tailwind v4
- * returns oklch() format, which the palette array doesn't match directly.
- *
- * Uses a temp DOM element: set the color, read back getComputedStyle which
- * normalizes to rgb()/rgba() in most browsers, then convert to hex.
- * More reliable than the canvas API (which may not parse oklch in all
- * browsers).
+ * lowercase hex string for comparison. The browser's getComputedStyle
+ * returns oklch() or rgb() format even though we store hex in @theme —
+ * this function bridges the gap.
  */
 function normalizeToHex(cssColor: string): string {
   if (!cssColor) return "";
-  // If already hex, return as-is (lowercase)
-  if (cssColor.startsWith("#")) {
-    return cssColor.toLowerCase();
-  }
-  // If it's a token name (e.g. "primary-600"), return as-is — it'll be
-  // matched directly against the palette
+  if (cssColor.startsWith("#")) return cssColor.toLowerCase();
+  // If it's a token name (e.g. "primary-600"), return as-is
   if (!cssColor.includes("(") && !cssColor.startsWith("rgb") && !cssColor.startsWith("oklch") && !cssColor.startsWith("hsl")) {
     return cssColor;
   }
-  // Use a temp element to normalize the color through the browser's parser
+  // Use a temp element to normalize through the browser's color parser
   try {
     const temp = document.createElement("div");
     temp.style.color = cssColor;
@@ -144,13 +200,12 @@ function normalizeToHex(cssColor: string): string {
     document.body.appendChild(temp);
     const computed = getComputedStyle(temp).color;
     document.body.removeChild(temp);
-    // computed is typically "rgb(r, g, b)" or "rgba(r, g, b, a)"
     const match = computed.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
     if (match) {
       const [, r, g, b] = match;
       return "#" + [r, g, b].map((n) => parseInt(n).toString(16).padStart(2, "0")).join("");
     }
-    // If we still got oklch back (some browsers), try canvas as fallback
+    // Canvas fallback for oklch (Chrome canvas supports oklch)
     const ctx = document.createElement("canvas").getContext("2d");
     if (ctx) {
       ctx.fillStyle = cssColor;
@@ -158,16 +213,15 @@ function normalizeToHex(cssColor: string): string {
       if (hex.startsWith("#")) return hex.toLowerCase();
     }
   } catch {}
-  return cssColor; // can't normalize — return as-is
+  return cssColor;
 }
 
 export function PaletteColorPicker({ value, onChange, label }: ControlProps) {
-  // Bug 6 fix: reverse-lookup — the value from getComputedStyle is oklch/rgb,
-  // not a token name. Convert to hex and match against the palette.
+  const palette = getPalette();
   const valueHex = normalizeToHex(value);
-  const matchedToken = PALETTE.find((c) => c.light.toLowerCase() === valueHex);
+  const matchedToken = palette.find((c) => c.light.toLowerCase() === valueHex);
   const activeTokenName = matchedToken?.name || value;
-  const isKnown = PALETTE.some((c) => c.name === activeTokenName);
+  const isKnown = palette.some((c) => c.name === activeTokenName);
 
   return (
     <div>
@@ -178,7 +232,7 @@ export function PaletteColorPicker({ value, onChange, label }: ControlProps) {
         </p>
       )}
       <div className="grid grid-cols-4 gap-1">
-        {PALETTE.map((color) => {
+        {palette.map((color) => {
           const active = color.name === activeTokenName;
           return (
             <button
