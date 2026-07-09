@@ -28,6 +28,7 @@ export function OverlayShell() {
   const pathname = usePathname();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [agentReady, setAgentReady] = useState(false);
 
   useEffect(() => {
     if (active && !iframeUrl) {
@@ -40,22 +41,32 @@ export function OverlayShell() {
     }
   }, [active, pathname, iframeUrl, setIframeUrl]);
 
+  // Inject the selection agent after the iframe loads + a short settling
+  // delay (lets the page's own JS — framer-motion, HeroParticleCanvas, etc.
+  // — finish reading layout, so the agent doesn't cause "layout forced"
+  // warnings by reading getBoundingClientRect too early).
   useEffect(() => {
     if (!active || !iframeLoaded || !iframeRef.current) return;
-    const iframe = iframeRef.current;
-    try {
-      const iframeWindow = iframe.contentWindow;
-      if (!iframeWindow) return;
-      const script = iframeWindow.document.createElement("script");
-      script.textContent = `(${injectSelectionAgent.toString()})()`;
-      iframeWindow.document.body.appendChild(script);
-    } catch {}
+    const timer = setTimeout(() => {
+      const iframe = iframeRef.current;
+      if (!iframe) return;
+      try {
+        const iframeWindow = iframe.contentWindow;
+        if (!iframeWindow) return;
+        const script = iframeWindow.document.createElement("script");
+        script.textContent = `(${injectSelectionAgent.toString()})()`;
+        iframeWindow.document.body.appendChild(script);
+        setAgentReady(true);
+      } catch {}
+    }, 600);
+    return () => clearTimeout(timer);
   }, [active, iframeLoaded]);
 
   useEffect(() => {
     if (iframeRef.current && iframeUrl) {
       iframeRef.current.src = iframeUrl;
       setIframeLoaded(false);
+      setAgentReady(false);
     }
   }, [iframeUrl]);
 
@@ -171,9 +182,14 @@ export function OverlayShell() {
               title="Content Studio Preview"
             />
           )}
-          {!iframeLoaded && (
-            <div className="absolute inset-0 flex items-center justify-center bg-stone-100">
-              <div className="animate-pulse-soft text-stone-400 font-serif">Loading page…</div>
+          {!agentReady && (
+            <div className="absolute inset-0 flex items-center justify-center bg-stone-100 z-10">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-6 h-6 border-2 border-stone-300 border-t-primary-500 rounded-full animate-spin" />
+                <div className="text-sm text-stone-400 font-serif">
+                  {iframeLoaded ? "Preparing editor…" : "Loading page…"}
+                </div>
+              </div>
             </div>
           )}
           {/* Preview overlay — dims the iframe edge when previewing */}

@@ -116,17 +116,41 @@ const PALETTE = [
 ];
 
 /**
- * Convert any CSS color string (oklch, rgb, hex) to a normalized hex string
- * for comparison. getComputedStyle returns oklch in v4/Tailwind v4, so we
- * need to handle that format. Uses the browser's own color parser via a
- * temporary canvas/element to normalize.
+ * Convert any CSS color string (oklch, rgb, hex, named) to a normalized
+ * lowercase hex string for comparison. getComputedStyle in Tailwind v4
+ * returns oklch() format, which the palette array doesn't match directly.
+ *
+ * Uses a temp DOM element: set the color, read back getComputedStyle which
+ * normalizes to rgb()/rgba() in most browsers, then convert to hex.
+ * More reliable than the canvas API (which may not parse oklch in all
+ * browsers).
  */
 function normalizeToHex(cssColor: string): string {
   if (!cssColor) return "";
   // If already hex, return as-is (lowercase)
-  if (cssColor.startsWith("#")) return cssColor.toLowerCase();
-  // Use the browser to normalize: set it as a color, read back as hex
+  if (cssColor.startsWith("#")) {
+    return cssColor.toLowerCase();
+  }
+  // If it's a token name (e.g. "primary-600"), return as-is — it'll be
+  // matched directly against the palette
+  if (!cssColor.includes("(") && !cssColor.startsWith("rgb") && !cssColor.startsWith("oklch") && !cssColor.startsWith("hsl")) {
+    return cssColor;
+  }
+  // Use a temp element to normalize the color through the browser's parser
   try {
+    const temp = document.createElement("div");
+    temp.style.color = cssColor;
+    temp.style.display = "none";
+    document.body.appendChild(temp);
+    const computed = getComputedStyle(temp).color;
+    document.body.removeChild(temp);
+    // computed is typically "rgb(r, g, b)" or "rgba(r, g, b, a)"
+    const match = computed.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+      const [, r, g, b] = match;
+      return "#" + [r, g, b].map((n) => parseInt(n).toString(16).padStart(2, "0")).join("");
+    }
+    // If we still got oklch back (some browsers), try canvas as fallback
     const ctx = document.createElement("canvas").getContext("2d");
     if (ctx) {
       ctx.fillStyle = cssColor;

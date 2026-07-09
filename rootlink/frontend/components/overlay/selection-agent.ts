@@ -23,13 +23,6 @@ export function injectSelectionAgent() {
   if (window.__overlaySelectionAgent) return; // already injected
   window.__overlaySelectionAgent = true;
 
-  // Bug 2 fix: don't attach handlers until the document is fully loaded,
-  // otherwise getBoundingClientRect forces layout before stylesheets load.
-  if (document.readyState !== "complete") {
-    window.addEventListener("load", () => injectSelectionAgent());
-    return;
-  }
-
   let hovered: HTMLElement | null = null;
   let selected: HTMLElement | null = null;
   let outline: HTMLDivElement | null = null;
