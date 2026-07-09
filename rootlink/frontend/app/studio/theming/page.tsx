@@ -41,18 +41,15 @@ interface TokenInfo {
   category: string;
 }
 
-/** Convert RGB channels ("99 77 51") to hex ("#634d33") */
-function rgbToHex(channels: string): string {
-  const parts = channels.trim().split(/\s+/).map(Number);
+/** Normalize a color value to hex for display in a color picker.
+ *  Handles both hex ("#634d33") and RGB channels ("99 77 51") — the latter
+ *  from legacy v3 data. Returns hex or #000000 if unparseable. */
+function toDisplayHex(value: string): string {
+  if (!value) return "#000000";
+  if (value.startsWith("#")) return value;
+  const parts = value.trim().split(/\s+/).map(Number);
   if (parts.length < 3 || parts.some(isNaN)) return "#000000";
   return "#" + parts.map((n) => n.toString(16).padStart(2, "0")).join("");
-}
-
-/** Convert hex ("#634d33") to RGB channels ("99 77 51") */
-function hexToRgb(hex: string): string {
-  const h = hex.replace("#", "");
-  if (h.length !== 6) return "0 0 0";
-  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)].join(" ");
 }
 
 const CATEGORIES = ["color", "font", "radius"] as const;
@@ -111,7 +108,7 @@ export default function ThemeManagerPage() {
     setSaving(token.id);
     try {
       // For color tokens, convert hex to RGB channels
-      const storedValue = token.category === "color" ? hexToRgb(value) : value;
+      const storedValue = value; // v4: store hex directly, no conversion needed
       await api.themes.updateToken(token.id, { [field]: storedValue });
       await fetchTokens();
     } catch (e: any) {
@@ -273,7 +270,7 @@ export default function ThemeManagerPage() {
                         <label className="relative">
                           <input
                             type="color"
-                            value={rgbToHex(token.light_value)}
+                            value={toDisplayHex(token.light_value)}
                             onChange={(e) => updateToken(token, "light_value", e.target.value)}
                             disabled={saving === token.id}
                             className="w-10 h-10 rounded-lg border border-stone-200 dark:border-stone-700 cursor-pointer overflow-hidden"
@@ -288,7 +285,7 @@ export default function ThemeManagerPage() {
                         <label className="relative">
                           <input
                             type="color"
-                            value={rgbToHex(token.dark_value || token.light_value)}
+                            value={toDisplayHex(token.dark_value || token.light_value)}
                             onChange={(e) => updateToken(token, "dark_value", e.target.value)}
                             disabled={saving === token.id}
                             className="w-10 h-10 rounded-lg border border-stone-200 dark:border-stone-700 cursor-pointer overflow-hidden"
