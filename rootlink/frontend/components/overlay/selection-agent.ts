@@ -23,6 +23,13 @@ export function injectSelectionAgent() {
   if (window.__overlaySelectionAgent) return; // already injected
   window.__overlaySelectionAgent = true;
 
+  // Bug 2 fix: don't attach handlers until the document is fully loaded,
+  // otherwise getBoundingClientRect forces layout before stylesheets load.
+  if (document.readyState !== "complete") {
+    window.addEventListener("load", () => injectSelectionAgent());
+    return;
+  }
+
   let hovered: HTMLElement | null = null;
   let selected: HTMLElement | null = null;
   let outline: HTMLDivElement | null = null;
@@ -135,21 +142,42 @@ export function injectSelectionAgent() {
     return result;
   }
 
+  // Tags that can have inline text editing
+  const TEXT_TAGS = new Set(["h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "a", "button", "label", "li", "strong", "em", "code", "small"]);
+
   // ── Select an element (send data to parent) ─────────────
   function selectElement(el: HTMLElement) {
+    // If a previously-selected text element was contentEditable, turn it off
+    if (selected && selected !== el && selected.isContentEditable) {
+      selected.contentEditable = "false";
+    }
     selected = el;
+
+    // Bug 4 fix: make text elements contentEditable so the user can edit inline
+    const isTextEl = TEXT_TAGS.has(el.tagName.toLowerCase());
+    if (isTextEl && !el.isContentEditable) {
+      el.contentEditable = "true";
+    }
+
+    // Bug 5 fix: capture the element's text content (not font-size)
+    const textContent = isTextEl ? (el.innerText || el.textContent || "").trim() : "";
+
     const element = {
       path: buildPath(el),
       tagName: el.tagName.toLowerCase(),
       label: elementLabel(el),
       computedStyles: captureComputedStyles(el),
       hierarchy: buildHierarchy(el),
+      textContent,
     };
     parent.postMessage({ type: "overlay:select", element }, "*");
   }
 
   // ── Deselect ─────────────────────────────────────────────
   function deselect() {
+    if (selected && selected.isContentEditable) {
+      selected.contentEditable = "false";
+    }
     selected = null;
     hideOutline();
     parent.postMessage({ type: "overlay:deselect" }, "*");

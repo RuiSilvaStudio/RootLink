@@ -23,6 +23,7 @@ export interface SelectedElement {
   label: string;
   computedStyles: Record<string, string>;
   hierarchy: { path: string; label: string; tagName: string }[];
+  textContent?: string;
 }
 
 /** A single style change in the current draft. */

@@ -300,7 +300,7 @@ export function InspectorPanel() {
             <p className="px-4 pt-3 pb-1 text-[10px] uppercase tracking-wider text-stone-500 font-semibold">Content</p>
             <div className="px-4 pb-3">
               <InlineTextEditor
-                value={selected.computedStyles["font-size"] || ""}
+                value={selected.textContent || ""}
                 onChange={() => {}}
               />
             </div>

@@ -115,8 +115,35 @@ const PALETTE = [
   { name: "stone-900", light: "#1c1917", dark: "#fafaf9" },
 ];
 
+/**
+ * Convert any CSS color string (oklch, rgb, hex) to a normalized hex string
+ * for comparison. getComputedStyle returns oklch in v4/Tailwind v4, so we
+ * need to handle that format. Uses the browser's own color parser via a
+ * temporary canvas/element to normalize.
+ */
+function normalizeToHex(cssColor: string): string {
+  if (!cssColor) return "";
+  // If already hex, return as-is (lowercase)
+  if (cssColor.startsWith("#")) return cssColor.toLowerCase();
+  // Use the browser to normalize: set it as a color, read back as hex
+  try {
+    const ctx = document.createElement("canvas").getContext("2d");
+    if (ctx) {
+      ctx.fillStyle = cssColor;
+      const hex = ctx.fillStyle;
+      if (hex.startsWith("#")) return hex.toLowerCase();
+    }
+  } catch {}
+  return cssColor; // can't normalize — return as-is
+}
+
 export function PaletteColorPicker({ value, onChange, label }: ControlProps) {
-  const isKnown = PALETTE.some((c) => c.name === value);
+  // Bug 6 fix: reverse-lookup — the value from getComputedStyle is oklch/rgb,
+  // not a token name. Convert to hex and match against the palette.
+  const valueHex = normalizeToHex(value);
+  const matchedToken = PALETTE.find((c) => c.light.toLowerCase() === valueHex);
+  const activeTokenName = matchedToken?.name || value;
+  const isKnown = PALETTE.some((c) => c.name === activeTokenName);
 
   return (
     <div>
@@ -128,7 +155,7 @@ export function PaletteColorPicker({ value, onChange, label }: ControlProps) {
       )}
       <div className="grid grid-cols-4 gap-1">
         {PALETTE.map((color) => {
-          const active = color.name === value;
+          const active = color.name === activeTokenName;
           return (
             <button
               key={color.name}
