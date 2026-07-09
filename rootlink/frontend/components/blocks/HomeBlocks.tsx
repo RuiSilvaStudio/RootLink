@@ -27,6 +27,7 @@ import { useLocale } from "@/lib/locale-context";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { StatCounter } from "@/components/ui/StatCounter";
+import { SectionHeader, IconContainer, LinkWithArrow } from "@/components/ui/DeFacto";
 import { HeroParticleCanvas } from "@/components/ui/HeroParticleCanvas";
 import { ContentCardSkeleton } from "@/components/ui/LoadingSkeleton";
 
@@ -128,31 +129,25 @@ export function HomeCategoriesBlock({ props }: BlockProps) {
   return (
     <section className="px-4 sm:px-8 py-24 sm:py-32">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-16">
-          <Badge variant="earth" className="mb-5">{props.badge || t("home.browse_category")}</Badge>
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.05] max-w-2xl">
-            {props.heading || t("home.find_your_corner")}
-          </h2>
-          <div className="mt-5 w-16 h-0.5 bg-primary-300/40 rounded-full" />
-        </div>
+        <SectionHeader
+          badge={props.badge || t("home.browse_category")}
+          heading={props.heading || t("home.find_your_corner")}
+          badgeVariant="earth"
+        />
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {families.length > 0 ? families.map((fam, i) => {
             const Icon = ICON_MAP[fam.icon] || Leaf;
             const colors = ["bg-primary-100 dark:bg-primary-950/20", "bg-earth-100/50", "bg-stone-200/50", "bg-green-100/50", "bg-sky-100/50", "bg-amber-100/50"];
             return (
               <Link key={fam.value} href={`/search?family=${fam.value}`} className="card-lift p-8 sm:p-10 group relative overflow-hidden" style={{ animationDelay: `${i * 0.12}s` }}>
-                <div className={`w-14 h-14 rounded-2xl ${colors[i % colors.length]} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                  <Icon className="w-7 h-7 text-primary-600" />
-                </div>
+                <IconContainer icon={Icon} size="xl" shape="2xl" bgColor={colors[i % colors.length]} iconColor="text-primary-600" hoverScale />
                 <h3 className="text-2xl font-display font-semibold text-stone-800 dark:text-stone-100 mb-3">
                   {locale === "pt" ? fam.label_pt : fam.label}
                 </h3>
                 <p className="text-stone-500 dark:text-stone-400 font-serif leading-relaxed">
                   {t("home.discover_category", { category: (locale === "pt" ? fam.label_pt : fam.label).toLowerCase() })}
                 </p>
-                <span className="inline-flex items-center gap-2 text-sm font-display font-medium text-primary-600 mt-6 group-hover:gap-3 transition-all">
-                  {t("home.explore")} <ArrowRight className="w-3.5 h-3.5" />
-                </span>
+                <LinkWithArrow href={`/search?family=${fam.value}`}>{t("home.explore")}</LinkWithArrow>
               </Link>
             );
           }) : (
@@ -191,9 +186,7 @@ export function HomeToolsBlock({ props }: BlockProps) {
             const Icon = tool.icon;
             return (
               <Link key={tool.href} href={tool.href} className="card-lift p-8 sm:p-10 group">
-                <div className={`w-12 h-12 rounded-xl ${tool.color} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}>
-                  <Icon className={`w-6 h-6 ${tool.iconColor}`} />
-                </div>
+                <IconContainer icon={Icon} size="lg" shape="xl" bgColor={tool.color} iconColor={tool.iconColor} hoverScale />
                 <h3 className="text-xl font-display font-semibold text-stone-800 dark:text-stone-100">{tool.title}</h3>
                 <p className="text-stone-500 dark:text-stone-300 mt-3 font-serif text-sm leading-relaxed">{tool.desc}</p>
               </Link>
