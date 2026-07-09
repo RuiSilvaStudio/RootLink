@@ -1,38 +1,40 @@
 ## Responses
+
 - Keep responses concise and to the point - unless the user asks otherwise
 
 ## Planning Mode
-- Always ask clarifying questions
-- Never assume design, tech stack or features
 
-## Lessons learned (read first)
+- **Always ask** clarifying questions
+- **Never assume** design, tech stack or features
 
-**Before any dev or deploy work, read `docs/LESSONS.md`.** It captures hard-won,
-non-obvious gotchas from past sessions (e.g. always run `next build` before a frontend
+## Lessons learned \(read first\)
+
+**Before any dev or deploy work, read** `docs/LESSONS.md`**.** It captures hard-won,
+non-obvious gotchas from past sessions \(e.g. always run `next build` before a frontend
 deploy; never `npm run build` while `next dev` is live; restart the backend after backend
-changes; multi-worker lifespan migration races; SQLite/JSON-null pitfalls). When a new
+changes; multi-worker lifespan migration races; SQLite/JSON-null pitfalls\). When a new
 gotcha bites, add it there in the same change. The content-platform work is documented in
-`docs/content-platform/` (spec `CONTENT_PLATFORM.md`, status `IMPLEMENTATION_STATUS.md`).
+`docs/content-platform/` \(spec `CONTENT_PLATFORM.md`, status `IMPLEMENTATION_STATUS.md`\).
 
-**The Content Studio** (the unified CMS-like tool managing RootLink's UI theming + content/copy)
-is documented in `docs/content-studio/` (spec `CONTENT_STUDIO.md`, status
-`IMPLEMENTATION_STATUS.md`). **Before any Content Studio work, read the spec first** — it is the
+**The Content Studio** \(the unified CMS-like tool managing RootLink's UI theming + content/copy\)
+is documented in `docs/content-studio/` \(spec `CONTENT_STUDIO.md`, status
+`IMPLEMENTATION_STATUS.md`\). **Before any Content Studio work, read the spec first** — it is the
 north-star contract and anti-drift mechanism. The inline Content UI Editor is being retired into
 the studio across Phases 1–2; until then, see below for the legacy inline-editor wiring rules.
 
-**The Content UI Editor** (super_admin inline text/image/icon editor) is documented in
-`discovery/mockups/content-ui-editor/briefing-to-build-local.md` (design + per-phase coverage of
-which pages are wired). Coverage is added page by page, not automatically. **Whenever you add a
+**The Content UI Editor** \(super\_admin inline text/image/icon editor\) is documented in
+`discovery/mockups/content-ui-editor/briefing-to-build-local.md` \(design + per-phase coverage of
+which pages are wired\). Coverage is added page by page, not automatically. **Whenever you add a
 new frontend page, or new static marketing/header copy to an existing page, ask the user whether
 it should be wired into the Content UI Editor — never assume either way.** See
 `.opencode/skills/platform-coherence/references/design-patterns.md` → "Content UI Editor" for the
-wiring pattern and pitfalls (click-conflict elements, static-array content).
+wiring pattern and pitfalls \(click-conflict elements, static-array content\).
 
 ## UI work — required skills
 
 **Any time, in any session, when building or modifying UI for this project,
-always load and use both the `frontend-design` and `frontend-ui-guardian`
-skills** — invoke the `skill` tool for both before writing UI code, not just
+always load and use both the **`frontend-design`** and **`frontend-ui-guardian
+`**skills** — invoke the `skill` tool for both before writing UI code, not just
 when explicitly asked. This applies to new pages, new components, and edits
 to existing UI alike. `frontend-design` guides aesthetic/typography choices
 so new UI doesn't read as templated defaults; `frontend-ui-guardian` is the
@@ -40,13 +42,27 @@ constitution for RootLink's frontend (Invisible Infrastructure, accessibility,
 community autonomy) and should be treated as authoritative for any design
 decision that conflicts with a generic default.
 
+**Always load the `tailwindcss-development` skill before any CSS/styling work.**
+This project uses **Tailwind CSS v4** (CSS-first configuration with `@theme`).
+NEVER use v3 patterns: no `@tailwind base/components/utilities` directives, no
+`tailwind.config.ts` JS config file, no `rgb(var(--token) / <alpha-value>)` hack.
+Use `@import "tailwindcss"` and `@theme { --color-*: #hex; }` instead. Colors
+are stored as hex (readable), and Tailwind v4 handles CSS variables + opacity
+modifiers natively. If you catch yourself writing v3 patterns, stop and use v4.
+
+**Never make technical decisions without consulting the user.** This includes
+framework choices, data formats, architectural patterns, and dependency
+additions. Present options with trade-offs and ask — do not assume.
+
 ## Directory Routing Map
+
 - `discovery/research/` Technical spikes, third-party API evaluation, and architectural ideas.
 - `discovery/assessment/` Stress test, security audits, and breaking/change impact report.
 - `discovery/mockups/`Schema drafts, JSON payloads, and UI/UX sandbox code.
 - `discovery/business/` Business Models, goals, monetization strategies, and vision documents.
 
 ## Guardrails & Safety Rules
+
 1. **Context Isolation**: When evaluating new ideas, read rootlink/ for context, but dump all thoughts, research, and code drafts into /discovery.
 2. **Idempotency**: Never alter existing database schemas or core business logic in rootlink/ during ideation or research phase.
 
@@ -54,11 +70,12 @@ decision that conflicts with a generic default.
 
 `DEPLOY.md` is the single source of truth for deployment. It survives chat history loss.
 
-Rules (follow all of them):
-- **Before any deployment task, READ `DEPLOY.md` first** — server access, architecture, domains, secrets locations, and every hard-won gotcha live there, not in chat history.
-- **To deploy, run `./scripts/deploy.sh`** from the repo root on `main`. It pushes to GitHub (triggering the Vercel frontend deploy), then SSHes to the server to back up the DB, pull, rebuild containers, run migrations, and health-check. Use `--no-push` to skip the git push.
-- **The frontend deploys on Vercel** automatically from a push to `main`. The backend (FastAPI + Redis + Celery on 192.168.1.228) is what `deploy.sh` updates.
-- **ALWAYS keep `DEPLOY.md` current.** If anything changes — server, domains, secrets, the deploy process, the compose file, env vars, or you hit a NEW gotcha worth remembering — update `DEPLOY.md` in the SAME change. Treat an out-of-date `DEPLOY.md` as a bug.
+Rules \(follow all of them\):
+
+- **Before any deployment task, READ** `DEPLOY.md` **first** — server access, architecture, domains, secrets locations, and every hard-won gotcha live there, not in chat history.
+- **To deploy, run** `./scripts/deploy.sh` from the repo root on `main`. It pushes to GitHub \(triggering the Vercel frontend deploy\), then SSHes to the server to back up the DB, pull, rebuild containers, run migrations, and health-check. Use `--no-push` to skip the git push.
+- **The frontend deploys on Vercel** automatically from a push to `main`. The backend \(FastAPI + Redis + Celery on 192.168.1.228\) is what `deploy.sh` updates.
+- **ALWAYS keep** `DEPLOY.md` **current.** If anything changes — server, domains, secrets, the deploy process, the compose file, env vars, or you hit a NEW gotcha worth remembering — update `DEPLOY.md` in the SAME change. Treat an out-of-date `DEPLOY.md` as a bug.
 - Open tech debt and the planned Next.js 15 upgrade are tracked in `TECH_DEBT.md`.
 
 ## graphify
@@ -68,8 +85,9 @@ This project has a knowledge graph at graphify-out/ with god nodes, community st
 When the user types `/graphify`, invoke the `skill` tool with `skill: "graphify"` before doing anything else.
 
 Rules:
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH\_REPORT.md or raw grep output.
 - Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- Read graphify-out/GRAPH\_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current \(AST-only, no API cost\).

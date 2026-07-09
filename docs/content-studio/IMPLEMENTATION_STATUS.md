@@ -13,7 +13,34 @@ The v2 spec (`CONTENT_STUDIO.md`) documents the full functional specification. T
 
 ---
 
-## Current phase: Phase 1 — Overlay shell + selection (in progress)
+## Current priority: Tailwind v4 migration (blocking all other work)
+
+The Content Studio was built on Tailwind v3.4.0 with an RGB-channel hack. The user
+added a `tailwindcss-development` skill documenting v4. The entire platform must migrate
+to v4.3.2 before any further Content Studio work. Full migration brief:
+[`TAILWIND_V4_MIGRATION.md`](./TAILWIND_V4_MIGRATION.md)
+
+**This is the next task for a new session.** Read the migration brief first, then:
+1. Install v4 deps
+2. Create PostCSS config
+3. Rewrite `globals.css` (`@import "tailwindcss"` + `@theme` with hex colors)
+4. Delete `tailwind.config.ts`
+5. Update theme seed + theme provider + palette picker (hex everywhere)
+6. Verify: tsc, lint, build, visual parity, dark mode, overlay works
+
+After the migration, the 6 bugs found during user testing can be fixed (some are
+auto-fixed by the migration). See the bug list below.
+
+---
+
+## Bugs found during user testing (fix after v4 migration)
+
+1. `el.className.split is not a function` — SVG elements have `className` as `SVGAnimatedString`, not a string. Use `getAttribute("class")` in `selection-agent.ts`.
+2. Layout forced warning — selection agent forces layout before iframe fully loads. Guard with `document.readyState`.
+3. 404 on `/api/blocks/pages/home` — home BlockPage not seeded in backend lifespan. Add `seed_block_pages()`.
+4. Can't edit text inline — `InlineTextEditor` is a non-functional placeholder. Build real `contentEditable` in the selection agent.
+5. Content section shows "96px" (font-size) instead of the heading text — `SelectedElement` doesn't include `textContent`. Add it.
+6. Color values never highlighted in palette — computed RGB can't match palette hex. The v4 migration fixes this (hex everywhere), but still need a reverse-lookup for `getComputedStyle` RGB output.
 
 ### Reusable from prior work ✅
 - Token CSS-variable layer (globals.css + tailwind.config.ts)

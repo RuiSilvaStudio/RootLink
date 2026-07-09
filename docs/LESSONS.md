@@ -311,4 +311,26 @@
     successfully bound to it — `kill -9` on the old PID is what actually reaped it. Don't assume a
     freed port means the old process fully exited; check `ps -p <old_pid>` too before moving on.
     (Roles/permissions post-Phase-6 decisions — professional promote/demote + entity-conversion
-    rank-cap/preview — restarting the backend dev server, 2026-07-04.)
+     rank-cap/preview — restarting the backend dev server, 2026-07-04.)
+
+38. **Always load relevant skills before working — the user added them for a reason.**
+    The `tailwindcss-development` skill was added to the project explicitly documenting
+    Tailwind v4 usage. It was never loaded during Content Studio development, so v3
+    patterns were used throughout (`@tailwind` directives, `tailwind.config.ts`,
+    `rgb(var(--token) / <alpha-value>)` hack). This caused a color format inconsistency
+    (RGB channels in CSS vars vs hex in the palette picker) that broke the palette
+    matching in the visual overlay. The user caught this and was rightfully frustrated.
+    **Rule: check `.opencode/skills/` and `~/.config/opencode/skills/` at the start of
+    every session. Load any skill that's relevant to the task. Do not assume you know
+    the patterns — the skills exist to prevent exactly this.** (Content Studio v2
+    Phase 4-6, 2026-07-09.)
+
+39. **Never make technical decisions without consulting the user.**
+    During Content Studio development, several decisions were made silently: using
+    Tailwind v3 instead of v4, storing colors as RGB channels instead of hex, using
+    an iframe for the overlay, building `InlineTextEditor` as a non-functional
+    placeholder, keeping v1 dashboard pages without asking. The AGENTS.md already says
+    "Never make technical decisions without consulting the user" but this was violated
+    repeatedly. **When you encounter a decision point (framework version, data format,
+    architectural pattern, dependency), stop and ask. Present options with trade-offs.
+    Do not assume.** (Content Studio v2, 2026-07-09.)
