@@ -84,6 +84,7 @@ from app.services.legal_seed import seed_legal_documents
 from app.services.roles_migration import migrate_legacy_delegations, migrate_users_to_entity_rank
 from app.services.template_seed import seed_content_templates
 from app.services.theme_seed import seed_default_theme
+from app.services.block_page_seed import seed_block_pages
 
 
 @asynccontextmanager
@@ -551,6 +552,13 @@ async def lifespan(app: FastAPI):
             await seed_default_element_catalog(session)
     except Exception as e:
         print(f"element catalog seed: {e}")
+    # Seed the Content Studio block pages (home, donate, etc.) — idempotent.
+    # The block_pages/block_sections tables are created by the create_all above.
+    try:
+        async with async_session_factory() as session:
+            await seed_block_pages(session)
+    except Exception as e:
+        print(f"block page seed: {e}")
     # Roles/permissions redesign — Phase 1 data migration (idempotent; only
     # processes rows not yet migrated). See
     # docs/roles-permissions/phase0-decisions.md (b) for the mapping
