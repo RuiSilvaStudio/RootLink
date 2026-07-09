@@ -13,34 +13,50 @@ The v2 spec (`CONTENT_STUDIO.md`) documents the full functional specification. T
 
 ---
 
-## Current priority: Tailwind v4 migration (blocking all other work)
+## Current priority: Component-level selection (Phases A-D)
 
-The Content Studio was built on Tailwind v3.4.0 with an RGB-channel hack. The user
-added a `tailwindcss-development` skill documenting v4. The entire platform must migrate
-to v4.3.2 before any further Content Studio work. Full migration brief:
-[`TAILWIND_V4_MIGRATION.md`](./TAILWIND_V4_MIGRATION.md)
+The overlay currently selects raw DOM elements (every div, span, svg). The goal
+is to snap selection to **component** boundaries — you click a Card, you get
+the Card (not the inner h3 or svg). This requires:
 
-**This is the next task for a new session.** Read the migration brief first, then:
-1. Install v4 deps
-2. Create PostCSS config
-3. Rewrite `globals.css` (`@import "tailwindcss"` + `@theme` with hex colors)
-4. Delete `tailwind.config.ts`
-5. Update theme seed + theme provider + palette picker (hex everywhere)
-6. Verify: tsc, lint, build, visual parity, dark mode, overlay works
+### Phase A — Extract 7 de facto components (in progress)
+- ✅ Created `components/ui/DeFacto.tsx` with 7 components (IconContainer, SectionHeader, LinkWithArrow, FilterPill, SidebarWidget, RankedListRow, ResultCard)
+- ✅ Refactored `HomeBlocks.tsx` (homepage) to use SectionHeader, IconContainer, LinkWithArrow
+- ⏳ Refactor `PageBlocks.tsx` to use the same components (SectionHeader, IconContainer, RankedListRow)
+- ⏳ Refactor `BlockComponents.tsx` (generic blocks)
+- ⏳ Refactor search components to use ResultCard, FilterPill, SidebarWidget
+- ⏳ Refactor events/marketplace/feed pages to use FilterPill
 
-After the migration, the 6 bugs found during user testing can be fixed (some are
-auto-fixed by the migration). See the bug list below.
+### Phase B — Tag all components with data-rl-component (pending)
+Add `data-rl-component="Name"` to the root element of all 47+ components (21 ui/, 16 blocks, 10 search, 7 de facto).
+
+### Phase C — Selection agent snaps to component boundaries (pending)
+Update the selection agent: hover finds nearest `data-rl-component` ancestor, outline snaps to component boundary, click selects the component, double-click drills into child components, breadcrumb shows component hierarchy.
+
+### Phase D — Inspector shows schema-only properties (pending)
+Fetch the element schema from `/api/element-schemas/{componentType}`, show ONLY schema-defined properties with the correct constrained controls. No raw CSS dump.
 
 ---
 
-## Bugs found during user testing (fix after v4 migration)
+## Bug fixes applied this session
 
-1. `el.className.split is not a function` — SVG elements have `className` as `SVGAnimatedString`, not a string. Use `getAttribute("class")` in `selection-agent.ts`.
-2. Layout forced warning — selection agent forces layout before iframe fully loads. Guard with `document.readyState`.
-3. 404 on `/api/blocks/pages/home` — home BlockPage not seeded in backend lifespan. Add `seed_block_pages()`.
-4. Can't edit text inline — `InlineTextEditor` is a non-functional placeholder. Build real `contentEditable` in the selection agent.
-5. Content section shows "96px" (font-size) instead of the heading text — `SelectedElement` doesn't include `textContent`. Add it.
-6. Color values never highlighted in palette — computed RGB can't match palette hex. The v4 migration fixes this (hex everywhere), but still need a reverse-lookup for `getComputedStyle` RGB output.
+All 6 bugs from user testing are fixed:
+1. ✅ SVG className crash — use `getAttribute("class")`
+2. ✅ Layout forced warning — 600ms delay + loading indicator before agent injection
+3. ✅ 404 on home block page — `seed_block_pages()` in backend lifespan
+4. ✅ Inline text editing — `contentEditable` on text elements when selected
+5. ✅ Content shows text not font-size — `textContent` added to `SelectedElement`
+6. ✅ Color not highlighted in palette — dynamic palette from `@theme` CSS vars + stone colors overridden as hex (eliminates oklch format mismatch)
+
+## Tailwind v4 migration ✅ COMPLETE
+
+Migrated from v3.4.0 to v4.3.2:
+- `@import "tailwindcss"` + `@theme` (hex, no RGB channels)
+- `tailwind.config.ts` deleted (106 lines of boilerplate removed)
+- `mapTokenToCssVar` runtime hack removed
+- Stone colors overridden as hex in `@theme` (v4 default uses oklch)
+- `theme_seed.py` stores hex
+- `normalizeToHex()` converts oklch/rgb from getComputedStyle to hex
 
 ### Reusable from prior work ✅
 - Token CSS-variable layer (globals.css + tailwind.config.ts)
