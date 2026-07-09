@@ -33,15 +33,15 @@ export function injectSelectionAgent() {
     outline = document.createElement("div");
     outline.style.cssText = `
       position: fixed; pointer-events: none; z-index: 99999;
-      border: 2px solid rgb(var(--color-rust-500, 168 100 61));
+      border: 2px solid var(--color-rust-500, #a8643d);
       border-radius: 4px; transition: all 0.05s ease-out;
       display: none;
     `;
     label = document.createElement("div");
     label.style.cssText = `
       position: fixed; pointer-events: none; z-index: 100000;
-      background: rgb(var(--color-rust-500, 168 100 61));
-      color: rgb(var(--color-cream, 248 246 242));
+      background: var(--color-rust-500, #a8643d);
+      color: var(--color-cream, #f8f6f2);
       font-size: 11px; font-family: monospace; padding: 2px 6px;
       border-radius: 4px 4px 0 0; white-space: nowrap;
       display: none; line-height: 1.4;
