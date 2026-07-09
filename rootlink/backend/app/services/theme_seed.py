@@ -60,6 +60,18 @@ _DEFAULT_TOKENS: list[tuple[str, str, str]] = [
     ("--color-rust-700", "#714029", "color"),
     ("--color-rust-800", "#5c3422", "color"),
     ("--color-rust-900", "#4a2a1c", "color"),
+    # ── Stone (override v4's default oklch with hex for consistency) ──
+    ("--color-stone-50", "#fafaf9", "color"),
+    ("--color-stone-100", "#f5f5f4", "color"),
+    ("--color-stone-200", "#e7e5e4", "color"),
+    ("--color-stone-300", "#d6d3d1", "color"),
+    ("--color-stone-400", "#a8a29e", "color"),
+    ("--color-stone-500", "#78716c", "color"),
+    ("--color-stone-600", "#57534e", "color"),
+    ("--color-stone-700", "#44403c", "color"),
+    ("--color-stone-800", "#292524", "color"),
+    ("--color-stone-900", "#1c1917", "color"),
+    ("--color-stone-950", "#0c0a09", "color"),
     # ── Fonts ──
     ("--font-display", '"Fraunces", Georgia, serif', "font"),
     ("--font-serif", '"Source Serif 4", Georgia, serif', "font"),
