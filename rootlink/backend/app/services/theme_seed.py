@@ -160,3 +160,30 @@ async def seed_default_theme(session: AsyncSession) -> None:
             )
 
     await session.commit()
+
+    # Backfill new tokens onto the active theme when it differs from Default.
+    # The seed only adds tokens to the "Default" theme above; if the active
+    # theme is a different one (e.g. renamed, or a custom theme), new tokens
+    # like --color-brand would be missing from it. This loop adds any seed
+    # tokens that don't yet exist on the active theme (additive only — never
+    # overwrites existing values).
+    active = await session.scalar(select(Theme).where(Theme.is_active.is_(True)))
+    if active and active.id != theme.id:
+        for token_name, light_value, dark_value, category in _DEFAULT_TOKENS:
+            existing = await session.scalar(
+                select(ThemeToken).where(
+                    ThemeToken.theme_id == active.id,
+                    ThemeToken.token_name == token_name,
+                )
+            )
+            if existing is None:
+                session.add(
+                    ThemeToken(
+                        theme_id=active.id,
+                        token_name=token_name,
+                        light_value=light_value,
+                        dark_value=dark_value,
+                        category=category,
+                    )
+                )
+        await session.commit()
