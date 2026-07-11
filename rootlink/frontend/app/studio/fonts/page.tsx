@@ -60,7 +60,7 @@ export default function FontLibraryPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-6 py-4 border-b border-primary-200/40 dark:border-stone-800 flex items-center justify-between">
+      <div className="shrink-0 px-6 py-4 border-b border-primary-200/40 dark:border-stone-800 flex items-center justify-between">
         <div>
           <h1 className="font-display text-xl font-semibold text-stone-800 dark:text-stone-100">Font Library</h1>
           <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">Import and manage fonts — active fonts appear in the theme manager + inspector</p>

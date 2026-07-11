@@ -1,0 +1,225 @@
+/** Shared component grouping for the Element Catalog and Visual Audit.
+ *
+ *  Each of the 50 component types is assigned to one of 6 groups.
+ *  Group colors are used for sidebar dots and filter pills.
+ */
+
+export const COMPONENT_GROUPS: Record<string, string> = {
+  // Layout blocks
+  CardGridBlock: "Layout block",
+  CtaBlock: "Layout block",
+  DonateBalanceBlock: "Layout block",
+  DonateHeroBlock: "Layout block",
+  DonateHowItWorksBlock: "Layout block",
+  DonateLeaderboardBlock: "Layout block",
+  DonateTiersBlock: "Layout block",
+  GroupsHeaderBlock: "Layout block",
+  GroupsHeroBlock: "Layout block",
+  HeroBlock: "Layout block",
+  HomeCategoriesBlock: "Layout block",
+  HomeCommunityBlock: "Layout block",
+  HomeCtaBlock: "Layout block",
+  HomeHeroBlock: "Layout block",
+  HomeRecentBlock: "Layout block",
+  HomeToolsBlock: "Layout block",
+  LeaderboardHeroBlock: "Layout block",
+  LeaderboardListBlock: "Layout block",
+  RankingDetailsBlock: "Layout block",
+  RankingHeroBlock: "Layout block",
+  TextBlock: "Layout block",
+  ToolsGridBlock: "Layout block",
+  ToolsHeaderBlock: "Layout block",
+  // UI components
+  Avatar: "UI component",
+  Badge: "UI component",
+  Button: "UI component",
+  Card: "UI component",
+  FilterPill: "UI component",
+  IconContainer: "UI component",
+  Input: "UI component",
+  LinkWithArrow: "UI component",
+  PageHeader: "UI component",
+  ProgressBar: "UI component",
+  Section: "UI component",
+  SectionHeader: "UI component",
+  Select: "UI component",
+  SidebarWidget: "UI component",
+  StatCounter: "UI component",
+  Textarea: "UI component",
+  Toggle: "UI component",
+  Tooltip: "UI component",
+  // Result cards
+  EmptyState: "Result card",
+  RankedListRow: "Result card",
+  ResultCard: "Result card",
+  // Internal effects
+  GrainOverlay: "Internal effect",
+  HeroParticleCanvas: "Internal effect",
+  ScrollReveal: "Internal effect",
+  // Technical helpers
+  ImageUpload: "Technical helper",
+  InfoPopover: "Technical helper",
+  // Extracted cards (Phase 1)
+  EventListCard: "List card",
+  MarketplaceListCard: "List card",
+  GroupListCard: "List card",
+  PlantListCard: "List card",
+  FeedItemCard: "List card",
+  NetworkUserCard: "List card",
+  ArticleListRow: "List card",
+  LearningCourseCard: "List card",
+  LearningEnrollmentCard: "List card",
+  LearningAllCourseCard: "List card",
+  LearningPathCard: "List card",
+  // Phase 2 — Event detail cards
+  EventScheduleItem: "Detail card",
+  EventAmenityCard: "Detail card",
+  EventSponsorCard: "Detail card",
+  EventDonationRow: "Detail card",
+  EventTicketCard: "Detail card",
+  EventAttendeeChip: "Detail card",
+  EventVendorRow: "Detail card",
+  // Phase 2 — Profile cards
+  ProfileGroupMiniCard: "Detail card",
+  ProfileContentCard: "Detail card",
+  ProfileEventRow: "Detail card",
+  ProfileGroupRow: "Detail card",
+  ProfileCourseRow: "Detail card",
+  ProfileListingRow: "Detail card",
+  ProfileSaleRow: "Detail card",
+  ProfilePurchaseRow: "Detail card",
+  ProfileTicketRow: "Detail card",
+  ProfileRsvpRow: "Detail card",
+  ProfileDonationRow: "Detail card",
+  ProfileEnrollmentRow: "Detail card",
+  ProfileCommentRow: "Detail card",
+  // Phase 3 — Minor pages
+  MarketplaceSellerCard: "Detail card",
+  GroupMemberChip: "Detail card",
+  PopularContentCard: "List card",
+};
+
+export const GROUP_COLORS: Record<string, string> = {
+  "Layout block": "bg-blue-400",
+  "UI component": "bg-emerald-400",
+  "Result card": "bg-amber-400",
+  Skeleton: "bg-stone-400",
+  "Internal effect": "bg-purple-400",
+  "Technical helper": "bg-slate-400",
+  "List card": "bg-teal-400",
+  "Detail card": "bg-cyan-400",
+};
+
+export const GROUP_ORDER = [
+  "Layout block",
+  "UI component",
+  "Result card",
+  "Internal effect",
+  "Technical helper",
+  "List card",
+  "Detail card",
+];
+
+/** Component → routes where it appears on the live platform.
+ *  Each route has a human-readable label and a path.
+ *  "site-wide" means it appears on too many pages to list individually.
+ *  "unused" means the component is defined but never rendered (dead code).
+ */
+export const COMPONENT_ROUTES: Record<string, { label: string; href: string }[] | "site-wide" | "unused"> = {
+  // Layout blocks
+  HeroBlock: [{ label: "Dynamic pages", href: "/p/[slug]" }],
+  TextBlock: [{ label: "Dynamic pages", href: "/p/[slug]" }],
+  CardGridBlock: [{ label: "Dynamic pages", href: "/p/[slug]" }],
+  CtaBlock: [{ label: "Dynamic pages", href: "/p/[slug]" }],
+  HomeHeroBlock: [{ label: "Homepage", href: "/" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  HomeCategoriesBlock: [{ label: "Homepage", href: "/" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  HomeToolsBlock: [{ label: "Homepage", href: "/" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  HomeCommunityBlock: [{ label: "Homepage", href: "/" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  HomeRecentBlock: [{ label: "Homepage", href: "/" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  HomeCtaBlock: [{ label: "Homepage", href: "/" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  DonateHeroBlock: [{ label: "Donate", href: "/donate" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  DonateBalanceBlock: [{ label: "Donate", href: "/donate" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  DonateTiersBlock: [{ label: "Donate", href: "/donate" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  DonateLeaderboardBlock: [{ label: "Donate", href: "/donate" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  DonateHowItWorksBlock: [{ label: "Donate", href: "/donate" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  LeaderboardHeroBlock: [{ label: "Leaderboard", href: "/leaderboard" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  LeaderboardListBlock: [{ label: "Leaderboard", href: "/leaderboard" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  RankingHeroBlock: [{ label: "Ranking", href: "/ranking" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  RankingDetailsBlock: [{ label: "Ranking", href: "/ranking" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  ToolsHeaderBlock: [{ label: "Tools", href: "/tools" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  ToolsGridBlock: [{ label: "Tools", href: "/tools" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  GroupsHeaderBlock: [{ label: "Groups", href: "/groups" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  GroupsHeroBlock: [{ label: "Groups", href: "/groups" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+
+  // UI components
+  Avatar: [{ label: "Profile", href: "/profile" }, { label: "Article", href: "/articles/example" }, { label: "Group", href: "/groups/1" }, { label: "Event", href: "/events/1" }],
+  Badge: "site-wide",
+  Button: "site-wide",
+  Card: [{ label: "Events", href: "/events" }, { label: "Groups", href: "/groups" }, { label: "Marketplace", href: "/marketplace" }, { label: "Network", href: "/network" }, { label: "Profile", href: "/profile" }],
+  FilterPill: [{ label: "Events", href: "/events" }, { label: "Marketplace", href: "/marketplace" }, { label: "Search", href: "/search" }],
+  IconContainer: [{ label: "Homepage", href: "/" }, { label: "Donate", href: "/donate" }, { label: "Leaderboard", href: "/leaderboard" }, { label: "Ranking", href: "/ranking" }, { label: "Tools", href: "/tools" }],
+  Input: [{ label: "Legal (admin)", href: "/admin/legal" }],
+  LinkWithArrow: [{ label: "Homepage", href: "/" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  PageHeader: [{ label: "Events", href: "/events" }, { label: "Marketplace", href: "/marketplace" }, { label: "Network", href: "/network" }, { label: "Legal", href: "/legal" }],
+  ProgressBar: [{ label: "Checklist", href: "/tools/monthly-checklist" }, { label: "Composting", href: "/composting" }, { label: "Network", href: "/network" }],
+  Section: [{ label: "Irrigation", href: "/tools/irrigation-calculator" }],
+  SectionHeader: [{ label: "Homepage", href: "/" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  Select: "unused",
+  SidebarWidget: [{ label: "Search", href: "/search" }],
+  StatCounter: [{ label: "Homepage", href: "/" }, { label: "Admin", href: "/admin" }, { label: "Learning", href: "/learning" }],
+  Textarea: [{ label: "Legal (admin)", href: "/admin/legal" }],
+  Toggle: "unused",
+  Tooltip: "unused",
+
+  // Result cards
+  EmptyState: [{ label: "Notifications", href: "/notifications" }, { label: "Groups", href: "/groups" }, { label: "Search", href: "/search" }, { label: "Feed", href: "/feed" }],
+  RankedListRow: [{ label: "Leaderboard", href: "/leaderboard" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  ResultCard: [{ label: "Search", href: "/search" }],
+
+  // Internal effects
+  GrainOverlay: "unused",
+  HeroParticleCanvas: [{ label: "Homepage", href: "/" }, { label: "Dynamic pages", href: "/p/[slug]" }],
+  ScrollReveal: "unused",
+
+  // Technical helpers
+  ImageUpload: [{ label: "Profile", href: "/profile" }, { label: "Groups", href: "/groups" }, { label: "Events", href: "/events" }, { label: "Articles (new)", href: "/articles/new" }],
+  InfoPopover: [{ label: "Articles (new)", href: "/articles/new" }],
+  // Extracted cards
+  EventListCard: [{ label: "Events", href: "/events" }],
+  MarketplaceListCard: [{ label: "Marketplace", href: "/marketplace" }],
+  GroupListCard: [{ label: "Groups", href: "/groups" }],
+  PlantListCard: [{ label: "Plants", href: "/plants" }],
+  FeedItemCard: [{ label: "Feed", href: "/feed" }],
+  NetworkUserCard: [{ label: "Network", href: "/network" }],
+  ArticleListRow: [{ label: "My articles", href: "/articles/my" }],
+  LearningCourseCard: [{ label: "Learning", href: "/learning" }],
+  LearningEnrollmentCard: [{ label: "Learning", href: "/learning" }],
+  LearningAllCourseCard: [{ label: "Learning", href: "/learning" }],
+  LearningPathCard: [{ label: "Learning", href: "/learning" }],
+  // Phase 2 — Event detail
+  EventScheduleItem: [{ label: "Event detail", href: "/events/1" }],
+  EventAmenityCard: [{ label: "Event detail", href: "/events/1" }],
+  EventSponsorCard: [{ label: "Event detail", href: "/events/1" }],
+  EventDonationRow: [{ label: "Event detail", href: "/events/1" }],
+  EventTicketCard: [{ label: "Event detail", href: "/events/1" }],
+  EventAttendeeChip: [{ label: "Event detail", href: "/events/1" }],
+  EventVendorRow: [{ label: "Event detail", href: "/events/1" }],
+  // Phase 2 — Profile
+  ProfileGroupMiniCard: [{ label: "Profile", href: "/profile" }],
+  ProfileContentCard: [{ label: "Profile", href: "/profile" }],
+  ProfileEventRow: [{ label: "Profile", href: "/profile" }],
+  ProfileGroupRow: [{ label: "Profile", href: "/profile" }],
+  ProfileCourseRow: [{ label: "Profile", href: "/profile" }],
+  ProfileListingRow: [{ label: "Profile", href: "/profile" }],
+  ProfileSaleRow: [{ label: "Profile", href: "/profile" }],
+  ProfilePurchaseRow: [{ label: "Profile", href: "/profile" }],
+  ProfileTicketRow: [{ label: "Profile", href: "/profile" }],
+  ProfileRsvpRow: [{ label: "Profile", href: "/profile" }],
+  ProfileDonationRow: [{ label: "Profile", href: "/profile" }],
+  ProfileEnrollmentRow: [{ label: "Profile", href: "/profile" }],
+  ProfileCommentRow: [{ label: "Profile", href: "/profile" }],
+  // Phase 3
+  MarketplaceSellerCard: [{ label: "Marketplace detail", href: "/marketplace/1" }],
+  GroupMemberChip: [{ label: "Group detail", href: "/groups/1" }],
+  PopularContentCard: [{ label: "Search", href: "/search" }],
+};

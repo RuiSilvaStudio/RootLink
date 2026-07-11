@@ -5,14 +5,20 @@ import { ArrowLeft, Leaf } from "lucide-react";
 import { useLocale } from "@/lib/locale-context";
 import { SubmitForm } from "@/components/SubmitForm";
 import { Button } from "@/components/ui/Button";
-import { EditableText } from "@/components/editor-mode/editable-text";
+import { Text } from "@/components/ui/Text";
+import { api } from "@/lib/api";
+import { BlockRenderer, type BlockSectionData } from "@/components/blocks";
 
 export default function SubmitPage() {
   const { t } = useLocale();
   const [token, setToken] = useState<string | null>(null);
+  const [heroSections, setHeroSections] = useState<BlockSectionData[] | null>(null);
 
   useEffect(() => {
     setToken(localStorage.getItem("token"));
+    api.blocks.getPage("submit")
+      .then((p) => p?.sections?.length ? setHeroSections(p.sections) : setHeroSections([]))
+      .catch(() => setHeroSections([]));
   }, []);
 
   if (!token) {
@@ -33,6 +39,10 @@ export default function SubmitPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-8 py-12">
+      {heroSections && heroSections.length > 0 && (
+        <BlockRenderer sections={heroSections} />
+      )}
+
       <a href="/search" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-primary-700 mb-6 transition">
         <ArrowLeft className="w-4 h-4" />
         {t("submit.back_to_search")}
@@ -42,8 +52,8 @@ export default function SubmitPage() {
           <Leaf className="w-5 h-5 text-primary-500" />
         </div>
         <div>
-          <EditableText k="submit.title" as="h1" className="text-2xl font-serif font-bold text-stone-800" />
-          <EditableText k="submit.subtitle" as="p" className="text-sm text-stone-500 font-light" />
+          <Text k="submit.title" as="h1" className="text-2xl font-serif font-bold text-stone-800" />
+          <Text k="submit.subtitle" as="p" className="text-sm text-stone-500 font-light" />
         </div>
       </div>
       <div className="mt-8">

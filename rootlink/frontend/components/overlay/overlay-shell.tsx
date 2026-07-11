@@ -13,22 +13,69 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { PenLine, Eye, X, ExternalLink, AlertTriangle, Check, Undo2, Save, Upload, Trash2 } from "lucide-react";
+import { PenLine, Eye, X, AlertTriangle, Check, Undo2, Save, Upload, Trash2, ChevronDown, FileText } from "lucide-react";
 import { useOverlay } from "./overlay-provider";
 import { InspectorPanel } from "./inspector-panel";
 import { injectSelectionAgent } from "./selection-agent";
+import { api } from "@/lib/api";
 
 export function OverlayShell() {
   const {
     active, canEdit, toggle, iframeUrl, setIframeUrl,
     pendingPrompt, confirmOverride, cancelOverride,
-    draftChanges, previewMode, setPreviewMode,
-    saveDraft, publishDraft, discardDraft, draftSaving, pageSlug,
+    draftChanges, saveDraft, publishDraft, discardDraft, clearDraftChanges, draftSaving, pageSlug,
+    previewMode, setPreviewMode,
   } = useOverlay();
   const pathname = usePathname();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [agentReady, setAgentReady] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [pages, setPages] = useState<{ slug: string; label: string }[]>([]);
+  const [pageMenuOpen, setPageMenuOpen] = useState(false);
+  const pageMenuRef = useRef<HTMLDivElement>(null);
+
+  // Prevent the page behind the overlay from scrolling.
+  useEffect(() => {
+    if (!canEdit || !active) return;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, [canEdit, active]);
+
+  // Fetch available pages on mount.
+  useEffect(() => {
+    api.blocks.listPages().then(setPages).catch(() => {});
+  }, []);
+
+  // Close page menu on outside click.
+  useEffect(() => {
+    if (!pageMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (pageMenuRef.current && !pageMenuRef.current.contains(e.target as Node)) setPageMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [pageMenuOpen]);
+
+  // Switch to a different page. Warns if unsaved changes exist.
+  const switchPage = (slug: string) => {
+    setPageMenuOpen(false);
+    if (slug === pageSlug) return;
+    if (draftChanges.length > 0) {
+      if (!window.confirm(`You have ${draftChanges.length} unsaved change${draftChanges.length !== 1 ? "s" : ""} on this page. Switching will discard them. Continue?`)) return;
+      clearDraftChanges();
+    }
+    if (previewMode) setPreviewMode(false);
+    setIframeUrl(`${window.location.origin}/${slug === "home" ? "" : slug}`);
+  };
+
+  // Discard: clear state + force iframe remount so the agent re-injects.
+  const handleDiscard = () => {
+    discardDraft();
+    setReloadKey((k) => k + 1);
+    setAgentReady(false);
+    setIframeLoaded(false);
+  };
 
   useEffect(() => {
     if (active && !iframeUrl) {
@@ -46,7 +93,7 @@ export function OverlayShell() {
   // — finish reading layout, so the agent doesn't cause "layout forced"
   // warnings by reading getBoundingClientRect too early).
   useEffect(() => {
-    if (!active || !iframeLoaded || !iframeRef.current) return;
+    if (!active || !iframeLoaded || !iframeRef.current || previewMode) return;
     const timer = setTimeout(() => {
       const iframe = iframeRef.current;
       if (!iframe) return;
@@ -60,7 +107,7 @@ export function OverlayShell() {
       } catch {}
     }, 600);
     return () => clearTimeout(timer);
-  }, [active, iframeLoaded]);
+  }, [active, iframeLoaded, previewMode]);
 
   useEffect(() => {
     if (iframeRef.current && iframeUrl) {
@@ -68,7 +115,15 @@ export function OverlayShell() {
       setIframeLoaded(false);
       setAgentReady(false);
     }
-  }, [iframeUrl]);
+  }, [iframeUrl, reloadKey]);
+
+  // Reload iframe when toggling preview mode — clears/re-applies draft changes
+  useEffect(() => {
+    if (!active || !iframeRef.current) return;
+    iframeRef.current.src = iframeUrl;
+    setIframeLoaded(false);
+    setAgentReady(false);
+  }, [previewMode, active, iframeUrl]);
 
   if (!canEdit || !active) return null;
 
@@ -86,10 +141,42 @@ export function OverlayShell() {
           <span className="font-display text-sm font-semibold text-primary-300">
             Content Studio — Edit Mode
           </span>
+          {/* Page navigation dropdown */}
+          {pages.length > 0 && (
+            <div ref={pageMenuRef} className="relative">
+              <button
+                onClick={() => setPageMenuOpen((o) => !o)}
+                disabled={draftSaving}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-stone-300 hover:bg-stone-800 transition disabled:opacity-50"
+                title="Switch page"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                {pages.find((p) => p.slug === pageSlug)?.label || pageSlug}
+                <ChevronDown className="w-3.5 h-3.5 text-stone-500" />
+              </button>
+              {pageMenuOpen && (
+                <div className="absolute top-full left-0 mt-1 w-48 max-h-80 overflow-y-auto rounded-lg border border-stone-800 bg-stone-900 shadow-lg z-50">
+                  {pages.map((p) => (
+                    <button
+                      key={p.slug}
+                      onClick={() => switchPage(p.slug)}
+                      className={`w-full text-left px-3 py-2 text-sm transition flex items-center gap-2 ${
+                        p.slug === pageSlug
+                          ? "bg-primary-600 text-cream"
+                          : "text-stone-200 hover:bg-stone-800"
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Preview toggle */}
+          {/* Preview toggle — shows the published version (draft changes hidden) */}
           <button
             onClick={() => setPreviewMode(!previewMode)}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition ${
@@ -97,7 +184,7 @@ export function OverlayShell() {
                 ? "bg-amber-600 text-white"
                 : "text-stone-400 hover:text-stone-200 hover:bg-stone-800"
             }`}
-            title="Preview as visitor"
+            title={previewMode ? "Exit preview" : "Preview as visitor"}
           >
             <Eye className="w-3.5 h-3.5" /> {previewMode ? "Previewing" : "Preview"}
           </button>
@@ -125,7 +212,7 @@ export function OverlayShell() {
                 {draftSaving ? "..." : <Upload className="w-3.5 h-3.5" />} Publish
               </button>
               <button
-                onClick={discardDraft}
+                onClick={handleDiscard}
                 disabled={draftSaving}
                 className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-stone-400 hover:text-red-400 transition"
                 title="Discard"
@@ -135,12 +222,7 @@ export function OverlayShell() {
             </>
           )}
 
-          {iframeUrl && (
-            <a href={iframeUrl} target="_blank" className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-stone-400 hover:text-stone-200 transition">
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-          )}
-        </div>
+          </div>
       </header>
 
       {/* ── Override prompt (inline, not modal) ────────── */}
@@ -176,13 +258,19 @@ export function OverlayShell() {
         <div className="flex-1 relative bg-white">
           {iframeUrl && (
             <iframe
+              key={reloadKey}
               ref={iframeRef}
               onLoad={() => setIframeLoaded(true)}
               className="w-full h-full border-0"
               title="Content Studio Preview"
             />
           )}
-          {!agentReady && (
+          {previewMode && (
+            <div className="absolute top-2 left-2 z-10 px-3 py-1.5 rounded-full bg-amber-600 text-white text-xs font-medium shadow-lg">
+              Preview as visitor — draft changes hidden
+            </div>
+          )}
+          {!previewMode && !agentReady && (
             <div className="absolute inset-0 flex items-center justify-center bg-stone-100 z-10">
               <div className="flex flex-col items-center gap-3">
                 <div className="w-6 h-6 border-2 border-stone-300 border-t-primary-500 rounded-full animate-spin" />
@@ -192,18 +280,14 @@ export function OverlayShell() {
               </div>
             </div>
           )}
-          {/* Preview overlay — dims the iframe edge when previewing */}
-          {previewMode && (
-            <div className="absolute top-2 left-2 z-10 px-3 py-1.5 rounded-full bg-amber-600 text-white text-xs font-medium shadow-lg">
-              Preview as visitor — draft changes hidden
-            </div>
-          )}
         </div>
 
-        {/* Inspector panel */}
-        <aside className="w-96 shrink-0 border-l border-stone-800 bg-stone-950 overflow-hidden flex flex-col">
-          <InspectorPanel />
-        </aside>
+        {/* Inspector panel — hidden in preview mode */}
+        {!previewMode && (
+          <aside className="w-96 shrink-0 border-l border-stone-800 bg-stone-950 overflow-hidden flex flex-col">
+            <InspectorPanel />
+          </aside>
+        )}
       </div>
     </div>
   );

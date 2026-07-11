@@ -23,6 +23,7 @@ export function ArticleCard({ item }: { item: any }) {
   if (isExternal) {
     return (
       <a
+        data-rl-component="ResultCard"
         href={c.url || `/content/${c.id}`}
         target="_blank"
         rel="noopener noreferrer"
@@ -54,6 +55,7 @@ export function ArticleCard({ item }: { item: any }) {
 
   return (
     <Link
+      data-rl-component="ResultCard"
       href={c.slug ? `/articles/${c.slug}` : `/content/${c.id}`}
       className="group block rounded-2xl border border-stone-200/60 bg-white p-5 transition-all hover:shadow-md hover:border-stone-300/60"
     >

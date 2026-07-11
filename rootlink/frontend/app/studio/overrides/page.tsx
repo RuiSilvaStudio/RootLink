@@ -53,12 +53,12 @@ export default function OverrideReportPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-6 py-4 border-b border-primary-200/40 dark:border-stone-800">
+      <div className="shrink-0 px-6 py-4 border-b border-primary-200/40 dark:border-stone-800">
         <h1 className="font-display text-xl font-semibold text-stone-800 dark:text-stone-100">Override Report</h1>
         <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">All deviations from theme defaults across the site</p>
       </div>
 
-      <div className="px-6 py-3 border-b border-primary-200/30 dark:border-stone-800/50 flex items-center gap-3">
+      <div className="shrink-0 px-6 py-3 border-b border-primary-200/30 dark:border-stone-800/50 flex items-center gap-3">
         <div className="flex gap-1 p-1 rounded-lg bg-stone-100 dark:bg-stone-800/50">
           {(["all", "active", "stale"] as const).map((f) => (
             <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1 rounded-md text-xs font-medium transition capitalize ${filter === f ? "bg-white dark:bg-stone-900 text-primary-700 dark:text-primary-300 shadow-sm" : "text-stone-500 hover:text-stone-700 dark:hover:text-stone-200"}`}>

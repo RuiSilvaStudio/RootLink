@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Moon } from "lucide-react";
 import { api } from "@/lib/api";
+import { SidebarWidget } from "@/components/ui/DeFacto";
 
 export function MoonWidget() {
   const [moon, setMoon] = useState<any>(null);
@@ -14,11 +15,7 @@ export function MoonWidget() {
   if (!moon) return null;
 
   return (
-    <div className="rounded-2xl border border-stone-200/60 bg-white p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <Moon className="w-4 h-4 text-stone-500" />
-        <h3 className="text-xs font-display font-semibold text-stone-500 uppercase tracking-wider">Moon Phase</h3>
-      </div>
+    <SidebarWidget icon={Moon} title="Moon Phase">
       <div className="flex items-center gap-3">
         <span className="text-3xl">{moon.icon}</span>
         <div>
@@ -29,6 +26,6 @@ export function MoonWidget() {
       <p className="text-xs text-stone-500 mt-3 leading-relaxed font-serif">
         {moon.agricultural_en}
       </p>
-    </div>
+    </SidebarWidget>
   );
 }

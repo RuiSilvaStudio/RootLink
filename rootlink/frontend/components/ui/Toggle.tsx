@@ -9,7 +9,7 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
 export function Toggle({ label, id, className = "", ...props }: Props) {
   const toggleId = id || label.toLowerCase().replace(/\s+/g, "-");
   return (
-    <label htmlFor={toggleId} className={`inline-flex items-center gap-3 cursor-pointer group ${className}`}>
+    <label data-rl-component="Toggle" htmlFor={toggleId} className={`inline-flex items-center gap-3 cursor-pointer group ${className}`}>
       <div className="relative">
         <input
           type="checkbox"

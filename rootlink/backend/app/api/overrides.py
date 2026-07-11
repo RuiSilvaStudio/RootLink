@@ -23,7 +23,7 @@ helper from `app/api/admin.py` for the `super_admin` gate, and
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -46,10 +46,21 @@ class OverrideBody(BaseModel):
 
 
 class DraftChange(BaseModel):
-    element_path: str
-    property: str
+    """A single change in a page draft. kind="style" for element property
+    overrides; kind="text" for inline copy edits (via the overlay's text
+    editing). Accepts camelCase from the frontend overlay-provider via
+    pydantic aliases (elementPath → element_path etc.)."""
+    model_config = {"populate_by_name": True}
+
+    kind: str = "style"
+    # style-kind fields
+    element_path: str = Field(default="", alias="elementPath")
+    property: str = ""
     value: str
-    old_value: str | None = None
+    old_value: str | None = Field(default=None, alias="oldValue")
+    # text-kind fields (only set when kind="text")
+    copy_key: str | None = Field(default=None, alias="copyKey")
+    locale: str | None = None
 
 
 class DraftBody(BaseModel):

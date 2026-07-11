@@ -3,7 +3,7 @@
 # deploy.sh — Automated RootLink backend deployment to the production server.
 #
 # Frontend deploys automatically on Vercel when you push to `main`.
-# This script handles the BACKEND (FastAPI + Redis + Celery on 192.168.1.228).
+# This script handles the BACKEND (FastAPI + Redis + Celery on 192.168.1.230).
 #
 # What it does, in order:
 #   1. Pushes local main to GitHub (so the server can pull it)
@@ -26,7 +26,7 @@
 
 set -euo pipefail
 
-SERVER="rui@192.168.1.228"
+SERVER="rui@192.168.1.230"
 REMOTE_REPO="/home/rui/RootLink"
 REMOTE_COMPOSE_DIR="/home/rui/RootLink/rootlink"
 COMPOSE_FILE="docker-compose.prod.yml"

@@ -30,7 +30,7 @@ export function InfoPopover({
   }, []);
 
   return (
-    <span ref={ref} className="relative inline-flex">
+    <span data-rl-component="InfoPopover" ref={ref} className="relative inline-flex">
       <button
         type="button"
         aria-label={label}

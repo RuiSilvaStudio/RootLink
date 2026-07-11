@@ -11,7 +11,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, Props>(
   ({ label, error, className = "", id, ...props }, ref) => {
     const textareaId = id || label?.toLowerCase().replace(/\s+/g, "-");
     return (
-      <div className="space-y-1.5">
+      <div data-rl-component="Textarea" className="space-y-1.5">
         {label && (
           <label htmlFor={textareaId} className="block text-sm font-display font-medium text-stone-700 dark:text-stone-300 tracking-wide">
             {label}

@@ -1,19 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { Calendar, MapPin, Plus, Users, Globe, Clock, Sparkles, Tag, Shield, Building, Heart, Trash2 } from "lucide-react";
+import { Calendar, Plus, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
 import { useToast } from "@/lib/toast-context";
 import { useDirtyGuard } from "@/lib/use-dirty-guard";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ImageUpload } from "@/components/ui/ImageUpload";
-import { EditableText } from "@/components/editor-mode/editable-text";
+import { FilterPill } from "@/components/ui/DeFacto";
+import { Text } from "@/components/ui/Text";
+import { EventListCard } from "@/components/cards/EventListCard";
+import { BlockRenderer, type BlockSectionData } from "@/components/blocks";
 
 const VISIBILITY_OPTIONS = [
   { value: "all", labelKey: "vis_all" },
@@ -71,6 +72,7 @@ export default function EventsPage() {
   const [families, setFamilies] = useState<any[]>([]);
   const [familyCategories, setFamilyCategories] = useState<any[]>([]);
   const [formFamilyCategories, setFormFamilyCategories] = useState<any[]>([]);
+  const [heroSections, setHeroSections] = useState<BlockSectionData[] | null>(null);
   const dirty = !!(title || description || date || location || maxAttendees || eventCategory || isOnline || descriptionLong);
   useDirtyGuard(dirty);
   const { t, locale } = useLocale();
@@ -79,6 +81,7 @@ export default function EventsPage() {
   useEffect(() => {
     setToken(localStorage.getItem("token"));
     if (new URLSearchParams(window.location.search).get("new") === "1") setShowForm(true);
+    api.blocks.getPage("events").then((p) => p?.sections?.length ? setHeroSections(p.sections) : setHeroSections([])).catch(() => setHeroSections([]));
   }, []);
   useEffect(() => {
     api.taxonomy.families().then(setFamilies).catch(() => {});
@@ -144,10 +147,14 @@ export default function EventsPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-8 py-12">
+      {heroSections && heroSections.length > 0 && (
+        <BlockRenderer sections={heroSections} />
+      )}
+
       <PageHeader
         icon={<Calendar className="w-5 h-5 text-primary-500" />}
-        title={<EditableText k="events.title" as="span" />}
-        subtitle={<EditableText k="events.subtitle" as="span" />}
+        title={<Text k="events.title" as="span" />}
+        subtitle={<Text k="events.subtitle" as="span" />}
         action={token && (
           <Button variant="primary" size="sm" onClick={() => setShowForm(!showForm)}>
             <Plus className="w-4 h-4" /> {t("events.new_event")}
@@ -156,24 +163,18 @@ export default function EventsPage() {
       />
 
       <div className="flex gap-2 mb-8 flex-wrap mt-8 items-center">
-        <button
+        <FilterPill
+          label={t("events.all")}
+          active={!family}
           onClick={() => handleFilterFamilyChange("")}
-          className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
-            !family ? "bg-primary-500 text-white border-primary-500 shadow-sm" : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border-primary-100 dark:border-stone-700 hover:border-primary-300 dark:hover:border-primary-600"
-          }`}
-        >
-          {t("events.all")}
-        </button>
+        />
         {families.map((fam) => (
-          <button
+          <FilterPill
             key={fam.value}
+            label={locale === "pt" ? fam.label_pt : fam.label}
+            active={family === fam.value}
             onClick={() => handleFilterFamilyChange(fam.value)}
-            className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
-              family === fam.value ? "bg-primary-500 text-white border-primary-500 shadow-sm" : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border-primary-100 dark:border-stone-700 hover:border-primary-300 dark:hover:border-primary-600"
-            }`}
-          >
-            {locale === "pt" ? fam.label_pt : fam.label}
-          </button>
+          />
         ))}
         {family && familyCategories.length > 0 && (
           <select
@@ -364,111 +365,7 @@ export default function EventsPage() {
             const now = new Date();
             const isUpcoming = eventDate > now && idx === 0;
             return (
-              <Link
-                key={event.id}
-                href={`/events/${event.id}`}
-                className={`group rounded-2xl border border-primary-100/40 dark:border-stone-700 bg-white dark:bg-stone-900 overflow-hidden transition-all duration-200 hover:shadow-lg hover:shadow-primary-900/5 dark:hover:shadow-black/20 hover:-translate-y-0.5 animate-fade-in-up ${
-                  isUpcoming ? "ring-2 ring-primary-200/60 dark:ring-primary-800/40" : ""
-                }`}
-                style={{ animationDelay: `${idx * 50}ms`, animationFillMode: "backwards" }}
-              >
-                {/* Image */}
-                <div className="relative h-40 bg-gradient-to-br from-primary-100 to-primary-50 dark:from-primary-900/30 dark:to-primary-950/20 overflow-hidden">
-                  {event.image_url ? (
-                    <img
-                      src={event.image_url}
-                      alt={event.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Calendar className="w-10 h-10 text-primary-200 dark:text-primary-700" />
-                    </div>
-                  )}
-                  {/* Date badge */}
-                  <div className="absolute top-3 left-3 bg-white/90 dark:bg-stone-800/90 backdrop-blur-sm rounded-xl px-3 py-1.5 shadow-sm">
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-stone-800 dark:text-stone-100 leading-none">{eventDate.getDate()}</div>
-                      <div className="text-[10px] font-medium text-stone-500 dark:text-stone-400 uppercase mt-0.5">
-                        {eventDate.toLocaleDateString("en-US", { month: "short" })}
-                      </div>
-                    </div>
-                  </div>
-                  {/* Upcoming badge */}
-                  {isUpcoming && (
-                    <div className="absolute top-3 right-3 bg-primary-500 text-white text-[10px] font-semibold px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
-                      <Sparkles className="w-3 h-3" /> Next
-                    </div>
-                  )}
-                  {/* Category badge */}
-                  {event.category && (
-                    <div className="absolute bottom-3 right-3">
-                      <Badge variant="sage" className="bg-white/90 dark:bg-stone-800/90 backdrop-blur-sm shadow-sm">{event.category}</Badge>
-                    </div>
-                  )}
-                  {/* Status badge */}
-                  {event.status === "draft" && (
-                    <div className="absolute bottom-3 left-3">
-                      <Badge variant="stone" className="bg-white/90 dark:bg-stone-800/90 backdrop-blur-sm shadow-sm">Draft</Badge>
-                    </div>
-                  )}
-                </div>
-
-                {/* Content */}
-                <div className="p-4">
-                  <h3 className="font-semibold text-stone-800 dark:text-stone-100 group-hover:text-primary-700 dark:group-hover:text-primary-400 transition line-clamp-1 font-display">
-                    {event.title}
-                  </h3>
-                  {event.description && (
-                    <p className="text-sm text-stone-500 dark:text-stone-400 mt-1 line-clamp-2 font-light leading-relaxed">{event.description}</p>
-                  )}
-                  <div className="flex items-center gap-3 mt-3 text-xs text-stone-600 dark:text-stone-400 flex-wrap">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      {eventDate.toLocaleDateString("en-US", {
-                        weekday: "short", month: "short", day: "numeric",
-                      })}
-                    </span>
-                    {event.location && (
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5" />{event.location}
-                      </span>
-                    )}
-                    {event.is_online && (
-                      <span className="flex items-center gap-1">
-                        <Globe className="w-3.5 h-3.5" />{t("events.online")}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <span className="flex items-center gap-1 text-xs text-stone-600 dark:text-stone-400">
-                      <Users className="w-3.5 h-3.5" />
-                      {event.attendee_count}{event.max_attendees ? `/${event.max_attendees}` : ""}
-                    </span>
-                    {event.ticket_type === "paid" && event.ticket_price && (
-                      <Badge variant="earth" className="text-[10px] px-1.5 py-0.5">
-                        <Tag className="w-2.5 h-2.5 mr-0.5" />€{(event.ticket_price / 100).toFixed(0)}
-                      </Badge>
-                    )}
-                    {event.ticket_type === "donation_based" && (
-                      <Badge variant="earth" className="text-[10px] px-1.5 py-0.5">
-                        <Heart className="w-2.5 h-2.5 mr-0.5" />
-                      </Badge>
-                    )}
-                    {event.visibility === "registered" && (
-                      <Badge variant="blue" className="text-[10px] px-1.5 py-0.5">
-                        <Shield className="w-2.5 h-2.5" />
-                      </Badge>
-                    )}
-                    {event.visibility === "group_only" && (
-                      <Badge variant="blue" className="text-[10px] px-1.5 py-0.5">
-                        <Building className="w-2.5 h-2.5" />
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </Link>
+              <EventListCard key={event.id} event={event} isUpcoming={isUpcoming} locale={locale} />
             );
           })}
         </div>

@@ -74,7 +74,7 @@ Solves the click-conflict problem with an **iframe + inspector** architecture: t
 2. The inspector panel docks on the right.
 3. The selection agent activates inside the iframe.
 
-**Selection:** any visible element is selectable. Hover shows an outline + label (element type). Click selects. A breadcrumb at the top of the inspector shows the hierarchy (Page > Section > Card > Heading) — click any level to select it. Double-click selects the parent. Keyboard: Esc goes up, Tab goes down.
+**Selection (site-builder convention):** hover shows an outline + label snapping to the nearest *component* (an element carrying `data-rl-component`), not the raw DOM node under the cursor. **First click selects** that component (outline + inspector). **Second click on text** edits that text directly on the page (contentEditable) — there is no drilling into structural tags like `<div>`. The breadcrumb at the top of the inspector shows the component hierarchy (Page > Section > Card) — click any level to select it. Keyboard: Esc exits text editing, then jumps up to the parent component; Ctrl+Z undoes the last change.
 
 **Inspector:** shows grouped properties for the selected element (Content, Typography, Color, Spacing, etc.). Initially derived from the element's **computed styles** at runtime. The dashboard can curate which properties show per element type (add/remove).
 
@@ -86,17 +86,18 @@ Solves the click-conflict problem with an **iframe + inspector** architecture: t
 
 ## 4. Constrained controls (the control vocabulary)
 
-Never free-text where a purpose-built control exists. Each property type maps to a specific control:
+Never free-text where a purpose-built control exists. Each property type maps to a specific control. **Only theme-token-backed properties are exposed** — structural CSS (`display`, `flex-direction`, `justify-content`, `align-items`, `border-style`, `opacity`, raw pixel margins, width/height) is never surfaced, because changing it would break the layout. Every pick stores the token **NAME** as the override identity (e.g. `primary-600`, `2xl`, `Fraunces`); the browser sees the theme reference (`var(--color-primary-600)`, `var(--text-2xl)`, the font's family string). Because the reference is a named token, **dark mode is automatic** (every color token has a dark value) and **reset reverts** to the Tailwind class default.
 
 | Property type | Control | Example |
 |---|---|---|
-| Numeric (spacing, padding, margin, radius, letter-spacing) | **Slider with pre-defined stops** — drag between named stops (e.g., xs/sm/md/lg/xl), not free-range | Padding: sm ↔ md ↔ lg |
-| Color (element/component) | **Palette color picker** — list of named palette colors with swatches + names (e.g., "primary-50", "rust-500"), NOT a free-form color wheel | Card background: primary-50 / earth-100 / rust-500 |
+| Numeric (padding, gap, radius, letter-spacing, line-height) | **Slider with pre-defined stops** — named stops (xs/sm/md/lg/xl), not free-range | Padding: sm ↔ md ↔ lg |
+| Color (element/component) | **Palette color picker** — named palette colors with swatches + names, NOT a free-form color wheel | Card background: primary-50 / earth-100 / rust-500 |
 | Color (theme definition, dashboard only) | **Full color picker** — hex/RGB wheel, for defining the palette itself | Theme's primary-600: #634d33 |
-| Boolean (on/off, dark mode, show/hide) | **Toggle switch** | Show border: on/off |
-| Enumeration (font family, border style, text-align) | **Button group or visual dropdown** | Font: Fraunces / Source Serif 4 / ... |
-| Type scale (font size) | **"Aa" button group at real scale** — buttons showing "Aa" at the actual size with a label (H1, H2, H3, ..., Body, Small) | Heading size: Aa(H1) Aa(H2) Aa(H3) |
-| Text/copy | **Inline text editor** — click the text on the page, type, it updates live | Headline: "Find what feeds your land" |
+| Boolean (on/off, show/hide) | **Toggle switch** | Show badge: on/off |
+| Font family | **Font dropdown** — every active font in the library, each rendered in its own typeface | Heading font: Fraunces / Routtage / … |
+| Enumeration (font weight, font style, text-align) | **Button group** | Weight: Light / Regular / Semi / Bold |
+| Type scale (font size) | **"Aa" button group at real scale** — buttons showing "Aa" at the actual size with a label (H1, H2, …, Body, Small) | Heading size: Aa(H1) Aa(H2) Aa(H3) |
+| Text/copy | **Inline text editor** — edit the text directly on the page (see §3.2) | Headline: "Find what feeds your land" |
 | Image | **Visual image picker** — thumbnail grid of existing assets + upload dropzone | Hero image: [grid of assets] |
 | Structural position | **Drag handle** (dashboard page builder only) | Section order: drag to reorder |
 

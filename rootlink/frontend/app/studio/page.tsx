@@ -32,7 +32,7 @@ export default function StudioOverview() {
   ];
 
   return (
-    <div className="p-6 lg:p-10 max-w-5xl">
+    <div className="h-full overflow-y-auto p-6 lg:p-10 max-w-5xl">
       <div className="mb-8">
         <p className="text-xs uppercase tracking-wider text-stone-400 font-medium mb-2">
           Content Studio

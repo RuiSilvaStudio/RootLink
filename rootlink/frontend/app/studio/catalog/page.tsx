@@ -15,8 +15,11 @@ import { useState, useEffect, useCallback } from "react";
 import { Loader2, Plus, Trash2, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/lib/toast-context";
 import { api } from "@/lib/api";
+import { ResizableSplit } from "@/components/ui/ResizableSplit";
+import { ComponentPreview } from "./ComponentPreview";
+import { COMPONENT_GROUPS, GROUP_COLORS } from "../component-config";
 
-const CONTROL_TYPES = ["slider", "palette", "toggle", "button-group", "type-scale", "inline-text", "image-picker"];
+const CONTROL_TYPES = ["slider", "palette", "toggle", "button-group", "type-scale", "font-family", "inline-text", "image-picker"];
 const PROPERTY_TYPES = ["intrinsic", "extrinsic"];
 
 interface SchemaRow {
@@ -28,6 +31,8 @@ interface SchemaRow {
   options: any;
   is_visible: boolean;
 }
+
+// ── Page component ────────────────────────────────────────────────────────
 
 export default function ElementCatalogPage() {
   const { addToast } = useToast();
@@ -88,28 +93,47 @@ export default function ElementCatalogPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-6 py-4 border-b border-primary-200/40 dark:border-stone-800">
+      <div className="shrink-0 px-6 py-4 border-b border-primary-200/40 dark:border-stone-800">
         <h1 className="font-display text-xl font-semibold text-stone-800 dark:text-stone-100">Element Catalog</h1>
         <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">Manage element property schemas — intrinsic vs extrinsic, control type, inspector visibility</p>
       </div>
 
-      <div className="flex-1 flex min-h-0">
-        {/* Element type list */}
-        <div className="w-48 shrink-0 border-r border-primary-200/40 dark:border-stone-800 p-3 overflow-y-auto">
-          <p className="px-1 pb-2 text-[10px] uppercase tracking-wider text-stone-400 font-medium">Types</p>
-          {elementTypes.map((type) => (
-            <button key={type} onClick={() => setSelectedType(type)}
-              className={`w-full px-2.5 py-2 rounded-md text-sm transition mb-1 capitalize ${selectedType === type ? "bg-primary-600 text-cream" : "text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"}`}>
-              {type} <span className={`text-[10px] ${selectedType === type ? "text-cream/60" : "text-stone-400"}`}>({schemas[type].length})</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Property table */}
-        <div className="flex-1 overflow-y-auto p-4 lg:p-6">
+      <ResizableSplit
+        defaultWidth={208}
+        minWidth={160}
+        maxWidth={320}
+        className="flex-1"
+        left={
+          <div className="h-full border-r border-primary-200/40 dark:border-stone-800 p-3 overflow-y-auto">
+            <p className="px-1 pb-2 text-[10px] uppercase tracking-wider text-stone-400 font-medium">Types</p>
+            {elementTypes.map((type) => {
+              const group = COMPONENT_GROUPS[type] || "";
+              const dot = GROUP_COLORS[group] || "bg-stone-400";
+              return (
+                <button key={type} onClick={() => setSelectedType(type)}
+                  className={`w-full px-2.5 py-2 rounded-md text-sm transition mb-1 flex items-center gap-2 ${
+                    selectedType === type ? "bg-primary-600 text-cream" : "text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
+                  }`}>
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
+                  <div className="min-w-0 flex-1 text-left">
+                    <div className="truncate font-medium">{type}</div>
+                    {group && <div className={`text-[10px] leading-tight ${selectedType === type ? "text-cream/60" : "text-stone-400"}`}>{group}</div>}
+                  </div>
+                  <span className={`text-[10px] shrink-0 ${selectedType === type ? "text-cream/60" : "text-stone-400"}`}>{schemas[type].length}</span>
+                </button>
+              );
+            })}
+          </div>
+        }
+        right={
+          <div className="h-full overflow-y-auto p-4 lg:p-6">
           {selectedType ? (
             <div className="max-w-3xl">
-              <h2 className="font-display text-lg font-semibold capitalize text-stone-800 dark:text-stone-100 mb-4">{selectedType}</h2>
+              <ComponentPreview type={selectedType} />
+              <h2 className="font-display text-lg font-semibold text-stone-800 dark:text-stone-100 mb-1 capitalize">{selectedType}</h2>
+              {COMPONENT_GROUPS[selectedType] && (
+                <p className="text-xs text-stone-400 mb-4">{COMPONENT_GROUPS[selectedType]}</p>
+              )}
               <div className="space-y-2">
                 {currentRows.map((row) => (
                   <div key={row.id} className={`flex items-center gap-3 p-3 rounded-lg border ${row.is_visible ? "border-stone-200/60 dark:border-stone-800" : "border-stone-200/30 dark:border-stone-800/50 opacity-60"}`}>
@@ -138,8 +162,9 @@ export default function ElementCatalogPage() {
               </div>
             </div>
           ) : <div className="text-center py-20"><p className="text-sm text-stone-400 font-serif">Select an element type.</p></div>}
-        </div>
-      </div>
+          </div>
+        }
+      />
     </div>
   );
 }

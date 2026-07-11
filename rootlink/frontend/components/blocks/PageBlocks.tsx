@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { IconContainer, RankedListRow } from "@/components/ui/DeFacto";
 
 type BlockProps = { props: Record<string, string> };
 
@@ -38,10 +39,16 @@ type BlockProps = { props: Record<string, string> };
 export function DonateHeroBlock({ props }: BlockProps) {
   const { t } = useLocale();
   return (
-    <div className="text-center mb-12">
-      <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-100 dark:bg-primary-900/30 mb-6">
-        <Heart className="w-8 h-8 text-primary-600 dark:text-primary-400" />
-      </div>
+    <div data-rl-component="DonateHeroBlock" className="text-center mb-12">
+      <IconContainer
+        icon={Heart}
+        size="2xl"
+        shape="2xl"
+        bgColor="bg-primary-100 dark:bg-primary-900/30"
+        iconColor="text-primary-600 dark:text-primary-400"
+        inline
+        className="mb-6"
+      />
       <h1 className="text-4xl font-display font-bold text-stone-900 dark:text-stone-100 mb-3">
         {props.hero_title || t("donate.hero_title")}
       </h1>
@@ -68,7 +75,7 @@ export function DonateBalanceBlock({ props }: BlockProps) {
   if (!balance) return null;
 
   return (
-    <div className="mb-10 p-6 rounded-2xl bg-primary-50 dark:bg-primary-900/20 border border-primary-200/40 dark:border-primary-800/30">
+    <div data-rl-component="DonateBalanceBlock" className="mb-10 p-6 rounded-2xl bg-primary-50 dark:bg-primary-900/20 border border-primary-200/40 dark:border-primary-800/30">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-stone-500 dark:text-stone-400">
@@ -136,7 +143,7 @@ export function DonateTiersBlock({ props }: BlockProps) {
 
   if (loading) {
     return (
-      <div>
+      <div data-rl-component="DonateTiersBlock">
         <h2 className="text-2xl font-display font-bold text-stone-900 dark:text-stone-100 mb-6">
           {heading}
         </h2>
@@ -150,7 +157,7 @@ export function DonateTiersBlock({ props }: BlockProps) {
   }
 
   return (
-    <div>
+    <div data-rl-component="DonateTiersBlock">
       <h2 className="text-2xl font-display font-bold text-stone-900 dark:text-stone-100 mb-6">
         {heading}
       </h2>
@@ -211,7 +218,7 @@ export function DonateLeaderboardBlock({ props }: BlockProps) {
 
   if (loading) {
     return (
-      <div>
+      <div data-rl-component="DonateLeaderboardBlock">
         <h2 className="text-2xl font-display font-bold text-stone-900 dark:text-stone-100 mb-6 flex items-center gap-2">
           <Trophy className="w-6 h-6 text-amber-500" />
           {heading}
@@ -228,7 +235,7 @@ export function DonateLeaderboardBlock({ props }: BlockProps) {
   if (leaderboard.length === 0) return null;
 
   return (
-    <div>
+    <div data-rl-component="DonateLeaderboardBlock">
       <h2 className="text-2xl font-display font-bold text-stone-900 dark:text-stone-100 mb-6 flex items-center gap-2">
         <Trophy className="w-6 h-6 text-amber-500" />
         {heading}
@@ -276,7 +283,7 @@ export function DonateHowItWorksBlock({ props }: BlockProps) {
     "donate.how_it_works_5",
   ];
   return (
-    <div className="mt-12 p-6 rounded-2xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-700">
+    <div data-rl-component="DonateHowItWorksBlock" className="mt-12 p-6 rounded-2xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-700">
       <h3 className="text-lg font-display font-semibold text-stone-900 dark:text-stone-100 mb-3">
         {props.heading || t("donate.how_it_works")}
       </h3>
@@ -294,10 +301,16 @@ export function DonateHowItWorksBlock({ props }: BlockProps) {
 export function LeaderboardHeroBlock({ props }: BlockProps) {
   const { t } = useLocale();
   return (
-    <div className="text-center mb-10">
-      <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-900/30 mb-4">
-        <Trophy className="w-8 h-8 text-amber-600 dark:text-amber-400" />
-      </div>
+    <div data-rl-component="LeaderboardHeroBlock" className="text-center mb-10">
+      <IconContainer
+        icon={Trophy}
+        size="2xl"
+        shape="2xl"
+        bgColor="bg-amber-100 dark:bg-amber-900/30"
+        iconColor="text-amber-600 dark:text-amber-400"
+        inline
+        className="mb-4"
+      />
       <h1 className="text-3xl font-display font-bold text-stone-900 dark:text-stone-100 mb-2">
         {props.hero_title || t("leaderboard.hero_title")}
       </h1>
@@ -324,7 +337,7 @@ export function LeaderboardListBlock({ props }: BlockProps) {
 
   if (loading) {
     return (
-      <div className="space-y-3">
+      <div data-rl-component="LeaderboardListBlock" className="space-y-3">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
           <div key={i} className="h-16 rounded-xl bg-stone-100 dark:bg-stone-800 animate-pulse" />
         ))}
@@ -334,7 +347,7 @@ export function LeaderboardListBlock({ props }: BlockProps) {
 
   if (leaderboard.length === 0) {
     return (
-      <div className="text-center py-12">
+      <div data-rl-component="LeaderboardListBlock" className="text-center py-12">
         <Heart className="w-12 h-12 text-stone-300 dark:text-stone-600 mx-auto mb-4" />
         <p className="text-stone-500 dark:text-stone-400 font-serif">
           {props.empty_state || t("leaderboard.empty_state")}
@@ -347,60 +360,24 @@ export function LeaderboardListBlock({ props }: BlockProps) {
   }
 
   return (
-    <div className="space-y-2">
+    <div data-rl-component="LeaderboardListBlock" className="space-y-2">
       {leaderboard.map((entry, i) => (
-        <div
+        <RankedListRow
           key={entry.user_id}
-          className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${
-            i === 0
-              ? "bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800/30"
-              : i === 1
-              ? "bg-stone-50 dark:bg-stone-800/50 border-stone-200 dark:border-stone-700"
-              : i === 2
-              ? "bg-orange-50 dark:bg-orange-900/10 border-orange-200 dark:border-orange-800/30"
-              : "bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700"
-          }`}
-        >
-          <div className="flex items-center gap-4">
-            <span
-              className={`text-lg font-display font-bold w-8 ${
-                i === 0
-                  ? "text-amber-600 dark:text-amber-400"
-                  : i === 1
-                  ? "text-stone-500 dark:text-stone-400"
-                  : i === 2
-                  ? "text-orange-600 dark:text-orange-400"
-                  : "text-stone-400 dark:text-stone-500"
-              }`}
-            >
-              {i + 1}
-            </span>
-            {entry.avatar_url ? (
-              <img src={entry.avatar_url} alt="" className="w-10 h-10 rounded-full" />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-sm font-medium text-primary-700 dark:text-primary-400">
-                {entry.name[0]}
-              </div>
-            )}
-            <div>
-              <p className="text-sm font-medium text-stone-700 dark:text-stone-300">
-                {entry.name}
-              </p>
-              {i < 3 && (
-                <p className="text-xs text-stone-400 dark:text-stone-500">
-                  {i === 0
-                    ? (props.gold_label || t("leaderboard.gold"))
-                    : i === 1
-                    ? (props.silver_label || t("leaderboard.silver"))
-                    : (props.bronze_label || t("leaderboard.bronze"))}
-                </p>
-              )}
-            </div>
-          </div>
-          <span className="text-sm font-display font-semibold text-primary-600 dark:text-primary-400">
-            €{entry.total_donated.toFixed(0)}
-          </span>
-        </div>
+          rank={i + 1}
+          name={entry.name}
+          avatarUrl={entry.avatar_url}
+          amount={`€${entry.total_donated.toFixed(0)}`}
+          tierLabel={
+            i < 3
+              ? i === 0
+                ? (props.gold_label || t("leaderboard.gold"))
+                : i === 1
+                ? (props.silver_label || t("leaderboard.silver"))
+                : (props.bronze_label || t("leaderboard.bronze"))
+              : undefined
+          }
+        />
       ))}
     </div>
   );
@@ -411,10 +388,16 @@ export function LeaderboardListBlock({ props }: BlockProps) {
 export function RankingHeroBlock({ props }: BlockProps) {
   const { t } = useLocale();
   return (
-    <div className="text-center mb-10">
-      <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-100 dark:bg-primary-900/30 mb-4">
-        <BarChart3 className="w-8 h-8 text-primary-600 dark:text-primary-400" />
-      </div>
+    <div data-rl-component="RankingHeroBlock" className="text-center mb-10">
+      <IconContainer
+        icon={BarChart3}
+        size="2xl"
+        shape="2xl"
+        bgColor="bg-primary-100 dark:bg-primary-900/30"
+        iconColor="text-primary-600 dark:text-primary-400"
+        inline
+        className="mb-4"
+      />
       <h1 className="text-3xl font-display font-bold text-stone-900 dark:text-stone-100 mb-2">
         {props.hero_title || t("ranking.hero_title")}
       </h1>
@@ -441,7 +424,7 @@ export function RankingDetailsBlock({ props }: BlockProps) {
 
   if (loading) {
     return (
-      <div className="space-y-4">
+      <div data-rl-component="RankingDetailsBlock" className="space-y-4">
         {[1, 2, 3, 4, 5].map((i) => (
           <div key={i} className="h-20 rounded-xl bg-stone-100 dark:bg-stone-800 animate-pulse" />
         ))}
@@ -452,7 +435,7 @@ export function RankingDetailsBlock({ props }: BlockProps) {
   if (!info) return null;
 
   return (
-    <div className="space-y-6">
+    <div data-rl-component="RankingDetailsBlock" className="space-y-6">
       <div className="p-6 rounded-2xl bg-primary-50 dark:bg-primary-900/20 border border-primary-200/40 dark:border-primary-800/30">
         <h2 className="text-lg font-display font-semibold text-stone-900 dark:text-stone-100 mb-3">
           {props.formula_label || t("ranking.formula")}
@@ -517,10 +500,8 @@ export function RankingDetailsBlock({ props }: BlockProps) {
 export function ToolsHeaderBlock({ props }: BlockProps) {
   const { t } = useLocale();
   return (
-    <div className="flex items-center gap-3 mb-2">
-      <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center">
-        <Wrench className="w-5 h-5 text-primary-500" />
-      </div>
+    <div data-rl-component="ToolsHeaderBlock" className="flex items-center gap-3 mb-2">
+      <IconContainer icon={Wrench} size="md" shape="xl" bgColor="bg-primary-100 dark:bg-primary-950/20" iconColor="text-primary-500" />
       <div>
         <h1 className="text-3xl font-serif font-bold text-stone-800">
           {props.title || t("tools.title")}
@@ -540,28 +521,32 @@ const TOOLS = [
     nameKey: "tools.gardening_calendar",
     slug: "gardening-calendar",
     icon: Calendar,
-    iconBg: "bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400",
+    iconBg: "bg-primary-100 dark:bg-primary-900/30",
+    iconColor: "text-primary-600 dark:text-primary-400",
     descKey: "tools.gardening_calendar_desc",
   },
   {
     nameKey: "tools.monthly_checklist",
     slug: "monthly-checklist",
     icon: CheckSquare,
-    iconBg: "bg-earth-100 dark:bg-earth-900/30 text-earth-600 dark:text-earth-400",
+    iconBg: "bg-earth-100 dark:bg-earth-900/30",
+    iconColor: "text-earth-600 dark:text-earth-400",
     descKey: "tools.monthly_checklist_desc",
   },
   {
     nameKey: "tools.irrigation_calculator",
     slug: "irrigation-calculator",
     icon: Droplets,
-    iconBg: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
+    iconBg: "bg-blue-100 dark:bg-blue-900/30",
+    iconColor: "text-blue-600 dark:text-blue-400",
     descKey: "tools.irrigation_calculator_desc",
   },
   {
     nameKey: "tools.coming_soon_planner",
     slug: "#",
     icon: Hammer,
-    iconBg: "bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500",
+    iconBg: "bg-stone-100 dark:bg-stone-800",
+    iconColor: "text-stone-400 dark:text-stone-500",
     descKey: "tools.coming_soon_planner_desc",
     disabled: true,
   },
@@ -569,7 +554,8 @@ const TOOLS = [
     nameKey: "tools.coming_soon_estimator",
     slug: "#",
     icon: Ruler,
-    iconBg: "bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500",
+    iconBg: "bg-stone-100 dark:bg-stone-800",
+    iconColor: "text-stone-400 dark:text-stone-500",
     descKey: "tools.coming_soon_estimator_desc",
     disabled: true,
   },
@@ -578,15 +564,13 @@ const TOOLS = [
 export function ToolsGridBlock({ props }: BlockProps) {
   const { t } = useLocale();
   return (
-    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 mt-10">
+    <div data-rl-component="ToolsGridBlock" className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 mt-10">
       {TOOLS.map((tool) => (
         tool.disabled ? (
           <div key={tool.slug}
             className="p-6 sm:p-8 rounded-xl2 border border-primary-100 dark:border-stone-700 bg-white/50 dark:bg-stone-900/50 opacity-50 cursor-not-allowed"
           >
-            <div className={`w-10 h-10 rounded-xl ${tool.iconBg} flex items-center justify-center mb-4`}>
-              <tool.icon className="w-5 h-5" />
-            </div>
+            <IconContainer icon={tool.icon} size="md" shape="xl" bgColor={tool.iconBg} iconColor={tool.iconColor} className="mb-4" />
             <h3 className="text-lg font-serif font-bold text-stone-600 dark:text-stone-400 mb-2">
               {t(tool.nameKey)}
             </h3>
@@ -601,9 +585,7 @@ export function ToolsGridBlock({ props }: BlockProps) {
           <a key={tool.slug} href={`/tools/${tool.slug}`}
             className="card-lift p-6 sm:p-8 group"
           >
-            <div className={`w-12 h-12 rounded-2xl ${tool.iconBg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-              <tool.icon className="w-6 h-6" />
-            </div>
+            <IconContainer icon={tool.icon} size="lg" shape="2xl" bgColor={tool.iconBg} iconColor={tool.iconColor} hoverScale className="mb-4" />
             <h3 className="text-xl font-serif font-bold text-stone-800 dark:text-stone-100 mb-2">
               {t(tool.nameKey)}
             </h3>
@@ -627,6 +609,7 @@ export function GroupsHeaderBlock({ props }: BlockProps) {
   const router = useRouter();
   return (
     <PageHeader
+      data-rl-component="GroupsHeaderBlock"
       icon={<Users className="w-5 h-5 text-primary-500" />}
       title={props.title || t("groups.title")}
       subtitle={props.subtitle || t("groups.subtitle")}
@@ -644,12 +627,10 @@ export function GroupsHeaderBlock({ props }: BlockProps) {
 export function GroupsHeroBlock({ props }: BlockProps) {
   const { t } = useLocale();
   return (
-    <Card variant="plain" className="p-6 mb-8 bg-gradient-to-br from-primary-50 to-white dark:from-primary-900/20 dark:to-stone-900 border-primary-100 dark:border-stone-700">
+    <Card variant="plain" data-rl-component="GroupsHeroBlock" className="p-6 mb-8 bg-gradient-to-br from-primary-50 to-white dark:from-primary-900/20 dark:to-stone-900 border-primary-100 dark:border-stone-700">
       <div className="grid md:grid-cols-3 gap-6">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center shrink-0">
-            <MessageCircle className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-          </div>
+          <IconContainer icon={MessageCircle} size="md" shape="xl" bgColor="bg-primary-100 dark:bg-primary-900/30" iconColor="text-primary-600 dark:text-primary-400" />
           <div>
             <h3 className="font-semibold text-stone-800 dark:text-stone-100 text-sm">
               {props.hero_discuss || t("groups.hero_discuss")}
@@ -660,9 +641,7 @@ export function GroupsHeroBlock({ props }: BlockProps) {
           </div>
         </div>
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-earth-100 dark:bg-earth-900/30 flex items-center justify-center shrink-0">
-            <Calendar className="w-5 h-5 text-earth-600 dark:text-earth-400" />
-          </div>
+          <IconContainer icon={Calendar} size="md" shape="xl" bgColor="bg-earth-100 dark:bg-earth-900/30" iconColor="text-earth-600 dark:text-earth-400" />
           <div>
             <h3 className="font-semibold text-stone-800 dark:text-stone-100 text-sm">
               {props.hero_events || t("groups.hero_events")}
@@ -673,9 +652,7 @@ export function GroupsHeroBlock({ props }: BlockProps) {
           </div>
         </div>
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
-            <Users className="w-5 h-5 text-green-600 dark:text-green-400" />
-          </div>
+          <IconContainer icon={Users} size="md" shape="xl" bgColor="bg-green-100 dark:bg-green-900/30" iconColor="text-green-600 dark:text-green-400" />
           <div>
             <h3 className="font-semibold text-stone-800 dark:text-stone-100 text-sm">
               {props.hero_network || t("groups.hero_network")}

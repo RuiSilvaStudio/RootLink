@@ -14,7 +14,7 @@ type BlockProps = { props: Record<string, string> };
 
 export function HeroBlock({ props }: BlockProps) {
   return (
-    <section className="py-20 px-6 text-center max-w-4xl mx-auto">
+    <section data-rl-component="HeroBlock" className="py-20 px-6 text-center max-w-4xl mx-auto">
       <h1 className="font-display text-4xl lg:text-5xl font-bold text-primary-700 dark:text-primary-300 leading-tight mb-4">
         {props.title || "Untitled"}
       </h1>
@@ -35,7 +35,7 @@ export function HeroBlock({ props }: BlockProps) {
 
 export function TextBlock({ props }: BlockProps) {
   return (
-    <section className="py-12 px-6 max-w-3xl mx-auto">
+    <section data-rl-component="TextBlock" className="py-12 px-6 max-w-3xl mx-auto">
       <div className="w-16 h-0.5 bg-primary-300 rounded-full mb-4" />
       <h2 className="font-display text-2xl font-semibold text-primary-700 dark:text-primary-300 mb-4">
         {props.heading || "Untitled"}
@@ -54,7 +54,7 @@ export function CardGridBlock({ props }: BlockProps) {
     { title: props.card3_title, desc: props.card3_desc },
   ];
   return (
-    <section className="py-12 px-6 max-w-5xl mx-auto">
+    <section data-rl-component="CardGridBlock" className="py-12 px-6 max-w-5xl mx-auto">
       <h2 className="font-display text-2xl font-semibold text-primary-700 dark:text-primary-300 mb-6">
         {props.heading || "Explore"}
       </h2>
@@ -79,7 +79,7 @@ export function CardGridBlock({ props }: BlockProps) {
 
 export function CtaBlock({ props }: BlockProps) {
   return (
-    <section className="py-16 px-6">
+    <section data-rl-component="CtaBlock" className="py-16 px-6">
       <div className="max-w-3xl mx-auto rounded-xl2 bg-primary-600 text-cream p-8 lg:p-12 text-center">
         <h2 className="font-display text-2xl lg:text-3xl font-bold mb-2">
           {props.title || ""}

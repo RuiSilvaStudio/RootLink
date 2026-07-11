@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Search, MapPin, Users, MessageCircle, Shuffle, User, Sparkles, BarChart3, Globe, Hash } from "lucide-react";
+import { Search, MapPin, Users, Shuffle, User, Sparkles, BarChart3, Globe, Hash } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
 import { Button } from "@/components/ui/Button";
@@ -12,7 +12,9 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardSkeleton } from "@/components/ui/LoadingSkeleton";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { EditableText } from "@/components/editor-mode/editable-text";
+import { Text } from "@/components/ui/Text";
+import { NetworkUserCard } from "@/components/cards/NetworkUserCard";
+import { BlockRenderer, type BlockSectionData } from "@/components/blocks";
 
 export default function NetworkPage() {
   const { t } = useLocale();
@@ -29,8 +31,9 @@ export default function NetworkPage() {
   const [regions, setRegions] = useState<{ region: string; count: number }[]>([]);
   const [skills, setSkills] = useState<{ skill: string; count: number }[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [heroSections, setHeroSections] = useState<BlockSectionData[] | null>(null);
 
-  useEffect(() => { setToken(localStorage.getItem("token")); }, []);
+  useEffect(() => { setToken(localStorage.getItem("token")); api.blocks.getPage("network").then((p) => p?.sections?.length ? setHeroSections(p.sections) : setHeroSections([])).catch(() => setHeroSections([])); }, []);
   useEffect(() => {
     if (!token) return;
     api.auth.me().then(setCurrentUser).catch(() => {});
@@ -107,10 +110,14 @@ export default function NetworkPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
+      {heroSections && heroSections.length > 0 && (
+        <BlockRenderer sections={heroSections} />
+      )}
+
       <PageHeader
         icon={<Users className="w-5 h-5 text-primary-500" />}
-        title={<EditableText k="network.title" as="span" />}
-        subtitle={<EditableText k="network.subtitle" as="span" />}
+        title={<Text k="network.title" as="span" />}
+        subtitle={<Text k="network.subtitle" as="span" />}
       />
 
       {!token && (
@@ -169,42 +176,16 @@ export default function NetworkPage() {
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {users.map((user) => (
-            <div key={user.id} className="card-lift p-5">
-              <Link href={`/profile/${user.id}`} className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-2xl bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center text-primary-700 font-bold shrink-0 text-lg">
-                  {user.name?.[0]?.toUpperCase() || "?"}
-                </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-stone-800 dark:text-stone-100 truncate">{user.name}</p>
-                  {user.location && <p className="text-xs text-stone-00 dark:text-stone-500 truncate">{user.location}</p>}
-                </div>
-              </Link>
-              {user.bio && <p className="text-sm text-stone-500 line-clamp-2 mb-3 font-light">{user.bio}</p>}
-              {user.skills && user.skills.length > 0 && (
-                <div className="flex flex-wrap gap-1 mb-2">
-                  {user.skills.slice(0, 3).map((s: string) => (
-                    <Badge key={s} variant="sage" className="text-[11px]">{s}</Badge>
-                  ))}
-                  {user.skills.length > 3 && <Badge variant="stone" className="text-[11px]">+{user.skills.length - 3}</Badge>}
-                </div>
-              )}
-              {currentUser && currentUser.id !== user.id && (
-                <div className="flex gap-2 mt-3">
-                  <Button
-                    variant={following.has(user.id) ? "secondary" : "primary"}
-                    size="sm"
-                    onClick={() => handleFollow(user.id)}
-                  >
-                    {following.has(user.id) ? t("network.unfollow") : t("network.follow")}
-                  </Button>
-                  <Link href={`/messages?user=${user.id}`}>
-                    <Button variant="secondary" size="sm">
-                      <MessageCircle className="w-3 h-3" /> {t("network.message")}
-                    </Button>
-                  </Link>
-                </div>
-              )}
-            </div>
+            <NetworkUserCard
+              key={user.id}
+              user={user}
+              isFollowing={following.has(user.id)}
+              showActions={!!currentUser && currentUser.id !== user.id}
+              onFollow={handleFollow}
+              followText={t("network.follow")}
+              unfollowText={t("network.unfollow")}
+              messageText={t("network.message")}
+            />
           ))}
         </div>
       )}

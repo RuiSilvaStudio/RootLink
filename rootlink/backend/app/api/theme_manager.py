@@ -15,7 +15,7 @@ always readable (it is published on activate).
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.admin import require_role
@@ -23,6 +23,7 @@ from app.core.database import get_db
 from app.core.entity_resolution import ROLE_RANK
 from app.core.permissions import rank_at_least
 from app.core.security import get_optional_user
+from app.models.override_log import OverrideLog
 from app.models.theme import Theme, ThemeToken
 from app.models.user import User, UserRole
 from app.services.audit import log_moderation
@@ -33,6 +34,7 @@ router = APIRouter(prefix="/api/themes", tags=["theme-manager"])
 class ThemeCreate(BaseModel):
     name: str
     description: str | None = None
+    copy_from: int | None = None  # source theme ID for duplication
 
 
 class ThemeUpdate(BaseModel):
@@ -140,13 +142,30 @@ async def create_theme(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role([UserRole.super_admin])),
 ):
-    """super_admin: create a new unpublished draft theme. Audit-logged."""
+    """super_admin: create a new unpublished draft theme. Audit-logged.
+    If `copy_from` is provided, copies all tokens from that theme."""
     theme = Theme(name=body.name, description=body.description, created_by=current_user.id)
     db.add(theme)
     await db.flush()
+    if body.copy_from:
+        source_tokens = (
+            await db.execute(
+                select(ThemeToken).where(ThemeToken.theme_id == body.copy_from)
+            )
+        ).scalars().all()
+        for src in source_tokens:
+            db.add(
+                ThemeToken(
+                    theme_id=theme.id,
+                    token_name=src.token_name,
+                    light_value=src.light_value,
+                    dark_value=src.dark_value,
+                    category=src.category,
+                )
+            )
     await log_moderation(
         db, action="create_theme", target_type="theme", target_id=theme.id,
-        actor_id=current_user.id, meta={"name": body.name},
+        actor_id=current_user.id, meta={"name": body.name, "copy_from": body.copy_from},
     )
     await db.commit()
     await db.refresh(theme)
@@ -313,6 +332,28 @@ async def update_theme_token(
     for field in ("light_value", "dark_value", "category"):
         if field in data:
             setattr(token, field, data[field])
+    await db.flush()
+    # Auto-stale: when a color token's value changes, mark referencing
+    # OverrideLog rows as stale so the Content Studio warns editors
+    # (CONTENT_STUDIO.md §6 — stale-override warning).
+    if token.category == "color" and ("light_value" in data or "dark_value" in data):
+        palette = token.token_name.removeprefix("--color-")
+        result = await db.execute(
+            update(OverrideLog)
+            .where(
+                OverrideLog.property.in_(["color", "background-color", "border-color"]),
+                OverrideLog.new_value == palette,
+                OverrideLog.is_stale.is_(False),
+            )
+            .values(is_stale=True)
+        )
+        cnt = result.rowcount
+        if cnt:
+            await log_moderation(
+                db, action="auto_stale_override_rows", target_type="theme_token",
+                target_id=token_id, actor_id=current_user.id,
+                meta={"count": cnt, "reason": "color_token_value_changed", "palette": palette},
+            )
     await db.commit()
     await db.refresh(token)
     return {"ok": True, **_serialize_token(token)}
@@ -324,16 +365,33 @@ async def delete_theme_token(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role([UserRole.super_admin])),
 ):
-    """super_admin: delete a token. Audit-logged."""
+    """super_admin: delete a token. When the token is a color, deletes
+    referencing OverrideLog rows so elements silently fall back to their
+    theme default. Audit-logged."""
     token = await db.scalar(select(ThemeToken).where(ThemeToken.id == token_id))
     if token is None:
         raise HTTPException(status_code=404, detail="Token not found")
     name = token.token_name
     theme_id = token.theme_id
+    category = token.category
+    if category == "color":
+        palette = name.removeprefix("--color-")
+        result = await db.execute(
+            delete(OverrideLog).where(
+                OverrideLog.property.in_(["color", "background-color", "border-color"]),
+                OverrideLog.new_value == palette,
+            )
+        )
+        cnt = result.rowcount
     await db.delete(token)
     await log_moderation(
         db, action="delete_theme_token", target_type="theme_token", target_id=token_id,
         actor_id=current_user.id, meta={"theme_id": theme_id, "token_name": name},
     )
+    if category == "color" and cnt:
+        await log_moderation(
+            db, action="auto_revert_override_rows", target_type="theme_token", target_id=token_id,
+            actor_id=current_user.id, meta={"count": cnt, "reason": "color_token_removed", "palette": palette},
+        )
     await db.commit()
     return {"ok": True, "deleted": token_id}

@@ -5,8 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import {
   Calendar, MapPin, Globe, Users, Edit3, Trash2, CheckCircle, XCircle,
   Clock, Leaf, Heart, Ticket, Tag, Building, Mic, DollarSign, Camera,
-  ChevronRight, Star, Shield, Coffee, ParkingCircle, Accessibility,
-  MessageSquare, ExternalLink, QrCode, UserCheck, Plus, X, Eye, EyeOff,
+  ChevronRight, Star, Shield, ParkingCircle, Accessibility,
+  MessageSquare, ExternalLink, UserCheck, Plus,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -15,6 +15,13 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { EventScheduleItem } from "@/components/cards/EventScheduleItem";
+import { EventAmenityCard } from "@/components/cards/EventAmenityCard";
+import { EventSponsorCard } from "@/components/cards/EventSponsorCard";
+import { EventDonationRow } from "@/components/cards/EventDonationRow";
+import { EventTicketCard } from "@/components/cards/EventTicketCard";
+import { EventAttendeeChip } from "@/components/cards/EventAttendeeChip";
+import { EventVendorRow } from "@/components/cards/EventVendorRow";
 import { useLocale } from "@/lib/locale-context";
 import { usePermission } from "@/lib/use-permission";
 import { useToast } from "@/lib/toast-context";
@@ -596,40 +603,9 @@ export default function EventDetailPage() {
               <EmptyState icon={<Clock className="w-7 h-7" />} title="No schedule yet." />
             ) : (
               <div className="space-y-3">
-                {schedule.map((item) => {
-                  const start = new Date(item.start_time);
-                  const end = item.end_time ? new Date(item.end_time) : null;
-                  const typeColors: Record<string, string> = {
-                    talk: "bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800",
-                    workshop: "bg-earth-50 dark:bg-earth-900/20 border-earth-200 dark:border-earth-800",
-                    break: "bg-stone-50 dark:bg-stone-800/50 border-stone-200 dark:border-stone-700",
-                    meal: "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800",
-                    networking: "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
-                    activity: "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800",
-                  };
-                  return (
-                    <div key={item.id} className={`rounded-xl border p-4 ${typeColors[item.type] || "bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800"}`}>
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="sage">{t(`events.schedule_type_${item.type}`)}</Badge>
-                            {item.location && <span className="text-xs text-stone-500 dark:text-stone-400">{item.location}</span>}
-                          </div>
-                          <h4 className="font-semibold text-stone-800 dark:text-stone-100 mt-1">{item.title}</h4>
-                          {item.speaker_name && <p className="text-sm text-stone-500 dark:text-stone-400">{item.speaker_name}</p>}
-                          {item.description && <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">{item.description}</p>}
-                        </div>
-                        <div className="text-right text-sm text-stone-500 dark:text-stone-400 shrink-0 ml-4">
-                          <p>{start.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</p>
-                          {end && <p>— {end.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</p>}
-                        </div>
-                      </div>
-                      {canManage && (
-                        <button onClick={() => handleScheduleDelete(item.id)} className="text-xs text-red-400 hover:text-red-600 mt-2">Remove</button>
-                      )}
-                    </div>
-                  );
-                })}
+                {schedule.map((item) => (
+                  <EventScheduleItem key={item.id} item={item} canManage={canManage} onDelete={handleScheduleDelete} t={t} />
+                ))}
               </div>
             )}
               </>
@@ -705,18 +681,7 @@ export default function EventDetailPage() {
                 <h4 className="font-display font-bold text-stone-800 dark:text-stone-100 mb-3">{t("events.tab_amenities")}</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {amenities.map((a) => (
-                    <div key={a.id} className="flex items-center gap-3 bg-primary-50 dark:bg-primary-900/20 rounded-xl p-3">
-                      <div className="w-8 h-8 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
-                        <Coffee className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-stone-700 dark:text-stone-200 truncate">{a.name}</p>
-                        {a.time_start && <p className="text-xs text-stone-500 dark:text-stone-400">{a.time_start}{a.time_end ? ` — ${a.time_end}` : ""}</p>}
-                      </div>
-                      {canManage && (
-                        <button onClick={() => handleAmenityDelete(a.id)} className="text-stone-300 dark:text-stone-600 hover:text-red-500 dark:hover:text-red-400"><X className="w-3 h-3" /></button>
-                      )}
-                    </div>
+                    <EventAmenityCard key={a.id} amenity={a} canManage={canManage} onDelete={handleAmenityDelete} />
                   ))}
                 </div>
               </div>
@@ -787,30 +752,12 @@ export default function EventDetailPage() {
                 {["platinum", "gold", "silver", "bronze", "media", "community"].map((tier) => {
                   const tierSponsors = sponsors.filter((s) => s.tier === tier && (s.visible_to_attendees || canManage));
                   if (tierSponsors.length === 0) return null;
-                  const tierColors: Record<string, string> = {
-                    platinum: "from-slate-100 dark:from-slate-900/40 to-slate-50 dark:to-slate-800/40 border-slate-200 dark:border-slate-700",
-                    gold: "from-amber-50 dark:from-amber-900/20 to-yellow-50 dark:to-yellow-900/20 border-amber-200 dark:border-amber-800",
-                    silver: "from-gray-50 dark:from-gray-900/40 to-slate-50 dark:to-slate-800/40 border-gray-200 dark:border-gray-700",
-                    bronze: "from-orange-50 dark:from-orange-900/20 to-amber-50 dark:to-amber-900/20 border-orange-200 dark:border-orange-800",
-                    media: "from-blue-50 dark:from-blue-900/20 to-indigo-50 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800",
-                    community: "from-primary-50 dark:from-primary-900/20 to-earth-50 dark:to-earth-900/20 border-primary-200 dark:border-primary-800",
-                  };
                   return (
                     <div key={tier}>
                       <h4 className="text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 mb-2">{t(`events.sponsor_tier_${tier}`)}</h4>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         {tierSponsors.map((s) => (
-                          <div key={s.id} className={`bg-gradient-to-br ${tierColors[tier]} border rounded-xl p-4 text-center`}>
-                            {s.logo_url ? (
-                              <img src={s.logo_url} alt={s.name} className="h-12 mx-auto mb-2 object-contain" />
-                            ) : (
-                              <div className="h-12 flex items-center justify-center text-stone-300 dark:text-stone-600"><Building className="w-6 h-6" /></div>
-                            )}
-                            <p className="font-medium text-stone-700 dark:text-stone-200 text-sm">{s.name}</p>
-                            {canManage && (
-                              <button onClick={() => handleSponsorDelete(s.id)} className="text-xs text-red-400 hover:text-red-600 mt-1">Remove</button>
-                            )}
-                          </div>
+                          <EventSponsorCard key={s.id} sponsor={s} canManage={canManage} onDelete={handleSponsorDelete} />
                         ))}
                       </div>
                     </div>
@@ -861,16 +808,7 @@ export default function EventDetailPage() {
             ) : (
               <div className="space-y-2">
                 {donations.map((d) => (
-                  <div key={d.id} className="flex items-center gap-3 bg-primary-50 dark:bg-primary-900/20 rounded-xl p-3">
-                    <div className="w-8 h-8 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center text-primary-700 dark:text-primary-400 text-xs font-bold">
-                      {d.is_anonymous ? "?" : (d.donor_name?.[0]?.toUpperCase() || "?")}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-stone-700 dark:text-stone-200">{d.is_anonymous ? "Anonymous" : d.donor_name}</p>
-                      {d.message && <p className="text-xs text-stone-500 dark:text-stone-400 truncate">{d.message}</p>}
-                    </div>
-                    <span className="text-sm font-bold text-primary-700 dark:text-primary-400">€{(d.amount / 100).toFixed(0)}</span>
-                  </div>
+                  <EventDonationRow key={d.id} donation={d} />
                 ))}
               </div>
             )}
@@ -885,16 +823,7 @@ export default function EventDetailPage() {
                 <h3 className="font-display font-bold text-stone-800 dark:text-stone-100 mb-4">{t("events.ticket_purchase")}</h3>
                 {myTicket ? (
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3 bg-primary-50 dark:bg-primary-900/20 rounded-xl p-4">
-                      <div className="w-16 h-16 bg-white dark:bg-stone-900 rounded-xl flex items-center justify-center border border-primary-100 dark:border-stone-700">
-                        <QrCode className="w-10 h-10 text-stone-500 dark:text-stone-400" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-stone-700 dark:text-stone-200">{t(`events.ticket_type_${myTicket.ticket_type}`)} × {myTicket.quantity}</p>
-                        <p className="text-sm text-stone-500 dark:text-stone-400">{t("events.ticket_total")}: €{(myTicket.total_paid / 100).toFixed(0)}</p>
-                        {myTicket.checked_in && <Badge variant="green">{t("events.ticket_checked_in")}</Badge>}
-                      </div>
-                    </div>
+                    <EventTicketCard ticket={myTicket} t={t} />
                     {(isOwner || isAdmin) && !myTicket.checked_in && (
                       <Button size="sm" onClick={() => handleCheckIn(myTicket.id)}>
                         <UserCheck className="w-4 h-4" /> Check In
@@ -949,12 +878,7 @@ export default function EventDetailPage() {
             ) : (
               <div className="flex flex-wrap gap-2">
                 {attendees.map((a: any) => (
-                  <div key={a.id} className="flex items-center gap-2 bg-primary-50 dark:bg-primary-900/20 px-3 py-1.5 rounded-full text-sm text-stone-600 dark:text-stone-300">
-                    <div className="w-6 h-6 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded-full flex items-center justify-center text-xs font-medium">
-                      {a.name?.[0]?.toUpperCase() || "?"}
-                    </div>
-                    {a.name}
-                  </div>
+                  <EventAttendeeChip key={a.id} attendee={a} />
                 ))}
               </div>
             )}
@@ -1001,32 +925,9 @@ export default function EventDetailPage() {
               <EmptyState icon={<Building className="w-7 h-7" />} title="No vendors yet." />
             ) : (
               <div className="space-y-2">
-                {vendors.map((v) => {
-                  const statusColors: Record<string, string> = {
-                    pending: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
-                    confirmed: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
-                    cancelled: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300",
-                  };
-                  return (
-                    <div key={v.id} className="flex items-center gap-3 bg-primary-50 dark:bg-primary-900/20 rounded-xl p-3">
-                      <div className="w-8 h-8 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
-                        <Building className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-stone-700 dark:text-stone-200">{v.name}</p>
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[v.status] || ""}`}>{t(`events.vendor_status_${v.status}`)}</span>
-                          {v.visible_to_attendees && <Eye className="w-3 h-3 text-stone-500 dark:text-stone-400" />}
-                          {!v.visible_to_attendees && <EyeOff className="w-3 h-3 text-stone-300 dark:text-stone-600" />}
-                        </div>
-                        {v.service_type && <p className="text-xs text-stone-500 dark:text-stone-400">{v.service_type}</p>}
-                      </div>
-                      {canManage && (
-                        <button onClick={() => handleVendorDelete(v.id)} className="text-stone-300 dark:text-stone-600 hover:text-red-500 dark:hover:text-red-400"><X className="w-3 h-3" /></button>
-                      )}
-                    </div>
-                  );
-                })}
+                {vendors.map((v) => (
+                  <EventVendorRow key={v.id} vendor={v} canManage={canManage} onDelete={handleVendorDelete} t={t} />
+                ))}
               </div>
             )}
           </div>

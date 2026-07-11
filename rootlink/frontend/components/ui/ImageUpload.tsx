@@ -181,7 +181,7 @@ export function ImageUpload({
   };
 
   return (
-    <div className={className}>
+    <div data-rl-component="ImageUpload" className={className}>
       {label && (
         <p className="text-xs font-display font-medium text-stone-400 uppercase tracking-wider mb-2">
           {label}

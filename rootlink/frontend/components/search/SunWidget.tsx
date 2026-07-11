@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Sunrise, Sunset } from "lucide-react";
 import { api } from "@/lib/api";
+import { SidebarWidget } from "@/components/ui/DeFacto";
 
 export function SunWidget() {
   const [sun, setSun] = useState<any>(null);
@@ -24,11 +25,7 @@ export function SunWidget() {
   };
 
   return (
-    <div className="rounded-2xl border border-stone-200/60 bg-white p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <Sunrise className="w-4 h-4 text-amber-500" />
-        <h3 className="text-xs font-display font-semibold text-stone-500 uppercase tracking-wider">Sun Today</h3>
-      </div>
+    <SidebarWidget icon={Sunrise} title="Sun Today" iconColor="text-amber-500">
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -48,6 +45,6 @@ export function SunWidget() {
           <span className="text-[10px] text-stone-400">{sun.day_length_hours}h of daylight</span>
         </div>
       </div>
-    </div>
+    </SidebarWidget>
   );
 }

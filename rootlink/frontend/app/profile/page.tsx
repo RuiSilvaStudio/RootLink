@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   User, MapPin, Save, LogOut, Users, UserPlus, UserMinus, Eye, EyeOff,
   FileText, Calendar, BookOpen, MessageSquare, Ticket, Heart, Bookmark,
-  Settings, Rss, Clock, CheckCircle, QrCode, Shield, Sprout, GraduationCap, Building,
+  Settings, Rss, Clock, CheckCircle, Shield, Sprout, GraduationCap, Building,
   Package, Tag, Gift, ArrowRightLeft, ShoppingCart,
 } from "lucide-react";
 import { api } from "@/lib/api";
@@ -21,6 +21,19 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Avatar } from "@/components/ui/Avatar";
 import { ImageUpload } from "@/components/ui/ImageUpload";
+import { ProfileGroupMiniCard } from "@/components/cards/ProfileGroupMiniCard";
+import { ProfileContentCard } from "@/components/cards/ProfileContentCard";
+import { ProfileEventRow } from "@/components/cards/ProfileEventRow";
+import { ProfileGroupRow } from "@/components/cards/ProfileGroupRow";
+import { ProfileCourseRow } from "@/components/cards/ProfileCourseRow";
+import { ProfileListingRow } from "@/components/cards/ProfileListingRow";
+import { ProfileSaleRow } from "@/components/cards/ProfileSaleRow";
+import { ProfilePurchaseRow } from "@/components/cards/ProfilePurchaseRow";
+import { ProfileTicketRow } from "@/components/cards/ProfileTicketRow";
+import { ProfileRsvpRow } from "@/components/cards/ProfileRsvpRow";
+import { ProfileDonationRow } from "@/components/cards/ProfileDonationRow";
+import { ProfileEnrollmentRow } from "@/components/cards/ProfileEnrollmentRow";
+import { ProfileCommentRow } from "@/components/cards/ProfileCommentRow";
 
 const TABS = ["about", "activity", "marketplace", "events", "discussions", "settings"] as const;
 type Tab = (typeof TABS)[number];
@@ -475,15 +488,7 @@ function ProfilePage() {
                 <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3">{t("profile.groups_joined")}</h3>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {activity.groups_joined.map((g: any) => (
-                    <Link key={g.id} href={`/groups/${g.id}`} className="flex items-center gap-3 bg-primary-50/40 dark:bg-primary-900/10 rounded-xl p-3 hover:bg-primary-50 transition">
-                      <div className="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center shrink-0">
-                        <Users className="w-5 h-5 text-primary-600" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-stone-700 dark:text-stone-300 truncate">{g.name}</p>
-                        {g.role !== "member" && <Badge variant="sage" className="text-[9px] mt-0.5">{g.role}</Badge>}
-                      </div>
-                    </Link>
+                    <ProfileGroupMiniCard key={g.id} group={g} t={t} />
                   ))}
                 </div>
               </Card>
@@ -504,11 +509,7 @@ function ProfilePage() {
                 </h3>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {activity.content.map((c: any) => (
-                    <Link key={c.id} href={`/content/${c.id}`} className="card-lift p-4 group">
-                      <img src={safeImageUrl(c.image_url, "/images/placeholder-card.svg")} alt={c.title} className="w-full h-24 object-cover rounded-lg mb-3" />
-                      <p className="text-sm font-medium text-stone-700 dark:text-stone-300 group-hover:text-primary-700 transition line-clamp-2">{c.title}</p>
-                      {c.created_at && <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">{new Date(c.created_at).toLocaleDateString()}</p>}
-                    </Link>
+                    <ProfileContentCard key={c.id} item={c} />
                   ))}
                 </div>
               </div>
@@ -520,15 +521,7 @@ function ProfilePage() {
                 </h3>
                 <div className="space-y-2">
                   {activity.events.map((e: any) => (
-                    <Link key={e.id} href={`/events/${e.id}`} className="flex items-center gap-3 bg-white dark:bg-stone-900 rounded-xl border border-primary-100/40 dark:border-stone-700/40 p-3 hover:shadow-md transition">
-                      <div className="w-10 h-10 rounded-lg bg-earth-100 flex items-center justify-center shrink-0">
-                        <Calendar className="w-5 h-5 text-earth-600" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-stone-700 dark:text-stone-300 truncate">{e.title}</p>
-                        <p className="text-xs text-stone-400 dark:text-stone-500">{e.date ? new Date(e.date).toLocaleDateString() : ""}{e.location ? ` · ${e.location}` : ""}</p>
-                      </div>
-                    </Link>
+                    <ProfileEventRow key={e.id} event={e} />
                   ))}
                 </div>
               </div>
@@ -540,15 +533,7 @@ function ProfilePage() {
                 </h3>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {activity.groups.map((g: any) => (
-                    <Link key={g.id} href={`/groups/${g.id}`} className="flex items-center gap-3 bg-white dark:bg-stone-900 rounded-xl border border-primary-100/40 dark:border-stone-700/40 p-3 hover:shadow-md transition">
-                      <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                        <Users className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-stone-700 dark:text-stone-300 truncate">{g.name}</p>
-                        {g.family && <Badge variant="stone" className="text-[9px] mt-0.5">{g.family}</Badge>}
-                      </div>
-                    </Link>
+                    <ProfileGroupRow key={g.id} group={g} t={t} />
                   ))}
                 </div>
               </div>
@@ -560,17 +545,7 @@ function ProfilePage() {
                 </h3>
                 <div className="space-y-2">
                   {activity.courses.map((c: any) => (
-                    <Link key={c.id} href={`/learning/courses/${c.id}`} className="flex items-center gap-3 bg-white dark:bg-stone-900 rounded-xl border border-primary-100/40 dark:border-stone-700/40 p-3 hover:shadow-md transition">
-                      <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
-                        <BookOpen className="w-5 h-5 text-green-600" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-stone-700 dark:text-stone-300 truncate">{c.title}</p>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${c.published ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
-                          {c.published ? t("learning.published") : t("learning.draft")}
-                        </span>
-                      </div>
-                    </Link>
+                    <ProfileCourseRow key={c.id} course={c} t={t} />
                   ))}
                 </div>
               </div>
@@ -597,34 +572,7 @@ function ProfilePage() {
               {myListings.length > 0 ? (
                 <div className="grid sm:grid-cols-2 gap-3">
                   {myListings.map((lst: any) => (
-                    <a key={lst.id} href={`/marketplace/${lst.id}`} className="flex items-center gap-3 bg-white dark:bg-stone-900 rounded-xl border border-primary-100/40 dark:border-stone-700/40 p-3 hover:shadow-md transition">
-                      <div className="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center shrink-0">
-                        {safeImageUrl(lst.images?.[0]) ? (
-                          <img src={safeImageUrl(lst.images?.[0])} alt="" className="w-full h-full object-cover rounded-lg" />
-                        ) : (
-                          <Package className="w-5 h-5 text-primary-600" />
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-stone-700 dark:text-stone-300 truncate">{lst.title}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs text-stone-400 dark:text-stone-500">
-                            {lst.listing_type === "free" ? t("marketplace.free") :
-                             lst.listing_type === "swap" ? t("marketplace.swap") :
-                             lst.listing_type === "want" ? t("marketplace.wanted") :
-                             `€${(lst.price_cents / 100).toFixed(2)}`}
-                          </span>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                            lst.status === "active" ? "bg-green-100 text-green-700" :
-                            lst.status === "sold" ? "bg-stone-100 text-stone-500" :
-                            "bg-amber-100 text-amber-700"
-                          }`}>{lst.status}</span>
-                          {lst.quantity > 0 && lst.listing_type !== "want" && (
-                            <span className="text-[10px] text-stone-400 dark:text-stone-500">{lst.quantity} {t("marketplace.available")}</span>
-                          )}
-                        </div>
-                      </div>
-                    </a>
+                    <ProfileListingRow key={lst.id} listing={lst} t={t} />
                   ))}
                 </div>
               ) : (
@@ -640,18 +588,7 @@ function ProfilePage() {
                 </h3>
                 <div className="space-y-2">
                   {mySales.map((sale: any) => (
-                    <div key={sale.id} className="flex items-center gap-3 bg-white dark:bg-stone-900 rounded-xl border border-primary-100/40 dark:border-stone-700/40 p-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-stone-700 dark:text-stone-300 truncate">{sale.listing_title}</p>
-                        <p className="text-xs text-stone-400 dark:text-stone-500">{sale.created_at ? new Date(sale.created_at).toLocaleDateString() : ""}</p>
-                      </div>
-                      <span className="text-sm font-bold text-primary-700">€{(sale.amount_cents / 100).toFixed(2)}</span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                        sale.payment_status === "paid" ? "bg-green-100 text-green-700" :
-                        sale.payment_status === "pending" ? "bg-amber-100 text-amber-700" :
-                        "bg-red-100 text-red-700"
-                      }`}>{sale.payment_status}</span>
-                    </div>
+                    <ProfileSaleRow key={sale.id} sale={sale} />
                   ))}
                 </div>
               </div>
@@ -665,18 +602,7 @@ function ProfilePage() {
                 </h3>
                 <div className="space-y-2">
                   {myOrders.map((order: any) => (
-                    <a key={order.id} href={`/marketplace/${order.listing_id}`} className="flex items-center gap-3 bg-white dark:bg-stone-900 rounded-xl border border-primary-100/40 dark:border-stone-700/40 p-3 hover:shadow-md transition">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-stone-700 dark:text-stone-300 truncate">{order.listing_title}</p>
-                        <p className="text-xs text-stone-400 dark:text-stone-500">{order.created_at ? new Date(order.created_at).toLocaleDateString() : ""}</p>
-                      </div>
-                      <span className="text-sm font-bold text-primary-700">€{(order.amount_cents / 100).toFixed(2)}</span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                        order.payment_status === "paid" ? "bg-green-100 text-green-700" :
-                        order.payment_status === "pending" ? "bg-amber-100 text-amber-700" :
-                        "bg-red-100 text-red-700"
-                      }`}>{order.payment_status}</span>
-                    </a>
+                    <ProfilePurchaseRow key={order.id} order={order} />
                   ))}
                 </div>
               </div>
@@ -716,21 +642,7 @@ function ProfilePage() {
                 </h3>
                 <div className="space-y-2">
                   {activity.tickets.map((tk: any) => (
-                    <Link key={tk.id} href={`/events/${tk.event_id}`} className="flex items-center gap-3 bg-white dark:bg-stone-900 rounded-xl border border-primary-100/40 dark:border-stone-700/40 p-4 hover:shadow-md transition">
-                      <div className="w-12 h-12 rounded-xl bg-sky-100 flex items-center justify-center shrink-0">
-                        <QrCode className="w-6 h-6 text-sky-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-stone-700 dark:text-stone-300 truncate">{tk.event_title}</p>
-                        <p className="text-xs text-stone-400 dark:text-stone-500">{tk.ticket_type} × {tk.quantity} — €{(tk.total_paid / 100).toFixed(0)}</p>
-                        {tk.event_date && <p className="text-xs text-stone-400 dark:text-stone-500">{new Date(tk.event_date).toLocaleDateString()}</p>}
-                      </div>
-                      {tk.checked_in ? (
-                        <Badge variant="green"><CheckCircle className="w-3 h-3 mr-1" /> {t("profile.checked_in")}</Badge>
-                      ) : (
-                        <Badge variant="stone">{t("profile.not_checked_in")}</Badge>
-                      )}
-                    </Link>
+                    <ProfileTicketRow key={tk.id} ticket={tk} t={t} />
                   ))}
                 </div>
               </div>
@@ -743,15 +655,7 @@ function ProfilePage() {
                 </h3>
                 <div className="space-y-2">
                   {activity.rsvps.map((r: any, i: number) => (
-                    <Link key={i} href={`/events/${r.event_id}`} className="flex items-center gap-3 bg-white dark:bg-stone-900 rounded-xl border border-primary-100/40 dark:border-stone-700/40 p-3 hover:shadow-md transition">
-                      <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
-                        <Calendar className="w-5 h-5 text-amber-600" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-stone-700 dark:text-stone-300 truncate">{r.event_title}</p>
-                        <p className="text-xs text-stone-400 dark:text-stone-500">{r.event_date ? new Date(r.event_date).toLocaleDateString() : ""}{r.event_location ? ` · ${r.event_location}` : ""}</p>
-                      </div>
-                    </Link>
+                    <ProfileRsvpRow key={i} rsvp={r} />
                   ))}
                 </div>
               </div>
@@ -764,16 +668,7 @@ function ProfilePage() {
                 </h3>
                 <div className="space-y-2">
                   {activity.donations.map((d: any) => (
-                    <Link key={d.id} href={`/events/${d.event_id}`} className="flex items-center gap-3 bg-white dark:bg-stone-900 rounded-xl border border-primary-100/40 dark:border-stone-700/40 p-3 hover:shadow-md transition">
-                      <div className="w-10 h-10 rounded-lg bg-rust-100 flex items-center justify-center shrink-0">
-                        <Heart className="w-5 h-5 text-rust-600" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-stone-700 dark:text-stone-300 truncate">{d.event_title}</p>
-                        <p className="text-xs text-stone-400 dark:text-stone-500">{d.created_at ? new Date(d.created_at).toLocaleDateString() : ""}{d.is_anonymous ? ` · ${t("profile.anonymous")}` : ""}</p>
-                      </div>
-                      <span className="text-sm font-bold text-rust-600">€{(d.amount / 100).toFixed(0)}</span>
-                    </Link>
+                    <ProfileDonationRow key={d.id} donation={d} t={t} />
                   ))}
                 </div>
               </div>
@@ -786,14 +681,7 @@ function ProfilePage() {
                 </h3>
                 <div className="space-y-2">
                   {activity.enrollments.map((e: any, i: number) => (
-                    <Link key={i} href={`/learning/courses/${e.course_id}`} className="flex items-center gap-3 bg-white dark:bg-stone-900 rounded-xl border border-primary-100/40 dark:border-stone-700/40 p-3 hover:shadow-md transition">
-                      <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
-                        <GraduationCap className="w-5 h-5 text-green-600" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-stone-700 dark:text-stone-300 truncate">{e.course_title}</p>
-                      </div>
-                    </Link>
+                    <ProfileEnrollmentRow key={i} enrollment={e} />
                   ))}
                 </div>
               </div>
@@ -808,24 +696,9 @@ function ProfilePage() {
         {activeTab === "discussions" && (
           <div className="space-y-3">
             {activity?.comments?.length > 0 ? (
-              activity.comments.map((cm: any) => {
-                const linkMap: Record<string, string> = {
-                  content: `/content/${cm.entity_id}`,
-                  event: `/events/${cm.entity_id}`,
-                  group: `/groups/${cm.entity_id}`,
-                  plant: `/plants/${cm.entity_id}`,
-                  course: `/learning/courses/${cm.entity_id}`,
-                };
-                return (
-                  <Link key={cm.id} href={linkMap[cm.entity_type] || "#"} className="block bg-white dark:bg-stone-900 rounded-xl border border-primary-100/40 dark:border-stone-700/40 p-4 hover:shadow-md transition">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="stone" className="text-[9px] capitalize">{cm.entity_type}</Badge>
-                      <span className="text-xs text-stone-400 dark:text-stone-500">{cm.created_at ? new Date(cm.created_at).toLocaleDateString() : ""}</span>
-                    </div>
-                    <p className="text-sm text-stone-600 dark:text-stone-400 dark:text-stone-500 font-serif italic line-clamp-2">&quot;{cm.body}&quot;</p>
-                  </Link>
-                );
-              })
+              activity.comments.map((cm: any) => (
+                <ProfileCommentRow key={cm.id} comment={cm} />
+              ))
             ) : (
               <EmptyState icon={<MessageSquare className="w-7 h-7" />} title={t("profile.no_comments")} />
             )}

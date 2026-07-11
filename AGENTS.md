@@ -1,6 +1,7 @@
 ## Responses
 
 - Keep responses concise and to the point - unless the user asks otherwise
+- **The user is the product owner, not an engineer.** Explain decisions and ask questions in plain English with concrete examples. Ask about the goal/outcome, never the implementation technique. When presenting options, describe what each one means for a human using the product — not what the code looks like. Save technical detail for implementation notes.
 
 ## Planning Mode
 
@@ -65,6 +66,14 @@ additions. Present options with trade-offs and ask — do not assume.
 
 1. **Context Isolation**: When evaluating new ideas, read rootlink/ for context, but dump all thoughts, research, and code drafts into /discovery.
 2. **Idempotency**: Never alter existing database schemas or core business logic in rootlink/ during ideation or research phase.
+
+## Editable copy convention
+
+**All editable marketing/copy text must use the `<Text k="copy.key">` component** (`components/ui/Text.tsx`). It auto-marks the element with `data-rl-text="copy.key"` so the Content Studio overlay knows the text is editable + its copy key (for persisting edits via `/api/copy`). Render plain `{t("key")}` inside `<Text>` as children, or let `<Text>` render it automatically.
+
+**Computed values** (counts, prices, dates, usernames, API data) are rendered with plain `{expr}` — no `<Text>`, no `data-rl-text`. The overlay treats these as read-only ("Computed value — not editable"). This is the distinction: editable copy = keyed = `<Text>`; computed = unkeyed = read-only. When building a new page, use `<Text>` for headings/subtitles/labels/buttons that are static copy, and leave dynamic values untagged.
+
+`SectionHeader` accepts `headingKey`, `LinkWithArrow` accepts `copyKey`, `Button` forwards `data-rl-text` via `{...props}` — use these for text inside DeFacto/Button components.
 
 ## Deployment
 

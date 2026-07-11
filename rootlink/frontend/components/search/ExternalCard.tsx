@@ -7,7 +7,7 @@ export function ExternalCard({ item }: { item: any }) {
   const c = item.content;
 
   return (
-    <div className="rounded-2xl border border-stone-200/60 bg-stone-50/50 p-4">
+    <div data-rl-component="ResultCard" className="rounded-2xl border border-stone-200/60 bg-stone-50/50 p-4">
       <div className="flex items-center gap-2 mb-2">
         <Badge variant="stone" className="text-[10px]">External Data</Badge>
         <span className="text-[10px] text-stone-600">iNaturalist</span>

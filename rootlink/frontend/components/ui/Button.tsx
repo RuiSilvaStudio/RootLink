@@ -29,6 +29,7 @@ export const Button = forwardRef<HTMLButtonElement, Props>(
   ({ variant = "primary", size = "md", loading, disabled, className = "", children, ...props }, ref) => {
     return (
       <button
+        data-rl-component="Button"
         ref={ref}
         disabled={disabled || loading}
         className={`

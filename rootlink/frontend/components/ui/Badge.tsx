@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { HTMLAttributes, ReactNode } from "react";
 
 const variants = {
   sage: "bg-primary-100/60 text-primary-700 border-primary-200/40 dark:bg-primary-900/40 dark:text-primary-300 dark:border-primary-700/40",
@@ -10,16 +10,16 @@ const variants = {
   red: "bg-red-100/60 text-red-700 border-red-200/40 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700/40",
 };
 
-type Props = {
+type Props = HTMLAttributes<HTMLSpanElement> & {
   variant?: keyof typeof variants;
   children: ReactNode;
   dot?: boolean;
   className?: string;
 };
 
-export function Badge({ variant = "sage", children, dot, className = "" }: Props) {
+export function Badge({ variant = "sage", children, dot, className = "", ...rest }: Props) {
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-display font-medium uppercase tracking-wider border ${variants[variant]} ${className}`}>
+    <span data-rl-component="Badge" className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-display font-medium uppercase tracking-wider border ${variants[variant]} ${className}`} {...rest}>
       {dot && <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />}
       {children}
     </span>

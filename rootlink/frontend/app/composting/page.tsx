@@ -14,7 +14,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardSkeleton } from "@/components/ui/LoadingSkeleton";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { EditableText } from "@/components/editor-mode/editable-text";
+import { Text } from "@/components/ui/Text";
+import { BlockRenderer, type BlockSectionData } from "@/components/blocks";
 
 const MATERIALS = [
   { value: "food_scraps", labelKey: "waste.material_food_scraps" },
@@ -55,6 +56,7 @@ export default function CompostingPage() {
   const [editHours, setEditHours] = useState("");
   const [editMaterials, setEditMaterials] = useState<string[]>([]);
   const [editStatus, setEditStatus] = useState("active");
+  const [heroSections, setHeroSections] = useState<BlockSectionData[] | null>(null);
 
   const isPlatformSuperAdmin = user?.role === "super_admin";
 
@@ -74,6 +76,9 @@ export default function CompostingPage() {
     setToken(localStorage.getItem("token"));
     fetchHubs();
     api.waste.challenges().then(setChallenges).catch(() => {});
+    api.blocks.getPage("composting")
+      .then((p) => p?.sections?.length ? setHeroSections(p.sections) : setHeroSections([]))
+      .catch(() => setHeroSections([]));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchHubs = useCallback(async () => {
@@ -173,10 +178,14 @@ export default function CompostingPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
+      {heroSections && heroSections.length > 0 && (
+        <BlockRenderer sections={heroSections} />
+      )}
+
       <PageHeader
         icon={<Leaf className="w-5 h-5 text-green-600" />}
-        title={<EditableText k="waste.composting_title" as="span" />}
-        subtitle={<EditableText k="waste.composting_subtitle" as="span" />}
+        title={<Text k="waste.composting_title" as="span" />}
+        subtitle={<Text k="waste.composting_subtitle" as="span" />}
         action={token && (
           <Button variant="primary" size="sm" onClick={() => setShowForm(!showForm)}>
             <Plus className="w-4 h-4" /> {t("waste.create_hub")}

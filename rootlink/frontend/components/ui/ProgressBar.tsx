@@ -41,7 +41,7 @@ export function ProgressBar({ value, max = 100, label, showPercent = true, size 
     : "bg-earth-500";
 
   return (
-    <div ref={ref} className={`space-y-2 ${className}`}>
+    <div data-rl-component="ProgressBar" ref={ref} className={`space-y-2 ${className}`}>
       {(label || showPercent) && (
         <div className="flex justify-between items-center">
           {label && <span className="text-sm font-serif text-stone-600 dark:text-stone-300">{label}</span>}

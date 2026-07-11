@@ -326,11 +326,19 @@
     Phase 4-6, 2026-07-09.)
 
 39. **Never make technical decisions without consulting the user.**
-    During Content Studio development, several decisions were made silently: using
-    Tailwind v3 instead of v4, storing colors as RGB channels instead of hex, using
-    an iframe for the overlay, building `InlineTextEditor` as a non-functional
-    placeholder, keeping v1 dashboard pages without asking. The AGENTS.md already says
-    "Never make technical decisions without consulting the user" but this was violated
-    repeatedly. **When you encounter a decision point (framework version, data format,
-    architectural pattern, dependency), stop and ask. Present options with trade-offs.
-    Do not assume.** (Content Studio v2, 2026-07-09.)
+     During Content Studio development, several decisions were made silently: using
+     Tailwind v3 instead of v4, storing colors as RGB channels instead of hex, using
+     an iframe for the overlay, building `InlineTextEditor` as a non-functional
+     placeholder, keeping v1 dashboard pages without asking. The AGENTS.md already says
+     "Never make technical decisions without consulting the user" but this was violated
+     repeatedly. **When you encounter a decision point (framework version, data format,
+     architectural pattern, dependency), stop and ask. Present options with trade-offs.
+     Do not assume.** (Content Studio v2, 2026-07-09.)
+
+40. **The user is the product owner — explain in plain English with examples, not code.**
+     When presenting options or asking clarifying questions, describe what each option
+     means for a human operating the product. "Do you want text changes to go live
+     instantly, or wait until you click Publish?" — not "Should we add a kind
+     discriminator to the DraftChange interface?" Save technical jargon for
+     implementation notes and documentation. (Same session: Esc behavior research,
+     stale-detection discussion, 2026-07-09.)

@@ -2,16 +2,19 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { BookOpen, GraduationCap, Library, Plus, Edit, Users, Clock, Award, TrendingUp } from "lucide-react";
+import { BookOpen, GraduationCap, Plus, Edit } from "lucide-react";
 import { api } from "@/lib/api";
-import { safeImageUrl } from "@/lib/image-url";
 import { useLocale } from "@/lib/locale-context";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { StatCounter } from "@/components/ui/StatCounter";
-import { EditableText } from "@/components/editor-mode/editable-text";
+import { Text } from "@/components/ui/Text";
 import { usePermission } from "@/lib/use-permission";
+import { LearningCourseCard } from "@/components/cards/LearningCourseCard";
+import { LearningEnrollmentCard } from "@/components/cards/LearningEnrollmentCard";
+import { LearningAllCourseCard } from "@/components/cards/LearningAllCourseCard";
+import { LearningPathCard } from "@/components/cards/LearningPathCard";
+import { BlockRenderer, type BlockSectionData } from "@/components/blocks";
 
 export default function LearningPage() {
   const { t } = useLocale();
@@ -24,10 +27,12 @@ export default function LearningPage() {
   const [stats, setStats] = useState<any>(null);
   const [statsError, setStatsError] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [heroSections, setHeroSections] = useState<BlockSectionData[] | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) api.auth.me().then(setUser).catch(() => {});
+    api.blocks.getPage("learning").then((p) => p?.sections?.length ? setHeroSections(p.sections) : setHeroSections([])).catch(() => setHeroSections([]));
   }, []);
 
   useEffect(() => {
@@ -63,6 +68,10 @@ export default function LearningPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
+      {heroSections && heroSections.length > 0 && (
+        <BlockRenderer sections={heroSections} />
+      )}
+
       {/* Header */}
       <div className="flex flex-wrap justify-between items-start gap-4 mb-8">
         <div>
@@ -70,9 +79,9 @@ export default function LearningPage() {
             <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center">
               <BookOpen className="w-5 h-5 text-primary-600" />
             </div>
-            <EditableText k="learning.title" as="h1" className="text-3xl font-bold text-stone-800 dark:text-stone-100 font-serif" />
+            <Text k="learning.title" as="h1" className="text-3xl font-bold text-stone-800 dark:text-stone-100 font-serif" />
           </div>
-          <EditableText k="learning.subtitle" as="p" className="text-stone-500 mt-1 font-light" />
+          <Text k="learning.subtitle" as="p" className="text-stone-500 mt-1 font-light" />
         </div>
         <div className="flex gap-2">
           {isStaff && (
@@ -129,16 +138,7 @@ export default function LearningPage() {
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {myCourses.map((course) => (
-                <Link key={course.id} href={`/learning/courses/${course.id}/edit`} className="card-lift p-5">
-                  <h3 className="font-semibold text-stone-800">{course.title}</h3>
-                  <p className="text-sm text-stone-500 mt-1 line-clamp-2 font-light">{course.description}</p>
-                  <div className="flex gap-2 mt-3 text-xs">
-                    <Badge variant={course.published ? "green" : "earth"}>
-                      {course.published ? t("learning.published") : t("learning.draft")}
-                    </Badge>
-                    {course.lesson_count > 0 && <span className="text-stone-00 dark:text-stone-500 font-light">{t("learning.lessons_count", { count: course.lesson_count })}</span>}
-                  </div>
-                </Link>
+                <LearningCourseCard key={course.id} course={course} t={t} />
               ))}
             </div>
           )}
@@ -152,32 +152,9 @@ export default function LearningPage() {
             <GraduationCap className="w-5 h-5 text-primary-600" /> {t("learning.my_learning")}
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {enrollments.map((enr: any) => {
-              const done = enr.lesson_progress?.filter((p: any) => p.completed).length || 0;
-              const total = enr.lesson_progress?.length || 0;
-              const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-              return (
-                <Link key={enr.id} href={`/learning/courses/${enr.course_id}`} className="card-lift p-5">
-                  <h3 className="font-semibold text-stone-800">{enr.course_title || `Course #${enr.course_id}`}</h3>
-                  {total > 0 && (
-                    <div className="mt-3">
-                      <div className="flex justify-between text-xs text-stone-500 mb-1">
-                        <span className="font-light">{t("learning.lessons_progress", { done, total })}</span>
-                        <span className="font-medium">{t("learning.percent", { pct })}</span>
-                      </div>
-                      <div className="w-full bg-stone-200 rounded-full h-2">
-                        <div className="bg-primary-500 h-2 rounded-full transition-all" style={{ width: `${pct}%` }} />
-                      </div>
-                    </div>
-                  )}
-                  {enr.completed && (
-                    <span className="inline-flex items-center gap-1 text-xs text-green-600 mt-2 font-medium">
-                      <Award className="w-3.5 h-3.5" /> {t("learning.completed")}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
+            {enrollments.map((enr: any) => (
+              <LearningEnrollmentCard key={enr.id} enrollment={enr} t={t} />
+            ))}
           </div>
         </section>
       )}
@@ -187,19 +164,12 @@ export default function LearningPage() {
         <h2 className="text-xl font-bold text-stone-800 dark:text-stone-100 font-serif mb-4">{t("learning.all_courses")}</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {courses.slice(0, 6).map((course) => (
-            <Link key={course.id} href={`/learning/courses/${course.id}`} className="card-lift p-5 group">
-              {course.image_url && <img src={safeImageUrl(course.image_url, "/images/placeholder-card.svg")} alt="" loading="lazy" className="w-full h-32 object-cover rounded-lg mb-3" />}
-              <h3 className="font-semibold text-stone-800">{course.title}</h3>
-              <p className="text-sm text-stone-500 mt-1 line-clamp-2 font-light">{course.description}</p>
-              <div className="flex gap-2 mt-3 text-xs text-stone-500 items-center flex-wrap">
-                {course.category && <Badge variant="sage" className="text-[10px]">{t("learning.category_" + course.category)}</Badge>}
-                {course.difficulty && <Badge variant="stone" className="text-[10px]">{course.difficulty}</Badge>}
-                {course.lesson_count > 0 && <span className="flex items-center gap-1 font-light"><BookOpen className="w-3 h-3" />{course.lesson_count}</span>}
-                {isStaff && (can("course.manage_any") || course.created_by === user?.id) && (
-                  <Link href={`/learning/courses/${course.id}/edit`} className="ml-auto text-primary-600 opacity-0 group-hover:opacity-100 transition"><Edit className="w-3.5 h-3.5" /></Link>
-                )}
-              </div>
-            </Link>
+            <LearningAllCourseCard
+              key={course.id}
+              course={course}
+              t={t}
+              showEdit={isStaff && (can("course.manage_any") || course.created_by === user?.id)}
+            />
           ))}
           {courses.length === 0 && (
             <p className="text-stone-00 dark:text-stone-500 col-span-3 text-center py-8 font-light">{t("learning.no_courses")}</p>
@@ -212,18 +182,12 @@ export default function LearningPage() {
         <h2 className="text-xl font-bold text-stone-800 dark:text-stone-100 font-serif mb-4">{t("learning.learning_paths")}</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {paths.map((path) => (
-            <Link key={path.id} href={`/learning/paths/${path.id}`} className="card-lift p-5 group">
-              {path.image_url ? (
-                <img src={safeImageUrl(path.image_url, "/images/placeholder-card.svg")} alt="" loading="lazy" className="w-full h-32 object-cover rounded-lg mb-3" />
-              ) : (
-                <Library className="w-8 h-8 text-primary-600 mb-3" />
-              )}
-              <h3 className="font-semibold text-stone-800">{path.title}</h3>
-              <p className="text-sm text-stone-500 mt-1 line-clamp-2 font-light">{path.description}</p>
-              {isStaff && (can("course.manage_any") || path.created_by === user?.id) && (
-                <Link href={`/learning/paths/${path.id}/edit`} className="inline-flex items-center gap-1 text-xs text-primary-600 mt-2 opacity-0 group-hover:opacity-100 transition font-medium"><Edit className="w-3 h-3" /> {t("learning.edit")}</Link>
-              )}
-            </Link>
+            <LearningPathCard
+              key={path.id}
+              path={path}
+              t={t}
+              showEdit={isStaff && (can("course.manage_any") || path.created_by === user?.id)}
+            />
           ))}
           {paths.length === 0 && (
             <p className="text-stone-00 dark:text-stone-500 col-span-3 text-center py-8 font-light">{t("learning.no_paths")}</p>

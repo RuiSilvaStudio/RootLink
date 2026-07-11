@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Users, Plus, Search, ExternalLink, Hash, MessageCircle, Calendar, X } from "lucide-react";
+import { Users, Plus, Search, ExternalLink, MessageCircle, Calendar, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { safeImageUrl } from "@/lib/image-url";
 import { useLocale } from "@/lib/locale-context";
@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { CardSkeleton } from "@/components/ui/LoadingSkeleton";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { BlockRenderer, type BlockSectionData } from "@/components/blocks";
+import { GroupListCard } from "@/components/cards/GroupListCard";
 
 export default function GroupsPage() {
   const [groups, setGroups] = useState<any[]>([]);
@@ -200,24 +201,7 @@ export default function GroupsPage() {
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {groups.map((group) => (
-            <a key={group.id} href={`/groups/${group.id}`} className="card-lift p-5 group">
-              {group.image_url ? (
-                <div className="w-full h-32 rounded-xl overflow-hidden mb-4 bg-primary-50 dark:bg-primary-950/20">
-                  <img src={safeImageUrl(group.image_url, "/images/placeholder-card.svg")} alt={group.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                </div>
-              ) : (
-                <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
-                  <Hash className="w-5 h-5 text-primary-500" />
-                </div>
-              )}
-              <h3 className="font-semibold text-stone-800 dark:text-stone-100 group-hover:text-primary-700 transition">{group.name}</h3>
-              <p className="text-sm text-stone-500 mt-1 line-clamp-2 font-light">
-                {group.description || t("groups.no_description")}
-              </p>
-              <div className="mt-3">
-                <Badge variant="sage">{group.category}</Badge>
-              </div>
-            </a>
+            <GroupListCard key={group.id} group={group} noDescriptionText={t("groups.no_description")} />
           ))}
         </div>
       )}

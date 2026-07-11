@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Users } from "lucide-react";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/Badge";
+import { SidebarWidget } from "@/components/ui/DeFacto";
 
 export function RelatedGroups({ query }: { query: string }) {
   const [groups, setGroups] = useState<any[]>([]);
@@ -19,11 +20,7 @@ export function RelatedGroups({ query }: { query: string }) {
   if (groups.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-stone-200/60 bg-white p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <Users className="w-4 h-4 text-green-500" />
-        <h3 className="text-xs font-display font-semibold text-stone-500 uppercase tracking-wider">Related Groups</h3>
-      </div>
+    <SidebarWidget icon={Users} title="Related Groups" iconColor="text-green-500">
       <div className="space-y-2">
         {groups.map((g) => (
           <a
@@ -39,6 +36,6 @@ export function RelatedGroups({ query }: { query: string }) {
           </a>
         ))}
       </div>
-    </div>
+    </SidebarWidget>
   );
 }

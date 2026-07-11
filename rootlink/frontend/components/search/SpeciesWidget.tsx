@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Leaf, ExternalLink } from "lucide-react";
 import { api } from "@/lib/api";
+import { SidebarWidget } from "@/components/ui/DeFacto";
 
 export function SpeciesWidget({ query }: { query: string }) {
   const [species, setSpecies] = useState<any>({ inaturalist: [], gbif: [] });
@@ -19,12 +20,7 @@ export function SpeciesWidget({ query }: { query: string }) {
   if (!hasData) return null;
 
   return (
-    <div className="rounded-2xl border border-stone-200/60 bg-white p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <Leaf className="w-4 h-4 text-primary-500" />
-        <h3 className="text-xs font-display font-semibold text-stone-500 uppercase tracking-wider">Species Data</h3>
-      </div>
-
+    <SidebarWidget icon={Leaf} title="Species Data" iconColor="text-primary-500">
       {species.inaturalist?.length > 0 && (
         <div className="mb-3">
           <p className="text-[10px] text-stone-600 mb-1.5">iNaturalist</p>
@@ -56,6 +52,6 @@ export function SpeciesWidget({ query }: { query: string }) {
           ))}
         </div>
       )}
-    </div>
+    </SidebarWidget>
   );
 }

@@ -8,6 +8,7 @@ export function PlantCard({ item }: { item: any }) {
 
   return (
     <a
+      data-rl-component="ResultCard"
       href={c.url || `/plants`}
       className="group block rounded-2xl border border-primary-200/60 bg-white p-5 transition-all hover:shadow-md hover:border-primary-300/60"
     >

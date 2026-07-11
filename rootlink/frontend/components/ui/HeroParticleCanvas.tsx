@@ -344,6 +344,7 @@ export function HeroParticleCanvas() {
 
   return (
     <canvas
+      data-rl-component="HeroParticleCanvas"
       ref={canvasRef}
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 z-0"

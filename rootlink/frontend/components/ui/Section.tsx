@@ -13,7 +13,7 @@ type Props = {
 
 export function Section({ badge, title, description, children, className = "", as: Tag = "section", variant = "default" }: Props) {
   return (
-    <Tag className={`px-4 sm:px-8 py-20 sm:py-28 ${variant === "muted" ? "bg-primary-50/40" : ""} ${className}`}>
+    <Tag data-rl-component="Section" className={`px-4 sm:px-8 py-20 sm:py-28 ${variant === "muted" ? "bg-primary-50/40" : ""} ${className}`}>
       <div className="max-w-6xl mx-auto">
         {(badge || title) && (
           <div className="text-center mb-14">

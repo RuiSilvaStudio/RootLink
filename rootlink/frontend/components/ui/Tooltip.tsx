@@ -28,6 +28,7 @@ export function Tooltip({
   const [open, setOpen] = useState(false);
   return (
     <span
+      data-rl-component="Tooltip"
       className="relative inline-flex"
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}

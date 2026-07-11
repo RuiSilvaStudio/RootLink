@@ -1,6 +1,7 @@
 export { Button } from "./Button";
 export { Card } from "./Card";
 export { Badge } from "./Badge";
+export { Text } from "./Text";
 export { Input } from "./Input";
 export { Select } from "./Select";
 export { Textarea } from "./Textarea";
@@ -13,7 +14,6 @@ export { StatCounter } from "./StatCounter";
 export { ProgressBar } from "./ProgressBar";
 export { ContentCardSkeleton, CardSkeleton, ListSkeleton, ProfileSkeleton, TextSkeleton, PageSkeleton } from "./LoadingSkeleton";
 export { GrainOverlay } from "./GrainOverlay";
-export { OptimizedImage } from "./OptimizedImage";
 export { ImageUpload } from "./ImageUpload";
 export { ScrollReveal } from "./ScrollReveal";
 export { Tooltip } from "./Tooltip";

@@ -8,6 +8,7 @@ import { safeImageUrl } from "@/lib/image-url";
 import { useToast } from "@/lib/toast-context";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { CommentSection } from "@/components/CommentSection";
+import { GroupMemberChip } from "@/components/cards/GroupMemberChip";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -199,15 +200,7 @@ export default function GroupDetailPage() {
           </h2>
           <div className="flex flex-wrap gap-2">
             {members.map((member) => (
-              <div key={member.id} className="flex items-center gap-2 bg-primary-50 px-3 py-1.5 rounded-full text-sm text-stone-600 dark:text-stone-300">
-                <div className="w-6 h-6 rounded-full bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center">
-                  <Users className="w-3 h-3 text-primary-500" />
-                </div>
-                User #{member.user_id}
-                {member.role !== "member" && (
-                  <Badge variant="sage" className="text-[10px]">{member.role}</Badge>
-                )}
-              </div>
+              <GroupMemberChip key={member.id} member={member} />
             ))}
           </div>
         </div>

@@ -14,7 +14,7 @@ type Props = {
 export function EmptyState({ icon, title, message, subtitle, action, children, className = "" }: Props) {
   const msg = message || subtitle;
   return (
-    <div className={`text-center py-16 px-6 ${className}`}>
+    <div data-rl-component="EmptyState" className={`text-center py-16 px-6 ${className}`}>
       {icon && (
         <div className="w-16 h-16 rounded-full bg-primary-100/60 dark:bg-primary-900/40 flex items-center justify-center mx-auto mb-6">
           {icon}

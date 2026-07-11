@@ -18,7 +18,38 @@
  * is 384px (w-96) wide.
  */
 
-import { MousePointer2, Upload, FolderOpen, ImageIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { MousePointer2, Upload, FolderOpen, ImageIcon, ChevronDown } from "lucide-react";
+import { api } from "@/lib/api";
+
+export interface FontEntry {
+  id: number;
+  name: string;
+  family: string;   // CSS font-family value, e.g. '"Routtage", sans-serif'
+  is_active: boolean;
+}
+
+// Module-level font cache (shared by the picker + the inspector's name→family
+// resolver), so a font chosen in the picker applies with one fetch.
+let _fontsCache: FontEntry[] | null = null;
+
+async function loadFonts(): Promise<FontEntry[]> {
+  if (_fontsCache) return _fontsCache;
+  try {
+    const all = await api.fonts.list();
+    _fontsCache = all.filter((f) => f.is_active);
+  } catch {
+    _fontsCache = [];
+  }
+  return _fontsCache;
+}
+
+/** Resolve a font NAME to its CSS font-family value (or null if unknown).
+ *  Triggers a load if the cache is empty. */
+export async function fontFamilyCSS(name: string): Promise<string | null> {
+  const fonts = await loadFonts();
+  return fonts.find((f) => f.name === name)?.family ?? null;
+}
 
 // ── Shared types ────────────────────────────────────────────────
 export interface ControlProps {
@@ -44,23 +75,38 @@ function ControlLabel({ label }: { label?: string }) {
 // gap, letter-spacing, border-radius, border-width.
 
 const SPACING_STOPS = [
-  { value: "0px", label: "0" },
-  { value: "0.25rem", label: "xs" },
-  { value: "0.5rem", label: "sm" },
-  { value: "1rem", label: "md" },
-  { value: "1.5rem", label: "lg" },
-  { value: "2rem", label: "xl" },
-  { value: "3rem", label: "2xl" },
+  { value: "0", label: "0" },
+  { value: "1", label: "xs" },
+  { value: "2", label: "sm" },
+  { value: "3", label: "md" },
+  { value: "4", label: "lg" },
+  { value: "6", label: "xl" },
+  { value: "8", label: "2xl" },
 ];
 
-export function SliderWithStops({ value, onChange, label }: ControlProps) {
-  const activeIndex = SPACING_STOPS.findIndex((s) => s.value === value);
+export const RADIUS_STOPS = [
+  { value: "none", label: "0" },
+  { value: "sm", label: "sm" },
+  { value: "md", label: "md" },
+  { value: "lg", label: "lg" },
+  { value: "xl", label: "xl" },
+  { value: "2xl", label: "2xl" },
+  { value: "3xl", label: "3xl" },
+  { value: "full", label: "full" },
+];
+
+export interface SliderProps extends ControlProps {
+  stops?: { value: string; label: string }[];
+}
+
+export function SliderWithStops({ value, onChange, label, stops = SPACING_STOPS }: SliderProps) {
+  const activeIndex = stops.findIndex((s) => s.value === value);
 
   return (
     <div>
       <ControlLabel label={label} />
       <div className="flex gap-0.5 rounded-lg bg-stone-900 p-0.5 border border-stone-800">
-        {SPACING_STOPS.map((stop) => {
+        {stops.map((stop) => {
           const active = stop.value === value;
           return (
             <button
@@ -91,44 +137,26 @@ export function SliderWithStops({ value, onChange, label }: ControlProps) {
 // 2. PaletteColorPicker
 // ══════════════════════════════════════════════════════════════════
 // A grid of named palette colors (4 columns) — NOT a free-form color wheel.
-// Each swatch is a button showing the light-mode color as its background with
-// the token name below in tiny text. The active swatch has a ring/border.
-// onChange is called with the token name (e.g. "primary-600"). If the current
-// value isn't a known palette token, a "Custom" line shows at the top.
+// Each swatch shows the color; the token NAME sits below it. The active swatch
+// is the one whose NAME matches the current value — no color-format
+// comparison (the inspector passes the applied token NAME, read from the
+// element's data-rl-*-token attr / Tailwind class by the agent). onChange
+// emits the token NAME (e.g. "primary-600"); the inspector turns that into
+// `var(--color-primary-600)` for the browser and keeps the name as the
+// override identity (dark-mode-safe, survives theme swaps).
 
 interface PaletteEntry {
   name: string;   // e.g. "primary-600"
-  light: string;  // hex e.g. "#634d33"
-  dark: string;   // hex (may equal light if no dark override)
+  value: string;  // the declared CSS value (hex), for the swatch background
 }
 
 let _paletteCache: PaletteEntry[] | null = null;
 
-/**
- * Dynamically build the color palette from the @theme CSS variables at
- * runtime. Reads all --color-* variables from getComputedStyle on :root
- * (light values) and on a .dark element (dark values). This ensures the
- * palette is always in sync with the theme — any color added to @theme
- * automatically appears in the palette picker. No manual maintenance.
- */
-function getPalette(): PaletteEntry[] {
-  if (_paletteCache) return _paletteCache;
-
-  const root = document.documentElement;
-  const rootStyles = getComputedStyle(root);
-  const entries: PaletteEntry[] = [];
-
-  // Read dark-mode values from a temp .dark element
-  const darkEl = document.createElement("div");
-  darkEl.className = "dark";
-  darkEl.style.display = "none";
-  document.body.appendChild(darkEl);
-  const darkStyles = getComputedStyle(darkEl);
-
-  // Iterate all CSS custom properties on :root
+/** Collect every `--color-*` custom-property name declared on the page
+ *  (from <style>/@theme and :root inline injection by ThemeProvider). */
+function collectColorTokenNames(): string[] {
+  const names = new Set<string>();
   const styleSheets = Array.from(document.styleSheets);
-  const tokenNames = new Set<string>();
-
   for (const sheet of styleSheets) {
     try {
       for (const rule of Array.from(sheet.cssRules)) {
@@ -136,34 +164,32 @@ function getPalette(): PaletteEntry[] {
           const style = rule.style;
           for (let i = 0; i < style.length; i++) {
             const prop = style.item(i);
-            if (prop && prop.startsWith("--color-")) {
-              tokenNames.add(prop);
-            }
+            if (prop && prop.startsWith("--color-")) names.add(prop);
           }
         }
       }
     } catch { /* cross-origin stylesheet — skip */ }
   }
-
-  // Also scan :root inline styles (ThemeProvider injects via style attr)
+  const root = document.documentElement;
   for (let i = 0; i < root.style.length; i++) {
     const prop = root.style.item(i);
-    if (prop && prop.startsWith("--color-")) {
-      tokenNames.add(prop);
-    }
+    if (prop && prop.startsWith("--color-")) names.add(prop);
   }
+  return Array.from(names);
+}
 
-  for (const tokenName of Array.from(tokenNames)) {
-    // tokenName is like "--color-primary-600"
-    const name = tokenName.replace("--color-", "");
-    const light = rootStyles.getPropertyValue(tokenName).trim();
-    const dark = darkStyles.getPropertyValue(tokenName).trim() || light;
-    if (light) {
-      entries.push({ name, light: light.startsWith("#") ? light : normalizeToHex(light) || light, dark: dark.startsWith("#") ? dark : normalizeToHex(dark) || dark });
-    }
+/** Build the color palette from the live theme. Idempotent (cached). The
+ *  swatch value is the declared CSS (hex) read straight from the custom
+ *  property — getComputedStyle returns custom-property values as-declared,
+ *  so no rgb/oklch normalization is needed. */
+function getPalette(): PaletteEntry[] {
+  if (_paletteCache) return _paletteCache;
+  const rootStyles = getComputedStyle(document.documentElement);
+  const entries: PaletteEntry[] = [];
+  for (const tokenName of collectColorTokenNames()) {
+    const value = rootStyles.getPropertyValue(tokenName).trim();
+    if (value) entries.push({ name: tokenName.replace("--color-", ""), value });
   }
-
-  // Sort: primary, earth, rust, cream, stone — then by shade number
   const familyOrder = ["primary", "earth", "rust", "cream", "stone"];
   entries.sort((a, b) => {
     const aFam = familyOrder.findIndex((f) => a.name.startsWith(f));
@@ -173,67 +199,32 @@ function getPalette(): PaletteEntry[] {
     const bNum = parseInt(b.name.match(/\d+/)?.[0] || "0");
     return aNum - bNum;
   });
-
-  document.body.removeChild(darkEl);
   _paletteCache = entries;
   return entries;
 }
 
-/**
- * Convert any CSS color string (oklch, rgb, hex, named) to a normalized
- * lowercase hex string for comparison. The browser's getComputedStyle
- * returns oklch() or rgb() format even though we store hex in @theme —
- * this function bridges the gap.
- */
-function normalizeToHex(cssColor: string): string {
-  if (!cssColor) return "";
-  if (cssColor.startsWith("#")) return cssColor.toLowerCase();
-  // If it's a token name (e.g. "primary-600"), return as-is
-  if (!cssColor.includes("(") && !cssColor.startsWith("rgb") && !cssColor.startsWith("oklch") && !cssColor.startsWith("hsl")) {
-    return cssColor;
-  }
-  // Use a temp element to normalize through the browser's color parser
-  try {
-    const temp = document.createElement("div");
-    temp.style.color = cssColor;
-    temp.style.display = "none";
-    document.body.appendChild(temp);
-    const computed = getComputedStyle(temp).color;
-    document.body.removeChild(temp);
-    const match = computed.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-    if (match) {
-      const [, r, g, b] = match;
-      return "#" + [r, g, b].map((n) => parseInt(n).toString(16).padStart(2, "0")).join("");
-    }
-    // Canvas fallback for oklch (Chrome canvas supports oklch)
-    const ctx = document.createElement("canvas").getContext("2d");
-    if (ctx) {
-      ctx.fillStyle = cssColor;
-      const hex = ctx.fillStyle;
-      if (hex.startsWith("#")) return hex.toLowerCase();
-    }
-  } catch {}
-  return cssColor;
-}
-
 export function PaletteColorPicker({ value, onChange, label }: ControlProps) {
   const palette = getPalette();
-  const valueHex = normalizeToHex(value);
-  const matchedToken = palette.find((c) => c.light.toLowerCase() === valueHex);
-  const activeTokenName = matchedToken?.name || value;
-  const isKnown = palette.some((c) => c.name === activeTokenName);
+  // `value` is the applied token NAME (or, when the element uses a non-token
+  // color, a raw CSS value — in which case nothing matches and "custom" shows).
+  const isKnown = palette.some((c) => c.name === value);
 
   return (
     <div>
       <ControlLabel label={label} />
-      {!isKnown && (
-        <p className="mb-1.5 text-[11px] font-mono text-stone-500">
-          custom · <span className="text-stone-400">{value || "—"}</span>
-        </p>
+      {!isKnown && value && (
+        <div className="mb-1.5 flex items-center gap-2">
+          <span
+            className="w-4 h-4 rounded border border-stone-700/60 shrink-0"
+            style={{ backgroundColor: value }}
+            aria-hidden
+          />
+          <span className="text-[11px] font-mono text-stone-500">current · not a theme color</span>
+        </div>
       )}
       <div className="grid grid-cols-4 gap-1">
         {palette.map((color) => {
-          const active = color.name === activeTokenName;
+          const active = color.name === value;
           return (
             <button
               key={color.name}
@@ -249,7 +240,7 @@ export function PaletteColorPicker({ value, onChange, label }: ControlProps) {
             >
               <span
                 className="w-full h-7 rounded border border-stone-700/60"
-                style={{ backgroundColor: color.light }}
+                style={{ backgroundColor: color.value }}
               />
               <span className="text-[9px] font-mono text-stone-400 leading-none truncate w-full text-center">
                 {color.name}
@@ -351,18 +342,25 @@ export function ButtonGroup({ value, onChange, label, options }: ButtonGroupProp
 // ══════════════════════════════════════════════════════════════════
 // "Aa" buttons at real scale for font-size selection. Each button renders
 // "Aa" at the actual font-size of that option (inline style) with the label
-// (H1, H2, ...) below in tiny text. Active button: `bg-primary-600 text-cream`.
-// If the current value isn't a known scale step, show the raw value as a
-// non-selectable label.
+// (H1, H2, ...) below. The VALUE emitted is the Tailwind v4 type-scale NAME
+// (e.g. "4xl"); the inspector applies `var(--text-4xl)`. Active button:
+// `bg-primary-600 text-cream`. If the current value isn't a known scale step,
+// show the raw value as a non-selectable label.
 
 const TYPE_SCALE = [
-  { value: "1.875rem", label: "H1", size: "1.875rem" },
-  { value: "1.5rem", label: "H2", size: "1.5rem" },
-  { value: "1.25rem", label: "H3", size: "1.25rem" },
-  { value: "1.125rem", label: "H4", size: "1.125rem" },
-  { value: "1rem", label: "Body", size: "1rem" },
-  { value: "0.875rem", label: "Small", size: "0.875rem" },
-  { value: "0.75rem", label: "XS", size: "0.75rem" },
+  { value: "9xl", label: "9XL", size: "8rem" },
+  { value: "8xl", label: "8XL", size: "6rem" },
+  { value: "7xl", label: "7XL", size: "4.5rem" },
+  { value: "6xl", label: "6XL", size: "3.75rem" },
+  { value: "5xl", label: "5XL", size: "3rem" },
+  { value: "4xl", label: "H1", size: "2.25rem" },
+  { value: "3xl", label: "H2", size: "1.875rem" },
+  { value: "2xl", label: "H3", size: "1.5rem" },
+  { value: "xl", label: "H4", size: "1.25rem" },
+  { value: "lg", label: "Lg", size: "1.125rem" },
+  { value: "base", label: "Body", size: "1rem" },
+  { value: "sm", label: "Small", size: "0.875rem" },
+  { value: "xs", label: "XS", size: "0.75rem" },
 ];
 
 export function TypeScaleButtons({ value, onChange, label }: ControlProps) {
@@ -407,25 +405,119 @@ export function TypeScaleButtons({ value, onChange, label }: ControlProps) {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// 6. InlineTextEditor
+// 6. FontFamilyPicker
 // ══════════════════════════════════════════════════════════════════
-// Placeholder control — the actual inline editing happens on the page (in the
-// iframe) via the selection agent, which makes the text contentEditable. This
-// component just shows the current text value (read-only) and a hint to click
-// the text on the page to edit it inline.
+// A dropdown of every ACTIVE font in the library (/api/fonts), each rendered in
+// its own typeface so you see the font as you pick. onChange emits the font
+// NAME (override identity); the inspector resolves that to the font's CSS
+// `family` string for the browser. Scales to many fonts (scrollable list).
 
-export function InlineTextEditor({ value, label }: ControlProps) {
+export function FontFamilyPicker({ value, onChange, label }: ControlProps) {
+  const [fonts, setFonts] = useState<FontEntry[]>(_fontsCache ?? []);
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    loadFonts().then(setFonts);
+  }, []);
+
+  // Close on outside click.
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  // Normalize font strings for comparison — browsers may use different
+  // quotes/whitespace than what the font library stores.
+  const normalizeFont = (s: string) => s.toLowerCase().replace(/['"]/g, "").replace(/\s+/g, " ").trim();
+  const normalizedValue = normalizeFont(value || "");
+  const current = fonts.find((f) => f.name === value || normalizeFont(f.family) === normalizedValue);
+
+  return (
+    <div ref={ref}>
+      <ControlLabel label={label} />
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-md border border-stone-800 bg-stone-900 text-left transition hover:bg-stone-800"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span
+          className="text-sm text-stone-200 truncate"
+          style={{ fontFamily: current?.family ?? "var(--font-serif)" }}
+        >
+          {current?.name ?? (value ? value : "Select a font…")}
+        </span>
+        <ChevronDown className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+      </button>
+      {open && (
+        <div className="mt-1 max-h-60 overflow-y-auto rounded-md border border-stone-800 bg-stone-900 shadow-lg">
+          {fonts.length === 0 ? (
+            <p className="px-3 py-2 text-[11px] font-mono text-stone-500">
+              No active fonts. Add fonts in the dashboard.
+            </p>
+          ) : (
+            fonts.map((f) => {
+              const active = f.name === value || normalizeFont(f.family) === normalizedValue;
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => { onChange(f.name); setOpen(false); }}
+                  className={`w-full text-left px-3 py-2 text-sm transition flex items-center justify-between gap-2 ${
+                    active ? "bg-primary-600 text-cream" : "text-stone-200 hover:bg-stone-800"
+                  }`}
+                  style={{ fontFamily: f.family }}
+                  role="option"
+                  aria-selected={active}
+                >
+                  <span className="truncate">{f.name}</span>
+                  {active && <span className="text-[10px] font-mono opacity-80 shrink-0">active</span>}
+                </button>
+              );
+            })
+          )}
+        </div>
+      )}
+      {!current && value && (
+        <p className="mt-1 text-[11px] font-mono text-stone-500">
+          current · not in the font library
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 7. InlineTextEditor
+// ══════════════════════════════════════════════════════════════════
+// Shows the live text of a selected text element while it's being edited
+// inline on the page (the agent makes it contentEditable). Read-only mirror of
+// the on-page text — the editing itself happens in the iframe, and updates
+// here via overlay:text-change messages. When not editing, shows a hint to
+// double-click the text on the page to edit it.
+
+export interface InlineTextEditorProps extends ControlProps {
+  editing?: boolean;
+}
+
+export function InlineTextEditor({ value, label, editing }: InlineTextEditorProps) {
   return (
     <div>
       <ControlLabel label={label} />
-      <div className="rounded-md border border-stone-800 bg-stone-900 px-2 py-1.5">
+      <div className={`rounded-md border bg-stone-900 px-2 py-1.5 ${editing ? "border-primary-500" : "border-stone-800"}`}>
         <p className="text-sm font-serif text-stone-300 whitespace-pre-wrap break-words min-h-[1.25rem]">
           {value || <span className="text-stone-600 italic">empty</span>}
         </p>
       </div>
       <p className="mt-1.5 flex items-center gap-1 text-[10px] font-mono text-stone-500">
         <MousePointer2 className="w-3 h-3" />
-        Click the text on the page to edit it inline.
+        {editing ? "Editing on the page — Esc to stop." : "Double-click the text on the page to edit it."}
       </p>
     </div>
   );

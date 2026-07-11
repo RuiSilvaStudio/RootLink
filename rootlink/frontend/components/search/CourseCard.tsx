@@ -8,6 +8,7 @@ export function CourseCard({ item }: { item: any }) {
 
   return (
     <a
+      data-rl-component="ResultCard"
       href={`/learning`}
       className="group block rounded-2xl border border-blue-200/60 bg-white p-5 transition-all hover:shadow-md hover:border-blue-300/60"
     >

@@ -11,7 +11,7 @@ export const Input = forwardRef<HTMLInputElement, Props>(
   ({ label, error, className = "", id, ...props }, ref) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
     return (
-      <div className="space-y-1.5">
+      <div data-rl-component="Input" className="space-y-1.5">
         {label && (
           <label htmlFor={inputId} className="block text-sm font-display font-medium text-stone-700 dark:text-stone-300 tracking-wide">
             {label}

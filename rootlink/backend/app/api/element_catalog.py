@@ -25,13 +25,14 @@ from collections import defaultdict
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.admin import require_role
 from app.core.database import get_db
 from app.models.element_schema import ElementSchema
 from app.models.font import Font
+from app.models.override_log import OverrideLog
 from app.models.user import User, UserRole
 from app.services.audit import log_moderation
 
@@ -255,7 +256,7 @@ async def list_fonts(db: AsyncSession = Depends(get_db)):
             select(Font).where(Font.is_active.is_(True)).order_by(Font.name)
         )
     ).scalars().all()
-    return [{"id": r.id, "name": r.name, "family": r.family, "url": r.url} for r in rows]
+    return [{"id": r.id, "name": r.name, "family": r.family, "url": r.url, "is_active": r.is_active} for r in rows]
 
 
 @router.post("/fonts")
@@ -291,10 +292,25 @@ async def update_font(
     font = await db.scalar(select(Font).where(Font.id == font_id))
     if font is None:
         raise HTTPException(status_code=404, detail="Font not found")
+    font_name = font.name
+    was_active = font.is_active
     data = body.model_dump(exclude_unset=True)
     for field in ("name", "family", "url", "is_active"):
         if field in data:
             setattr(font, field, data[field])
+    if "is_active" in data and was_active and not data["is_active"]:
+        result = await db.execute(
+            delete(OverrideLog).where(
+                OverrideLog.property == "font-family",
+                OverrideLog.new_value == font_name,
+            )
+        )
+        cnt = result.rowcount
+        if cnt:
+            await log_moderation(
+                db, action="auto_revert_override_rows", target_type="font", target_id=font_id,
+                actor_id=current_user.id, meta={"count": cnt, "reason": "font_deactivated", "font_name": font_name},
+            )
     await db.commit()
     await db.refresh(font)
     return _serialize_font(font)
@@ -306,15 +322,28 @@ async def delete_font(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role([UserRole.super_admin])),
 ):
-    """super_admin: delete a font. Audit-logged."""
+    """super_admin: delete a font. Deletes referencing OverrideLog rows so
+    elements silently fall back to their theme default font. Audit-logged."""
     font = await db.scalar(select(Font).where(Font.id == font_id))
     if font is None:
         raise HTTPException(status_code=404, detail="Font not found")
     name = font.name
+    result = await db.execute(
+        delete(OverrideLog).where(
+            OverrideLog.property == "font-family",
+            OverrideLog.new_value == name,
+        )
+    )
+    cnt = result.rowcount
     await db.delete(font)
     await log_moderation(
         db, action="delete_font", target_type="font", target_id=font_id,
         actor_id=current_user.id, meta={"name": name},
     )
+    if cnt:
+        await log_moderation(
+            db, action="auto_revert_override_rows", target_type="font", target_id=font_id,
+            actor_id=current_user.id, meta={"count": cnt, "reason": "font_deleted", "font_name": name},
+        )
     await db.commit()
     return {"ok": True, "deleted": font_id}

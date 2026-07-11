@@ -10,7 +10,8 @@ import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardSkeleton } from "@/components/ui/LoadingSkeleton";
-import { EditableText } from "@/components/editor-mode/editable-text";
+import { Text } from "@/components/ui/Text";
+import { BlockRenderer, type BlockSectionData } from "@/components/blocks";
 
 const ENTITY_TYPES = [
   { value: "", labelKey: "entities.all_types" },
@@ -42,6 +43,7 @@ export default function EntitiesPage() {
   const [family, setFamily] = useState("");
   const [region, setRegion] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [heroSections, setHeroSections] = useState<BlockSectionData[] | null>(null);
 
   const fetchEntities = useCallback(async () => {
     setLoading(true);
@@ -67,6 +69,9 @@ export default function EntitiesPage() {
     api.users.entityStats().then(setStats).catch(() => {});
     api.taxonomy.families().then(setFamilies).catch(() => {});
     fetchEntities();
+    api.blocks.getPage("entities")
+      .then((p) => p?.sections?.length ? setHeroSections(p.sections) : setHeroSections([]))
+      .catch(() => setHeroSections([]));
   }, [fetchEntities]);
 
   const entityTypeLabel = (type: string | null) => {
@@ -77,10 +82,14 @@ export default function EntitiesPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
+      {heroSections && heroSections.length > 0 && (
+        <BlockRenderer sections={heroSections} />
+      )}
+
       <PageHeader
         icon={<Building className="w-5 h-5 text-primary-500" />}
-        title={<EditableText k="entities.title" as="span" />}
-        subtitle={<EditableText k="entities.subtitle" as="span" />}
+        title={<Text k="entities.title" as="span" />}
+        subtitle={<Text k="entities.subtitle" as="span" />}
       />
 
       {/* Stats row */}

@@ -9,6 +9,7 @@ export function EventCard({ item }: { item: any }) {
 
   return (
     <a
+      data-rl-component="ResultCard"
       href={`/events`}
       className="group block rounded-2xl border border-earth-200/60 bg-white p-5 transition-all hover:shadow-md hover:border-earth-300/60"
     >

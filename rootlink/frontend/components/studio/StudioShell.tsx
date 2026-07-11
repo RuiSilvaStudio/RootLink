@@ -32,6 +32,7 @@ import {
   BookOpen,
   Library,
   AlertTriangle,
+  Search,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/locale-context";
@@ -50,6 +51,7 @@ const SECTIONS: StudioSection[] = [
   { label: "Theming", href: "/studio/theming", icon: Palette, status: "active" },
   { label: "Blocks", href: "/studio/blocks", icon: Boxes, status: "active" },
   { label: "Catalog", href: "/studio/catalog", icon: Library, status: "active" },
+  { label: "Audit", href: "/studio/audit", icon: Search, status: "active" },
   { label: "Fonts", href: "/studio/fonts", icon: BookOpen, status: "active" },
   { label: "Overrides", href: "/studio/overrides", icon: AlertTriangle, status: "active" },
 ];
@@ -137,9 +139,9 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-cream dark:bg-stone-950 flex flex-col">
+    <div className="h-screen bg-cream dark:bg-stone-950 flex flex-col">
       {/* ── Top bar ─────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 h-12 flex items-center justify-between px-4 border-b border-primary-200/40 dark:border-stone-800 bg-cream/90 dark:bg-stone-950/90 backdrop-blur-md">
+      <header className="sticky top-0 z-40 h-12 shrink-0 flex items-center justify-between px-4 border-b border-primary-200/40 dark:border-stone-800 bg-cream/90 dark:bg-stone-950/90 backdrop-blur-md">
         <div className="flex items-center gap-3">
           {/* Hamburger — mobile only */}
           <button
@@ -169,7 +171,7 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <div className="flex-1 flex">
+      <div className="flex-1 flex min-h-0">
         {/* ── Sidebar — desktop docked ────────────────────────── */}
         <aside className="hidden lg:flex flex-col w-60 shrink-0 border-r border-primary-200/40 dark:border-stone-800 p-3 gap-0.5">
           <p className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wider text-stone-400 font-medium">
@@ -220,7 +222,7 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
         )}
 
         {/* ── Main content ────────────────────────────────────── */}
-        <main className="flex-1 min-w-0 overflow-auto">{children}</main>
+        <main className="flex-1 min-w-0 overflow-hidden">{children}</main>
       </div>
     </div>
   );

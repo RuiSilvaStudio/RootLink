@@ -11,16 +11,18 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardSkeleton } from "@/components/ui/LoadingSkeleton";
+import { FilterPill } from "@/components/ui/DeFacto";
 import { ArticleCard } from "@/components/search/ArticleCard";
 import { CourseCard } from "@/components/search/CourseCard";
 import { EventCard } from "@/components/search/EventCard";
 import { GroupCard } from "@/components/search/GroupCard";
 import { PlantCard } from "@/components/search/PlantCard";
 import { ExternalCard } from "@/components/search/ExternalCard";
+import { PopularContentCard } from "@/components/cards/PopularContentCard";
 import { MoonWidget } from "@/components/search/MoonWidget";
 import { SunWidget } from "@/components/search/SunWidget";
 import { RelatedGroups } from "@/components/search/RelatedGroups";
-import { EditableText } from "@/components/editor-mode/editable-text";
+import { Text } from "@/components/ui/Text";
 import { SpeciesWidget } from "@/components/search/SpeciesWidget";
 
 const PAGE_SIZE = 10;
@@ -300,27 +302,21 @@ function SearchContent() {
       <div className="flex gap-2 mb-8 flex-wrap items-center">
         <Filter className="w-4 h-4 text-stone-600 dark:text-stone-500 shrink-0" />
         {/* Family filter */}
-        <button
+        <FilterPill
+          label={t("search.all") || "All"}
+          active={!family}
           onClick={() => { handleFamilyChange(""); if (query) doSearch(query, "", contentType, 1, ""); }}
-          className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
-            !family ? "bg-primary-500 text-white border-primary-500 shadow-sm" : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border-primary-100 dark:border-stone-700 hover:border-primary-300 dark:hover:border-primary-600"
-          }`}
-        >
-          {t("search.all") || "All"}
-        </button>
+        />
         {families.map((fam) => (
-          <button
+          <FilterPill
             key={fam.value}
+            label={locale === "pt" ? fam.label_pt : fam.label}
+            active={family === fam.value}
             onClick={() => {
               handleFamilyChange(fam.value);
               if (query) doSearch(query, "", contentType, 1, fam.value);
             }}
-            className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
-              family === fam.value ? "bg-primary-500 text-white border-primary-500 shadow-sm" : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border-primary-100 dark:border-stone-700 hover:border-primary-300 dark:hover:border-primary-600"
-            }`}
-          >
-            {locale === "pt" ? fam.label_pt : fam.label}
-          </button>
+          />
         ))}
 
         {/* Category sub-filter (only when family selected) */}
@@ -347,20 +343,16 @@ function SearchContent() {
 
         <div className="w-px h-6 bg-primary-100 dark:bg-primary-950/20 mx-1 self-center" />
         {contentTypes.map((ct) => (
-          <button
+          <FilterPill
             key={ct.value}
+            label={ct.label}
+            active={contentType === ct.value}
+            variant="neutral"
             onClick={() => {
               setContentType(ct.value);
               if (query) doSearch(query, category, ct.value, 1, family);
             }}
-            className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
-              contentType === ct.value
-                ? "bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900 border-stone-800 dark:border-stone-200 shadow-sm"
-                : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border-primary-100 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-500"
-            }`}
-          >
-            {ct.label}
-          </button>
+          />
         ))}
       </div>
 
@@ -448,30 +440,9 @@ function SearchContent() {
                     <h2 className="text-lg font-serif font-bold text-stone-800">{t("home.popular_content")}</h2>
                   </div>
                   <div className="grid sm:grid-cols-3 gap-3">
-                    {popular.map((item: any) => {
-                      const isExternal = Boolean(item.url);
-                      const Tag = isExternal ? "a" : Link;
-                      const extraProps = isExternal ? { target: "_blank", rel: "noopener noreferrer" as const } : {};
-                      return (
-                        <Tag key={item.id} href={isExternal ? item.url : `/articles/${item.slug!}`} {...extraProps}
-                        className="rounded-2xl border border-primary-100/40 dark:border-stone-700 bg-white dark:bg-stone-900 p-4 flex items-start gap-3 transition-all hover:shadow-md hover:border-primary-200/60 dark:hover:border-primary-700"
-                        >
-                        <div className="w-12 h-12 rounded-xl shrink-0 flex items-center justify-center overflow-hidden">
-                          <img
-                            src={safeImageUrl(item.image_url, "/images/placeholder-card.svg")}
-                            alt={item.title}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="font-medium text-sm text-stone-800 dark:text-stone-100 line-clamp-2">{item.title}</h3>
-                          <div className="flex gap-1 mt-1">
-                            <Badge variant="sage" className="text-[10px]">{item.category}</Badge>
-                          </div>
-                        </div>
-                      </Tag>
-                      );
-                    })}
+                    {popular.map((item: any) => (
+                      <PopularContentCard key={item.id} item={item} />
+                    ))}
                   </div>
                 </div>
               )}
@@ -526,12 +497,12 @@ function SearchContent() {
       {/* Submit CTA */}
       <div className="max-w-6xl mx-auto mt-12">
         <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800 rounded-2xl p-6 text-center">
-          <EditableText k="search.cant_find" as="p" className="text-stone-600 dark:text-stone-300 text-sm mb-3 font-medium" />
+          <Text k="search.cant_find" as="p" className="text-stone-600 dark:text-stone-300 text-sm mb-3 font-medium" />
           <a
             href="/submit"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-primary-500 hover:bg-primary-700 px-5 py-2.5 rounded-xl transition shadow-sm hover:shadow-md"
           >
-            <EditableText k="search.submit_link" as="span" /> <ArrowRight className="w-3.5 h-3.5" />
+            <Text k="search.submit_link" as="span" /> <ArrowRight className="w-3.5 h-3.5" />
           </a>
         </div>
       </div>

@@ -6,12 +6,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { AuthProvider } from "@/lib/auth-context";
 import { LocaleProvider, useLocale } from "@/lib/locale-context";
 import { ToastProvider } from "@/lib/toast-context";
-import { EditorModeProvider } from "@/components/editor-mode/editor-mode-provider";
-import { EditorModeChrome } from "@/components/editor-mode/editor-mode-chrome";
 import { ThemeProvider } from "@/lib/theme-context";
 import { OverlayProvider } from "@/components/overlay/overlay-provider";
 import { OverlayShell } from "@/components/overlay/overlay-shell";
 import { OverlayToggle } from "@/components/overlay/overlay-toggle";
+import { StyleOverrideApplier } from "@/components/overlay/StyleOverrideApplier";
 import { CommandPalette } from "@/components/CommandPalette";
 import { NavBar } from "@/components/nav/NavBar";
 import { Footer } from "@/components/Footer";
@@ -53,7 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>
             <ToastProvider>
               <ThemeProvider>
-                <EditorModeProvider>
+                <StyleOverrideApplier />
                 <CommandPalette />
                 {/* NavBar renders MobileNav (drawer+sheets) and MobileBottomBar internally.
                     Studio routes have their own chrome (components/studio/StudioShell.tsx). */}
@@ -74,17 +73,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     </motion.main>
                   </AnimatePresence>
                 )}
-                {/* Footer lives inside EditorModeProvider (Phase 2) so its text
-                    can use useEditorMode() — moved from outside the provider
-                    tree, see briefing-to-build-local.md "Phase 2". Providers
-                    render no DOM, so this is layout/CSS-safe. */}
                 {!isAdmin && !isAuth && !isStudio && <Footer />}
-                {/* Legacy inline Content UI Editor chrome — superseded by the
-                    visual overlay (OverlayShell + OverlayToggle below). The
-                    EditorModeProvider stays mounted so legacy EditableText/
-                    EditableImage/EditableIcon components don't crash, but the
-                    chrome (the old "Edit page" button) is no longer rendered. */}
-              </EditorModeProvider>
               </ThemeProvider>
               {/* Content Studio v2 — visual overlay (replaces the old inline editor).
                   Renders nothing unless super_admin + desktop + edit mode toggled on. */}

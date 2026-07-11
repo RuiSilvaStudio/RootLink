@@ -9,13 +9,15 @@ import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ListSkeleton } from "@/components/ui/LoadingSkeleton";
-import { EditableText } from "@/components/editor-mode/editable-text";
+import { Text } from "@/components/ui/Text";
+import { BlockRenderer, type BlockSectionData } from "@/components/blocks";
 
 export default function NotificationsPage() {
   const { t } = useLocale();
   const router = useRouter();
   const [notifs, setNotifs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [heroSections, setHeroSections] = useState<BlockSectionData[] | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -24,6 +26,9 @@ export default function NotificationsPage() {
       return;
     }
     api.notifications.list().then(setNotifs).catch(() => {}).finally(() => setLoading(false));
+    api.blocks.getPage("notifications")
+      .then((p) => p?.sections?.length ? setHeroSections(p.sections) : setHeroSections([]))
+      .catch(() => setHeroSections([]));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const markAllRead = async () => {
@@ -33,9 +38,13 @@ export default function NotificationsPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-8 py-12">
+      {heroSections && heroSections.length > 0 && (
+        <BlockRenderer sections={heroSections} />
+      )}
+
       <PageHeader
         icon={<Bell className="w-5 h-5 text-primary-500" />}
-        title={<EditableText k="notifications.title" as="span" />}
+        title={<Text k="notifications.title" as="span" />}
         action={
           notifs.length > 0 ? (
             <Button variant="secondary" size="sm" onClick={markAllRead}>

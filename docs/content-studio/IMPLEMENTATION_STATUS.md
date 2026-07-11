@@ -1,7 +1,7 @@
 # Content Studio — Implementation Status
 
 > **Spec:** [`CONTENT_STUDIO.md`](./CONTENT_STUDIO.md)
-> **Last updated:** 2026-07-08 (v2 pivot — visual overlay)
+> **Last updated:** 2026-07-09 (theme-token model rebuild — select / edit / panel)
 
 ---
 
@@ -13,28 +13,80 @@ The v2 spec (`CONTENT_STUDIO.md`) documents the full functional specification. T
 
 ---
 
-## Current priority: Component-level selection (Phases A-D)
+## Component-level selection (Phases A-D) — ✅ COMPLETE
 
-The overlay currently selects raw DOM elements (every div, span, svg). The goal
-is to snap selection to **component** boundaries — you click a Card, you get
-the Card (not the inner h3 or svg). This requires:
+The overlay now snaps selection to **component** boundaries — you click a Card,
+you get the Card (not the inner h3 or svg). tsc + lint clean (build not run — a
+dev server is live on :3001; running `npm run build` would clobber `.next/` per
+LESSONS.md #2; run the build separately before deploy).
 
-### Phase A — Extract 7 de facto components (in progress)
-- ✅ Created `components/ui/DeFacto.tsx` with 7 components (IconContainer, SectionHeader, LinkWithArrow, FilterPill, SidebarWidget, RankedListRow, ResultCard)
-- ✅ Refactored `HomeBlocks.tsx` (homepage) to use SectionHeader, IconContainer, LinkWithArrow
-- ⏳ Refactor `PageBlocks.tsx` to use the same components (SectionHeader, IconContainer, RankedListRow)
-- ⏳ Refactor `BlockComponents.tsx` (generic blocks)
-- ⏳ Refactor search components to use ResultCard, FilterPill, SidebarWidget
-- ⏳ Refactor events/marketplace/feed pages to use FilterPill
+### Phase A — Extract 7 de facto components ✅
+- ✅ `components/ui/DeFacto.tsx` — 7 components. Extended during this work: `FilterPill` gained `variant` (primary | neutral) + optional `icon` + `size`; `SidebarWidget` gained `iconColor`; `IconContainer` gained `inline` (for text-center hero icons); `ResultCard`'s dynamic-class bug (`border-${accent}-200/60`, invisible to Tailwind JIT) fixed with a static `ACCENT_BORDER` map.
+- ✅ `PageBlocks.tsx` — hero icons → `IconContainer` (with `inline` for the text-center heros); `LeaderboardListBlock` rows → `RankedListRow` (exact gold/silver/bronze match). `DonateLeaderboardBlock` left as plain rows (`RankedListRow` would add tier styling it intentionally lacks).
+- ✅ Search page filters → `FilterPill` (family = primary, content-type = neutral); the 4 sidebar widgets → `SidebarWidget` (each keeps its distinct icon color; also fixes a latent missing-`dark:bg-stone-900` bug). `events`/`marketplace` filters → `FilterPill` (marketplace uses `size="sm"` + `icon`). `feed` has no filter pills (nothing to refactor).
+- ⚠️ `BlockComponents.tsx` generic blocks have no clean de facto match without a visual change (SectionHeader's h2 is `text-4xl`; these blocks intentionally use `text-2xl` sub-headings; their cards aren't links so ResultCard doesn't fit). Left structurally as-is; tagged in Phase B. (Decision flagged to user.)
+- Decision (user-approved): keep the specialized search result cards' rich layouts; tag them all as `ResultCard` rather than rewriting them onto the generic DeFacto ResultCard.
 
-### Phase B — Tag all components with data-rl-component (pending)
-Add `data-rl-component="Name"` to the root element of all 47+ components (21 ui/, 16 blocks, 10 search, 7 de facto).
+### Phase B — Tag all components with data-rl-component ✅
+- ✅ `data-rl-component="<Name>"` on the root element of 70 tagged elements across `components/ui`, `components/blocks`, `components/search` + the 7 de facto. (3 parallel subagents did the sweep; verified by grep.)
+- ✅ `PageHeader` + `Card` gained `...rest` forwarding + `"data-rl-component"?: string` so block-level roots (`GroupsHeaderBlock`/`GroupsHeroBlock`) override the inner `PageHeader`/`Card` tag with their block name.
+- The 4 search widgets are covered transitively (their root is now `SidebarWidget`, already tagged).
 
-### Phase C — Selection agent snaps to component boundaries (pending)
-Update the selection agent: hover finds nearest `data-rl-component` ancestor, outline snaps to component boundary, click selects the component, double-click drills into child components, breadcrumb shows component hierarchy.
+### Phase C — Selection agent snaps to component boundaries ✅
+- ✅ `selection-agent.ts`: hover → nearest `data-rl-component` ancestor (outline + component-name label); click → select that component; **double-click → drill into the nearest child component**; Esc → parent component; breadcrumb → the chain of component ancestors (component names, not raw DOM). The `overlay:select` message now carries `componentType`.
+- ⚠️ Spec §3.2 says "double-click selects the parent"; the Phase C plan (this doc) says "drill into child components". These conflict. Implemented the Phase C plan (Esc=up, dblclick=down, breadcrumb=jump) as the coherent component-navigation model. Flagged for user.
+- Inline `contentEditable` text editing (Phase 1/2) is retired at the component level (making a whole Card contentEditable would be destructive). Text editing moves to the Phase D inspector's `inline-text` control bound to schema text properties.
 
-### Phase D — Inspector shows schema-only properties (pending)
-Fetch the element schema from `/api/element-schemas/{componentType}`, show ONLY schema-defined properties with the correct constrained controls. No raw CSS dump.
+### Phase D — Inspector shows schema-only properties ✅
+- ✅ `inspector-panel.tsx`: fetches `/api/element-schemas` (grouped map, cached) on mount; on selection looks up the schema by `selected.componentType` (with a lowercase fallback so `Card`→seeded `card`). When a curated schema exists, shows **only** those schema properties via the schema's `control_type`/`options`/`default_value` — no raw CSS dump. When no schema is curated for the component, falls back to constrained controls on computed properties, showing only properties that have a purpose-built control (still no raw dump).
+- `SelectedElement` gained `componentType?: string | null` (overlay-provider).
+- Note: only the 4 generic seeded types (`heading`/`card`/`button`/`section`) are reachable via the lowercase fallback; PascalCase de facto names (`FilterPill`, `ResultCard`, `SectionHeader`, …) have no curated schema yet → they use the constrained-controls fallback until the dashboard curates schemas keyed by those names.
+
+---
+
+## Theme-token model rebuild (select / edit / panel) — ✅ COMPLETE
+
+A user-review-driven rebuild of the overlay's selection, editing, and inspector to the
+spec's actual design: **the theme is the menu of values; selecting an item = picking
+theme values for it; per-item edits are reversible overrides storing token NAMES;
+dark mode is automatic.** No structural CSS is exposed (would break layouts); no
+color-format conversions (the old `normalizeToHex` rgb→hex hack and the removed
+`mapTokenToCssVar` are gone — everything is the Tailwind v4 `@theme` language applied
+and matched by name).
+
+### 1. Colors + automatic dark mode
+- ✅ `selection-agent.ts` `applyStyle(property, value, appliedValue)`: the inspector sends the token NAME (`primary-600`) as `value` (override identity, persisted, dark-mode-safe) and the CSS the browser sees (`var(--color-primary-600)`) as `appliedValue`. Setting the reference — not a bare name or raw hex — is what makes the palette actually apply AND makes dark mode automatic (the `.dark` override re-resolves the named token). The token name is recorded in a `data-rl-*-token` attribute.
+- ✅ `constrained-controls.tsx` `PaletteColorPicker`: name-based — the active swatch is the one whose NAME matches the current value. Removed `normalizeToHex` (temp-element rgb→hex hack) entirely; `getPalette` reads declared `--color-*` values straight from the custom properties (returned as-declared, no format normalization).
+- ✅ Current-token detection is name-based, no comparison: `readAppliedToken` reads the `data-rl-*-token` attr (for overrides) and falls back to parsing the element's Tailwind utility classes (`text-primary-600`, `bg-earth-100`, …) for the default state. Variant-prefixed classes (`dark:`, `hover:`, …) are skipped so the base (light) value is read.
+
+### 2. Font-family dropdown
+- ✅ `FontFamilyPicker`: dropdown listing every ACTIVE font from `/api/fonts` (module-level cache shared with the inspector), each rendered in its own typeface. Picking emits the font NAME; the inspector resolves it to the font's `family` CSS for the browser (`fontFamilyCSS`). Scales to many fonts.
+
+### 3. Inspector panel — theme-value knobs only
+- ✅ Rebuilt `inspector-panel.tsx`: only theme-token-backed properties surface, grouped Typography / Colors / Spacing / Corners. **Removed** the structural knobs the prior Phase D wrongly exposed (`display`, `flex-direction`, `justify-content`, `align-items`, `border-style`, `opacity`, raw-pixel margins). Schema-driven when a curated schema exists; else a constrained-controls fallback showing only properties that have a purpose-built control (no raw CSS dump). Per-property **reset** (revert to the Tailwind class default).
+
+### 4. On-page text editing — site-builder convention
+- ✅ `selection-agent.ts`: **1st click selects** the nearest tagged component; **2nd click on text** makes that text `contentEditable` and edits it live on the page; 2nd click on a non-text element does nothing (no drilling into `<div>`s). Esc exits text editing, then jumps up to the parent component. The agent posts `overlay:text-change` so the panel mirrors live text; `selected.editing` flags the panel's Content section.
+- (Supersedes the Phase C "dblclick drills into child components" model and the retired contentEditable — see the spec §3.2 update.)
+
+### 5. Named theme values for sizes / spacing / radius (same treatment as colors)
+- ✅ Controls emit Tailwind v4 token NAMES: `TypeScaleButtons` → `4xl`/`3xl`/… (applied `var(--text-4xl)`); spacing slider → `4` (applied `calc(var(--spacing) * 4)`); radius slider → `xl`/`2xl`/… (applied `var(--radius-xl)`), with `RADIUS_STOPS` routed for corners.
+- ✅ Backend `theme_seed.py` seeded the scale tokens (`--text-xs…9xl`, `--spacing`, `--radius-sm…full`) into the theme DB — values match Tailwind v4 defaults exactly (zero visual change) but now dashboard-managed. Refactored the seed to **per-token idempotent upsert** so new tokens back-fill onto an already-seeded Default theme on the next boot (26 theme tests still pass). ⚠️ Requires a backend restart to apply on an existing dev DB (the dev server runs without `--reload`).
+- ✅ Dashboard `/studio/theming` gained **Size** and **Spacing** tabs (redefine `--text-2xl` site-wide; one `--spacing` base scales every spacing utility).
+
+### 6. Overrides store names; reset; stale
+- ✅ Every per-item edit stores the token NAME (override identity); `resetProperty` removes the inline override so the element reverts to its Tailwind class default. Dark mode follows automatically (named color tokens have dark values).
+- ⏳ Stale-warnings for **deactivated** fonts/colors (an override referencing a token later removed from the library/theme) — resolved: on font deactivation or color token deletion, referencing `OverrideLog` rows are auto-deleted so the element silently falls back to its theme default; no stale warning needed (2026-07-09). The font picker shows `current · not in the font library` as a soft signal in the meantime.
+
+### Verification
+- tsc + lint clean. `npm run build` not run (dev server live on :3001 — LESSONS.md #2). Backend `ruff` clean; `test_theme_manager` + `test_theme` pass (26).
+
+### Phase 1 follow-up — 1st click identifies the block's text ✅
+The earlier model only identified text on double-click (selecting the text element itself). Reworked so **first click** identifies the block AND its text together, matching the user's "1st click selects / 2nd click edits" model:
+- `selection-agent.ts`: tracks `textTarget` (the text element under the cursor, found via the same `findTextAt` logic dblclick uses). `selectElement(block, textEl)` sends a `textElement` payload (path/appliedTokens/computedStyles/textContent) when the text differs from the block. `applyStyle`/`resetProperty` route by property — text props (`color`, `font-*`, `text-*`, letter/line-height) → `textTarget`; block props (background, border, padding, radius) → `selected`. Double-click keeps the block selected, refreshes `textTarget` to the dblclicked text, and enters edit mode.
+- `overlay-provider.tsx`: `SelectedElement.textElement` added.
+- `inspector-panel.tsx`: panel split into **Content** (live text mirror) + **Text** section (font/size/weight/color of the text element, changes route to it) + **Block** section (container props, schema-or-fallback). A `Button` (its own text) reads text props from `selected` directly. Color highlight is mode-aware (dark mode prefers the `dark:` class; opacity modifiers tolerated) and shows a colored chip + "current" instead of raw rgb when a color is inherited.
+- Phase 2 ✅: a `<Text k="copy.key">` component (`components/ui/Text.tsx`) auto-tags editable copy with `data-rl-text` (reusing the existing `t()`/`/api/copy` key system) — new pages using `<Text>` can't forget the convention. Computed text (counts/prices/dates from `{expr}`, no `<Text>`) is read-only (double-click does nothing, panel shows "Computed value — not editable"). Inline edits persist via `api.copy.set(key, locale, text)` (committed on Esc/click-away by the agent). `SectionHeader` gained `headingKey`, `LinkWithArrow` gained `copyKey`, `Button` forwards `data-rl-text` via `{...props}`. Homepage blocks (`HomeBlocks.tsx`) migrated as the first tagged surface (~14 copy elements); `Badge` text deferred (needs `...rest` forwarding). Remaining pages migrate incrementally.
 
 ---
 
@@ -56,7 +108,7 @@ Migrated from v3.4.0 to v4.3.2:
 - `mapTokenToCssVar` runtime hack removed
 - Stone colors overridden as hex in `@theme` (v4 default uses oklch)
 - `theme_seed.py` stores hex
-- `normalizeToHex()` converts oklch/rgb from getComputedStyle to hex
+- `normalizeToHex()` converts oklch/rgb from getComputedStyle to hex (later removed in the theme-token rebuild — see "Theme-token model rebuild" above)
 
 ### Reusable from prior work ✅
 - Token CSS-variable layer (globals.css + tailwind.config.ts)

@@ -8,6 +8,7 @@ export function GroupCard({ item }: { item: any }) {
 
   return (
     <a
+      data-rl-component="ResultCard"
       href={c.url || `/groups`}
       className="group block rounded-2xl border border-green-200/60 bg-white p-5 transition-all hover:shadow-md hover:border-green-300/60"
     >

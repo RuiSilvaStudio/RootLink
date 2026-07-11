@@ -12,7 +12,7 @@ export const Select = forwardRef<HTMLSelectElement, Props>(
   ({ label, error, options, className = "", id, ...props }, ref) => {
     const selectId = id || label?.toLowerCase().replace(/\s+/g, "-");
     return (
-      <div className="space-y-1.5">
+      <div data-rl-component="Select" className="space-y-1.5">
         {label && (
           <label htmlFor={selectId} className="block text-sm font-display font-medium text-stone-700 dark:text-stone-300 tracking-wide">
             {label}

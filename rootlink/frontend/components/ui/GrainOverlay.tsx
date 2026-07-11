@@ -10,6 +10,7 @@ interface GrainOverlayProps {
 export function GrainOverlay({ opacity = 0.04, className = "" }: GrainOverlayProps) {
   return (
     <motion.div
+      data-rl-component="GrainOverlay"
       initial={false}
       animate={{ opacity }}
       transition={{ duration: 0.3, ease: "easeOut" }}

@@ -13,8 +13,9 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardSkeleton } from "@/components/ui/LoadingSkeleton";
 import { ImageUpload } from "@/components/ui/ImageUpload";
-import { EditableText } from "@/components/editor-mode/editable-text";
+import { Text } from "@/components/ui/Text";
 import { useDirtyGuard } from "@/lib/use-dirty-guard";
+import { BlockRenderer, type BlockSectionData } from "@/components/blocks";
 
 const DIFFICULTIES = [
   { value: "", labelKey: "waste.all_difficulties" },
@@ -46,11 +47,15 @@ export default function UpcyclingPage() {
 
   const dirty = !!(title || description);
   useDirtyGuard(dirty);
+  const [heroSections, setHeroSections] = useState<BlockSectionData[] | null>(null);
 
   useEffect(() => {
     setToken(localStorage.getItem("token"));
     api.taxonomy.families().then(setFamilies).catch(() => {});
     fetchProjects();
+    api.blocks.getPage("upcycling")
+      .then((p) => p?.sections?.length ? setHeroSections(p.sections) : setHeroSections([]))
+      .catch(() => setHeroSections([]));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchProjects = useCallback(async () => {
@@ -103,10 +108,14 @@ export default function UpcyclingPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
+      {heroSections && heroSections.length > 0 && (
+        <BlockRenderer sections={heroSections} />
+      )}
+
       <PageHeader
         icon={<RefreshCw className="w-5 h-5 text-primary-500" />}
-        title={<EditableText k="waste.upcycling_title" as="span" />}
-        subtitle={<EditableText k="waste.upcycling_subtitle" as="span" />}
+        title={<Text k="waste.upcycling_title" as="span" />}
+        subtitle={<Text k="waste.upcycling_subtitle" as="span" />}
         action={token && (
           <Button variant="primary" size="sm" onClick={() => setShowForm(!showForm)}>
             <Plus className="w-4 h-4" /> {t("waste.share_project")}

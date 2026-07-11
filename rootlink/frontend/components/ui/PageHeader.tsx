@@ -14,12 +14,15 @@ type Props = {
   action?: ReactNode;
   children?: ReactNode;
   className?: string;
+  // Forwarded onto the root <header> so callers (e.g. block components) can
+  // override the data-rl-component value with their own block name.
+  "data-rl-component"?: string;
 };
 
-export function PageHeader({ icon, badge, title, description, subtitle, action, children, className = "" }: Props) {
+export function PageHeader({ icon, badge, title, description, subtitle, action, children, className = "", ...rest }: Props) {
   const desc = description || subtitle;
   return (
-    <header className={`max-w-2xl ${className}`}>
+    <header data-rl-component="PageHeader" {...rest} className={`max-w-2xl ${className}`}>
       {icon && (
         <div className="w-12 h-12 rounded-xl bg-primary-100/50 dark:bg-primary-900/30 flex items-center justify-center mb-5">
           {icon}

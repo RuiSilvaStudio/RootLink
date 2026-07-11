@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { StatCounter } from "@/components/ui/StatCounter";
 import { SectionHeader, IconContainer, LinkWithArrow } from "@/components/ui/DeFacto";
+import { Text } from "@/components/ui/Text";
 import { HeroParticleCanvas } from "@/components/ui/HeroParticleCanvas";
 import { ContentCardSkeleton } from "@/components/ui/LoadingSkeleton";
 
@@ -57,20 +58,20 @@ export function HomeHeroBlock({ props }: BlockProps) {
   };
 
   return (
-    <section className="relative hero-grad min-h-[90vh] flex items-center px-4 sm:px-8 pt-16 overflow-hidden">
+    <section data-rl-component="HomeHeroBlock" className="relative hero-grad min-h-[90vh] flex items-center px-4 sm:px-8 pt-16 overflow-hidden">
       <HeroParticleCanvas />
       <div className="absolute inset-0 z-[1] bg-gradient-to-b from-cream/70 via-cream/30 to-transparent dark:from-stone-950/80 dark:via-stone-950/40 dark:to-transparent pointer-events-none" />
       <div className="relative z-10 max-w-6xl mx-auto w-full">
         <div className="grid lg:grid-cols-5 gap-12 items-center">
           <div className="lg:col-span-3 animate-fade-in">
             <Badge variant="sage" className="mb-6">{props.badge || t("home.discover_rootlink")}</Badge>
-            <h1 className={`text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[0.95] tracking-tight ${props.title_class || ""}`}>
+            <Text as="h1" k="home.hero_title" className={`text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[0.95] tracking-tight ${props.title_class || ""}`}>
               {props.title || t("home.hero_title")}
-            </h1>
+            </Text>
             <div className="mt-6 w-20 h-0.5 bg-primary-300/50 rounded-full" />
-            <p className="text-lg sm:text-xl text-stone-500 dark:text-stone-300 mt-6 max-w-lg font-serif leading-relaxed">
+            <Text as="p" k="home.hero_subtitle" className="text-lg sm:text-xl text-stone-500 dark:text-stone-300 mt-6 max-w-lg font-serif leading-relaxed">
               {props.subtitle || t("home.hero_subtitle")}
-            </p>
+            </Text>
             <form onSubmit={handleSearch} className="mt-8 flex flex-col sm:flex-row gap-3 max-w-lg">
               <div className="relative flex-1">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
@@ -82,7 +83,7 @@ export function HomeHeroBlock({ props }: BlockProps) {
                   className="w-full pl-11 pr-4 py-3 rounded-xl2 border border-primary-200/60 bg-white/80 backdrop-blur-sm text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none transition-all font-serif"
                 />
               </div>
-              <Button type="submit" size="md">{t("home.search")}</Button>
+              <Button type="submit" size="md" data-rl-text="home.search">{t("home.search")}</Button>
             </form>
           </div>
           <div className="lg:col-span-2 space-y-8 lg:border-l lg:border-primary-200/30 lg:pl-12 animate-fade-in" style={{ animationDelay: "0.2s" }}>
@@ -127,12 +128,13 @@ export function HomeCategoriesBlock({ props }: BlockProps) {
   }, []);
 
   return (
-    <section className="px-4 sm:px-8 py-24 sm:py-32">
+    <section data-rl-component="HomeCategoriesBlock" className="px-4 sm:px-8 py-24 sm:py-32">
       <div className="max-w-6xl mx-auto">
         <SectionHeader
           badge={props.badge || t("home.browse_category")}
           heading={props.heading || t("home.find_your_corner")}
           badgeVariant="earth"
+          headingKey="home.find_your_corner"
         />
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {families.length > 0 ? families.map((fam, i) => {
@@ -144,14 +146,14 @@ export function HomeCategoriesBlock({ props }: BlockProps) {
                 <h3 className="text-2xl font-display font-semibold text-stone-800 dark:text-stone-100 mb-3">
                   {locale === "pt" ? fam.label_pt : fam.label}
                 </h3>
-                <p className="text-stone-500 dark:text-stone-400 font-serif leading-relaxed">
+                <Text as="p" k="home.discover_category" className="text-stone-500 dark:text-stone-400 font-serif leading-relaxed">
                   {t("home.discover_category", { category: (locale === "pt" ? fam.label_pt : fam.label).toLowerCase() })}
-                </p>
-                <LinkWithArrow href={`/search?family=${fam.value}`}>{t("home.explore")}</LinkWithArrow>
+                </Text>
+                <LinkWithArrow href={`/search?family=${fam.value}`} copyKey="home.explore">{t("home.explore")}</LinkWithArrow>
               </Link>
             );
           }) : (
-            <p className="col-span-3 text-center text-stone-400 py-8 font-serif">{t("home.no_categories") || "No categories available"}</p>
+            <Text as="p" k="home.no_categories" className="col-span-3 text-center text-stone-400 py-8 font-serif">{t("home.no_categories") || "No categories available"}</Text>
           )}
         </div>
       </div>
@@ -169,16 +171,16 @@ export function HomeToolsBlock({ props }: BlockProps) {
     { href: "/tools/irrigation-calculator", icon: Droplets, color: "bg-sky-100/60 dark:bg-sky-900/30", iconColor: "text-sky-600 dark:text-sky-400", title: t("home.irrigation_calculator"), desc: t("home.irrigation_calculator_desc") },
   ];
   return (
-    <section className="px-4 sm:px-8 py-24 sm:py-32 bg-primary-50/40 dark:bg-primary-950/20 noise-bg">
+    <section data-rl-component="HomeToolsBlock" className="px-4 sm:px-8 py-24 sm:py-32 bg-primary-50/40 dark:bg-primary-950/20 noise-bg">
       <div className="max-w-6xl mx-auto">
         <div className="mb-16 max-w-2xl">
           <Badge variant="sage" className="mb-5">{props.badge || t("home.featured_tools")}</Badge>
-          <h2 className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.05]">
+          <Text as="h2" k="home.built_for_seasons" className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.05]">
             {props.heading || t("home.built_for_seasons")}
-          </h2>
-          <p className="mt-5 text-lg text-stone-500 dark:text-stone-300 font-serif leading-relaxed">
+          </Text>
+          <Text as="p" k="home.tools_subtitle" className="mt-5 text-lg text-stone-500 dark:text-stone-300 font-serif leading-relaxed">
             {props.subtitle || t("home.tools_subtitle")}
-          </p>
+          </Text>
           <div className="mt-5 w-16 h-0.5 bg-primary-300/40 dark:bg-primary-700/40 rounded-full" />
         </div>
         <div className="grid sm:grid-cols-3 gap-6">
@@ -209,13 +211,13 @@ export function HomeCommunityBlock({ props }: BlockProps) {
     { href: "/entities", icon: Building, title: t("home.entities"), desc: t("home.entities_desc") },
   ];
   return (
-    <section className="px-4 sm:px-8 py-24 sm:py-32">
+    <section data-rl-component="HomeCommunityBlock" className="px-4 sm:px-8 py-24 sm:py-32">
       <div className="max-w-6xl mx-auto">
         <div className="mb-16">
           <Badge variant="green" className="mb-5">{props.badge || t("home.community")}</Badge>
-          <h2 className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.05]">
+          <Text as="h2" k="home.learning" className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.05]">
             {props.heading || t("home.learning")}
-          </h2>
+          </Text>
           <div className="mt-5 w-16 h-0.5 bg-primary-300/40 dark:bg-primary-700/40 rounded-full" />
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -228,9 +230,9 @@ export function HomeCommunityBlock({ props }: BlockProps) {
                 </div>
                 <h3 className="text-xl font-display font-semibold text-stone-800 dark:text-stone-100 mb-2 group-hover:text-primary-700 dark:group-hover:text-primary-400 transition">{link.title}</h3>
                 <p className="text-stone-500 dark:text-stone-400 font-serif text-sm leading-relaxed mb-5">{link.desc}</p>
-                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 dark:text-primary-400 group-hover:gap-2.5 transition-all">
+                <Text as="span" k="home.explore" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 dark:text-primary-400 group-hover:gap-2.5 transition-all">
                   {t("home.explore")} <span className="text-lg leading-none">→</span>
-                </span>
+                </Text>
               </Link>
             );
           })}
@@ -252,13 +254,13 @@ export function HomeRecentBlock({ props }: BlockProps) {
   }, []);
 
   return (
-    <section className="px-4 sm:px-8 py-24 sm:py-32 bg-primary-50/40 noise-bg">
+    <section data-rl-component="HomeRecentBlock" className="px-4 sm:px-8 py-24 sm:py-32 bg-primary-50/40 noise-bg">
       <div className="max-w-6xl mx-auto">
         <div className="mb-16">
           <Badge variant="green" className="mb-5">{props.badge || t("home.recently_indexed")}</Badge>
-          <h2 className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.05]">
+          <Text as="h2" k="home.from_community" className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.05]">
             {props.heading || t("home.from_community")}
-          </h2>
+          </Text>
           <div className="mt-5 w-16 h-0.5 bg-primary-300/40 rounded-full" />
         </div>
         {loading ? (
@@ -266,7 +268,7 @@ export function HomeRecentBlock({ props }: BlockProps) {
             {[1, 2, 3, 4].map((i) => <ContentCardSkeleton key={i} />)}
           </div>
         ) : recent.length === 0 ? (
-          <p className="text-center text-stone-400 py-12 font-serif">{t("home.no_recent_content")}</p>
+          <Text as="p" k="home.no_recent_content" className="text-center text-stone-400 py-12 font-serif">{t("home.no_recent_content")}</Text>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {recent.slice(0, 8).map((item: any) => {
@@ -301,19 +303,19 @@ export function HomeCtaBlock({ props }: BlockProps) {
   const { t } = useLocale();
   const router = useRouter();
   return (
-    <section className="px-4 sm:px-8 py-24 sm:py-32">
+    <section data-rl-component="HomeCtaBlock" className="px-4 sm:px-8 py-24 sm:py-32">
       <div className="max-w-3xl mx-auto text-center">
         <div className="w-12 h-px bg-primary-300/40 mx-auto mb-8" />
         <Badge variant="sage" className="mb-5">{props.badge || t("home.join_community")}</Badge>
-        <h2 className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.05]">
+        <Text as="h2" k="home.ready_to_share" className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.05]">
           {props.heading || t("home.ready_to_share")}
-        </h2>
-        <p className="text-stone-500 dark:text-stone-400 mt-5 max-w-md mx-auto font-serif text-lg leading-relaxed">
+        </Text>
+        <Text as="p" k="home.cta_subtitle" className="text-stone-500 dark:text-stone-400 mt-5 max-w-md mx-auto font-serif text-lg leading-relaxed">
           {props.subtitle || t("home.cta_subtitle")}
-        </p>
+        </Text>
         <div className="flex flex-wrap justify-center gap-4 mt-10">
-          <Button variant="primary" size="lg" onClick={() => router.push("/submit")}>{t("home.submit_link")}</Button>
-          <Button variant="secondary" size="lg" onClick={() => router.push("/search")}>{t("home.browse_all")}</Button>
+          <Button variant="primary" size="lg" data-rl-text="home.submit_link" onClick={() => router.push("/submit")}>{t("home.submit_link")}</Button>
+          <Button variant="secondary" size="lg" data-rl-text="home.browse_all" onClick={() => router.push("/search")}>{t("home.browse_all")}</Button>
         </div>
         <div className="mt-10 w-12 h-px bg-primary-300/40 mx-auto" />
       </div>

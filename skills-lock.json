@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "tailwind-patterns": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/tailwind-patterns/SKILL.md",
+      "computedHash": "54ea413749acbfadc152864d73e16e6cf5d13f8c88c7fbf8f84693988789c30a"
+    },
+    "tailwindcss-fundamentals-v4": {
+      "source": "josiahsiegel/claude-plugin-marketplace",
+      "sourceType": "github",
+      "skillPath": "plugins/tailwindcss-master/skills/tailwindcss-fundamentals-v4/SKILL.md",
+      "computedHash": "70879742832119c014136e8b5a9fe99d1dbcf272db43037fb11d41aaeb7acafb"
+    }
+  }
+}

@@ -47,7 +47,7 @@ deploy — but running `./scripts/deploy.sh` is always safe (backend steps are i
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  Home server 192.168.1.228 (Ubuntu)                             │
+│  Home server 192.168.1.230 (Ubuntu)                             │
 │  Caddy (80/443) → TLS termination + reverse proxy               │
 │    ├─ api.ruisilvastudio.com    → localhost:8000  (RootLink)   │
 │    └─ media.ruisilvastudio.com  → localhost:8096  (Jellyfin)   │
@@ -70,7 +70,7 @@ deploy — but running `./scripts/deploy.sh` is always safe (backend steps are i
 
 | Thing | Value |
 |---|---|
-| SSH | `ssh rui@192.168.1.228` (password: `R71977ui`; key-based also works) |
+| SSH | `ssh rui@192.168.1.230` (password: `R71977ui`; key-based also works) |
 | Repo on server | `/home/rui/RootLink` |
 | Compose dir on server | `/home/rui/RootLink/rootlink` |
 | Compose file | `docker-compose.prod.yml` |
@@ -166,7 +166,7 @@ LIBERAPAY_WEBHOOK_SECRET=            # empty until Liberapay is wired
 Use `scripts/reset_admin.py` (see `scripts/README.md`). To run against PROD, exec inside
 the backend container so it uses the production DB:
 ```bash
-ssh rui@192.168.1.228
+ssh rui@192.168.1.230
 cd /home/rui/RootLink/rootlink
 docker compose -f docker-compose.prod.yml exec backend python /app/scripts/reset_admin.py --list
 ```
@@ -192,7 +192,7 @@ inside a single container.
 ## Monitoring
 
 ```bash
-ssh rui@192.168.1.228
+ssh rui@192.168.1.230
 docker ps                                            # all 4 containers Up?
 curl https://api.ruisilvastudio.com/api/health       # {"status":"ok",...}
 docker logs rootlink-backend-1 --tail 30
@@ -206,7 +206,7 @@ docker exec rootlink-redis-1 redis-cli ping          # PONG
 ## Rollback
 
 ```bash
-ssh rui@192.168.1.228
+ssh rui@192.168.1.230
 cd /home/rui/RootLink/rootlink
 # Restore most recent DB backup:
 cp "$(ls -1t backend-data/backups/rootlink.db.backup.* | head -1)" backend-data/rootlink.db

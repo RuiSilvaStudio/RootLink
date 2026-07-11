@@ -983,7 +983,7 @@ export const api = {
       request<{ id: number; name: string; tokens: { token_name: string; light_value: string; dark_value: string | null; category: string }[] }>("/api/themes/active"),
     adminList: () =>
       request<{ id: number; name: string; description: string | null; is_active: boolean; is_published: boolean }[]>("/api/themes/admin"),
-    create: (data: { name: string; description?: string }) =>
+    create: (data: { name: string; description?: string; copy_from?: number }) =>
       request<any>("/api/themes", { method: "POST", body: JSON.stringify(data) }),
     update: (id: number, data: { name?: string; description?: string; is_published?: boolean }) =>
       request<any>(`/api/themes/${id}`, { method: "PUT", body: JSON.stringify(data) }),

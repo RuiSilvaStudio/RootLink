@@ -22,6 +22,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Loader2, Plus, Check, Trash2, Moon, Sun, Copy } from "lucide-react";
 import { useToast } from "@/lib/toast-context";
+import { ResizableSplit } from "@/components/ui/ResizableSplit";
 import { useTheme } from "@/lib/theme-context";
 import { api } from "@/lib/api";
 
@@ -55,7 +56,7 @@ function toDisplayHex(value: string): string {
   return "#000000";
 }
 
-const CATEGORIES = ["color", "font", "radius"] as const;
+const CATEGORIES = ["color", "font", "size", "spacing", "radius"] as const;
 
 export default function ThemeManagerPage() {
   const { addToast } = useToast();
@@ -67,7 +68,22 @@ export default function ThemeManagerPage() {
   const [saving, setSaving] = useState<number | null>(null);
   const [creatingTheme, setCreatingTheme] = useState(false);
   const [newThemeName, setNewThemeName] = useState("");
-  const [activeTab, setActiveTab] = useState<"color" | "font" | "radius">("color");
+  const [activeTab, setActiveTab] = useState<"color" | "font" | "size" | "spacing" | "radius">("color");
+  const [addingToken, setAddingToken] = useState(false);
+  const [newTokenName, setNewTokenName] = useState("");
+  const [newTokenValue, setNewTokenValue] = useState("");
+  const [editingThemeName, setEditingThemeName] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const [fonts, setFonts] = useState<{ id: number; name: string; family: string }[]>([]);
+  const [customFontTokens, setCustomFontTokens] = useState<Set<number>>(new Set());
+  const toggleCustomFont = (tokenId: number) => {
+    setCustomFontTokens((prev) => {
+      const next = new Set(prev);
+      if (next.has(tokenId)) next.delete(tokenId);
+      else next.add(tokenId);
+      return next;
+    });
+  };
 
   const fetchThemes = useCallback(async () => {
     try {
@@ -91,8 +107,52 @@ export default function ThemeManagerPage() {
 
   useEffect(() => { fetchThemes(); }, [fetchThemes]);
   useEffect(() => { fetchTokens(); }, [fetchTokens]);
+  useEffect(() => { api.fonts.list().then(setFonts).catch(() => {}); }, []);
 
   const selectedTheme = themes.find((t) => t.id === selectedThemeId);
+
+  const addToken = async () => {
+    if (!newTokenName.trim() || !selectedThemeId) return;
+    try {
+      await api.themes.upsertToken(selectedThemeId, {
+        token_name: newTokenName.trim(),
+        light_value: newTokenValue || (activeTab === "color" ? "#000000" : activeTab === "font" ? "sans-serif" : "0"),
+        category: activeTab,
+      });
+      setNewTokenName("");
+      setNewTokenValue("");
+      setAddingToken(false);
+      await fetchTokens();
+      addToast("success", "Token added");
+    } catch (e: any) {
+      addToast("error", e?.message || "Failed to add token");
+    }
+  };
+
+  const deleteToken = async (token: TokenInfo) => {
+    if (!confirm(`Delete token "${token.token_name}"?`)) return;
+    try {
+      await api.themes.removeToken(token.id);
+      await fetchTokens();
+      addToast("success", "Token deleted");
+    } catch (e: any) {
+      addToast("error", e?.message || "Failed to delete token");
+    }
+  };
+
+  const saveThemeName = async () => {
+    if (!renameValue.trim() || !selectedThemeId) {
+      setEditingThemeName(false);
+      return;
+    }
+    try {
+      await api.themes.update(selectedThemeId, { name: renameValue.trim() });
+      setEditingThemeName(false);
+      await fetchThemes();
+    } catch (e: any) {
+      addToast("error", e?.message || "Failed to rename theme");
+    }
+  };
 
   const createTheme = async () => {
     if (!newThemeName.trim()) return;
@@ -144,7 +204,7 @@ export default function ThemeManagerPage() {
 
   const duplicateTheme = async (theme: ThemeInfo) => {
     try {
-      await api.themes.create({ name: `${theme.name} (copy)`, description: theme.description || undefined });
+      await api.themes.create({ name: `${theme.name} (copy)`, description: theme.description || undefined, copy_from: theme.id });
       await fetchThemes();
       addToast("success", "Theme duplicated (draft)");
     } catch (e: any) {
@@ -162,12 +222,14 @@ export default function ThemeManagerPage() {
 
   const colorTokens = tokens.filter((t) => t.category === "color");
   const fontTokens = tokens.filter((t) => t.category === "font");
+  const sizeTokens = tokens.filter((t) => t.category === "size");
+  const spacingTokens = tokens.filter((t) => t.category === "spacing");
   const radiusTokens = tokens.filter((t) => t.category === "radius");
 
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-primary-200/40 dark:border-stone-800 flex items-center justify-between gap-4">
+      <div className="shrink-0 px-6 py-4 border-b border-primary-200/40 dark:border-stone-800 flex items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-xl font-semibold text-stone-800 dark:text-stone-100">Theme Manager</h1>
           <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
@@ -182,43 +244,68 @@ export default function ThemeManagerPage() {
         </button>
       </div>
 
-      <div className="flex-1 flex min-h-0">
-        {/* Theme list */}
-        <div className="w-56 shrink-0 border-r border-primary-200/40 dark:border-stone-800 p-3 overflow-y-auto">
-          <p className="px-1 pb-2 text-[10px] uppercase tracking-wider text-stone-400 font-medium">Themes</p>
-          {themes.map((theme) => (
-            <button
-              key={theme.id}
-              onClick={() => setSelectedThemeId(theme.id)}
-              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md text-sm transition mb-1 ${
-                selectedThemeId === theme.id
-                  ? "bg-primary-600 text-cream"
-                  : "text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
-              }`}
-            >
-              <span className="truncate">{theme.name}</span>
-              <span className={`text-[10px] ${selectedThemeId === theme.id ? "text-cream/60" : theme.is_active ? "text-emerald-500" : "text-stone-400"}`}>
-                {theme.is_active ? "●" : theme.is_published ? "○" : "draft"}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* Token editor */}
-        <div className="flex-1 overflow-y-auto p-4 lg:p-6">
+      <ResizableSplit
+        defaultWidth={224}
+        minWidth={160}
+        maxWidth={320}
+        className="flex-1"
+        left={
+          <div className="h-full border-r border-primary-200/40 dark:border-stone-800 p-3 overflow-y-auto">
+            <p className="px-1 pb-2 text-[10px] uppercase tracking-wider text-stone-400 font-medium">Themes</p>
+            {themes.map((theme) => (
+              <button
+                key={theme.id}
+                onClick={() => setSelectedThemeId(theme.id)}
+                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md text-sm transition mb-1 ${
+                  selectedThemeId === theme.id
+                    ? "bg-primary-600 text-cream"
+                    : "text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
+                }`}
+              >
+                <span className="truncate">{theme.name}</span>
+                <span className={`text-[10px] ${selectedThemeId === theme.id ? "text-cream/60" : theme.is_active ? "text-emerald-500" : "text-stone-400"}`}>
+                  {theme.is_active ? "●" : theme.is_published ? "○" : "draft"}
+                </span>
+              </button>
+            ))}
+          </div>
+        }
+        right={
+          <div className="h-full overflow-y-auto p-4 lg:p-6">
           {selectedTheme ? (
             <div className="max-w-3xl">
               {/* Theme header */}
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="font-display text-lg font-semibold text-stone-800 dark:text-stone-100">
-                    {selectedTheme.name}
-                    {selectedTheme.is_active && <span className="ml-2 text-xs text-emerald-500">Active</span>}
-                    {!selectedTheme.is_published && <span className="ml-2 text-xs text-amber-500">Draft</span>}
-                  </h2>
+                  {editingThemeName ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={renameValue}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        onBlur={saveThemeName}
+                        onKeyDown={(e) => { if (e.key === "Enter") saveThemeName(); if (e.key === "Escape") setEditingThemeName(false); }}
+                        className="font-display text-lg font-semibold text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-3 py-1 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                        autoFocus
+                      />
+                    </div>
+                  ) : (
+                    <h2
+                      className="font-display text-lg font-semibold text-stone-800 dark:text-stone-100 cursor-pointer hover:text-primary-600 dark:hover:text-primary-400 transition"
+                      onClick={() => { setEditingThemeName(true); setRenameValue(selectedTheme.name); }}
+                      title="Click to rename"
+                    >
+                      {selectedTheme.name}
+                      {selectedTheme.is_active && <span className="ml-2 text-xs text-emerald-500">Active</span>}
+                      {!selectedTheme.is_published && <span className="ml-2 text-xs text-amber-500">Draft</span>}
+                    </h2>
+                  )}
                   {selectedTheme.description && <p className="text-xs text-stone-500 mt-0.5">{selectedTheme.description}</p>}
                 </div>
                 <div className="flex items-center gap-2">
+                  <button onClick={() => { setAddingToken(true); setNewTokenName(""); setNewTokenValue(""); }} className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 transition" title="Add a new token to this theme">
+                    <Plus className="w-3.5 h-3.5" /> Add token
+                  </button>
                   <button onClick={() => duplicateTheme(selectedTheme)} className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 transition" title="Duplicate">
                     <Copy className="w-3.5 h-3.5" /> Duplicate
                   </button>
@@ -254,6 +341,54 @@ export default function ThemeManagerPage() {
                   );
                 })}
               </div>
+
+              {/* Add token inline form */}
+              {addingToken && (
+                <div className="mb-6 p-4 rounded-lg border border-primary-200/60 dark:border-primary-700/40 bg-primary-50/30 dark:bg-primary-900/20">
+                  <div className="flex items-end gap-3">
+                    <div className="flex-1">
+                      <label className="block text-[10px] uppercase tracking-wider text-stone-500 mb-1">Token name</label>
+                      <input
+                        type="text"
+                        value={newTokenName}
+                        onChange={(e) => setNewTokenName(e.target.value)}
+                        placeholder={activeTab === "color" ? "--color-accent" : activeTab === "font" ? "--font-body" : `--${activeTab}-...`}
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary-500 font-mono"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-[10px] uppercase tracking-wider text-stone-500 mb-1">Value</label>
+                      {activeTab === "color" ? (
+                        <div className="flex items-center gap-2">
+                          <input type="color" value={newTokenValue || "#000000"} onChange={(e) => setNewTokenValue(e.target.value)} className="w-10 h-10 rounded-lg border border-stone-200 dark:border-stone-700 cursor-pointer overflow-hidden" />
+                          <input type="text" value={newTokenValue} onChange={(e) => setNewTokenValue(e.target.value)} placeholder="#634d33" className="flex-1 px-2 py-2 text-sm font-mono rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary-500" />
+                        </div>
+                      ) : activeTab === "font" ? (
+                        <select
+                          value={newTokenValue}
+                          onChange={(e) => setNewTokenValue(e.target.value)}
+                          className="w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                        >
+                          <option value="">Select a font…</option>
+                          {fonts.map((f) => (
+                            <option key={f.id} value={f.family} style={{ fontFamily: f.family }}>
+                              {f.name}
+                            </option>
+                          ))}
+                          <option value="__custom__">— Custom —</option>
+                        </select>
+                      ) : (
+                        <input type="text" value={newTokenValue} onChange={(e) => setNewTokenValue(e.target.value)} placeholder={activeTab === "radius" ? "8px" : activeTab === "size" ? "1rem" : "0.25rem"} className="w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary-500 font-mono" />
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={addToken} disabled={!newTokenName.trim()} className="px-4 py-2 text-xs font-semibold rounded-lg bg-primary-600 hover:bg-primary-700 text-cream disabled:opacity-50">Add</button>
+                      <button onClick={() => setAddingToken(false)} className="px-3 py-2 text-xs font-medium rounded-lg text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800">Cancel</button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Color tokens */}
               {activeTab === "color" && (
@@ -295,6 +430,9 @@ export default function ThemeManagerPage() {
                           />
                         </label>
                       </div>
+                      <button onClick={() => deleteToken(token)} className="ml-2 p-1 rounded hover:bg-red-50 dark:hover:bg-red-950 text-stone-400 hover:text-red-500 transition" title="Delete token">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -303,21 +441,75 @@ export default function ThemeManagerPage() {
               {/* Font tokens */}
               {activeTab === "font" && (
                 <div className="space-y-3">
-                  {fontTokens.map((token) => (
-                    <div key={token.id} className="p-4 rounded-lg border border-stone-200/60 dark:border-stone-800">
-                      <code className="text-xs text-stone-500 dark:text-stone-400 font-mono mb-2 block">{token.token_name}</code>
-                      <input
-                        type="text"
-                        value={token.light_value}
-                        onChange={(e) => updateToken(token, "light_value", e.target.value)}
-                        disabled={saving === token.id}
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary-500 font-mono"
-                      />
-                      <p className="mt-2 text-lg" style={{ fontFamily: token.light_value }}>
-                        The quick brown fox
-                      </p>
-                    </div>
-                  ))}
+                  {fonts.length === 0 && (
+                    <p className="text-xs text-stone-500 font-serif">
+                      No fonts in the library yet. Add fonts in <a href="/studio/fonts" className="text-primary-600 underline">Fonts</a> first.
+                    </p>
+                  )}
+                  {fontTokens.map((token) => {
+                    const familyMatch = fonts.find((f) => f.family === token.light_value);
+                    const isCustom = customFontTokens.has(token.id) || (token.light_value.length > 0 && !familyMatch);
+                    return (
+                      <div key={token.id} className="p-4 rounded-lg border border-stone-200/60 dark:border-stone-800 relative">
+                        <code className="text-xs text-stone-500 dark:text-stone-400 font-mono mb-2 block">{token.token_name}</code>
+                        {isCustom ? (
+                          <div className="flex items-center gap-2 mb-2">
+                            <input
+                              type="text"
+                              value={token.light_value}
+                              onChange={(e) => updateToken(token, "light_value", e.target.value)}
+                              disabled={saving === token.id}
+                              className="flex-1 px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary-500 font-mono"
+                            />
+                            <button
+                              onClick={() => toggleCustomFont(token.id)}
+                              className="text-xs text-stone-400 hover:text-primary-600 transition"
+                            >
+                              library
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 mb-2">
+                            <select
+                              value={familyMatch ? familyMatch.id : ""}
+                              onChange={(e) => {
+                                const id = Number(e.target.value);
+                                if (id) {
+                                  const f = fonts.find((f) => f.id === id);
+                                  if (f) updateToken(token, "light_value", f.family);
+                                } else {
+                                  toggleCustomFont(token.id);
+                                }
+                              }}
+                              disabled={saving === token.id}
+                              className="flex-1 px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                            >
+                              <option value="" disabled={!familyMatch}>Select a font…</option>
+                              {fonts.map((f) => (
+                                <option key={f.id} value={f.id} style={{ fontFamily: f.family }}>
+                                  {f.name}
+                                </option>
+                              ))}
+                              <option value="">— Custom —</option>
+                            </select>
+                            <button
+                              onClick={() => toggleCustomFont(token.id)}
+                              className="text-xs text-stone-400 hover:text-primary-600 transition"
+                              title="Switch to custom entry"
+                            >
+                              custom
+                            </button>
+                          </div>
+                        )}
+                        <p className="text-lg" style={{ fontFamily: token.light_value }}>
+                          The quick brown fox
+                        </p>
+                        <button onClick={() => deleteToken(token)} className="absolute top-3 right-3 p-1 rounded hover:bg-red-50 dark:hover:bg-red-950 text-stone-400 hover:text-red-500 transition" title="Delete token">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -327,7 +519,7 @@ export default function ThemeManagerPage() {
                   {radiusTokens.map((token) => {
                     const px = parseInt(token.light_value) || 0;
                     return (
-                      <div key={token.id} className="p-4 rounded-lg border border-stone-200/60 dark:border-stone-800">
+                      <div key={token.id} className="p-4 rounded-lg border border-stone-200/60 dark:border-stone-800 relative">
                         <code className="text-xs text-stone-500 dark:text-stone-400 font-mono mb-3 block">{token.token_name}</code>
                         <div className="flex items-center gap-4">
                           <input
@@ -342,6 +534,88 @@ export default function ThemeManagerPage() {
                           <span className="text-sm font-mono text-stone-500 w-12">{px}px</span>
                           <div className="w-12 h-12 border-2 border-primary-300 dark:border-stone-600 bg-primary-100 dark:bg-primary-900/30" style={{ borderRadius: `${px}px` }} />
                         </div>
+                        <button onClick={() => deleteToken(token)} className="absolute top-3 right-3 p-1 rounded hover:bg-red-50 dark:hover:bg-red-950 text-stone-400 hover:text-red-500 transition" title="Delete token">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Size tokens (type scale — redefine what each text-* size means) */}
+              {activeTab === "size" && (
+                <div className="space-y-3">
+                  <p className="text-xs text-stone-500 dark:text-stone-400 mb-2 font-serif">
+                    Redefine a size here and every element using that text-* class updates site-wide. Same value in light &amp; dark mode.
+                  </p>
+                  {sizeTokens.map((token) => {
+                    const rem = parseFloat(token.light_value) || 0;
+                    return (
+                      <div key={token.id} className="p-4 rounded-lg border border-stone-200/60 dark:border-stone-800 relative">
+                        <div className="flex items-center justify-between mb-3">
+                          <code className="text-xs text-stone-500 dark:text-stone-400 font-mono">{token.token_name}</code>
+                          <span className="text-sm font-mono text-stone-500">{token.light_value}</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <input
+                            type="range"
+                            min="0.5"
+                            max="9"
+                            step="0.125"
+                            value={rem}
+                            onChange={(e) => updateToken(token, "light_value", e.target.value + "rem")}
+                            disabled={saving === token.id}
+                            className="flex-1 accent-primary-600"
+                          />
+                          <span className="text-stone-800 dark:text-stone-100" style={{ fontSize: token.light_value }}>
+                            Aa
+                          </span>
+                        </div>
+                        <button onClick={() => deleteToken(token)} className="absolute top-3 right-3 p-1 rounded hover:bg-red-50 dark:hover:bg-red-950 text-stone-400 hover:text-red-500 transition" title="Delete token">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Spacing base (scales every spacing utility proportionally) */}
+              {activeTab === "spacing" && (
+                <div className="space-y-3">
+                  <p className="text-xs text-stone-500 dark:text-stone-400 mb-2 font-serif">
+                    The spacing base scales every spacing utility (p-4, gap-2, m-8 …) proportionally. One knob for the whole rhythm.
+                  </p>
+                  {spacingTokens.map((token) => {
+                    const rem = parseFloat(token.light_value) || 0;
+                    return (
+                      <div key={token.id} className="p-4 rounded-lg border border-stone-200/60 dark:border-stone-800 relative">
+                        <div className="flex items-center justify-between mb-3">
+                          <code className="text-xs text-stone-500 dark:text-stone-400 font-mono">{token.token_name}</code>
+                          <span className="text-sm font-mono text-stone-500">{token.light_value}</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <input
+                            type="range"
+                            min="0.125"
+                            max="0.75"
+                            step="0.0625"
+                            value={rem}
+                            onChange={(e) => updateToken(token, "light_value", e.target.value + "rem")}
+                            disabled={saving === token.id}
+                            className="flex-1 accent-primary-600"
+                          />
+                          <div className="flex items-end gap-1 h-8">
+                            <span className="w-2 bg-primary-400/70" style={{ height: `calc(${token.light_value} * 2)` }} />
+                            <span className="w-2 bg-primary-400/70" style={{ height: `calc(${token.light_value} * 4)` }} />
+                            <span className="w-2 bg-primary-400/70" style={{ height: `calc(${token.light_value} * 6)` }} />
+                            <span className="w-2 bg-primary-400/70" style={{ height: `calc(${token.light_value} * 8)` }} />
+                          </div>
+                        </div>
+                        <button onClick={() => deleteToken(token)} className="absolute top-3 right-3 p-1 rounded hover:bg-red-50 dark:hover:bg-red-950 text-stone-400 hover:text-red-500 transition" title="Delete token">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     );
                   })}
@@ -353,8 +627,9 @@ export default function ThemeManagerPage() {
               <p className="text-sm text-stone-400 font-serif">Select a theme to edit its tokens.</p>
             </div>
           )}
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       {/* Create theme modal */}
       {creatingTheme && (

@@ -49,6 +49,7 @@ interface IconContainerProps {
   bgColor?: string; // e.g. "bg-primary-100 dark:bg-primary-950/20"
   iconColor?: string; // e.g. "text-primary-600"
   hoverScale?: boolean;
+  inline?: boolean; // inline-flex (for text-center contexts) vs flex (block)
   className?: string;
 }
 
@@ -59,12 +60,13 @@ export function IconContainer({
   bgColor = "bg-primary-100 dark:bg-primary-950/20",
   iconColor = "text-primary-600",
   hoverScale = false,
+  inline = false,
   className = "",
 }: IconContainerProps) {
   return (
     <div
       data-rl-component="IconContainer"
-      className={`flex items-center justify-center shrink-0 ${ICON_SIZES[size]} ${SHAPES[shape]} ${bgColor} ${hoverScale ? "group-hover:scale-110 transition-transform duration-300" : ""} ${className}`}
+      className={`${inline ? "inline-flex" : "flex"} items-center justify-center shrink-0 ${ICON_SIZES[size]} ${SHAPES[shape]} ${bgColor} ${hoverScale ? "group-hover:scale-110 transition-transform duration-300" : ""} ${className}`}
     >
       <Icon className={`${ICON_INNER[size]} ${iconColor}`} />
     </div>
@@ -79,14 +81,17 @@ interface SectionHeaderProps {
   badge?: ReactNode;
   heading: ReactNode;
   badgeVariant?: "sage" | "green" | "earth" | "blue" | "stone" | "amber" | "red";
+  /** Copy key for the heading — sets data-rl-text on the <h2> so the overlay
+   *  identifies it as editable studio copy (see <Text> component). */
+  headingKey?: string;
   className?: string;
 }
 
-export function SectionHeader({ badge, heading, badgeVariant = "sage", className = "" }: SectionHeaderProps) {
+export function SectionHeader({ badge, heading, badgeVariant = "sage", headingKey, className = "" }: SectionHeaderProps) {
   return (
     <div data-rl-component="SectionHeader" className={`mb-16 ${className}`}>
       {badge && <Badge variant={badgeVariant} className="mb-5">{badge}</Badge>}
-      <h2 className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.05] max-w-2xl">
+      <h2 data-rl-text={headingKey} className="text-4xl sm:text-5xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.05] max-w-2xl">
         {heading}
       </h2>
       <div className="mt-5 w-16 h-0.5 bg-primary-300/40 rounded-full" />
@@ -104,13 +109,17 @@ interface LinkWithArrowProps {
   className?: string;
   target?: string;
   rel?: string;
+  /** Copy key for the link text — sets data-rl-text on the <a> so the overlay
+   *  identifies it as editable studio copy (see <Text> component). */
+  copyKey?: string;
 }
 
-export function LinkWithArrow({ href, children, className = "", target, rel }: LinkWithArrowProps) {
+export function LinkWithArrow({ href, children, className = "", target, rel, copyKey }: LinkWithArrowProps) {
   return (
     <Link
       href={href}
       data-rl-component="LinkWithArrow"
+      data-rl-text={copyKey}
       target={target}
       rel={rel}
       className={`inline-flex items-center gap-2 text-sm font-display font-medium text-primary-600 mt-6 group-hover:gap-3 transition-all ${className}`}
@@ -129,19 +138,43 @@ interface FilterPillProps {
   label: string;
   active?: boolean;
   onClick?: () => void;
+  variant?: "primary" | "neutral";
+  icon?: LucideIcon;
+  size?: "sm" | "md";
 }
 
-export function FilterPill({ label, active = false, onClick }: FilterPillProps) {
+const PILL_SIZES = {
+  sm: "px-2.5 py-1.5 text-xs rounded-lg",
+  md: "px-3 py-1.5 text-sm rounded-xl",
+};
+
+const PILL_VARIANTS = {
+  primary: {
+    active: "bg-primary-500 text-white border-primary-500 shadow-sm",
+    idle: "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border-primary-100 dark:border-stone-700 hover:border-primary-300 dark:hover:border-primary-600",
+  },
+  neutral: {
+    active: "bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900 border-stone-800 dark:border-stone-200 shadow-sm",
+    idle: "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border-primary-100 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-500",
+  },
+};
+
+export function FilterPill({
+  label,
+  active = false,
+  onClick,
+  variant = "primary",
+  icon: Icon,
+  size = "md",
+}: FilterPillProps) {
+  const v = PILL_VARIANTS[variant];
   return (
     <button
       data-rl-component="FilterPill"
       onClick={onClick}
-      className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
-        active
-          ? "bg-primary-500 text-white border-primary-500 shadow-sm"
-          : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border-primary-100 dark:border-stone-700 hover:border-primary-300"
-      }`}
+      className={`inline-flex items-center gap-1 border transition-all ${PILL_SIZES[size]} ${active ? v.active : v.idle}`}
     >
+      {Icon && <Icon className="w-3 h-3 shrink-0" />}
       {label}
     </button>
   );
@@ -155,17 +188,18 @@ interface SidebarWidgetProps {
   icon: LucideIcon;
   title: string;
   children: ReactNode;
+  iconColor?: string;
   className?: string;
 }
 
-export function SidebarWidget({ icon: Icon, title, children, className = "" }: SidebarWidgetProps) {
+export function SidebarWidget({ icon: Icon, title, children, iconColor = "text-stone-500", className = "" }: SidebarWidgetProps) {
   return (
     <div
       data-rl-component="SidebarWidget"
       className={`rounded-2xl border border-stone-200/60 bg-white dark:bg-stone-900 p-4 ${className}`}
     >
       <div className="flex items-center gap-2 mb-3">
-        <Icon className="w-4 h-4 text-stone-500" />
+        <Icon className={`w-4 h-4 ${iconColor}`} />
         <h3 className="text-xs font-display font-semibold text-stone-500 uppercase tracking-wider">{title}</h3>
       </div>
       {children}
@@ -236,11 +270,24 @@ interface ResultCardProps {
   summary?: string;
   thumbnail?: ReactNode;
   badges?: ReactNode;
-  accent?: string; // border/bg accent color class
+  accent?: string; // named accent: primary | earth | rust | stone | green | blue | amber
   target?: string;
   rel?: string;
   className?: string;
 }
+
+// Static accent map — Tailwind's JIT cannot detect `border-${accent}-200/60`
+// (dynamically constructed class names), so the border would never render.
+// Map each named accent to its literal class strings instead.
+const ACCENT_BORDER: Record<string, string> = {
+  primary: "border-primary-200/60 hover:border-primary-300/60",
+  earth: "border-earth-200/60 hover:border-earth-300/60",
+  rust: "border-rust-200/60 hover:border-rust-300/60",
+  stone: "border-stone-200/60 hover:border-stone-300/60",
+  green: "border-green-200/60 hover:border-green-300/60",
+  blue: "border-blue-200/60 hover:border-blue-300/60",
+  amber: "border-amber-200/60 hover:border-amber-300/60",
+};
 
 export function ResultCard({
   href,
@@ -253,13 +300,14 @@ export function ResultCard({
   rel,
   className = "",
 }: ResultCardProps) {
+  const border = ACCENT_BORDER[accent] || ACCENT_BORDER.primary;
   return (
     <Link
       href={href}
       data-rl-component="ResultCard"
       target={target}
       rel={rel}
-      className={`group block rounded-2xl border border-${accent}-200/60 bg-white dark:bg-stone-900 p-5 transition-all hover:shadow-md hover:border-${accent}-300/60 ${className}`}
+      className={`group block rounded-2xl border bg-white dark:bg-stone-900 p-5 transition-all hover:shadow-md ${border} ${className}`}
     >
       <div className="flex items-start gap-4">
         {thumbnail}

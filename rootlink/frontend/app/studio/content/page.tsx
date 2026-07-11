@@ -25,6 +25,7 @@ import { useToast } from "@/lib/toast-context";
 import { api } from "@/lib/api";
 import enMessages from "@/messages/en.json";
 import ptMessages from "@/messages/pt.json";
+import { ResizableSplit } from "@/components/ui/ResizableSplit";
 
 type Overrides = Record<string, string>;
 interface OverrideEntry {
@@ -218,7 +219,7 @@ export default function ContentPage() {
   return (
     <div className="flex flex-col h-full">
       {/* ── Header ─────────────────────────────────────────── */}
-      <div className="px-6 py-4 border-b border-primary-200/40 dark:border-stone-800 flex items-center justify-between gap-4">
+      <div className="shrink-0 px-6 py-4 border-b border-primary-200/40 dark:border-stone-800 flex items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-xl font-semibold text-stone-800 dark:text-stone-100">
             Content
@@ -235,93 +236,98 @@ export default function ContentPage() {
         )}
       </div>
 
-      <div className="flex-1 flex min-h-0">
-        {/* ── Namespace list (desktop) ────────────────────── */}
-        <div className="hidden lg:flex flex-col w-64 shrink-0 border-r border-primary-200/40 dark:border-stone-800">
-          <div className="p-3 border-b border-primary-200/30 dark:border-stone-800/50">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search keys…"
-                className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary-500"
-              />
+      {/* ── Namespace select (mobile) ───────────────────── */}
+      <div className="lg:hidden shrink-0 p-3 border-b border-primary-200/40 dark:border-stone-800">
+        <div className="relative mb-2">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search keys…"
+            className="w-full pl-8 pr-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          />
+        </div>
+        <select
+          value={selectedNs}
+          onChange={(e) => setSelectedNs(e.target.value)}
+          className="w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary-500"
+        >
+          {ALL_NAMESPACES.map((ns) => (
+            <option key={ns} value={ns}>
+              {ns} ({keysInNamespace(ns).length})
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <ResizableSplit
+        defaultWidth={256}
+        minWidth={192}
+        maxWidth={384}
+        className="flex-1"
+        leftClassName="hidden lg:flex"
+        left={
+          <div className="h-full flex flex-col border-r border-primary-200/40 dark:border-stone-800">
+            <div className="p-3 border-b border-primary-200/30 dark:border-stone-800/50">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search keys…"
+                  className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                />
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2">
+              {DOMAINS.map((domain) => {
+                const namespaces = filteredNamespaces.filter((ns) => domainFor(ns) === domain);
+                if (namespaces.length === 0) return null;
+                return (
+                  <div key={domain} className="mb-3">
+                    <p className="px-2 py-1 text-[10px] uppercase tracking-wider text-stone-400 font-medium">
+                      {domain}
+                    </p>
+                    {namespaces.map((ns) => {
+                      const keyCount = keysInNamespace(ns).length;
+                      const modCount = keysInNamespace(ns).filter(isModified).length;
+                      return (
+                        <button
+                          key={ns}
+                          onClick={() => setSelectedNs(ns)}
+                          className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition ${
+                            selectedNs === ns
+                              ? "bg-primary-600 text-cream"
+                              : "text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
+                          }`}
+                        >
+                          <span className="font-mono text-xs">{ns}</span>
+                          <span className="flex items-center gap-1.5">
+                            {modCount > 0 && (
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  selectedNs === ns ? "bg-cream/70" : "bg-rust-500"
+                                }`}
+                                title={`${modCount} modified`}
+                              />
+                            )}
+                            <span className={`text-[10px] ${selectedNs === ns ? "text-cream/70" : "text-stone-400"}`}>
+                              {keyCount}
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })}
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto p-2">
-            {DOMAINS.map((domain) => {
-              const namespaces = filteredNamespaces.filter((ns) => domainFor(ns) === domain);
-              if (namespaces.length === 0) return null;
-              return (
-                <div key={domain} className="mb-3">
-                  <p className="px-2 py-1 text-[10px] uppercase tracking-wider text-stone-400 font-medium">
-                    {domain}
-                  </p>
-                  {namespaces.map((ns) => {
-                    const keyCount = keysInNamespace(ns).length;
-                    const modCount = keysInNamespace(ns).filter(isModified).length;
-                    return (
-                      <button
-                        key={ns}
-                        onClick={() => setSelectedNs(ns)}
-                        className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition ${
-                          selectedNs === ns
-                            ? "bg-primary-600 text-cream"
-                            : "text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
-                        }`}
-                      >
-                        <span className="font-mono text-xs">{ns}</span>
-                        <span className="flex items-center gap-1.5">
-                          {modCount > 0 && (
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                selectedNs === ns ? "bg-cream/70" : "bg-rust-500"
-                              }`}
-                              title={`${modCount} modified`}
-                            />
-                          )}
-                          <span className={`text-[10px] ${selectedNs === ns ? "text-cream/70" : "text-stone-400"}`}>
-                            {keyCount}
-                          </span>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ── Namespace select (mobile) ───────────────────── */}
-        <div className="lg:hidden p-3 border-b border-primary-200/40 dark:border-stone-800">
-          <div className="relative mb-2">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search keys…"
-              className="w-full pl-8 pr-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary-500"
-            />
-          </div>
-          <select
-            value={selectedNs}
-            onChange={(e) => setSelectedNs(e.target.value)}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary-500"
-          >
-            {ALL_NAMESPACES.map((ns) => (
-              <option key={ns} value={ns}>
-                {ns} ({keysInNamespace(ns).length})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* ── Key editors ──────────────────────────────────── */}
-        <div className="flex-1 overflow-y-auto p-4 lg:p-6">
+        }
+        right={
+          <div className="h-full overflow-y-auto p-4 lg:p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-mono text-sm text-stone-500 dark:text-stone-400">
               {selectedNs}.*
@@ -418,8 +424,9 @@ export default function ContentPage() {
               );
             })}
           </div>
-        </div>
-      </div>
+          </div>
+        }
+      />
     </div>
   );
 }
