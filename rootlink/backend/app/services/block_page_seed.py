@@ -12,6 +12,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.block_page import BlockPage, BlockSection
 
 # (slug, label, [(block_type, order), ...])
+# The first 6 have pre-configured sections. The next 12 are hand-coded
+# pages with hero section slots — empty by default, managed via the
+# block builder. Idempotent: skips pages that already exist.
 _BLOCK_PAGES: list[tuple[str, str, list[tuple[str, int]]]] = [
     ("home", "Homepage", [
         ("home-hero", 0),
@@ -44,6 +47,19 @@ _BLOCK_PAGES: list[tuple[str, str, list[tuple[str, int]]]] = [
         ("groups-header", 0),
         ("groups-hero", 1),
     ]),
+    # Hand-coded pages with hero slots (no pre-configured sections)
+    ("events", "Events", []),
+    ("marketplace", "Marketplace", []),
+    ("feed", "Feed", []),
+    ("network", "Network", []),
+    ("search", "Search", []),
+    ("plants", "Plants", []),
+    ("learning", "Learning", []),
+    ("composting", "Composting", []),
+    ("upcycling", "Upcycling", []),
+    ("entities", "Entities", []),
+    ("submit", "Submit", []),
+    ("notifications", "Notifications", []),
 ]
 
 
