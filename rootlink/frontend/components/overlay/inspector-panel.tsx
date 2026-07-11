@@ -256,7 +256,7 @@ export function InspectorPanel() {
 
   const componentType = selected?.componentType || null;
   const schemaProps: SchemaProperty[] = componentType
-    ? (schemaMap[componentType] || schemaMap[componentType.toLowerCase()] || []).filter((p) => p.is_visible)
+    ? (schemaMap[componentType] || []).filter((p) => p.is_visible)
     : [];
   const hasSchema = schemaProps.length > 0;
 

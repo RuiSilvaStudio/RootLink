@@ -241,8 +241,8 @@ async def test_super_admin_creates_font_and_public_list_returns_it(client, make_
     assert len(pub) == 1
     assert pub[0]["name"] == "Fraunces"
     assert pub[0]["family"] == '"Fraunces", Georgia, serif'
-    # Public list returns exactly {id, name, family, url} — no internal fields.
-    assert set(pub[0].keys()) == {"id", "name", "family", "url"}
+    # Public list returns exactly {id, name, family, url, is_active} — no internal fields.
+    assert set(pub[0].keys()) == {"id", "name", "family", "url", "is_active"}
 
 
 async def test_create_duplicate_font_name_conflicts(client, make_user):
