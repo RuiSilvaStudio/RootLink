@@ -154,6 +154,20 @@ export default function ThemeManagerPage() {
     }
   };
 
+  const deleteTheme = async (theme: ThemeInfo) => {
+    if (theme.is_active) return;
+    if (!window.confirm(`Delete theme "${theme.name}"? This cannot be undone. All its colors, fonts, and settings will be permanently removed.`)) return;
+    try {
+      await api.themes.remove(theme.id);
+      await fetchThemes();
+      const remaining = themes.filter((t) => t.id !== theme.id);
+      if (remaining.length > 0) setSelectedThemeId(remaining[0].id);
+      addToast("success", `Theme "${theme.name}" deleted`);
+    } catch (e: any) {
+      addToast("error", e?.message || "Failed to delete theme");
+    }
+  };
+
   const createTheme = async () => {
     if (!newThemeName.trim()) return;
     try {
@@ -252,6 +266,11 @@ export default function ThemeManagerPage() {
         left={
           <div className="h-full border-r border-primary-200/40 dark:border-stone-800 p-3 overflow-y-auto">
             <p className="px-1 pb-2 text-[10px] uppercase tracking-wider text-stone-400 font-medium">Themes</p>
+            <div className="px-1 pb-3 text-[9px] text-stone-400 leading-relaxed">
+              <span className="text-emerald-500">●</span> Active = live on site &nbsp;
+              <span className="text-stone-500">○</span> Published = available &nbsp;
+              <span className="text-amber-500">draft</span> = not yet published
+            </div>
             {themes.map((theme) => (
               <button
                 key={theme.id}
@@ -317,6 +336,11 @@ export default function ThemeManagerPage() {
                   {!selectedTheme.is_active && selectedTheme.is_published && (
                     <button onClick={() => activateTheme(selectedTheme)} className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition">
                       <Check className="w-3.5 h-3.5" /> Activate
+                    </button>
+                  )}
+                  {!selectedTheme.is_active && (
+                    <button onClick={() => deleteTheme(selectedTheme)} className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-stone-400 hover:text-red-500 transition" title="Delete theme (cannot delete the active theme)">
+                      <Trash2 className="w-3.5 h-3.5" /> Delete
                     </button>
                   )}
                 </div>

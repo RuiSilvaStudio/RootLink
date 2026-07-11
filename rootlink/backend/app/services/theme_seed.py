@@ -111,10 +111,11 @@ async def seed_default_theme(session: AsyncSession) -> None:
         select(Theme).where(Theme.name == DEFAULT_THEME_NAME)
     )
     if theme is None:
+        any_active = await session.scalar(select(Theme).where(Theme.is_active.is_(True)))
         theme = Theme(
             name=DEFAULT_THEME_NAME,
             description="RootLink's default earth-toned palette.",
-            is_active=True,
+            is_active=not any_active,
             is_published=True,
         )
         session.add(theme)
