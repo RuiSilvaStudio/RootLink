@@ -5,6 +5,8 @@ import Link from "next/link";
 import { X, ChevronDown } from "lucide-react";
 import { useLocale } from "@/lib/locale-context";
 import { Text } from "@/components/ui/Text";
+import { Wordmark } from "@/components/ui/Wordmark";
+import { BrandIcon } from "@/components/ui/BrandIcon";
 
 /**
  * The Privacidade/Termos/Legal pages exist and are fully functional
@@ -232,13 +234,11 @@ export function Footer() {
 
             {/* ── Column 1: Brand ─────────────────────────── */}
             <div>
-              <Link href="/" className="inline-flex items-center gap-2.5 mb-4 group" aria-label="RootLink — início">
+              <Link href="/" className="inline-flex items-center gap-2.5 mb-4 group text-brand dark:text-primary-300" aria-label="RootLink — início">
                 <div className="w-7 h-7 rounded-lg bg-primary-600 flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f8f6f2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                  </svg>
+                  <BrandIcon className="text-cream w-4 h-4" />
                 </div>
-                <span className="font-display text-lg font-semibold text-primary-700 dark:text-primary-300">RootLink</span>
+                <Wordmark className="h-5 w-auto" />
               </Link>
 
               <Text

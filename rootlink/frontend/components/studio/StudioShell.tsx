@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/locale-context";
+import { BrandIcon } from "@/components/ui/BrandIcon";
 
 interface StudioSection {
   label: string;
@@ -151,7 +152,8 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <Link href="/studio" className="flex items-center gap-2">
+          <Link href="/studio" className="flex items-center gap-2 text-brand dark:text-primary-300">
+            <BrandIcon className="w-5 h-5" />
             <span className="font-display font-semibold text-primary-700 dark:text-primary-300 text-sm tracking-tight">
               Content Studio
             </span>

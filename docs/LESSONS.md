@@ -340,5 +340,31 @@
      means for a human operating the product. "Do you want text changes to go live
      instantly, or wait until you click Publish?" — not "Should we add a kind
      discriminator to the DraftChange interface?" Save technical jargon for
-     implementation notes and documentation. (Same session: Esc behavior research,
-     stale-detection discussion, 2026-07-09.)
+      implementation notes and documentation. (Same session: Esc behavior research,
+      stale-detection discussion, 2026-07-09.)
+
+ 41. **The ThemeProvider's dark-mode token swap is dead code — inline styles always
+     beat the `.dark` class rule.** `theme-context.tsx:applyTokens()` sets light values
+     as *inline styles* on `<html>` (`root.style.setProperty('--color-X', light)`) and
+     dark values in a `<style>` tag (`.dark { --color-X: dark }`). Inline styles have
+     higher specificity than any class selector, so the `.dark` override never takes
+     effect — `--color-X` stays at its light value in both modes. This has been latent
+     since the theme system was built; no existing component noticed because **every
+     component uses explicit `dark:` Tailwind variants** (e.g. `text-primary-600
+     dark:text-primary-400`), switching to a *different token* in dark mode rather than
+     relying on the *same token's* dark value. The wordmark component (new, using
+     `text-brand` alone) was the first to rely on the automatic swap, exposing the bug.
+     Fix for the wordmark: add `dark:text-primary-300` (the pattern every other
+     component uses). The architectural fix (use stylesheet rules for both light +
+     dark, not inline styles) is tracked in TECH_DEBT.md. (Logo/wordmark integration,
+     2026-07-11.)
+
+ 42. **The overlay's color-token detector has a hardcoded family list — new color
+     families must be added to `COLOR_FAMILIES` in `selection-agent.ts`.** The palette
+     picker scans CSS variables for `--color-*` (so a new `--color-brand` appears as a
+     swatch), but the *token-name reader* (`readAppliedToken`) only recognizes Tailwind
+     utility classes whose family is in the `COLOR_FAMILIES` array. A component using
+     `text-brand` will show "current · not a theme color" until `"brand"` is added to
+     that array. When adding a new color family to `@theme` + `theme_seed.py`, also add
+     its name to `selection-agent.ts`'s `COLOR_FAMILIES`. (Logo/wordmark integration,
+     2026-07-11.)

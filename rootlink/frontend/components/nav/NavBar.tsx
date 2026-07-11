@@ -18,6 +18,7 @@ import { MobileBottomBar } from "./MobileBottomBar";
 import { desktopDropdowns } from "./NavConfig";
 import { SafeAvatar } from "./UserAvatar";
 import { Text } from "@/components/ui/Text";
+import { Wordmark } from "@/components/ui/Wordmark";
 
 type NotifTab = "notifications" | "messages" | "activity";
 type MobileSheet = "create" | "notifications" | "profile" | null;
@@ -154,9 +155,8 @@ export function NavBar() {
               aria-label="Abrir menu">
               <Menu className="w-5 h-5" />
             </button>
-            <Link href="/" className="font-display text-xl font-semibold tracking-tight leading-none select-none">
-              <span className="text-stone-900 dark:text-stone-50">Root</span>
-              <em className="text-primary-500 not-italic">Link</em>
+            <Link href="/" className="flex items-center leading-none select-none text-brand dark:text-primary-300">
+              <Wordmark className="h-6 w-auto" />
             </Link>
           </div>
 

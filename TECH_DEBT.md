@@ -260,3 +260,41 @@ Deferred during the content-platform initiative (also tracked in
   doubles as org/practitioner verification). Consider a dedicated `email_verified` flag.
 - **Liability-disclaimer legal sign-off** (CONTENT_PLATFORM.md §6.2) and **per-Kind retention
   periods** (§8) — product/legal, not code.
+
+## 8. ThemeProvider inline-style bug — dark-mode token swap is dead code
+
+**Found:** 2026-07-11 (logo/wordmark integration — see LESSONS.md #41).
+
+**Problem:** `theme-context.tsx:applyTokens()` sets light values as **inline styles**
+on `<html>` (`root.style.setProperty('--color-X', light_value)`) and dark values in a
+`<style>` tag (`.dark { --color-X: dark_value }`). Inline styles have higher CSS
+specificity than any class selector, so the `.dark` override **never takes effect** —
+every `--color-*` token stays at its light value in both light and dark mode.
+
+This has been latent since the theme system was built (Phase 4). No existing component
+noticed because **every component on the site uses explicit `dark:` Tailwind variants**
+(e.g. `text-primary-600 dark:text-primary-400`), switching to a *different token* in
+dark mode rather than relying on the *same token's* dark value. The wordmark component
+(new, using `text-brand` with no `dark:` variant) was the first to rely on the automatic
+swap, exposing the bug.
+
+**Current workaround:** The wordmark and brand icon use `text-brand dark:text-primary-300`
+(the same explicit-variant pattern every other component uses). This works correctly
+because Tailwind v4 generates separate CSS rules for `dark:` variants — it does not depend
+on the ThemeProvider's token swap.
+
+**Proper fix (not yet done):** Change `applyTokens()` to use stylesheet rules for **both**
+light and dark values, not inline styles for light. For example:
+
+```js
+// Instead of: root.style.setProperty('--color-X', light)
+// Use a <style> tag:
+//   :root { --color-X: light; }
+//   .dark { --color-X: dark; }
+```
+
+**Risk:** Components that use a single token (e.g. `text-primary-600` with no `dark:`
+variant) and were *designed assuming the swap was broken* (i.e. the designer chose a
+light-mode color that also looks acceptable in dark mode) would suddenly get a different
+dark color. Needs a full visual audit of the site in dark mode after the fix. Track which
+components use bare tokens without `dark:` variants before and after.

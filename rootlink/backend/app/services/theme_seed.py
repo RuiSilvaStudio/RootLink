@@ -32,6 +32,8 @@ _DEFAULT_TOKENS: list[tuple[str, str, str, str]] = [
     ("--color-primary-700", "#4f3d2a", "#cabda6", "color"),
     ("--color-primary-800", "#3d2f21", "#e3ddd0", "color"),
     ("--color-primary-900", "#291f16", "#f3f0eb", "color"),
+    # ── Brand (logo / wordmark — independently controllable from primary) ──
+    ("--color-brand", "#4f3d2a", "#ad9a7a", "color"),
     # ── Earth (warm tan) ──
     ("--color-earth-50", "#f5f0ea", "#2e2218", "color"),
     ("--color-earth-100", "#e8ddd0", "#453324", "color"),

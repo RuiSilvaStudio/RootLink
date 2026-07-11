@@ -234,7 +234,7 @@ export function injectSelectionAgent() {
 
   // Color families whose Tailwind utilities map 1:1 to named palette tokens.
   const COLOR_FAMILIES = [
-    "primary", "earth", "rust", "stone", "cream",
+    "brand", "primary", "earth", "rust", "stone", "cream",
     "green", "blue", "amber", "red", "sky", "orange", "emerald", "teal",
     "cyan", "pink", "purple", "indigo", "violet", "fuchsia", "rose", "lime", "yellow",
   ];

@@ -12,6 +12,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/locale-context";
 import { api } from "@/lib/api";
 import { SafeAvatar } from "./UserAvatar";
+import { Wordmark } from "@/components/ui/Wordmark";
 
 type Sheet = "create" | "notifications" | "profile" | null;
 type NotifTab = "notifications" | "messages" | "activity";
@@ -68,9 +69,8 @@ export function MobileNav({ unread, moon, openSheet, onCloseSheet, drawerOpen, o
         <div className="fixed inset-y-0 left-0 z-[70] w-[min(85vw,320px)] bg-white dark:bg-stone-900 flex flex-col overflow-hidden lg:hidden animate-drawer-in border-r border-stone-200 dark:border-stone-800">
           {/* Header */}
           <div className="flex items-center justify-between px-4 h-14 border-b border-stone-200 dark:border-stone-800 flex-shrink-0">
-            <span className="font-display text-xl font-semibold tracking-tight leading-none">
-              <span className="text-stone-900 dark:text-stone-50">Root</span>
-              <em className="text-primary-500 not-italic">Link</em>
+            <span className="text-brand dark:text-primary-300">
+              <Wordmark className="h-6 w-auto" />
             </span>
             <button onClick={onCloseDrawer} className="p-2 -mr-1 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-primary-50/60 dark:hover:bg-primary-900/20 transition-colors" aria-label={t("nav.admin")}>
               <X className="w-5 h-5" />

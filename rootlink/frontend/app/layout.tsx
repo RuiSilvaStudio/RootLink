@@ -32,7 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt" className="noise-bg" suppressHydrationWarning>
       <head>
-        <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" type="image/svg+xml" href="/icon.svg" />
         <meta name="theme-color" content="#7a6040" />
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {

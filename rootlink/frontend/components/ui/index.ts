@@ -18,3 +18,5 @@ export { ImageUpload } from "./ImageUpload";
 export { ScrollReveal } from "./ScrollReveal";
 export { Tooltip } from "./Tooltip";
 export { InfoPopover } from "./InfoPopover";
+export { Wordmark } from "./Wordmark";
+export { BrandIcon } from "./BrandIcon";
