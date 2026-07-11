@@ -113,6 +113,10 @@ export function CommandPalette() {
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={t("nav.search")}
+      data-rl-dialog
       className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4"
       onClick={() => setOpen(false)}
     >

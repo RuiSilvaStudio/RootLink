@@ -11,9 +11,12 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, Plus, Trash2, Type, Link as LinkIcon } from "lucide-react";
+import { Plus, Trash2, Type, Link as LinkIcon } from "lucide-react";
 import { useToast } from "@/lib/toast-context";
+import { Button, EmptyState, Input, Modal, Toggle, Tooltip } from "@/components/ui";
+import { CardSkeleton } from "@/components/ui/LoadingSkeleton";
 import { api } from "@/lib/api";
+import { LoadError } from "@/components/studio/LoadError";
 
 interface FontRow {
   id: number;
@@ -27,13 +30,14 @@ export default function FontLibraryPage() {
   const { addToast } = useToast();
   const [fonts, setFonts] = useState<FontRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [newFamily, setNewFamily] = useState("");
   const [newUrl, setNewUrl] = useState("");
 
   const fetch = useCallback(async () => {
-    try { setFonts(await api.fonts.list()); } catch {} finally { setLoading(false); }
+    try { setFonts(await api.fonts.list()); setLoadError(false); } catch { setLoadError(true); } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { fetch(); }, [fetch]);
@@ -49,14 +53,27 @@ export default function FontLibraryPage() {
   };
 
   const toggleActive = async (font: FontRow) => {
-    try { await api.fonts.update(font.id, { is_active: !font.is_active }); await fetch(); } catch {}
+    try { await api.fonts.update(font.id, { is_active: !font.is_active }); await fetch(); } catch (e: any) { addToast("error", e?.message || "Failed to update font"); }
   };
 
-  const removeFont = async (id: number) => {
-    try { await api.fonts.remove(id); await fetch(); addToast("info", "Font removed"); } catch (e: any) { addToast("error", e?.message); }
+  const removeFont = async (font: FontRow) => {
+    if (!window.confirm(`Delete the font "${font.name}" from the library? Elements using it will fall back to the theme default.`)) return;
+    try { await api.fonts.remove(font.id); await fetch(); addToast("info", "Font removed"); } catch (e: any) { addToast("error", e?.message); }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-full min-h-[60vh]"><Loader2 className="w-5 h-5 animate-spin text-stone-400" /></div>;
+  if (loading) {
+    return (
+      <div className="p-4 lg:p-6 min-h-[60vh]">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <CardSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) return <div className="p-6 max-w-xl"><LoadError onRetry={fetch} /></div>;
 
   return (
     <div className="flex flex-col h-full">
@@ -65,49 +82,65 @@ export default function FontLibraryPage() {
           <h1 className="font-display text-xl font-semibold text-stone-800 dark:text-stone-100">Font Library</h1>
           <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">Import and manage fonts — active fonts appear in the theme manager + inspector</p>
         </div>
-        <button onClick={() => setAdding(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-primary-600 hover:bg-primary-700 text-cream"><Plus className="w-3.5 h-3.5" /> Add font</button>
+        <Button size="xs" variant="primary" onClick={() => setAdding(true)}><Plus className="w-3.5 h-3.5" /> Add font</Button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 lg:p-6">
+        {fonts.length === 0 ? (
+          <EmptyState
+            icon={<Type className="w-7 h-7 text-primary-500" />}
+            title="No fonts yet"
+            message="Add a font from a Google Fonts URL to start building the library."
+            action={{ label: "Add font", onClick: () => setAdding(true) }}
+          />
+        ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl">
           {fonts.map((font) => (
             <div key={font.id} className={`p-5 rounded-xl2 border transition ${font.is_active ? "border-primary-200/60 dark:border-stone-800 bg-white dark:bg-stone-900" : "border-stone-200/30 dark:border-stone-800/50 opacity-50"}`}>
               <div className="flex items-start justify-between mb-3">
                 <Type className="w-5 h-5 text-primary-500" />
-                <div className="flex items-center gap-1">
-                  <button onClick={() => toggleActive(font)} className={`w-9 h-5 rounded-full transition relative ${font.is_active ? "bg-primary-600" : "bg-stone-300 dark:bg-stone-700"}`}>
-                    <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition ${font.is_active ? "left-4" : "left-0.5"}`} />
-                  </button>
-                  <button onClick={() => removeFont(font.id)} className="text-stone-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                <div className="flex items-center gap-2">
+                  <Toggle
+                    label="Active"
+                    id={`font-active-${font.id}`}
+                    checked={font.is_active}
+                    onChange={() => toggleActive(font)}
+                  />
+                  <Tooltip content="Delete font">
+                    <Button size="xs" variant="danger" onClick={() => removeFont(font)} aria-label={`Delete font ${font.name}`}>
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </Tooltip>
                 </div>
               </div>
               <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-1">{font.name}</h3>
-              <code className="text-[10px] font-mono text-stone-400 block mb-3 truncate">{font.family}</code>
+              <code className="text-xs font-mono text-stone-400 dark:text-stone-500 block mb-3 truncate">{font.family}</code>
               <p className="text-2xl mb-2" style={{ fontFamily: font.family }}>Aa Bb Cc 123</p>
               <p className="text-sm font-serif" style={{ fontFamily: font.family }}>The quick brown fox</p>
-              {font.url && <p className="text-[10px] text-stone-400 mt-2 flex items-center gap-1"><LinkIcon className="w-3 h-3" /> Google Fonts</p>}
+              {font.url && <p className="text-xs text-stone-400 dark:text-stone-500 mt-2 flex items-center gap-1"><LinkIcon className="w-3 h-3" /> Google Fonts</p>}
             </div>
           ))}
         </div>
+        )}
       </div>
 
-      {adding && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center px-4" onClick={() => setAdding(false)}>
-          <div className="absolute inset-0 bg-stone-950/40 backdrop-blur-sm" />
-          <div className="relative w-full max-w-md bg-white dark:bg-stone-900 rounded-2xl shadow-2xl border border-stone-200/60 dark:border-stone-700 p-6" onClick={(e) => e.stopPropagation()}>
-            <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-4">Add font</h2>
-            <div className="space-y-3">
-              <div><label className="block text-xs font-medium text-stone-500 mb-1">Name</label><input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Inter" className="w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary-500" autoFocus /></div>
-              <div><label className="block text-xs font-medium text-stone-500 mb-1">CSS font-family</label><input type="text" value={newFamily} onChange={(e) => setNewFamily(e.target.value)} placeholder='"Inter", sans-serif' className="w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary-500 font-mono" /></div>
-              <div><label className="block text-xs font-medium text-stone-500 mb-1">Google Fonts URL (optional)</label><input type="url" value={newUrl} onChange={(e) => setNewUrl(e.target.value)} placeholder="https://fonts.googleapis.com/css2?family=..." className="w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary-500" /></div>
-            </div>
-            <div className="flex justify-end gap-2 mt-5">
-              <button onClick={() => setAdding(false)} className="px-3 py-2 text-xs font-medium rounded-lg text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800">Cancel</button>
-              <button onClick={addFont} disabled={!newName.trim() || !newFamily.trim()} className="px-4 py-2 text-xs font-semibold rounded-lg bg-primary-600 hover:bg-primary-700 text-cream disabled:opacity-50">Add</button>
-            </div>
-          </div>
+      <Modal
+        open={adding}
+        onClose={() => setAdding(false)}
+        title="Add font"
+        footer={
+          <>
+            <Button size="xs" variant="ghost" onClick={() => setAdding(false)}>Cancel</Button>
+            <Button size="xs" variant="primary" onClick={addFont} disabled={!newName.trim() || !newFamily.trim()}>Add</Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <Input label="Name" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Inter" />
+          <Input label="CSS font-family" value={newFamily} onChange={(e) => setNewFamily(e.target.value)} placeholder='"Inter", sans-serif' className="font-mono" />
+          <Input label="Google Fonts URL (optional)" type="url" value={newUrl} onChange={(e) => setNewUrl(e.target.value)} placeholder="https://fonts.googleapis.com/css2?family=..." />
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

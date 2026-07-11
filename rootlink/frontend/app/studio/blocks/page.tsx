@@ -14,13 +14,16 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Trash2, ChevronUp, ChevronDown, Eye, Loader2, ExternalLink } from "lucide-react";
+import { Plus, Trash2, ChevronUp, ChevronDown, Eye, ExternalLink } from "lucide-react";
 import { useToast } from "@/lib/toast-context";
 import { api } from "@/lib/api";
 import { BLOCK_REGISTRY, getBlockType, defaultPropsFor } from "@/lib/block-registry";
 import { BlockRenderer, type BlockSectionData } from "@/components/blocks";
 import { useAuth } from "@/lib/auth-context";
+import { Button, Input, Textarea, Tooltip, Modal } from "@/components/ui";
+import { ListSkeleton, CardSkeleton, TextSkeleton } from "@/components/ui/LoadingSkeleton";
 import { ResizableSplit } from "@/components/ui/ResizableSplit";
+import { LoadError } from "@/components/studio/LoadError";
 
 interface BlockPageData {
   id: number;
@@ -36,6 +39,7 @@ export default function BlocksPage() {
   const [pages, setPages] = useState<BlockPageData[]>([]);
   const [selectedPageId, setSelectedPageId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [editingSectionId, setEditingSectionId] = useState<number | null>(null);
   const [creatingPage, setCreatingPage] = useState(false);
   const [newPageSlug, setNewPageSlug] = useState("");
@@ -45,11 +49,12 @@ export default function BlocksPage() {
     try {
       const data = await api.blocks.adminListPages();
       setPages(data);
+      setLoadError(false);
       if (data.length > 0 && selectedPageId === null) {
         setSelectedPageId(data[0].id);
       }
     } catch {
-      // Non-fatal
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -103,6 +108,7 @@ export default function BlocksPage() {
 
   const moveSection = async (sectionId: number, direction: "up" | "down") => {
     if (!selectedPage) return;
+    const pageId = selectedPage.id;
     const sections = [...selectedPage.sections].sort((a, b) => a.order - b.order);
     const idx = sections.findIndex((s) => s.id === sectionId);
     if (idx < 0) return;
@@ -110,14 +116,33 @@ export default function BlocksPage() {
     if (swapIdx < 0 || swapIdx >= sections.length) return;
     const a = sections[idx];
     const b = sections[swapIdx];
-    await Promise.all([
-      api.blocks.updateSection(a.id, { order: b.order }),
-      api.blocks.updateSection(b.id, { order: a.order }),
-    ]);
-    await fetchPages();
+    // Optimistic: swap the two sections' orders in local state immediately.
+    // The same swap applied twice is a no-op, so it doubles as the revert.
+    const swapOrders = (prev: BlockPageData[]) =>
+      prev.map((p) =>
+        p.id !== pageId
+          ? p
+          : {
+              ...p,
+              sections: p.sections.map((s) =>
+                s.id === a.id ? { ...s, order: b.order } : s.id === b.id ? { ...s, order: a.order } : s
+              ),
+            }
+      );
+    setPages(swapOrders);
+    try {
+      await Promise.all([
+        api.blocks.updateSection(a.id, { order: b.order }),
+        api.blocks.updateSection(b.id, { order: a.order }),
+      ]);
+    } catch (e: any) {
+      setPages(swapOrders); // revert the optimistic swap
+      addToast("error", e?.message || "Failed to reorder section");
+    }
   };
 
   const deleteSection = async (sectionId: number) => {
+    if (!window.confirm("Delete this section? This cannot be undone.")) return;
     try {
       await api.blocks.deleteSection(sectionId);
       await fetchPages();
@@ -139,8 +164,27 @@ export default function BlocksPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full min-h-[60vh]">
-        <Loader2 className="w-5 h-5 animate-spin text-stone-400" />
+      <div className="flex h-full min-h-[60vh]">
+        <div className="hidden lg:block w-64 shrink-0 border-r border-primary-200/40 dark:border-stone-800 p-3">
+          <ListSkeleton rows={7} />
+        </div>
+        <div className="flex-1 p-4 lg:p-6">
+          <div className="max-w-4xl mx-auto">
+            <TextSkeleton lines={1} className="max-w-xs mb-6" />
+            <div className="space-y-4">
+              <CardSkeleton />
+              <CardSkeleton />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="p-6 max-w-xl">
+        <LoadError onRetry={fetchPages} />
       </div>
     );
   }
@@ -157,17 +201,14 @@ export default function BlocksPage() {
             Compose pages from reusable blocks — sections, elements, layout
           </p>
         </div>
-        <button
-          onClick={() => setCreatingPage(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-primary-600 hover:bg-primary-700 text-cream transition"
-        >
+        <Button size="xs" onClick={() => setCreatingPage(true)}>
           <Plus className="w-3.5 h-3.5" /> New page
-        </button>
+        </Button>
       </div>
 
       {/* Mobile: page list + block palette (stacked) */}
       <div className="lg:hidden shrink-0 border-b border-primary-200/40 dark:border-stone-800 p-3 max-h-[40vh] overflow-y-auto">
-        <p className="px-1 pb-2 text-[10px] uppercase tracking-wider text-stone-400 font-medium">Pages</p>
+        <p className="px-1 pb-2 text-xs uppercase tracking-wider text-stone-400 font-medium">Pages</p>
         <div className="space-y-1 mb-4">
           {pages.map((page) => (
             <button
@@ -180,13 +221,13 @@ export default function BlocksPage() {
               }`}
             >
               <span className="truncate">{page.label}</span>
-              <span className={`text-[10px] ${selectedPageId === page.id ? "text-cream/60" : page.is_published ? "text-emerald-500" : "text-stone-400"}`}>
+              <span className={`text-xs ${selectedPageId === page.id ? "text-cream/60" : page.is_published ? "text-emerald-500" : "text-stone-400"}`}>
                 {page.is_published ? "●" : "○"}
               </span>
             </button>
           ))}
         </div>
-        <p className="px-1 pt-2 pb-2 text-[10px] uppercase tracking-wider text-stone-400 font-medium">Add block</p>
+        <p className="px-1 pt-2 pb-2 text-xs uppercase tracking-wider text-stone-400 font-medium">Add block</p>
         <div className="space-y-1">
           {BLOCK_REGISTRY.map((block) => (
             <button
@@ -197,7 +238,7 @@ export default function BlocksPage() {
             >
               <Plus className="w-3.5 h-3.5 shrink-0 text-primary-500" />
               <span>{block.label}</span>
-              <span className="ml-auto text-[9px] uppercase text-stone-400">{block.category}</span>
+              <span className="ml-auto text-xs uppercase text-stone-400">{block.category}</span>
             </button>
           ))}
         </div>
@@ -212,7 +253,7 @@ export default function BlocksPage() {
         left={
           <div className="h-full border-r border-primary-200/40 dark:border-stone-800 p-3 overflow-y-auto">
             {/* Page list */}
-            <p className="px-1 pt-1 pb-2 text-[10px] uppercase tracking-wider text-stone-400 font-medium">
+            <p className="px-1 pt-1 pb-2 text-xs uppercase tracking-wider text-stone-400 font-medium">
               Pages
             </p>
             <div className="space-y-1 mb-4">
@@ -227,7 +268,7 @@ export default function BlocksPage() {
                   }`}
                 >
                   <span className="truncate">{page.label}</span>
-                  <span className={`text-[10px] ${selectedPageId === page.id ? "text-cream/60" : page.is_published ? "text-emerald-500" : "text-stone-400"}`}>
+              <span className={`text-xs ${selectedPageId === page.id ? "text-cream/60" : page.is_published ? "text-emerald-500" : "text-stone-400"}`}>
                     {page.is_published ? "●" : "○"}
                   </span>
                 </button>
@@ -238,7 +279,7 @@ export default function BlocksPage() {
             </div>
 
             {/* Block palette */}
-            <p className="px-1 pt-2 pb-2 text-[10px] uppercase tracking-wider text-stone-400 font-medium">
+            <p className="px-1 pt-2 pb-2 text-xs uppercase tracking-wider text-stone-400 font-medium">
               Add block
             </p>
             <div className="space-y-1">
@@ -251,7 +292,7 @@ export default function BlocksPage() {
                 >
                   <Plus className="w-3.5 h-3.5 shrink-0 text-primary-500" />
                   <span>{block.label}</span>
-                  <span className="ml-auto text-[9px] uppercase text-stone-400">{block.category}</span>
+                  <span className="ml-auto text-xs uppercase text-stone-400">{block.category}</span>
                 </button>
               ))}
             </div>
@@ -277,16 +318,13 @@ export default function BlocksPage() {
                   >
                     <ExternalLink className="w-3.5 h-3.5" /> View
                   </a>
-                  <button
+                  <Button
+                    size="xs"
+                    variant={selectedPage.is_published ? "secondary" : "primary"}
                     onClick={() => togglePublish(selectedPage)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition ${
-                      selectedPage.is_published
-                        ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                        : "bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300"
-                    }`}
                   >
                     {selectedPage.is_published ? "Published" : "Publish"}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -315,35 +353,42 @@ export default function BlocksPage() {
                               {blockType?.label || section.block_type}
                             </span>
                             <div className="flex items-center gap-1">
-                              <button
-                                onClick={() => moveSection(section.id, "up")}
-                                disabled={idx === 0}
-                                className="p-1 rounded text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 disabled:opacity-30"
-                                title="Move up"
-                              >
-                                <ChevronUp className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => moveSection(section.id, "down")}
-                                disabled={idx === arr.length - 1}
-                                className="p-1 rounded text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 disabled:opacity-30"
-                                title="Move down"
-                              >
-                                <ChevronDown className="w-3.5 h-3.5" />
-                              </button>
-                              <button
+                              <Tooltip content="Move up">
+                                <button
+                                  onClick={() => moveSection(section.id, "up")}
+                                  disabled={idx === 0}
+                                  aria-label="Move section up"
+                                  className="p-1 rounded text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 disabled:opacity-30"
+                                >
+                                  <ChevronUp className="w-3.5 h-3.5" />
+                                </button>
+                              </Tooltip>
+                              <Tooltip content="Move down">
+                                <button
+                                  onClick={() => moveSection(section.id, "down")}
+                                  disabled={idx === arr.length - 1}
+                                  aria-label="Move section down"
+                                  className="p-1 rounded text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 disabled:opacity-30"
+                                >
+                                  <ChevronDown className="w-3.5 h-3.5" />
+                                </button>
+                              </Tooltip>
+                              <Button
+                                size="xs"
+                                variant="ghost"
                                 onClick={() => setEditingSectionId(isEditing ? null : section.id)}
-                                className="px-2 py-1 text-xs font-medium rounded text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-950/30"
                               >
                                 {isEditing ? "Done" : "Edit"}
-                              </button>
-                              <button
-                                onClick={() => deleteSection(section.id)}
-                                className="p-1 rounded text-stone-400 hover:text-red-500"
-                                title="Delete section"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                              </Button>
+                              <Tooltip content="Delete section">
+                                <button
+                                  onClick={() => deleteSection(section.id)}
+                                  aria-label="Delete section"
+                                  className="p-1 rounded text-stone-400 hover:text-red-500"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </Tooltip>
                             </div>
                           </div>
 
@@ -379,66 +424,57 @@ export default function BlocksPage() {
       />
 
       {/* Create page modal */}
-      {creatingPage && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center px-4"
-          onClick={() => setCreatingPage(false)}
-        >
-          <div className="absolute inset-0 bg-stone-950/40 backdrop-blur-sm" />
-          <div
-            className="relative w-full max-w-md bg-white dark:bg-stone-900 rounded-2xl shadow-2xl border border-stone-200/60 dark:border-stone-700 p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-4">
-              New page
-            </h2>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1.5">
-                  Label
-                </label>
-                <input
+      <Modal
+        open={creatingPage}
+        onClose={() => setCreatingPage(false)}
+        title="New page"
+        footer={
+          <>
+            <Button size="xs" variant="ghost" onClick={() => setCreatingPage(false)}>
+              Cancel
+            </Button>
+            <Button
+              size="xs"
+              onClick={createPage}
+              disabled={!newPageSlug.trim() || !newPageLabel.trim()}
+            >
+              Create
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <Input
+            label="Label"
+            id="new-page-label"
+            type="text"
+            value={newPageLabel}
+            onChange={(e) => setNewPageLabel(e.target.value)}
+            placeholder="My landing page"
+          />
+          <div>
+            <label
+              htmlFor="new-page-slug"
+              className="block text-sm font-display font-medium text-stone-700 dark:text-stone-300 tracking-wide mb-1.5"
+            >
+              Slug (URL)
+            </label>
+            <div className="flex items-center gap-1">
+              <span className="text-sm text-stone-400 font-mono">/p/</span>
+              <div className="flex-1">
+                <Input
+                  id="new-page-slug"
                   type="text"
-                  value={newPageLabel}
-                  onChange={(e) => setNewPageLabel(e.target.value)}
-                  placeholder="My landing page"
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                  value={newPageSlug}
+                  onChange={(e) => setNewPageSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))}
+                  placeholder="my-landing"
+                  className="font-mono"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1.5">
-                  Slug (URL)
-                </label>
-                <div className="flex items-center gap-1">
-                  <span className="text-sm text-stone-400 font-mono">/p/</span>
-                  <input
-                    type="text"
-                    value={newPageSlug}
-                    onChange={(e) => setNewPageSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))}
-                    placeholder="my-landing"
-                    className="flex-1 px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary-500 font-mono"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-5">
-              <button
-                onClick={() => setCreatingPage(false)}
-                className="px-3 py-2 text-xs font-medium rounded-lg text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={createPage}
-                disabled={!newPageSlug.trim() || !newPageLabel.trim()}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-primary-600 hover:bg-primary-700 text-cream disabled:opacity-50"
-              >
-                Create
-              </button>
             </div>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
@@ -460,33 +496,30 @@ function SectionEditor({
     <div className="p-4 space-y-3">
       {blockType.fields.map((field) => (
         <div key={field.name}>
-          <label className="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1.5">
-            {field.label}
-          </label>
           {field.type === "textarea" ? (
-            <textarea
+            <Textarea
+              label={field.label}
+              id={`block-field-${field.name}`}
               value={props[field.name] || ""}
               onChange={(e) => setProps((prev) => ({ ...prev, [field.name]: e.target.value }))}
               rows={3}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary-500 font-serif resize-y"
+              className="font-serif"
             />
           ) : (
-            <input
+            <Input
+              label={field.label}
+              id={`block-field-${field.name}`}
               type="text"
               value={props[field.name] || ""}
               onChange={(e) => setProps((prev) => ({ ...prev, [field.name]: e.target.value }))}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary-500"
             />
           )}
         </div>
       ))}
       <div className="flex justify-end pt-2">
-        <button
-          onClick={() => onSave(props)}
-          className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-primary-600 hover:bg-primary-700 text-cream"
-        >
+        <Button size="xs" onClick={() => onSave(props)}>
           Save section
-        </button>
+        </Button>
       </div>
     </div>
   );

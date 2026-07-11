@@ -33,6 +33,7 @@ A **visual site editor** that lives on top of the actual live RootLink site, plu
 8. **Block composition is dashboard-only.** Add/reorder/delete blocks happens in the dashboard's page builder. The overlay is for customizing content/style of existing elements, not structural changes.
 9. **Dynamic pages: edit the template.** Dynamic pages (article detail, group detail) have a template you can edit — changes apply to all instances of that page type. Individual record content is not editable here.
 10. **Multi-theme.** Multiple named themes (Default, Christmas, Halloween). Each is a full palette swap. Publishing a theme activates it. Overrides persist across theme changes (they reference token names, and tokens now resolve to the new theme's values).
+11. **Unified UX contract (2026-07-11).** All studio + overlay UI follows the `frontend-ui-guardian` skill's "Back-Office / Tool UI" chapter and its implemented vocabulary (kit Modal/Button/Input/Toggle/Tooltip/EmptyState/skeletons, `LoadError` + retry on every fetch, `useDirtyGuard` on every dirty state, confirmations on every destructive action, 12px type floor, the keyboard contract incl. Esc-yields-to-dialogs). Established by the UX hardening pass (`discovery/assessment/content-studio-ux-review.md`, P0–P2); the checklist lives in `platform-coherence` → `references/common-changes.md` → "Add or modify Studio/back-office UI". No new studio feature ships outside this contract.
 
 ---
 

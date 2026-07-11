@@ -541,6 +541,10 @@ export function injectSelectionAgent() {
   // ── Keyboard navigation ─────────────────────────────────
   document.addEventListener("keydown", (e: KeyboardEvent) => {
     if (e.key === "Escape") {
+      // Yield to any open dialog on the page (command palette, modals):
+      // its own Esc handler must close it — the agent only navigates
+      // selection when nothing above it wants the key.
+      if (document.querySelector('[role="dialog"], [data-rl-dialog]')) return;
       if (editing) {
         exitTextEdit();
       } else if (selected) {
@@ -555,8 +559,13 @@ export function injectSelectionAgent() {
     }
   }, true);
 
-  // ── Undo stack (before-save undo) ───────────────────────
+  // ── Undo/redo stacks (before-save undo) ─────────────────
   const undoStack: { el: HTMLElement; property: string; oldValue: string }[] = [];
+  // What undo just reverted, so redo can re-apply it: the inline CSS that had
+  // been applied ("" = the property was absent, e.g. undoing a reset) plus the
+  // token NAME recorded in the data-rl-*-token attr (null = no token attr).
+  // Any NEW applyStyle/resetProperty clears this (standard editor semantics).
+  const redoStack: { el: HTMLElement; property: string; appliedValue: string; tokenValue: string | null; oldValue: string }[] = [];
 
   /** Apply a theme value. `value` is the token NAME; `appliedValue` is the CSS
    *  the browser sees (var(...) for colors/sizes, a font-family string for
@@ -580,6 +589,7 @@ export function injectSelectionAgent() {
     // reset can revert to the Tailwind class default.
     const attr = tokenAttrFor(property);
     if (attr) el.setAttribute(attr, value);
+    redoStack.length = 0; // a new change invalidates the redo history
     selectElement(selected, textTarget);
   }
 
@@ -598,12 +608,24 @@ export function injectSelectionAgent() {
     el.style.removeProperty(property);
     const attr = tokenAttrFor(property);
     if (attr) el.removeAttribute(attr);
+    redoStack.length = 0; // a new change invalidates the redo history
     selectElement(selected, textTarget);
   }
 
   function undo() {
     const entry = undoStack.pop();
     if (!entry) return;
+    // Capture what's being undone so redo can re-apply it. Note: like undo
+    // itself, this only touches the DOM — the provider's draftChanges list is
+    // NOT reconciled (existing behavior, mirrored exactly).
+    const attr = tokenAttrFor(entry.property);
+    redoStack.push({
+      el: entry.el,
+      property: entry.property,
+      appliedValue: entry.el.style.getPropertyValue(entry.property),
+      tokenValue: attr && entry.el.hasAttribute(attr) ? entry.el.getAttribute(attr) : null,
+      oldValue: entry.oldValue,
+    });
     if (entry.oldValue) {
       entry.el.style.setProperty(entry.property, entry.oldValue);
     } else {
@@ -612,18 +634,51 @@ export function injectSelectionAgent() {
     if (selected === entry.el) selectElement(selected);
   }
 
+  function redo() {
+    const entry = redoStack.pop();
+    if (!entry) return;
+    if (entry.appliedValue) {
+      entry.el.style.setProperty(entry.property, entry.appliedValue);
+    } else {
+      entry.el.style.removeProperty(entry.property); // redo of a reset
+    }
+    const attr = tokenAttrFor(entry.property);
+    if (attr) {
+      if (entry.tokenValue !== null) entry.el.setAttribute(attr, entry.tokenValue);
+      else entry.el.removeAttribute(attr);
+    }
+    // Re-arm undo for the re-applied change (same original oldValue).
+    undoStack.push({ el: entry.el, property: entry.property, oldValue: entry.oldValue });
+    if (selected === entry.el) selectElement(selected);
+  }
+
   // ── Listen for messages from the parent (inspector) ────
   window.addEventListener("message", (e: MessageEvent) => {
     if (!e.data || typeof e.data !== "object") return;
     switch (e.data.type) {
       case "overlay:apply-style":
-        applyStyle(e.data.property, e.data.value, e.data.appliedValue);
+        if (e.data.path) {
+          // Path-targeted apply (resume-draft): re-apply a saved change to a
+          // specific element without needing a selection. Doesn't touch the
+          // undo/redo stacks — these are saved changes, not new edits.
+          const target = document.querySelector(e.data.path) as HTMLElement | null;
+          if (target) {
+            target.style.setProperty(e.data.property, e.data.appliedValue ?? e.data.value);
+            const attr = tokenAttrFor(e.data.property);
+            if (attr) target.setAttribute(attr, e.data.value);
+          }
+        } else {
+          applyStyle(e.data.property, e.data.value, e.data.appliedValue);
+        }
         break;
       case "overlay:reset-property":
         resetProperty(e.data.property);
         break;
       case "overlay:undo":
         undo();
+        break;
+      case "overlay:redo":
+        redo();
         break;
       case "overlay:exit-edit":
         exitTextEdit();
@@ -640,9 +695,26 @@ export function injectSelectionAgent() {
     }
   });
 
-  // ── Keyboard: Ctrl+Z for undo ───────────────────────────
+  // ── Keyboard: Ctrl+Z undo / Ctrl+Shift+Z, Ctrl+Y redo / Ctrl+S save ──
   document.addEventListener("keydown", (e: KeyboardEvent) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    const key = e.key.toLowerCase();
+    if (key === "s") {
+      // Block the browser save dialog; ask the parent to save the draft.
+      e.preventDefault();
+      e.stopPropagation();
+      parent.postMessage({ type: "overlay:request-save" }, "*");
+      return;
+    }
+    if ((key === "z" && e.shiftKey) || key === "y") {
+      // While editing text, let the browser redo text edits natively.
+      if (editing) return;
+      redo();
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    if (key === "z") {
       // While editing text, let the browser undo text edits natively.
       if (editing) return;
       undo();
@@ -652,6 +724,9 @@ export function injectSelectionAgent() {
   }, true);
 
   createOverlayElements();
+  // Tell the parent the agent is live — the provider uses this to offer
+  // resuming a previously saved draft for the current page.
+  parent.postMessage({ type: "overlay:agent-ready" }, "*");
   console.log("[Content Studio] Selection agent active");
 }
 

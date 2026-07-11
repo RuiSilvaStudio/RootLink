@@ -14,6 +14,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { ExternalLink, AlertCircle, X } from "lucide-react";
+import { Tooltip } from "@/components/ui";
 import { ComponentPreview } from "../catalog/ComponentPreview";
 import {
   COMPONENT_GROUPS,
@@ -82,15 +83,17 @@ export default function VisualAuditPage() {
             return (
               <div key={type} className="rounded-xl border border-stone-200/60 dark:border-stone-800 bg-white dark:bg-stone-900/50 overflow-hidden flex flex-col">
                 {/* Preview — clickable */}
-                <button
-                  onClick={() => setModalType(type)}
-                  className="w-full border-b border-stone-200/40 dark:border-stone-800 cursor-zoom-in hover:bg-stone-50 dark:hover:bg-stone-900/70 transition"
-                  title="Click to view full size"
-                >
-                  <div className="[&>div:first-child]:mb-0 [&>div:first-child]:rounded-none [&>div:first-child]:border-0 [&>div:first-child]:h-40">
-                    <ComponentPreview type={type} />
-                  </div>
-                </button>
+                <Tooltip content="Click to view full size">
+                  <button
+                    onClick={() => setModalType(type)}
+                    aria-label={`View ${type} full size`}
+                    className="w-full border-b border-stone-200/40 dark:border-stone-800 cursor-zoom-in hover:bg-stone-50 dark:hover:bg-stone-900/70 transition"
+                  >
+                    <div className="[&>div:first-child]:mb-0 [&>div:first-child]:rounded-none [&>div:first-child]:border-0 [&>div:first-child]:h-40">
+                      <ComponentPreview type={type} />
+                    </div>
+                  </button>
+                </Tooltip>
 
                 {/* Info */}
                 <div className="p-3 flex-1 flex flex-col gap-2">
@@ -98,21 +101,21 @@ export default function VisualAuditPage() {
                     <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
                     <span className="text-sm font-medium text-stone-800 dark:text-stone-100 truncate">{type}</span>
                     {isUnused && (
-                      <span className="flex items-center gap-1 text-[10px] text-amber-600 bg-amber-100/60 dark:bg-amber-950/30 px-1.5 py-0.5 rounded-full">
+                      <span className="flex items-center gap-1 text-xs text-amber-600 bg-amber-100/60 dark:bg-amber-950/30 px-1.5 py-0.5 rounded-full">
                         <AlertCircle className="w-3 h-3" /> unused
                       </span>
                     )}
                   </div>
-                  {group && <div className="text-[10px] text-stone-400 -mt-1">{group}</div>}
+                  {group && <div className="text-xs text-stone-400 -mt-1">{group}</div>}
                   <div className="flex flex-wrap gap-1.5 mt-auto pt-1">
                     {isUnused ? (
-                      <span className="text-[10px] text-stone-400 italic">Not rendered on any page</span>
+                      <span className="text-xs text-stone-400 italic">Not rendered on any page</span>
                     ) : isSiteWide ? (
-                      <span className="text-[10px] text-stone-500 dark:text-stone-400">Used on most pages</span>
+                      <span className="text-xs text-stone-500 dark:text-stone-400">Used on most pages</span>
                     ) : routes && Array.isArray(routes) ? (
                       routes.map((r) => (
                         <a key={r.href} href={r.href} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-[10px] text-primary-600 dark:text-primary-300 hover:underline">
+                          className="flex items-center gap-1 text-xs text-primary-600 dark:text-primary-300 hover:underline">
                           {r.label} <ExternalLink className="w-2.5 h-2.5" />
                         </a>
                       ))
@@ -130,13 +133,20 @@ export default function VisualAuditPage() {
         <div className="fixed inset-0 z-[200] flex items-center justify-center px-4" onClick={close}>
           <div className="absolute inset-0 bg-stone-950/60 backdrop-blur-sm" />
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${modalType} — full-size preview`}
             className="relative w-full max-w-3xl max-h-[85vh] overflow-y-auto bg-white dark:bg-stone-900 rounded-2xl shadow-2xl border border-stone-200/60 dark:border-stone-700 p-6"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close */}
-            <button onClick={close} className="absolute top-4 right-4 p-1.5 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition" title="Close (Esc)">
-              <X className="w-4 h-4" />
-            </button>
+            <div className="absolute top-4 right-4">
+              <Tooltip content="Close (Esc)" side="left">
+                <button onClick={close} aria-label="Close preview" className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition">
+                  <X className="w-4 h-4" />
+                </button>
+              </Tooltip>
+            </div>
 
             {/* Large preview at 1:1 scale */}
             <ComponentPreview type={modalType} large />
@@ -147,7 +157,7 @@ export default function VisualAuditPage() {
               <h2 className="font-display text-lg font-semibold text-stone-800 dark:text-stone-100">{modalType}</h2>
               {modalGroup && <span className="text-xs text-stone-400">{modalGroup}</span>}
               {modalIsUnused && (
-                <span className="flex items-center gap-1 text-[10px] text-amber-600 bg-amber-100/60 dark:bg-amber-950/30 px-1.5 py-0.5 rounded-full">
+                <span className="flex items-center gap-1 text-xs text-amber-600 bg-amber-100/60 dark:bg-amber-950/30 px-1.5 py-0.5 rounded-full">
                   <AlertCircle className="w-3 h-3" /> unused
                 </span>
               )}

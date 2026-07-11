@@ -1,7 +1,7 @@
 # Content Studio — Implementation Status
 
 > **Spec:** [`CONTENT_STUDIO.md`](./CONTENT_STUDIO.md)
-> **Last updated:** 2026-07-09 (theme-token model rebuild — select / edit / panel)
+> **Last updated:** 2026-07-11 (UX hardening — P2 polish: keyboard, resume-draft, skeletons)
 
 ---
 
@@ -202,6 +202,133 @@ Built the dashboard CMS with form editors, theming panels, block canvas, and mig
 - ✅ **Stale-override warning in overlay**: inspector fetches page overrides, shows warning bar when selected element has stale overrides.
 - ✅ Studio sidebar updated with Overrides section.
 - ✅ Playwright-verified: report loads, filter tabs, override list, sidebar link, overlay inspector works with override awareness. tsc + lint clean.
+
+---
+
+## UX hardening — P0 safety (2026-07-11) ✅
+
+From the full UX review (`discovery/assessment/content-studio-ux-review.md` — benchmark, gap
+analysis, risk assessment; execution order: Skills → P0 → P1 → P2, user-reviewed per step).
+
+**Skills fixes (same session, before code):** corrected stale agent-skill content that could
+mislead future sessions — `design-patterns.md` (fictional forest/sand palette → real
+`globals.css` tokens; retired Content-UI-Editor wiring → overlay/`<Text k>` pattern),
+`frontend-ui-guardian` (v4 reality, real type scale, new "Back-Office / Tool UI" chapter),
+AGENTS.md (brand-override note for `frontend-design`, retired-editor cleanup),
+`tailwind-patterns` (RootLink overrides: hex not oklch, real fonts, single `--spacing`),
+`common-changes.md` (new-page checklist → overlay convention).
+
+**P0 safety changes:**
+- **Overlay exit guard**: `toggle()` confirms before deactivating with unsaved draft changes
+  (`overlay-provider.tsx`); every deactivation path covered except forced ineligibility (which
+  keeps the draft in memory). `useDirtyGuard` wired for refresh/tab-close + in-app links.
+- **Overlay Discard confirmation** + **editing-locale chip** ("Editing: PT/EN") in the top bar
+  (`overlay-shell.tsx`) — inline text edits commit to `localStorage.rootlink_locale`; the chip
+  makes that visible (indicator only; switcher deferred).
+- **Destructive-action confirmations**: block-section delete, catalog property delete, font
+  delete, copy revert (warns it removes BOTH locales), override revert.
+- **Copy-editor dirty guard**: `/studio/content` uses the shared `useDirtyGuard` — unsaved
+  drafts no longer lost silently on navigation.
+- **Visible error states**: new `components/studio/LoadError.tsx` (inline notice + "Try again");
+  all silent `catch {}` initial-load failures in theming/blocks/catalog/fonts/overrides/content
+  now render it — a dead backend no longer looks like deleted content.
+
+Verified: tsc + lint clean (build not run — dev server live on :3001, LESSONS.md #2).
+
+---
+
+## UX hardening — P1 consistency (2026-07-11) ✅
+
+The studio now uses the shared design-system kit instead of a parallel inline mini-design-system.
+
+**Kit additions** (`components/ui/`):
+- **`Modal.tsx` (new)** — shared accessible dialog: portal to body (LESSONS #16), Esc-close,
+  focus trap, `role="dialog"`/`aria-modal`/`aria-labelledby`, focus restore to opener,
+  backdrop click, optional footer. Replaces all 3 bespoke studio modals.
+- **`Button`** gained `size="xs"` (studio-density, additive). **`Toggle`** gained dark-mode
+  variants (was light-only).
+
+**Studio pages** (theming, fonts, blocks, catalog, content, overrides, audit, overview, shell):
+- All 3 bespoke modals → kit `<Modal>`; raw buttons → `<Button size="xs">` (danger for
+  destructive); raw fields → kit `<Input>`/`<Textarea>`; fonts' hand-rolled switch → kit
+  `<Toggle>`. Segmented tabs/selection rows deliberately kept (with `aria-pressed`/`aria-current`).
+- All native `title=` → kit `<Tooltip>` (hover+focus, touch/keyboard accessible); icon-only
+  buttons got `aria-label`s. 12px type floor enforced (sub-12px arbitrary sizes → `text-xs`;
+  exception: `catalog/ComponentPreview.tsx` miniature previews, by design).
+- **Theming debounce**: token edits update local state instantly, API save debounced 400ms
+  per token (was one API call per drag tick); post-save refetch dropped so in-flight responses
+  can't clobber newer edits. New empty states: empty token category, empty font library
+  (kit `EmptyState`), zero namespace-search results.
+- Overview lists all 7 live modules (was 3); stale "as they come online" copy removed.
+  StudioShell: `aria-current="page"` on active nav, Esc closes the mobile drawer, dead
+  footer doc link → plain text. Theme-status legend readable (`text-xs`, labeled glyphs).
+
+**Overlay** (inspector-panel, constrained-controls, overlay-shell):
+- 12px floor throughout ("Aa" real-scale specimens exempt — that's the control's purpose);
+  contrast bumps `stone-500/600` → `stone-400` on dark chrome; focus-visible rings; Tooltips +
+  `aria-label`s on icon-only buttons; stale-override banner now links to `/studio/overrides`
+  (new tab — same-tab would kill the edit session). Segmented controls (slider stops, palette
+  swatches, button groups) keep native `title` echoes — they have visible text labels;
+  Tooltip's inline-flex wrapper would break their stretch layouts.
+
+**Kit gaps logged for later** (not blocking): Modal initial focus lands on its X button
+(should prefer content fields); `Tooltip` lacks `className` passthrough (wrapper needed for
+absolutely-positioned children); no dense `Select` size; no icon-only `Button` variant.
+
+Verified: tsc + lint clean after every file (build not run — dev server live, LESSONS.md #2).
+
+---
+
+## UX hardening — P2 polish (2026-07-11) ✅
+
+**Esc / Ctrl+K conflict fix (user-reported):** the selection agent's capture-phase Esc handler
+swallowed Esc unconditionally, so the CommandPalette (Ctrl+K) opened inside the iframe couldn't
+be closed with Esc. The agent now **yields Esc whenever an open dialog exists** in the iframe
+(`[role="dialog"], [data-rl-dialog]`); CommandPalette gained proper dialog semantics
+(`role="dialog"` + `aria-modal` + `data-rl-dialog`) — which also covers any kit `<Modal>` open
+inside the iframe. (LESSONS.md #43.)
+
+**Keyboard:**
+- **Redo** — redo stack in the agent (undo pushes onto it; any new edit clears it); Ctrl+Shift+Z /
+  Ctrl+Y inside the iframe, `overlay:redo` message, Redo button beside Undo in the inspector.
+  Undo/redo are DOM-level (they deliberately don't mutate `draftChanges`, matching existing undo).
+- **Ctrl/Cmd+S** — saves the overlay draft from either side of the iframe boundary
+  (`overlay:request-save` from the agent + parent-side listener); on `/studio/content` it
+  triggers the new **"Save all (N)"** (also a header button; per-key failures stay dirty,
+  summary toast).
+- **Ctrl/Cmd+Shift+E** — enters edit mode (when the floating toggle is visible); shortcut shown
+  in its tooltip.
+- **Arrow-key navigation** in the overlay page-switcher and FontFamilyPicker (listbox semantics,
+  Home/End, Enter, Esc closes just the menu).
+
+**Feedback & drafts:**
+- **Status flash** — emerald "Draft saved" / "Published" / "Draft discarded" chip in the top bar
+  (`role="status"`, auto-clears 2.5s).
+- **Resume saved draft** — the agent posts `overlay:agent-ready`; the provider fetches
+  `api.drafts.get(pageSlug)` and, when a saved draft exists and nothing is unsaved locally,
+  offers an amber bar: "This page has a saved draft with N changes" → Resume (re-applies style
+  changes live via `overlay:apply-style` + `path`; text changes load into the draft but aren't
+  re-applied visually — no set-text message exists yet) / Ignore.
+- **Resizable inspector** — left-edge drag handle (pointer capture, since document-level
+  listeners die over the iframe), 320–560px, persisted to `localStorage["rl-inspector-width"]`,
+  keyboard-resizable (`role="separator"`, arrows ±16px, Enter/dblclick reset 384).
+
+**Studio dashboard:**
+- **Skeleton loading** (kit `LoadingSkeleton` compositions matching each page's layout) replaces
+  the lone spinner on all 6 data pages.
+- **Optimistic section reorder** in the page builder (instant swap, API behind, revert+toast on
+  failure, no refetch flash).
+
+Verified: tsc + lint clean; all `overlay:*` message plumbing confirmed wired end-to-end.
+**P0–P2 of the UX review are now complete** (`discovery/assessment/content-studio-ux-review.md`).
+**The unified UX is codified as a binding contract for all new development** (2026-07-11):
+AGENTS.md → "Unified UX contract"; `frontend-ui-guardian` skill → "Back-Office / Tool UI"
+(implemented-vocabulary table + keyboard contract); `platform-coherence` →
+`design-patterns.md` "Content Studio & back-office UI patterns" + `common-changes.md`
+"Add or modify Studio/back-office UI" checklist; spec design principle #11.
+Remaining known gaps (deliberate, small): kit Modal initial-focus preference, Tooltip className
+passthrough, dense Select size, icon-only Button variant, in-overlay locale switcher, set-text
+message for visual draft-text resume.
 
 ---
 

@@ -14,6 +14,7 @@ const variants = {
 };
 
 const sizes = {
+  xs: "px-3 py-1.5 text-xs rounded-lg",
   sm: "px-4 py-1.5 text-sm rounded-lg",
   md: "px-6 py-2.5 text-base rounded-xl2",
   lg: "px-8 py-3.5 text-lg rounded-xl2",

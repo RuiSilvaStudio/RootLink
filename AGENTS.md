@@ -20,16 +20,16 @@ gotcha bites, add it there in the same change. The content-platform work is docu
 **The Content Studio** \(the unified CMS-like tool managing RootLink's UI theming + content/copy\)
 is documented in `docs/content-studio/` \(spec `CONTENT_STUDIO.md`, status
 `IMPLEMENTATION_STATUS.md`\). **Before any Content Studio work, read the spec first** — it is the
-north-star contract and anti-drift mechanism. The inline Content UI Editor is being retired into
-the studio across Phases 1–2; until then, see below for the legacy inline-editor wiring rules.
+north-star contract and anti-drift mechanism.
 
-**The Content UI Editor** \(super\_admin inline text/image/icon editor\) is documented in
-`discovery/mockups/content-ui-editor/briefing-to-build-local.md` \(design + per-phase coverage of
-which pages are wired\). Coverage is added page by page, not automatically. **Whenever you add a
-new frontend page, or new static marketing/header copy to an existing page, ask the user whether
-it should be wired into the Content UI Editor — never assume either way.** See
-`.opencode/skills/platform-coherence/references/design-patterns.md` → "Content UI Editor" for the
-wiring pattern and pitfalls \(click-conflict elements, static-array content\).
+**The old inline Content UI Editor \(`components/editor-mode/`\) is RETIRED** — superseded by the
+Content Studio's visual overlay \(`components/overlay/`\). Never wire new pages into `EditableText`/
+`EditableImage`/`EditableIcon`. Editable copy now uses the `<Text k="copy.key">` convention \(see
+"Editable copy convention" below\). Overlay coverage is added page by page, not automatically.
+**Whenever you add a new frontend page, or new static marketing/header copy to an existing page,
+ask the user whether it should be wired in — never assume either way.** See
+`.opencode/skills/platform-coherence/references/design-patterns.md` → "Content Studio overlay &
+editable copy" for the wiring pattern.
 
 ## UI work — required skills
 
@@ -43,6 +43,15 @@ constitution for RootLink's frontend (Invisible Infrastructure, accessibility,
 community autonomy) and should be treated as authoritative for any design
 decision that conflicts with a generic default.
 
+**Brand override for `frontend-design`:** that skill's calibration list warns against a
+"warm cream background + high-contrast serif display + terracotta accent" as an AI-default
+look. **That combination IS RootLink's established brand** \(cream `#f8f6f2`, Fraunces +
+Source Serif 4, rust terracotta\) — chosen deliberately, not as a default. NEVER "fix" or
+drift away from this identity to seem less templated. Additionally, its "take one aesthetic
+risk" guidance applies only to public marketing surfaces — **never to back-office/tool UI**
+\(Content Studio, admin, dashboards\), where consistency is the design; for those surfaces
+the `frontend-ui-guardian` skill's "Back-Office / Tool UI" chapter is authoritative.
+
 **Always load the `tailwindcss-development` skill before any CSS/styling work.**
 This project uses **Tailwind CSS v4** (CSS-first configuration with `@theme`).
 NEVER use v3 patterns: no `@tailwind base/components/utilities` directives, no
@@ -50,6 +59,20 @@ NEVER use v3 patterns: no `@tailwind base/components/utilities` directives, no
 Use `@import "tailwindcss"` and `@theme { --color-*: #hex; }` instead. Colors
 are stored as hex (readable), and Tailwind v4 handles CSS variables + opacity
 modifiers natively. If you catch yourself writing v3 patterns, stop and use v4.
+
+**Unified UX contract (2026-07-11, binding for ALL new development):** the platform's UX was
+unified in a full hardening pass \(report: `discovery/assessment/content-studio-ux-review.md`\).
+Every new page, component, or feature — front-office and back-office — must follow the
+established patterns instead of re-inventing them: the `frontend-ui-guardian` skill's
+"Back-Office / Tool UI" chapter \(incl. its "implemented vocabulary" table and keyboard
+contract\) is **binding** for studio/admin/dashboard work, and
+`.opencode/skills/platform-coherence/references/design-patterns.md` → "Content Studio &
+back-office UI patterns" lists the concrete components/hooks to reuse \(Modal, LoadError,
+useDirtyGuard, Tooltip, skeletons, confirmations, debounce, optimistic updates, 12px floor\).
+The checklist in `references/common-changes.md` → "Add or modify Studio/back-office UI" must
+be walked for any such change. Never ship a destructive action without a confirm, a dirty
+state without an exit guard, a fetch without loading/error/empty states, or a keyboard
+shortcut without checking the keyboard contract.
 
 **Never make technical decisions without consulting the user.** This includes
 framework choices, data formats, architectural patterns, and dependency

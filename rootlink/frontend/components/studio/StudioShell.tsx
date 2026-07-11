@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/locale-context";
+import { Tooltip } from "@/components/ui";
 import { BrandIcon } from "@/components/ui/BrandIcon";
 
 interface StudioSection {
@@ -63,20 +64,22 @@ function ThemeToggle() {
     setDark(document.documentElement.classList.contains("dark"));
   }, []);
   return (
-    <button
-      onClick={() => {
-        const next = !dark;
-        setDark(next);
-        document.documentElement.classList.toggle("dark", next);
-        try {
-          localStorage.setItem("theme", next ? "dark" : "light");
-        } catch {}
-      }}
-      className="p-2 rounded-lg text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 transition"
-      aria-label="Toggle dark mode"
-    >
-      {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-    </button>
+    <Tooltip content={dark ? "Switch to light mode" : "Switch to dark mode"} side="bottom">
+      <button
+        onClick={() => {
+          const next = !dark;
+          setDark(next);
+          document.documentElement.classList.toggle("dark", next);
+          try {
+            localStorage.setItem("theme", next ? "dark" : "light");
+          } catch {}
+        }}
+        className="p-2 rounded-lg text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 transition"
+        aria-label="Toggle dark mode"
+      >
+        {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+      </button>
+    </Tooltip>
   );
 }
 
@@ -98,7 +101,7 @@ function NavItem({ section, onNavigate }: { section: StudioSection; onNavigate?:
     >
       <Icon className="w-4 h-4 shrink-0" />
       <span className="flex-1">{section.label}</span>
-      {isSoon && <span className="text-[10px] uppercase tracking-wide text-stone-400">{section.note}</span>}
+      {isSoon && <span className="text-xs uppercase tracking-wide text-stone-400">{section.note}</span>}
     </span>
   );
 
@@ -107,7 +110,12 @@ function NavItem({ section, onNavigate }: { section: StudioSection; onNavigate?:
   }
 
   return (
-    <Link href={section.href} onClick={onNavigate} className="block px-1">
+    <Link
+      href={section.href}
+      onClick={onNavigate}
+      aria-current={isActive ? "page" : undefined}
+      className="block px-1"
+    >
       {content}
     </Link>
   );
@@ -130,6 +138,16 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
       router.replace("/auth/sign-in");
     }
   }, [loading, isSuperAdmin, router]);
+
+  // Esc closes the mobile drawer.
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDrawerOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [drawerOpen]);
 
   if (loading || !isSuperAdmin) {
     return (
@@ -176,7 +194,7 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex min-h-0">
         {/* ── Sidebar — desktop docked ────────────────────────── */}
         <aside className="hidden lg:flex flex-col w-60 shrink-0 border-r border-primary-200/40 dark:border-stone-800 p-3 gap-0.5">
-          <p className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wider text-stone-400 font-medium">
+          <p className="px-3 pt-2 pb-1 text-xs uppercase tracking-wider text-stone-400 font-medium">
             Manage
           </p>
           {SECTIONS.map((s) => (
@@ -184,11 +202,9 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
           ))}
 
           <div className="mt-auto p-3">
-            <p className="text-[11px] text-stone-400 leading-relaxed">
+            <p className="text-xs text-stone-400 dark:text-stone-500 leading-relaxed">
               The studio manages RootLink&apos;s UI theming and content.{" "}
-              <Link href="/docs/content-studio/CONTENT_STUDIO.md" className="text-primary-600 dark:text-primary-400 hover:underline">
-                Spec
-              </Link>
+              <span className="font-mono">Spec: docs/content-studio/</span>
             </p>
           </div>
         </aside>
@@ -213,7 +229,7 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <p className="px-3 pb-1 text-[10px] uppercase tracking-wider text-stone-400 font-medium">
+              <p className="px-3 pb-1 text-xs uppercase tracking-wider text-stone-400 font-medium">
                 Manage
               </p>
               {SECTIONS.map((s) => (

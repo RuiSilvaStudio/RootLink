@@ -12,10 +12,13 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, Plus, Trash2, Eye, EyeOff } from "lucide-react";
+import { Plus, Trash2, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/lib/toast-context";
 import { api } from "@/lib/api";
+import { Button, Input, Tooltip } from "@/components/ui";
+import { ListSkeleton, TextSkeleton } from "@/components/ui/LoadingSkeleton";
 import { ResizableSplit } from "@/components/ui/ResizableSplit";
+import { LoadError } from "@/components/studio/LoadError";
 import { ComponentPreview } from "./ComponentPreview";
 import { COMPONENT_GROUPS, GROUP_COLORS } from "../component-config";
 
@@ -38,6 +41,7 @@ export default function ElementCatalogPage() {
   const { addToast } = useToast();
   const [schemas, setSchemas] = useState<Record<string, SchemaRow[]>>({});
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [addingProp, setAddingProp] = useState("");
   const [saving, setSaving] = useState<number | null>(null);
@@ -46,9 +50,10 @@ export default function ElementCatalogPage() {
     try {
       const data = await api.elementSchemas.all();
       setSchemas(data);
+      setLoadError(false);
       const types = Object.keys(data);
       if (types.length > 0 && !selectedType) setSelectedType(types[0]);
-    } catch {} finally { setLoading(false); }
+    } catch { setLoadError(true); } finally { setLoading(false); }
   }, [selectedType]);
 
   useEffect(() => { fetch(); }, [fetch]);
@@ -78,15 +83,32 @@ export default function ElementCatalogPage() {
     finally { setSaving(null); }
   };
 
-  const deleteRow = async (id: number) => {
+  const deleteRow = async (row: SchemaRow) => {
+    if (!window.confirm(`Remove the property "${row.property_name}" from this element type?`)) return;
     try {
-      await api.elementSchemas.remove(id);
+      await api.elementSchemas.remove(row.id);
       await fetch();
       addToast("info", "Property removed");
     } catch (e: any) { addToast("error", e?.message); }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-full min-h-[60vh]"><Loader2 className="w-5 h-5 animate-spin text-stone-400" /></div>;
+  if (loading) {
+    return (
+      <div className="flex h-full min-h-[60vh]">
+        <div className="hidden lg:block w-52 shrink-0 border-r border-primary-200/40 dark:border-stone-800 p-3">
+          <ListSkeleton rows={7} />
+        </div>
+        <div className="flex-1 p-4 lg:p-6">
+          <div className="max-w-3xl">
+            <TextSkeleton lines={1} className="max-w-xs mb-6" />
+            <ListSkeleton rows={5} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) return <div className="p-6 max-w-xl"><LoadError onRetry={fetch} /></div>;
 
   const elementTypes = Object.keys(schemas).sort();
   const currentRows = selectedType ? schemas[selectedType] || [] : [];
@@ -105,7 +127,7 @@ export default function ElementCatalogPage() {
         className="flex-1"
         left={
           <div className="h-full border-r border-primary-200/40 dark:border-stone-800 p-3 overflow-y-auto">
-            <p className="px-1 pb-2 text-[10px] uppercase tracking-wider text-stone-400 font-medium">Types</p>
+            <p className="px-1 pb-2 text-xs uppercase tracking-wider text-stone-400 font-medium">Types</p>
             {elementTypes.map((type) => {
               const group = COMPONENT_GROUPS[type] || "";
               const dot = GROUP_COLORS[group] || "bg-stone-400";
@@ -117,9 +139,9 @@ export default function ElementCatalogPage() {
                   <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
                   <div className="min-w-0 flex-1 text-left">
                     <div className="truncate font-medium">{type}</div>
-                    {group && <div className={`text-[10px] leading-tight ${selectedType === type ? "text-cream/60" : "text-stone-400"}`}>{group}</div>}
+                    {group && <div className={`text-xs leading-tight ${selectedType === type ? "text-cream/60" : "text-stone-400"}`}>{group}</div>}
                   </div>
-                  <span className={`text-[10px] shrink-0 ${selectedType === type ? "text-cream/60" : "text-stone-400"}`}>{schemas[type].length}</span>
+                  <span className={`text-xs shrink-0 ${selectedType === type ? "text-cream/60" : "text-stone-400"}`}>{schemas[type].length}</span>
                 </button>
               );
             })}
@@ -137,28 +159,42 @@ export default function ElementCatalogPage() {
               <div className="space-y-2">
                 {currentRows.map((row) => (
                   <div key={row.id} className={`flex items-center gap-3 p-3 rounded-lg border ${row.is_visible ? "border-stone-200/60 dark:border-stone-800" : "border-stone-200/30 dark:border-stone-800/50 opacity-60"}`}>
-                    <button onClick={() => updateRow(row, "is_visible", !row.is_visible)} className="shrink-0" title={row.is_visible ? "Visible in inspector" : "Hidden"}>
-                      {row.is_visible ? <Eye className="w-4 h-4 text-primary-500" /> : <EyeOff className="w-4 h-4 text-stone-400" />}
-                    </button>
+                    <Tooltip content={row.is_visible ? "Visible in inspector" : "Hidden from inspector"}>
+                      <button
+                        onClick={() => updateRow(row, "is_visible", !row.is_visible)}
+                        aria-label={row.is_visible ? `Hide ${row.property_name} from inspector` : `Show ${row.property_name} in inspector`}
+                        className="shrink-0"
+                      >
+                        {row.is_visible ? <Eye className="w-4 h-4 text-primary-500" /> : <EyeOff className="w-4 h-4 text-stone-400" />}
+                      </button>
+                    </Tooltip>
                     <code className="text-xs font-mono text-stone-600 dark:text-stone-300 flex-1 min-w-0 truncate">{row.property_name}</code>
                     <select value={row.property_type} onChange={(e) => updateRow(row, "property_type", e.target.value)} disabled={saving === row.id}
-                      className="text-xs rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 px-2 py-1">
+                      aria-label={`Property type for ${row.property_name}`}
+                      className="text-xs px-2 py-1 rounded-lg border border-primary-200/60 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 transition-all duration-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none">
                       {PROPERTY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                     </select>
                     <select value={row.control_type} onChange={(e) => updateRow(row, "control_type", e.target.value)} disabled={saving === row.id}
-                      className="text-xs rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 px-2 py-1">
+                      aria-label={`Control type for ${row.property_name}`}
+                      className="text-xs px-2 py-1 rounded-lg border border-primary-200/60 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 transition-all duration-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none">
                       {CONTROL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                     </select>
-                    {row.default_value && <code className="text-[10px] font-mono text-stone-400 hidden sm:block">= {row.default_value}</code>}
-                    <button onClick={() => deleteRow(row.id)} className="shrink-0 text-stone-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                    {row.default_value && <code className="text-xs font-mono text-stone-400 hidden sm:block">= {row.default_value}</code>}
+                    <Tooltip content="Remove property">
+                      <button onClick={() => deleteRow(row)} aria-label={`Remove property ${row.property_name}`} className="shrink-0 text-stone-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                    </Tooltip>
                   </div>
                 ))}
               </div>
               {/* Add property */}
               <div className="mt-4 flex items-center gap-2">
-                <input type="text" value={addingProp} onChange={(e) => setAddingProp(e.target.value)} placeholder="e.g. box-shadow" onKeyDown={(e) => e.key === "Enter" && addProperty()}
-                  className="flex-1 px-3 py-2 text-sm rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary-500 font-mono" />
-                <button onClick={addProperty} disabled={!addingProp.trim()} className="flex items-center gap-1 px-3 py-2 text-xs font-semibold rounded-lg bg-primary-600 hover:bg-primary-700 text-cream disabled:opacity-50"><Plus className="w-3.5 h-3.5" /> Add</button>
+                <div className="flex-1">
+                  <Input type="text" value={addingProp} onChange={(e) => setAddingProp(e.target.value)} placeholder="e.g. box-shadow" onKeyDown={(e) => e.key === "Enter" && addProperty()}
+                    aria-label="New property name" className="font-mono" />
+                </div>
+                <Button size="xs" onClick={addProperty} disabled={!addingProp.trim()}>
+                  <Plus className="w-3.5 h-3.5" /> Add
+                </Button>
               </div>
             </div>
           ) : <div className="text-center py-20"><p className="text-sm text-stone-400 font-serif">Select an element type.</p></div>}

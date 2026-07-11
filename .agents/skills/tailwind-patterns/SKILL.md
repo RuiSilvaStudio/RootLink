@@ -10,6 +10,23 @@ date_added: "2026-02-27"
 
 > Modern utility-first CSS with CSS-native configuration.
 
+## ⚠️ RootLink project overrides (read first)
+
+This is generic community guidance. Where it conflicts with RootLink's established decisions,
+**RootLink wins**:
+
+- **Colors are hex, NOT oklch.** RootLink deliberately migrated all `@theme` colors to hex to fix
+  an oklch string-mismatch bug in the Content Studio palette picker (`getComputedStyle` returns a
+  different oklch string than the declared one). Never convert tokens to oklch.
+- **Fonts are Fraunces (display) + Source Serif 4 (body).** Ignore this file's Inter/Outfit/Poppins
+  suggestions — the serif identity is the brand.
+- **Spacing uses Tailwind v4's single `--spacing` base token** (managed by the Content Studio theme
+  manager), not a custom `--spacing-xs/sm/md` scale. Don't introduce one.
+- **Layout: ignore "prefer Bento layouts".** Use the layout the content calls for; RootLink's
+  public pages and studio have established grid/split patterns.
+- The palette lives in `rootlink/frontend/app/globals.css` `@theme` (`primary`/`earth`/`rust`/
+  `cream`/`stone` + `brand`) — never invent new color families.
+
 ## When to Use
 Use this skill when configuring Tailwind v4, using CSS-first theme and design tokens, or implementing container queries and modern Tailwind patterns.
 

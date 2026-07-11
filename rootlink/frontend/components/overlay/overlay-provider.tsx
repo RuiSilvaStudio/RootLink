@@ -13,9 +13,11 @@
  *   - Save/publish/discard actions
  */
 
-import { createContext, useCallback, useContext, useState, ReactNode, useEffect } from "react";
+import { createContext, useCallback, useContext, useState, ReactNode, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { useDirtyGuard } from "@/lib/use-dirty-guard";
 import { api } from "@/lib/api";
+import { fontFamilyCSS } from "./constrained-controls";
 
 export interface SelectedElement {
   path: string;
@@ -98,9 +100,33 @@ interface OverlayContextType {
   clearDraftChanges: () => void;
   draftSaving: boolean;
   pageSlug: string;
+  // P2 polish
+  /** Post overlay:redo to the iframe (Ctrl+Shift+Z / Ctrl+Y also work inside it). */
+  redo: () => void;
+  /** Transient status message ("Draft saved" / "Published" / "Draft discarded"); auto-clears after ~2.5s. */
+  statusFlash: string | null;
+  /** A saved (unpublished) draft exists for this page and nothing is staged yet — offer to resume it. */
+  resumableDraft: { count: number } | null;
+  /** Load the saved draft into draftChanges and re-apply its style changes live in the iframe. */
+  resumeDraft: () => Promise<void>;
+  /** Hide the resume offer (the saved draft stays on the server untouched). */
+  dismissResumable: () => void;
 }
 
 const OverlayContext = createContext<OverlayContextType | null>(null);
+
+// Token NAME → the CSS the browser sees — same mapping as the inspector's
+// handleChange and StyleOverrideApplier's tokenToCss. Used when re-applying a
+// resumed draft's style changes (the draft stores only the token name).
+// Font-family needs async resolution (font library) — handled separately.
+const COLOR_PROPS = new Set(["color", "background-color", "border-color"]);
+function tokenToCss(property: string, value: string): string {
+  if (COLOR_PROPS.has(property)) return `var(--color-${value})`;
+  if (property === "font-size") return `var(--text-${value})`;
+  if (property === "padding" || property === "gap") return `calc(var(--spacing) * ${value})`;
+  if (property === "border-radius") return `var(--radius-${value})`;
+  return value;
+}
 
 export function OverlayProvider({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -114,6 +140,33 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
   const [draftSaving, setDraftSaving] = useState(false);
   // The change awaiting prompt confirmation (held so confirm can apply it)
   const [, setPendingChange] = useState<DraftChange | null>(null);
+  // P2 polish: transient status message + resumable saved draft.
+  const [statusFlash, setStatusFlash] = useState<string | null>(null);
+  const [resumableDraft, setResumableDraft] = useState<{ count: number } | null>(null);
+  // The saved draft's changes, held while the resume offer is showing.
+  const savedDraftRef = useRef<DraftChange[] | null>(null);
+  // Latest draftChanges/saveDraft for use inside the postMessage listener
+  // without re-subscribing it on every change.
+  const draftChangesRef = useRef<DraftChange[]>([]);
+  const saveDraftRef = useRef<(() => Promise<void>) | null>(null);
+  // One flash timer, replaced on each set.
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** Show a transient status message; auto-clears after ~2.5s. */
+  const flash = useCallback((msg: string) => {
+    setStatusFlash(msg);
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    flashTimerRef.current = setTimeout(() => setStatusFlash(null), 2500);
+  }, []);
+
+  useEffect(() => {
+    draftChangesRef.current = draftChanges;
+  }, [draftChanges]);
+
+  useEffect(() => () => {
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+  }, []);
+
   useEffect(() => {
     const checkDesktop = () => setIsDesktop(window.matchMedia("(min-width: 1024px)").matches);
     checkDesktop();
@@ -134,6 +187,12 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
 
   const toggle = useCallback(() => {
     if (!canEdit) return;
+    // Exit guard: deactivating discards the in-memory draft, so confirm first.
+    // (Publish/save flows never go through toggle — they keep edit mode on.)
+    if (active && draftChanges.length > 0) {
+      const n = draftChanges.length;
+      if (!window.confirm(`You have ${n} unsaved change${n !== 1 ? "s" : ""}. Exit and discard them? Press Cancel to stay and save or publish first.`)) return;
+    }
     setActive((prev) => {
       const next = !prev;
       if (!next) {
@@ -141,16 +200,32 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
         setDraftChanges([]);
         setPendingPrompt(null);
         setPreviewMode(false);
+        setResumableDraft(null);
+        savedDraftRef.current = null;
       }
       return next;
     });
-  }, [canEdit]);
+  }, [canEdit, active, draftChanges]);
+
+  // Warn on refresh/tab-close (and in-app link clicks) while the draft has
+  // unsaved changes — the draft lives only in memory until saved/published.
+  const unsavedCount = draftChanges.length;
+  useDirtyGuard(active && unsavedCount > 0, {
+    message: `You have ${unsavedCount} unsaved change${unsavedCount !== 1 ? "s" : ""}. Leave and discard them? Press Cancel to stay and save or publish first.`,
+  });
 
   const select = useCallback((el: SelectedElement | null) => {
     setSelected(el);
   }, []);
 
   const pageSlug = iframeUrl ? new URL(iframeUrl).pathname.slice(1) || "home" : "home";
+
+  // Page switch invalidates any resume offer (the agent re-injects on the new
+  // page and re-triggers the saved-draft check for its slug).
+  useEffect(() => {
+    setResumableDraft(null);
+    savedDraftRef.current = null;
+  }, [pageSlug]);
 
   /** Apply a change (after prompt confirmed or no deviation).
    *  `value` is the theme token NAME (override identity — persisted in the
@@ -225,11 +300,29 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
           }
           return [...prev, { kind: "text", copyKey: key, locale, value: text, oldValue: "" }];
         });
+      } else if (e.data.type === "overlay:request-save") {
+        // Ctrl/Cmd+S inside the iframe — save the draft (no-op when nothing
+        // is unsaved; saveDraft already guards).
+        void saveDraftRef.current?.();
+      } else if (e.data.type === "overlay:agent-ready") {
+        // The agent just injected — check for a previously saved (unpublished)
+        // draft for this page and offer to resume it, but only when nothing is
+        // staged yet. Enhancement only: fetch failures are silent.
+        api.drafts.get(pageSlug).then((draft) => {
+          if (
+            draft && draft.status === "draft" &&
+            Array.isArray(draft.changes) && draft.changes.length > 0 &&
+            draftChangesRef.current.length === 0
+          ) {
+            savedDraftRef.current = draft.changes as DraftChange[];
+            setResumableDraft({ count: draft.changes.length });
+          }
+        }).catch(() => {});
       }
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [active, select]);
+  }, [active, select, pageSlug]);
 
   const confirmOverride = useCallback(() => {
     if (!pendingPrompt) return;
@@ -249,10 +342,30 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
     setDraftSaving(true);
     try {
       await api.drafts.save({ page_slug: pageSlug, changes: draftChanges });
+      flash("Draft saved");
     } finally {
       setDraftSaving(false);
     }
-  }, [draftChanges, pageSlug]);
+  }, [draftChanges, pageSlug, flash]);
+
+  // Latest saveDraft for the postMessage/keydown listeners (no re-subscribe).
+  useEffect(() => {
+    saveDraftRef.current = saveDraft;
+  }, [saveDraft]);
+
+  // Ctrl/Cmd+S on the parent (focus may be in the inspector, not the iframe):
+  // block the browser save dialog and save the draft. Active in edit mode only.
+  useEffect(() => {
+    if (!active) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        void saveDraftRef.current?.();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [active]);
 
   const publishDraft = useCallback(async () => {
     setDraftSaving(true);
@@ -273,10 +386,11 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
         }
       }
       setDraftChanges([]);
+      flash("Published");
     } finally {
       setDraftSaving(false);
     }
-  }, [draftChanges, pageSlug]);
+  }, [draftChanges, pageSlug, flash]);
 
   const discardDraft = useCallback(async () => {
     try {
@@ -284,11 +398,56 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
     } catch {}
     setDraftChanges([]);
     setPendingPrompt(null);
-  }, [pageSlug]);
+    // The server draft is gone — any resume offer is now stale.
+    setResumableDraft(null);
+    savedDraftRef.current = null;
+    flash("Draft discarded");
+  }, [pageSlug, flash]);
 
   const clearDraftChanges = useCallback(() => {
     setDraftChanges([]);
     setPendingPrompt(null);
+  }, []);
+
+  /** Redo the last undone style change (posts overlay:redo to the iframe —
+   *  Ctrl/Cmd+Shift+Z and Ctrl/Cmd+Y inside the iframe do the same). */
+  const redo = useCallback(() => {
+    const iframe = document.querySelector("iframe");
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.postMessage({ type: "overlay:redo" }, "*");
+    }
+  }, []);
+
+  /** Resume the saved draft: load its changes into draftChanges and re-apply
+   *  each STYLE change live in the iframe (path-targeted overlay:apply-style,
+   *  translating the stored token NAME to CSS the same way the inspector
+   *  does). Text changes have no live re-apply path (text flows agent→parent
+   *  only) — they're kept in draftChanges so Save/Publish still carries them. */
+  const resumeDraft = useCallback(async () => {
+    const changes = savedDraftRef.current;
+    setResumableDraft(null);
+    savedDraftRef.current = null;
+    if (!changes || changes.length === 0) return;
+    setDraftChanges(changes);
+    const iframe = document.querySelector("iframe");
+    const win = iframe?.contentWindow;
+    if (!win) return;
+    for (const ch of changes) {
+      if (ch.kind !== "style" || !ch.elementPath || !ch.property) continue;
+      const appliedValue = ch.property === "font-family"
+        ? (await fontFamilyCSS(ch.value)) ?? ch.value
+        : tokenToCss(ch.property, ch.value);
+      win.postMessage(
+        { type: "overlay:apply-style", path: ch.elementPath, property: ch.property, value: ch.value, appliedValue },
+        "*"
+      );
+    }
+  }, []);
+
+  /** Hide the resume offer — the saved draft stays on the server untouched. */
+  const dismissResumable = useCallback(() => {
+    setResumableDraft(null);
+    savedDraftRef.current = null;
   }, []);
 
   return (
@@ -299,6 +458,7 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
         confirmOverride, cancelOverride, resetProperty,
         previewMode, setPreviewMode,
         saveDraft, publishDraft, discardDraft, clearDraftChanges, draftSaving, pageSlug,
+        redo, statusFlash, resumableDraft, resumeDraft, dismissResumable,
       }}
     >
       {children}

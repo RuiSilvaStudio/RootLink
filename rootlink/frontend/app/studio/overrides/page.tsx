@@ -12,9 +12,12 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, AlertTriangle, RotateCcw, Filter } from "lucide-react";
+import { AlertTriangle, RotateCcw, Filter } from "lucide-react";
 import { useToast } from "@/lib/toast-context";
 import { api } from "@/lib/api";
+import { Button, Tooltip } from "@/components/ui";
+import { ListSkeleton } from "@/components/ui/LoadingSkeleton";
+import { LoadError } from "@/components/studio/LoadError";
 
 interface OverrideRow {
   id: number;
@@ -31,22 +34,34 @@ export default function OverrideReportPage() {
   const { addToast } = useToast();
   const [overrides, setOverrides] = useState<OverrideRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [filter, setFilter] = useState<"all" | "stale" | "active">("all");
 
   const fetch = useCallback(async () => {
-    try { setOverrides(await api.overrides.all()); } catch {} finally { setLoading(false); }
+    try { setOverrides(await api.overrides.all()); setLoadError(false); } catch { setLoadError(true); } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { fetch(); }, [fetch]);
 
   const revert = async (id: number) => {
+    if (!window.confirm("Revert this override? The element returns to its theme default.")) return;
     try { await api.overrides.remove(id); await fetch(); addToast("info", "Override reverted"); } catch (e: any) { addToast("error", e?.message); }
   };
   const markStale = async (id: number) => {
     try { await api.overrides.markStale(id); await fetch(); } catch (e: any) { addToast("error", e?.message); }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-full min-h-[60vh]"><Loader2 className="w-5 h-5 animate-spin text-stone-400" /></div>;
+  if (loading) {
+    return (
+      <div className="p-4 lg:p-6 min-h-[60vh]">
+        <div className="max-w-4xl">
+          <ListSkeleton rows={6} />
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) return <div className="p-6 max-w-xl"><LoadError onRetry={fetch} /></div>;
 
   const filtered = overrides.filter((o) => filter === "all" || (filter === "stale" ? o.is_stale : !o.is_stale));
   const staleCount = overrides.filter((o) => o.is_stale).length;
@@ -83,7 +98,7 @@ export default function OverrideReportPage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-mono text-primary-600 dark:text-primary-400">{row.page_slug}</span>
                     <span className="text-stone-300">/</span>
-                    <code className="text-[10px] font-mono text-stone-500 truncate">{row.element_path}</code>
+                    <code className="text-xs font-mono text-stone-500 truncate">{row.element_path}</code>
                   </div>
                   <div className="flex items-center gap-2 mt-1">
                     <code className="text-xs text-stone-600 dark:text-stone-300 font-mono">{row.property}</code>
@@ -91,12 +106,18 @@ export default function OverrideReportPage() {
                     <code className="text-xs text-stone-400 font-mono line-through">{row.old_value}</code>
                     <span className="text-stone-400 text-xs">→</span>
                     <code className="text-xs text-rust-600 dark:text-rust-400 font-mono">{row.new_value}</code>
-                    {row.is_stale && <span className="text-[10px] uppercase text-amber-600 dark:text-amber-400 font-medium">Stale</span>}
+                    {row.is_stale && <span className="text-xs uppercase text-amber-600 dark:text-amber-400 font-medium">Stale</span>}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => markStale(row.id)} className="px-2 py-1 text-xs text-stone-400 hover:text-amber-500 transition" title="Mark stale">Stale</button>
-                  <button onClick={() => revert(row.id)} className="flex items-center gap-1 px-2 py-1 text-xs text-stone-400 hover:text-red-500 transition" title="Revert"><RotateCcw className="w-3 h-3" /></button>
+                  <Tooltip content="Mark this override as stale">
+                    <Button size="xs" variant="ghost" onClick={() => markStale(row.id)}>Stale</Button>
+                  </Tooltip>
+                  <Tooltip content="Revert to theme default">
+                    <Button size="xs" variant="danger" onClick={() => revert(row.id)} aria-label="Revert override">
+                      <RotateCcw className="w-3 h-3" />
+                    </Button>
+                  </Tooltip>
                 </div>
               </div>
             ))}

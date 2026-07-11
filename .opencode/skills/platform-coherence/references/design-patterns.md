@@ -4,39 +4,39 @@
 
 ## Color Theme
 
-RootLink uses an earth/nature color palette via Tailwind CSS custom tokens.
+RootLink uses an earth/nature palette defined as **Tailwind v4 `@theme` tokens in
+`rootlink/frontend/app/globals.css`** (hex values, deliberately NOT oklch — see
+LESSONS/Content Studio docs for the oklch-mismatch bug). **The codebase is the source of
+truth** — if this file and `globals.css` disagree, `globals.css` wins.
 
-### Primary Colors
-- **Earth Brown:** Primary actions, headers, important UI elements
-- **Forest Green:** Secondary actions, success states, nature-related elements
-- **Warm Sand:** Backgrounds, cards, neutral surfaces
-- **Deep Soil:** Text, dark elements, high contrast
+### Actual palette (from `globals.css @theme`)
+- **`primary-50…900`** — earth brown (`primary-600` `#634d33` = main brand actions, headers; `primary-700` hover)
+- **`earth-50…900`** — warm tan (`earth-500` `#8c6b48` = secondary nature content)
+- **`rust-50…900`** — terracotta (`rust-500` `#a8643d` = emphasis, editor/selection accent)
+- **`cream`** — `#f8f6f2`, the surface/background color
+- **`stone-50…950`** — neutrals (overridden as hex, not v4's oklch defaults) — text, borders, dark-mode surfaces
+- **`brand`** — `#4f3d2a`
 
-### Tailwind Classes
-```css
-/* Primary palette */
-bg-earth-50 to earth-900    /* Earth brown scale */
-bg-forest-50 to forest-900  /* Forest green scale */
-bg-sand-50 to sand-900      /* Warm sand scale */
+There are **no `forest-*` or `sand-*` scales and no `text-primary`/`bg-secondary` semantic
+utilities** — never use them.
 
-/* Semantic colors */
-text-primary      /* Primary text */
-text-secondary    /* Secondary text */
-bg-primary        /* Primary background */
-bg-secondary      /* Secondary background */
-```
+### Semantic status colors
+Tailwind defaults, used sparingly: `emerald` = success/active/published, `amber` = warning/draft/stale,
+`red` = error/destructive. Color is never the only indicator of state.
 
 ### Usage Rules
-- Use earth tones for primary UI (buttons, headers, navigation)
-- Use forest green for nature-related content and success states
-- Use sand for backgrounds and neutral surfaces
+- Use `primary` for primary UI (buttons, headers, navigation); `rust` for emphasis/selection
+- Use `cream` (light) / `stone-900+` (dark) for backgrounds and surfaces
+- Runtime theming: the Content Studio theme manager rewrites these CSS variables — always
+  reference tokens (`bg-primary-600`), never hardcoded hex, so seasonal themes apply
 - Maintain WCAG AA contrast ratios (4.5:1 for text)
 
 ## Typography
 
-### Font Stack
-- Primary: System font stack (via Tailwind defaults)
-- Monospace: For code snippets only
+### Font Stack (from `globals.css @theme`)
+- Display: **Fraunces** (`font-display`) — headings, editorial elements
+- Body: **Source Serif 4** (`font-serif`) — primary reading content
+- Monospace: system mono, for code/technical data only
 
 ### Type Scale
 ```css
@@ -52,8 +52,11 @@ text-3xl   /* 30px - hero text */
 ### Rules
 - Body text: `text-base` (16px) minimum for readability
 - Line height: `leading-relaxed` (1.625) for body text
-- Never use font size below `text-xs` (12px)
+- Never use font size below `text-xs` (12px) — this floor applies to studio/admin UI too
 - Headings: use consistent hierarchy (h1 → h2 → h3)
+- Don't hand-roll page/section headings — use the shared components, which define the real
+  scale: `PageHeader` h1 is `text-4xl sm:text-5xl md:text-6xl font-display`; `SectionHeader`
+  h2 is `text-4xl sm:text-5xl font-display`
 
 ## Component Patterns
 
@@ -207,30 +210,58 @@ export default function DetailPage({ params }) {
 - Success feedback (toast or redirect)
 - Cancel button returns to previous page
 
-### Content UI Editor (super_admin inline editing)
-RootLink has a WYSIWYG inline text/image/icon editor for `super_admin` only — see
-`discovery/mockups/content-ui-editor/briefing-to-build-local.md` for the full design and
-`frontend/components/editor-mode/` for the components (`EditableText`, `EditableImage`,
-`EditableIcon`). Coverage is added incrementally, page by page — it is **not** automatic just
-because a page uses `t()`.
+### Content Studio overlay & editable copy (supersedes the retired Content UI Editor)
 
-**Whenever you add a new page, or add new static marketing/header copy to an existing page, ask
-the user whether it should be wired into the Content UI Editor** (do not silently decide either
-way — this mirrors the working method already established for this feature: propose, don't assume).
-If yes:
-- Add real `t()` i18n keys first if the copy is hardcoded/ternary (see the `donate`/`leaderboard`/
-  `ranking` migration in the Phase 3 section of `briefing-to-build-local.md` for the pattern).
-- Wrap headings/paragraphs/labels in `<EditableText k="namespace.key" as="h1" className="..." />`
-  (replaces the tag entirely — do not double-wrap in an extra element).
-- If the same copy renders inside a `.map()` over a static array (e.g. cards, tool lists), carry
-  the i18n **key** in the array item (`nameKey`/`descKey`), not a pre-resolved string, so the wrap
-  applies to the loop generically and new array entries stay editable automatically.
-- **Skip** wrapping any text that lives inside an element with its own state-changing `onClick`
-  (filter chips, tabs, dropdown triggers, accordion headers) — clicking to edit would also fire
-  the click handler. This needs a deliberate UX decision (how does an admin use the control *and*
-  edit its label?), not a quick `stopPropagation` fix — flag it and ask rather than wiring it.
-- `PageHeader`'s `title`/`subtitle`/`description` props accept `ReactNode` (not just `string`)
-  specifically so `EditableText` can be passed straight in.
+The old inline `components/editor-mode/` editor (`EditableText`/`EditableImage`/`EditableIcon`)
+is **RETIRED** — do not wire new pages into it. It was replaced by the **Content Studio visual
+overlay** (`components/overlay/`, spec: `docs/content-studio/CONTENT_STUDIO.md` — read the spec
+before any Content Studio work).
+
+How editable copy works now:
+- **All editable marketing/copy text uses `<Text k="copy.key">`** (`components/ui/Text.tsx`).
+  It auto-marks the element with `data-rl-text="copy.key"` so the overlay knows the text is
+  editable and which copy key persists edits (via `/api/copy`).
+- **Computed values** (counts, prices, dates, usernames, API data) render as plain `{expr}` —
+  no `<Text>`, no `data-rl-text`. The overlay treats these as read-only ("Computed value — not
+  editable"). Editable copy = keyed = `<Text>`; computed = unkeyed = read-only.
+- `SectionHeader` accepts `headingKey`, `LinkWithArrow` accepts `copyKey`, `Button` forwards
+  `data-rl-text` via `{...props}` — use these for text inside DeFacto/Button components.
+- Selectable components carry `data-rl-component="<Name>"` on their root element so the
+  overlay's selection agent can snap to them. New reusable components should be tagged.
+- Coverage is added page by page, not automatically. **When adding a new page or new static
+  copy, ask the user whether it should be wired in — never assume either way.**
+- If the same copy renders inside a `.map()` over a static array, carry the i18n **key** in the
+  array item (`nameKey`/`descKey`), not a pre-resolved string, so new entries stay editable.
+
+## Content Studio & back-office UI patterns (binding — 2026-07-11 unified UX)
+
+All studio/admin/dashboard UI follows the `frontend-ui-guardian` skill's "Back-Office / Tool UI"
+chapter. The concrete implementations to REUSE (never re-invent):
+
+| Pattern | Implementation | Notes |
+|---|---|---|
+| Dialog | `components/ui/Modal.tsx` | Portal to body, Esc-close, focus trap, `aria-modal`, footer slot |
+| Load failure | `components/studio/LoadError.tsx` | Inline notice + "Try again"; NEVER a silent `catch {}` |
+| Dirty-state guard | `lib/use-dirty-guard.ts` | `useDirtyGuard(dirty, { message })` — beforeunload + in-app link interception |
+| Destructive confirm | `window.confirm()` (OK/Cancel wording) | Delete/revert/discard/exit-with-draft always confirm |
+| Loading | Kit `LoadingSkeleton` compositions | Shape them like the page's real layout |
+| Tooltip | `components/ui/Tooltip` + `aria-label` on icon-only buttons | Native `title=` is banned (keyboard/touch-invisible) |
+| Buttons/fields | Kit `Button` (`size="xs"` for tool density, `danger` for destructive), `Input`, `Textarea`, `Toggle` | Segmented tabs/selection rows may stay raw with `aria-pressed`/`aria-current` |
+| Empty states | Kit `EmptyState`; quiet `text-sm` line in small panes | A blank pane is a bug |
+| Save feedback | Status-flash chip (`role="status"`, `aria-live="polite"`, ~2.5s) | See `overlay-provider.tsx` `statusFlash` |
+| Input → API | Local state instant, API debounced ~400ms per item | See theming token editor |
+| List mutations | Optimistic update, revert + toast on failure, no refetch flash | See blocks section reorder |
+| Type floor | 12px (`text-xs`) minimum everywhere | Exception: scaled miniature previews (`catalog/ComponentPreview.tsx`) |
+
+**Keyboard contract** (grep before adding any shortcut): `Ctrl+K` command palette · `Esc`
+closes an open dialog FIRST, then overlay selection-up (capture-phase handlers must yield to
+`[role="dialog"], [data-rl-dialog]` — LESSONS.md #43; every dialog-like surface must carry one
+of those attributes) · `Ctrl+Z`/`Ctrl+Shift+Z`/`Ctrl+Y` undo/redo · `Ctrl+S` save draft /
+save all · `Ctrl+Shift+E` enter overlay edit mode.
+
+Overlay-specific: selectable components carry `data-rl-component`; editable copy carries
+`data-rl-text` via `<Text k>`; the inspector is resizable (`localStorage["rl-inspector-width"]`);
+new color families must be added to `COLOR_FAMILIES` in `selection-agent.ts` (LESSONS.md #42).
 
 ## Accessibility
 

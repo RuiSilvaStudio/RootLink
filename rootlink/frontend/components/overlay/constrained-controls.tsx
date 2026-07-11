@@ -18,7 +18,7 @@
  * is 384px (w-96) wide.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { MousePointer2, Upload, FolderOpen, ImageIcon, ChevronDown } from "lucide-react";
 import { api } from "@/lib/api";
 
@@ -62,7 +62,7 @@ export interface ControlProps {
 function ControlLabel({ label }: { label?: string }) {
   if (!label) return null;
   return (
-    <p className="text-xs text-stone-500 font-mono mb-1.5">{label}</p>
+    <p className="text-xs text-stone-400 font-mono mb-1.5">{label}</p>
   );
 }
 
@@ -113,7 +113,7 @@ export function SliderWithStops({ value, onChange, label, stops = SPACING_STOPS 
               key={stop.value}
               type="button"
               onClick={() => onChange(stop.value)}
-              className={`flex-1 px-1 py-1 rounded-md text-[11px] font-mono transition ${
+              className={`flex-1 px-1 py-1 rounded-md text-xs font-mono transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
                 active
                   ? "bg-primary-600 text-cream"
                   : "text-stone-400 hover:bg-stone-800 hover:text-stone-200"
@@ -126,7 +126,7 @@ export function SliderWithStops({ value, onChange, label, stops = SPACING_STOPS 
           );
         })}
       </div>
-      <p className="mt-1 text-[11px] font-mono text-stone-500">
+      <p className="mt-1 text-xs font-mono text-stone-400">
         {activeIndex >= 0 ? value : `custom · ${value || "—"}`}
       </p>
     </div>
@@ -219,7 +219,7 @@ export function PaletteColorPicker({ value, onChange, label }: ControlProps) {
             style={{ backgroundColor: value }}
             aria-hidden
           />
-          <span className="text-[11px] font-mono text-stone-500">current · not a theme color</span>
+          <span className="text-xs font-mono text-stone-400">current · not a theme color</span>
         </div>
       )}
       <div className="grid grid-cols-4 gap-1">
@@ -230,7 +230,7 @@ export function PaletteColorPicker({ value, onChange, label }: ControlProps) {
               key={color.name}
               type="button"
               onClick={() => onChange(color.name)}
-              className={`flex flex-col items-center gap-1 rounded-md p-1 transition ${
+              className={`flex flex-col items-center gap-1 rounded-md p-1 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
                 active
                   ? "ring-2 ring-primary-400 bg-stone-800"
                   : "hover:bg-stone-800"
@@ -242,7 +242,7 @@ export function PaletteColorPicker({ value, onChange, label }: ControlProps) {
                 className="w-full h-7 rounded border border-stone-700/60"
                 style={{ backgroundColor: color.value }}
               />
-              <span className="text-[9px] font-mono text-stone-400 leading-none truncate w-full text-center">
+              <span className="text-xs font-mono text-stone-400 leading-none truncate w-full text-center">
                 {color.name}
               </span>
             </button>
@@ -274,7 +274,7 @@ export function Toggle({ value, onChange, label, onValue, offValue }: ToggleProp
       <button
         type="button"
         onClick={() => onChange(isOn ? offValue : onValue)}
-        className="inline-flex items-center gap-2 group"
+        className="inline-flex items-center gap-2 group rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
         aria-pressed={isOn}
         aria-label={label || (isOn ? onValue : offValue)}
       >
@@ -289,7 +289,7 @@ export function Toggle({ value, onChange, label, onValue, offValue }: ToggleProp
             }`}
           />
         </span>
-        <span className="text-[11px] font-mono text-stone-400">
+        <span className="text-xs font-mono text-stone-400">
           {isOn ? onValue : offValue}
         </span>
       </button>
@@ -320,7 +320,7 @@ export function ButtonGroup({ value, onChange, label, options }: ButtonGroupProp
               key={opt.value}
               type="button"
               onClick={() => onChange(opt.value)}
-              className={`px-2 py-1 rounded-md text-[11px] font-mono transition ${
+              className={`px-2 py-1 rounded-md text-xs font-mono transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
                 active
                   ? "bg-primary-600 text-cream"
                   : "text-stone-400 hover:bg-stone-800 hover:text-stone-200"
@@ -377,7 +377,7 @@ export function TypeScaleButtons({ value, onChange, label }: ControlProps) {
               key={opt.value}
               type="button"
               onClick={() => onChange(opt.value)}
-              className={`flex flex-col items-center justify-center px-2 py-1 rounded-md min-w-[2.25rem] transition ${
+              className={`flex flex-col items-center justify-center px-2 py-1 rounded-md min-w-[2.25rem] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
                 active
                   ? "bg-primary-600 text-cream"
                   : "text-stone-300 hover:bg-stone-800"
@@ -388,7 +388,7 @@ export function TypeScaleButtons({ value, onChange, label }: ControlProps) {
               <span style={{ fontSize: opt.size }} className="font-serif leading-none">
                 Aa
               </span>
-              <span className="mt-0.5 text-[9px] font-mono opacity-80 leading-none">
+              <span className="mt-0.5 text-xs font-mono opacity-80 leading-none">
                 {opt.label}
               </span>
             </button>
@@ -396,8 +396,8 @@ export function TypeScaleButtons({ value, onChange, label }: ControlProps) {
         })}
       </div>
       {!isKnown && (
-        <p className="mt-1 text-[11px] font-mono text-stone-500">
-          custom · <span className="text-stone-400">{value || "—"}</span>
+        <p className="mt-1 text-xs font-mono text-stone-400">
+          custom · <span className="text-stone-300">{value || "—"}</span>
         </p>
       )}
     </div>
@@ -412,9 +412,17 @@ export function TypeScaleButtons({ value, onChange, label }: ControlProps) {
 // NAME (override identity); the inspector resolves that to the font's CSS
 // `family` string for the browser. Scales to many fonts (scrollable list).
 
+// Normalize font strings for comparison — browsers may use different
+// quotes/whitespace than what the font library stores.
+const normalizeFont = (s: string) => s.toLowerCase().replace(/['"]/g, "").replace(/\s+/g, " ").trim();
+
 export function FontFamilyPicker({ value, onChange, label }: ControlProps) {
   const [fonts, setFonts] = useState<FontEntry[]>(_fontsCache ?? []);
   const [open, setOpen] = useState(false);
+  // Keyboard-navigation cursor over the open list. Focus stays on the trigger;
+  // the active option is exposed via aria-activedescendant + option ids.
+  const [activeIdx, setActiveIdx] = useState(-1);
+  const listboxId = useId();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -431,11 +439,57 @@ export function FontFamilyPicker({ value, onChange, label }: ControlProps) {
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  // Normalize font strings for comparison — browsers may use different
-  // quotes/whitespace than what the font library stores.
-  const normalizeFont = (s: string) => s.toLowerCase().replace(/['"]/g, "").replace(/\s+/g, " ").trim();
   const normalizedValue = normalizeFont(value || "");
   const current = fonts.find((f) => f.name === value || normalizeFont(f.family) === normalizedValue);
+
+  // When the list opens, start keyboard navigation on the current font.
+  useEffect(() => {
+    if (!open) return;
+    setActiveIdx((prev) => {
+      const idx = fonts.findIndex((f) => f.name === value || normalizeFont(f.family) === normalizeFont(value || ""));
+      return idx >= 0 ? idx : prev >= 0 ? prev : 0;
+    });
+  }, [open, fonts, value]);
+
+  /** Move the keyboard cursor and keep the option visible. */
+  const moveActive = (next: number) => {
+    if (fonts.length === 0) return;
+    const clamped = Math.max(0, Math.min(fonts.length - 1, next));
+    setActiveIdx(clamped);
+    document.getElementById(`${listboxId}-opt-${clamped}`)?.scrollIntoView({ block: "nearest" });
+  };
+
+  const onTriggerKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (!open) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        setOpen(true);
+      }
+      return;
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      moveActive(activeIdx + 1);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      moveActive(activeIdx - 1);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      moveActive(0);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      moveActive(fonts.length - 1);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const font = fonts[activeIdx];
+      if (font) onChange(font.name);
+      setOpen(false);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      setOpen(false);
+    }
+  };
 
   return (
     <div ref={ref}>
@@ -443,9 +497,12 @@ export function FontFamilyPicker({ value, onChange, label }: ControlProps) {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-md border border-stone-800 bg-stone-900 text-left transition hover:bg-stone-800"
+        onKeyDown={onTriggerKeyDown}
+        className="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-md border border-stone-800 bg-stone-900 text-left transition hover:bg-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-controls={open ? listboxId : undefined}
+        aria-activedescendant={open && activeIdx >= 0 ? `${listboxId}-opt-${activeIdx}` : undefined}
       >
         <span
           className="text-sm text-stone-200 truncate"
@@ -453,31 +510,41 @@ export function FontFamilyPicker({ value, onChange, label }: ControlProps) {
         >
           {current?.name ?? (value ? value : "Select a font…")}
         </span>
-        <ChevronDown className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+        <ChevronDown className="w-3.5 h-3.5 text-stone-500 shrink-0" aria-hidden="true" />
       </button>
       {open && (
-        <div className="mt-1 max-h-60 overflow-y-auto rounded-md border border-stone-800 bg-stone-900 shadow-lg">
+        <div
+          id={listboxId}
+          role="listbox"
+          aria-label="Fonts"
+          className="mt-1 max-h-60 overflow-y-auto rounded-md border border-stone-800 bg-stone-900 shadow-lg"
+        >
           {fonts.length === 0 ? (
-            <p className="px-3 py-2 text-[11px] font-mono text-stone-500">
+            <p className="px-3 py-2 text-xs font-mono text-stone-400">
               No active fonts. Add fonts in the dashboard.
             </p>
           ) : (
-            fonts.map((f) => {
+            fonts.map((f, i) => {
               const active = f.name === value || normalizeFont(f.family) === normalizedValue;
               return (
                 <button
                   key={f.id}
+                  id={`${listboxId}-opt-${i}`}
                   type="button"
                   onClick={() => { onChange(f.name); setOpen(false); }}
-                  className={`w-full text-left px-3 py-2 text-sm transition flex items-center justify-between gap-2 ${
-                    active ? "bg-primary-600 text-cream" : "text-stone-200 hover:bg-stone-800"
+                  className={`w-full text-left px-3 py-2 text-sm transition flex items-center justify-between gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500/40 ${
+                    active
+                      ? "bg-primary-600 text-cream"
+                      : i === activeIdx
+                        ? "bg-stone-800 text-stone-200"
+                        : "text-stone-200 hover:bg-stone-800"
                   }`}
                   style={{ fontFamily: f.family }}
                   role="option"
                   aria-selected={active}
                 >
                   <span className="truncate">{f.name}</span>
-                  {active && <span className="text-[10px] font-mono opacity-80 shrink-0">active</span>}
+                  {active && <span className="text-xs font-mono opacity-80 shrink-0">active</span>}
                 </button>
               );
             })
@@ -485,7 +552,7 @@ export function FontFamilyPicker({ value, onChange, label }: ControlProps) {
         </div>
       )}
       {!current && value && (
-        <p className="mt-1 text-[11px] font-mono text-stone-500">
+        <p className="mt-1 text-xs font-mono text-stone-400">
           current · not in the font library
         </p>
       )}
@@ -512,11 +579,11 @@ export function InlineTextEditor({ value, label, editing }: InlineTextEditorProp
       <ControlLabel label={label} />
       <div className={`rounded-md border bg-stone-900 px-2 py-1.5 ${editing ? "border-primary-500" : "border-stone-800"}`}>
         <p className="text-sm font-serif text-stone-300 whitespace-pre-wrap break-words min-h-[1.25rem]">
-          {value || <span className="text-stone-600 italic">empty</span>}
+          {value || <span className="text-stone-400 italic">empty</span>}
         </p>
       </div>
-      <p className="mt-1.5 flex items-center gap-1 text-[10px] font-mono text-stone-500">
-        <MousePointer2 className="w-3 h-3" />
+      <p className="mt-1.5 flex items-center gap-1 text-xs font-mono text-stone-400">
+        <MousePointer2 className="w-3 h-3" aria-hidden="true" />
         {editing ? "Editing on the page — Esc to stop." : "Double-click the text on the page to edit it."}
       </p>
     </div>
@@ -556,11 +623,11 @@ export function VisualImagePicker({ value, label }: ControlProps) {
             alt=""
             className="w-12 h-12 rounded-md object-cover border border-stone-700 shrink-0"
           />
-          <p className="text-[11px] font-mono text-stone-400 truncate">{value}</p>
+          <p className="text-xs font-mono text-stone-400 truncate">{value}</p>
         </div>
       ) : (
         value ? (
-          <p className="mb-2 text-[11px] font-mono text-stone-500 truncate">
+          <p className="mb-2 text-xs font-mono text-stone-400 truncate">
             {value}
           </p>
         ) : null
@@ -569,7 +636,7 @@ export function VisualImagePicker({ value, label }: ControlProps) {
       <button
         type="button"
         disabled
-        className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-mono text-stone-500 bg-stone-900 border border-stone-800 cursor-not-allowed"
+        className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-mono text-stone-500 bg-stone-900 border border-stone-800 cursor-not-allowed"
       >
         <FolderOpen className="w-3.5 h-3.5" />
         Browse assets
@@ -577,12 +644,12 @@ export function VisualImagePicker({ value, label }: ControlProps) {
 
       <div className="mt-1.5 flex flex-col items-center justify-center gap-1 px-2 py-4 rounded-md border border-dashed border-stone-800 text-stone-600 cursor-not-allowed">
         <Upload className="w-4 h-4" />
-        <p className="text-[10px] font-mono">Upload</p>
+        <p className="text-xs font-mono">Upload</p>
       </div>
 
       {!hasUrl && (
-        <p className="mt-1.5 flex items-center gap-1 text-[10px] font-mono text-stone-600">
-          <ImageIcon className="w-3 h-3" />
+        <p className="mt-1.5 flex items-center gap-1 text-xs font-mono text-stone-400">
+          <ImageIcon className="w-3 h-3" aria-hidden="true" />
           Asset library arrives in Phase 5.
         </p>
       )}

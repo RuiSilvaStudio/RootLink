@@ -28,7 +28,8 @@ import {
   fontFamilyCSS,
   RADIUS_STOPS,
 } from "./constrained-controls";
-import { MousePointer2, ChevronRight, Undo2, AlertTriangle, RotateCcw } from "lucide-react";
+import { MousePointer2, ChevronRight, Undo2, Redo2, AlertTriangle, RotateCcw } from "lucide-react";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { api } from "@/lib/api";
 import { useState, useEffect } from "react";
 
@@ -134,7 +135,7 @@ interface SchemaProperty {
 }
 
 export function InspectorPanel() {
-  const { selected, requestChange, resetProperty, pageSlug, draftChanges } = useOverlay();
+  const { selected, requestChange, resetProperty, pageSlug, draftChanges, redo } = useOverlay();
   const [staleOverrides, setStaleOverrides] = useState<any[]>([]);
   const [schemaMap, setSchemaMap] = useState<Record<string, SchemaProperty[]>>({});
 
@@ -265,10 +266,10 @@ export function InspectorPanel() {
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
           <MousePointer2 className="w-8 h-8 text-stone-700 mx-auto mb-3" />
-          <p className="text-sm text-stone-500 font-serif">
+          <p className="text-sm text-stone-400 font-serif">
             Click any element on the page to customize it.
           </p>
-          <p className="text-xs text-stone-600 mt-2 font-serif">
+          <p className="text-xs text-stone-400 mt-2 font-serif">
             Double-click text to edit it. Esc to go up. Ctrl+Z to undo.
           </p>
         </div>
@@ -297,7 +298,7 @@ export function InspectorPanel() {
         <div className="flex items-center gap-1 flex-wrap text-xs">
           {selected.hierarchy.map((item, i) => (
             <span key={item.path} className="flex items-center gap-1">
-              {i > 0 && <ChevronRight className="w-3 h-3 text-stone-600" />}
+              {i > 0 && <ChevronRight className="w-3 h-3 text-stone-600" aria-hidden="true" />}
               <button
                 onClick={() => {
                   const iframe = document.querySelector("iframe");
@@ -305,7 +306,7 @@ export function InspectorPanel() {
                     iframe.contentWindow.postMessage({ type: "overlay:select-path", path: item.path }, "*");
                   }
                 }}
-                className="font-mono text-stone-400 hover:text-primary-300 transition"
+                className="font-mono text-stone-400 hover:text-primary-300 transition rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
               >
                 {item.label}
               </button>
@@ -318,25 +319,47 @@ export function InspectorPanel() {
       <div className="shrink-0 px-4 py-3 border-b border-stone-800 flex items-center justify-between">
         <div>
           <code className="text-sm font-mono text-primary-300">{selected.label}</code>
-          <p className="text-xs text-stone-500 mt-0.5">
+          <p className="text-xs text-stone-400 mt-0.5">
             {selected.componentType ? `${selected.componentType} component` : `${selected.tagName} element`}
           </p>
         </div>
-        <button
-          onClick={sendUndo}
-          className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-stone-400 hover:text-stone-200 hover:bg-stone-800 transition"
-          title="Undo (Ctrl+Z)"
-        >
-          <Undo2 className="w-3.5 h-3.5" /> Undo
-        </button>
+        <div className="flex items-center gap-1">
+          <Tooltip content="Undo (Ctrl+Z)" side="left">
+            <button
+              onClick={sendUndo}
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-stone-400 hover:text-stone-200 hover:bg-stone-800 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+            >
+              <Undo2 className="w-3.5 h-3.5" aria-hidden="true" /> Undo
+            </button>
+          </Tooltip>
+          <Tooltip content="Redo (Ctrl+Shift+Z)" side="left">
+            <button
+              onClick={redo}
+              aria-label="Redo"
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-stone-400 hover:text-stone-200 hover:bg-stone-800 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+            >
+              <Redo2 className="w-3.5 h-3.5" aria-hidden="true" />
+            </button>
+          </Tooltip>
+        </div>
       </div>
 
       {/* ── Stale-override warning ──────────────────────── */}
       {selectedStale.length > 0 && (
         <div className="shrink-0 px-4 py-2 border-b border-amber-800/40 bg-amber-950/20">
           <div className="flex items-center gap-2 text-xs text-amber-400">
-            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-            <span>{selectedStale.length} override{selectedStale.length !== 1 ? "s" : ""} on this element may be stale (the default changed). Review in the dashboard.</span>
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+            <span>
+              {selectedStale.length} override{selectedStale.length !== 1 ? "s" : ""} on this element may be stale (the default changed).{" "}
+              <a
+                href="/studio/overrides"
+                target="_blank"
+                rel="noopener"
+                className="font-medium hover:underline hover:text-amber-300 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
+              >
+                Review in the dashboard →
+              </a>
+            </span>
           </div>
         </div>
       )}
@@ -347,16 +370,16 @@ export function InspectorPanel() {
             has a copy key (data-rl-text); read-only for computed values. */}
         {hasText && (
           <div className="border-b border-stone-800/50">
-            <p className="px-4 pt-3 pb-1 text-[10px] uppercase tracking-wider text-stone-500 font-semibold">Content</p>
+            <p className="px-4 pt-3 pb-1 text-xs uppercase tracking-wider text-stone-400 font-semibold">Content</p>
             <div className="px-4 pb-3">
               {selected.copyKey ? (
                 <InlineTextEditor value={textContent} editing={selected.editing} onChange={() => {}} />
               ) : (
                 <div className="rounded-md border border-stone-800 bg-stone-900 px-2 py-1.5">
                   <p className="text-sm font-serif text-stone-300 whitespace-pre-wrap break-words min-h-[1.25rem]">
-                    {textContent || <span className="text-stone-600 italic">empty</span>}
+                    {textContent || <span className="text-stone-400 italic">empty</span>}
                   </p>
-                  <p className="mt-1.5 text-[10px] font-mono text-stone-600">
+                  <p className="mt-1.5 text-xs font-mono text-stone-400">
                     Computed value — not editable.
                   </p>
                 </div>
@@ -376,20 +399,21 @@ export function InspectorPanel() {
           if (props.length === 0) return null;
           return (
             <div className="border-b border-stone-800/50">
-              <p className="px-4 pt-3 pb-1 text-[10px] uppercase tracking-wider text-stone-500 font-semibold">Text</p>
+              <p className="px-4 pt-3 pb-1 text-xs uppercase tracking-wider text-stone-400 font-semibold">Text</p>
               <div className="px-4 pb-3 space-y-2.5">
                 {props.map((prop) => (
                   <div key={prop.name}>
                     <div className="flex items-center justify-between mb-1.5">
-                      <p className="text-xs text-stone-500 font-mono">{prop.name}</p>
+                      <p className="text-xs text-stone-400 font-mono">{prop.name}</p>
                       {isOverridden(prop.name) && (
-                        <button
-                          onClick={() => sendReset(prop.name)}
-                          className="flex items-center gap-1 text-[10px] text-stone-500 hover:text-primary-300 transition"
-                          title="Revert to theme default"
-                        >
-                          <RotateCcw className="w-3 h-3" /> reset
-                        </button>
+                        <Tooltip content="Revert to theme default" side="left">
+                          <button
+                            onClick={() => sendReset(prop.name)}
+                            className="flex items-center gap-1 text-xs text-stone-400 hover:text-primary-300 transition rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+                          >
+                            <RotateCcw className="w-3 h-3" aria-hidden="true" /> reset
+                          </button>
+                        </Tooltip>
                       )}
                     </div>
                     {renderControl(prop.name)}
@@ -406,20 +430,21 @@ export function InspectorPanel() {
         {hasSchema ? (
           allSchemaGroups.map((group) => (
             <div key={group.label} className="border-b border-stone-800/50">
-              <p className="px-4 pt-3 pb-1 text-[10px] uppercase tracking-wider text-stone-500 font-semibold">{group.label}</p>
+              <p className="px-4 pt-3 pb-1 text-xs uppercase tracking-wider text-stone-400 font-semibold">{group.label}</p>
               <div className="px-4 pb-3 space-y-2.5">
                 {group.props.map((prop) => (
                   <div key={prop.property_name}>
                     <div className="flex items-center justify-between mb-1.5">
-                      <p className="text-xs text-stone-500 font-mono">{prop.property_name}</p>
+                      <p className="text-xs text-stone-400 font-mono">{prop.property_name}</p>
                       {isOverridden(prop.property_name) && (
-                        <button
-                          onClick={() => sendReset(prop.property_name)}
-                          className="flex items-center gap-1 text-[10px] text-stone-500 hover:text-primary-300 transition"
-                          title="Revert to theme default"
-                        >
-                          <RotateCcw className="w-3 h-3" /> reset
-                        </button>
+                        <Tooltip content="Revert to theme default" side="left">
+                          <button
+                            onClick={() => sendReset(prop.property_name)}
+                            className="flex items-center gap-1 text-xs text-stone-400 hover:text-primary-300 transition rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+                          >
+                            <RotateCcw className="w-3 h-3" aria-hidden="true" /> reset
+                          </button>
+                        </Tooltip>
                       )}
                     </div>
                     {renderSchemaControl(prop)}
@@ -432,8 +457,8 @@ export function InspectorPanel() {
           <>
             {componentType && (
               <div className="px-4 py-2 border-b border-stone-800/50 bg-stone-900/30">
-                <p className="text-[10px] text-stone-500 font-serif">
-                  No curated schema for <code className="text-stone-400">{componentType}</code>. Showing theme controls on the current values.
+                <p className="text-xs text-stone-400 font-serif">
+                  No curated schema for <code className="text-stone-300">{componentType}</code>. Showing theme controls on the current values.
                 </p>
               </div>
             )}
@@ -445,20 +470,21 @@ export function InspectorPanel() {
               if (props.length === 0) return null;
               return (
                 <div key={group.label} className="border-b border-stone-800/50">
-                  <p className="px-4 pt-3 pb-1 text-[10px] uppercase tracking-wider text-stone-500 font-semibold">{group.label}</p>
+                  <p className="px-4 pt-3 pb-1 text-xs uppercase tracking-wider text-stone-400 font-semibold">{group.label}</p>
                   <div className="px-4 pb-3 space-y-2.5">
                     {props.map((prop) => (
                       <div key={prop.name}>
                         <div className="flex items-center justify-between mb-1.5">
-                          <p className="text-xs text-stone-500 font-mono">{prop.name}</p>
+                          <p className="text-xs text-stone-400 font-mono">{prop.name}</p>
                           {isOverridden(prop.name) && (
-                            <button
-                              onClick={() => sendReset(prop.name)}
-                              className="flex items-center gap-1 text-[10px] text-stone-500 hover:text-primary-300 transition"
-                              title="Revert to theme default"
-                            >
-                              <RotateCcw className="w-3 h-3" /> reset
-                            </button>
+                            <Tooltip content="Revert to theme default" side="left">
+                              <button
+                                onClick={() => sendReset(prop.name)}
+                                className="flex items-center gap-1 text-xs text-stone-400 hover:text-primary-300 transition rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+                              >
+                                <RotateCcw className="w-3 h-3" aria-hidden="true" /> reset
+                              </button>
+                            </Tooltip>
                           )}
                         </div>
                         {renderControl(prop.name)}
@@ -474,7 +500,7 @@ export function InspectorPanel() {
 
       {/* ── Footer ──────────────────────────────────────── */}
       <div className="shrink-0 px-4 py-2.5 border-t border-stone-800 bg-stone-900/50">
-        <p className="text-[10px] text-stone-600 font-serif text-center">
+        <p className="text-xs text-stone-400 font-serif text-center">
           Pick from the theme. Changes preview live; dark mode follows. Undo: Ctrl+Z.
         </p>
       </div>

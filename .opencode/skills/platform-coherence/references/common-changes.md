@@ -105,15 +105,39 @@
 ## Add New Frontend Page / New Static Marketing Copy
 
 - [ ] **i18n:** Use real `t()` keys, never hardcoded/`locale === "pt" ? ... : ...` ternaries
-- [ ] **Content UI Editor:** Ask the user whether this page's headings/intro copy should be wired
-      to `EditableText` (super_admin inline editor) — do not assume yes or no. See
-      `references/design-patterns.md` → "Content UI Editor" and
-      `discovery/mockups/content-ui-editor/briefing-to-build-local.md` for the pattern and the
-      current per-page coverage (updated after every phase).
-- [ ] **Click-conflict check:** If wiring text, confirm it isn't inside an element with its own
-      state-changing `onClick` (filter/tab/dropdown/accordion) — if it is, flag it and ask instead
-      of wiring it silently.
+- [ ] **Content Studio overlay:** Ask the user whether this page's headings/intro copy should be
+      wired into the overlay with `<Text k="copy.key">` (`components/ui/Text.tsx`) — do not assume
+      yes or no. The old `EditableText` inline editor is RETIRED; never wire into it. See
+      `references/design-patterns.md` → "Content Studio overlay & editable copy" for the pattern.
+- [ ] **Computed vs copy:** Only static copy gets `<Text>`/keys — computed values (counts, prices,
+      dates, API data) render as plain `{expr}` so the overlay treats them as read-only.
 - [ ] **Static array content:** If the copy comes from a `.map()` over a hardcoded array (cards,
       lists), carry the i18n key in the array item, not a pre-resolved string, so new entries stay
       editable automatically.
+- [ ] **Graphify:** Run `graphify update .` after changes
+
+## Add or modify Studio/back-office UI (unified UX contract — 2026-07-11)
+
+Binding for ANY change to `/studio`, `/admin`, dashboards, or the overlay editor. Full rules:
+`frontend-ui-guardian` skill → "Back-Office / Tool UI"; concrete implementations:
+`references/design-patterns.md` → "Content Studio & back-office UI patterns".
+
+- [ ] **Kit only:** `Modal` / `Button size="xs"` / `Input` / `Textarea` / `Toggle` / `Tooltip` /
+      `EmptyState` / `LoadingSkeleton` from `components/ui/` — no bespoke buttons/fields/modals
+- [ ] **Destructive actions confirm** (`window.confirm`, OK/Cancel wording) — delete, revert,
+      discard, exit-with-unsaved
+- [ ] **Dirty state guarded** — `useDirtyGuard(dirty, { message })` for anything with unsaved input
+- [ ] **Three fetch states:** skeleton while loading, `LoadError` + retry on failure (never a
+      silent `catch {}`), an empty state for zero items
+- [ ] **Tooltips not `title=`** — kit `Tooltip`; `aria-label` on every icon-only button
+- [ ] **12px floor** — no `text-[8-11px]` (scaled miniature previews exempt)
+- [ ] **Save feedback** — visible confirmation (status flash / toast), never silence
+- [ ] **Debounce rapid inputs** (~400ms/item, local state instant); **optimistic list mutations**
+      (revert + toast on failure) instead of refetch flashes
+- [ ] **Keyboard contract checked** — no collisions with Ctrl+K / Esc / Ctrl+Z / Ctrl+Shift+Z /
+      Ctrl+Y / Ctrl+S / Ctrl+Shift+E; new dialog-like surfaces carry `role="dialog"` or
+      `data-rl-dialog` (LESSONS.md #43); greedy key handlers yield to open dialogs
+- [ ] **Dark mode** — `dark:` variants on everything added
+- [ ] **Content Studio work?** Read `docs/content-studio/CONTENT_STUDIO.md` first; update
+      `IMPLEMENTATION_STATUS.md` in the same change
 - [ ] **Graphify:** Run `graphify update .` after changes

@@ -11,10 +11,11 @@
  *   - Draft controls (change count, save, publish, discard, preview-as-visitor)
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { PenLine, Eye, X, AlertTriangle, Check, Undo2, Save, Upload, Trash2, ChevronDown, FileText } from "lucide-react";
+import { PenLine, Eye, X, AlertTriangle, Check, Undo2, Save, Upload, Trash2, ChevronDown, FileText, History } from "lucide-react";
 import { useOverlay } from "./overlay-provider";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { InspectorPanel } from "./inspector-panel";
 import { injectSelectionAgent } from "./selection-agent";
 import { api } from "@/lib/api";
@@ -25,6 +26,7 @@ export function OverlayShell() {
     pendingPrompt, confirmOverride, cancelOverride,
     draftChanges, saveDraft, publishDraft, discardDraft, clearDraftChanges, draftSaving, pageSlug,
     previewMode, setPreviewMode,
+    statusFlash, resumableDraft, resumeDraft, dismissResumable,
   } = useOverlay();
   const pathname = usePathname();
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -33,7 +35,23 @@ export function OverlayShell() {
   const [reloadKey, setReloadKey] = useState(0);
   const [pages, setPages] = useState<{ slug: string; label: string }[]>([]);
   const [pageMenuOpen, setPageMenuOpen] = useState(false);
+  const [pageActiveIndex, setPageActiveIndex] = useState(-1);
   const pageMenuRef = useRef<HTMLDivElement>(null);
+  // Inspector dock width — resizable via the left-edge handle (task: 320–560px,
+  // persisted). Read from localStorage on mount (SSR-safe: effect only).
+  const [inspectorWidth, setInspectorWidth] = useState(384);
+  const [inspectorDragging, setInspectorDragging] = useState(false);
+  const inspectorDragRef = useRef({ dragging: false, x: 0, w: 0 });
+  // The locale inline text edits commit to — same read as the selection
+  // agent (localStorage.rootlink_locale, default "pt"). Indicator only.
+  const [editLocale, setEditLocale] = useState("pt");
+
+  // Re-read the editing locale each time edit mode activates (the user may
+  // have switched the site language since the last session).
+  useEffect(() => {
+    if (!active) return;
+    setEditLocale(localStorage.getItem("rootlink_locale") || "pt");
+  }, [active]);
 
   // Prevent the page behind the overlay from scrolling.
   useEffect(() => {
@@ -57,6 +75,85 @@ export function OverlayShell() {
     return () => document.removeEventListener("mousedown", handler);
   }, [pageMenuOpen]);
 
+  // When the page menu opens, start keyboard navigation on the current page.
+  useEffect(() => {
+    if (pageMenuOpen) setPageActiveIndex(Math.max(0, pages.findIndex((p) => p.slug === pageSlug)));
+  }, [pageMenuOpen, pages, pageSlug]);
+
+  // Inspector width: restore the persisted value once on mount (clamped).
+  useEffect(() => {
+    const stored = window.localStorage.getItem("rl-inspector-width");
+    if (!stored) return;
+    const n = parseInt(stored, 10);
+    if (!Number.isNaN(n)) setInspectorWidth(Math.min(560, Math.max(320, n)));
+  }, []);
+
+  /** Clamp to 320–560px, apply, persist. */
+  const applyInspectorWidth = useCallback((w: number) => {
+    const clamped = Math.min(560, Math.max(320, Math.round(w)));
+    setInspectorWidth(clamped);
+    try { window.localStorage.setItem("rl-inspector-width", String(clamped)); } catch {}
+  }, []);
+
+  // Drag via pointer capture (document-level listeners would lose the pointer
+  // over the iframe; capture keeps events routed to the handle).
+  const onHandlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    inspectorDragRef.current = { dragging: true, x: e.clientX, w: inspectorWidth };
+    setInspectorDragging(true);
+  };
+  const onHandlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!inspectorDragRef.current.dragging) return;
+    // Handle sits on the dock's LEFT edge — dragging left widens the inspector.
+    applyInspectorWidth(inspectorDragRef.current.w + (inspectorDragRef.current.x - e.clientX));
+  };
+  const onHandlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!inspectorDragRef.current.dragging) return;
+    inspectorDragRef.current.dragging = false;
+    setInspectorDragging(false);
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
+  };
+  const onHandleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      applyInspectorWidth(inspectorWidth + 16);
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      applyInspectorWidth(inspectorWidth - 16);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      applyInspectorWidth(384);
+    }
+  };
+
+  // Keyboard navigation for the page dropdown (fires only while the menu is
+  // open; focus stays on the trigger inside this container).
+  const onPageMenuKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!pageMenuOpen || pages.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setPageActiveIndex((i) => Math.min(pages.length - 1, i + 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setPageActiveIndex((i) => Math.max(0, i - 1));
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      setPageActiveIndex(0);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      setPageActiveIndex(pages.length - 1);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (pageActiveIndex >= 0 && pageActiveIndex < pages.length) switchPage(pages[pageActiveIndex].slug);
+    } else if (e.key === "Escape") {
+      // Close ONLY the menu — this is the parent document, not the iframe.
+      e.preventDefault();
+      e.stopPropagation();
+      setPageMenuOpen(false);
+    }
+  };
+
   // Switch to a different page. Warns if unsaved changes exist.
   const switchPage = (slug: string) => {
     setPageMenuOpen(false);
@@ -69,8 +166,11 @@ export function OverlayShell() {
     setIframeUrl(`${window.location.origin}/${slug === "home" ? "" : slug}`);
   };
 
-  // Discard: clear state + force iframe remount so the agent re-injects.
+  // Discard: confirm, then clear state + force iframe remount so the agent
+  // re-injects. Discarding throws away the whole page draft — irreversible.
   const handleDiscard = () => {
+    const n = draftChanges.length;
+    if (!window.confirm(`Discard all ${n} unsaved change${n !== 1 ? "s" : ""} on this page? This cannot be undone.`)) return;
     discardDraft();
     setReloadKey((k) => k + 1);
     setAgentReady(false);
@@ -134,36 +234,57 @@ export function OverlayShell() {
         <div className="flex items-center gap-3">
           <button
             onClick={toggle}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-300 hover:bg-stone-800 transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-300 hover:bg-stone-800 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+            aria-label="Exit edit mode"
           >
-            <X className="w-3.5 h-3.5" /> Exit
+            <X className="w-3.5 h-3.5" aria-hidden="true" /> Exit
           </button>
           <span className="font-display text-sm font-semibold text-primary-300">
             Content Studio — Edit Mode
           </span>
+          {/* Editing-locale indicator — which language inline text edits save to */}
+          <Tooltip content="Inline text edits are saved to this language" side="bottom">
+            <span
+              className="px-2.5 py-1 rounded-full border border-stone-700 bg-stone-900 text-xs font-medium text-stone-300"
+              aria-label={`Inline text edits are saved to this language: ${editLocale.toUpperCase()}`}
+            >
+              Editing: <span className="text-primary-300">{editLocale.toUpperCase()}</span>
+            </span>
+          </Tooltip>
           {/* Page navigation dropdown */}
           {pages.length > 0 && (
-            <div ref={pageMenuRef} className="relative">
-              <button
-                onClick={() => setPageMenuOpen((o) => !o)}
-                disabled={draftSaving}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-stone-300 hover:bg-stone-800 transition disabled:opacity-50"
-                title="Switch page"
-              >
-                <FileText className="w-3.5 h-3.5" />
-                {pages.find((p) => p.slug === pageSlug)?.label || pageSlug}
-                <ChevronDown className="w-3.5 h-3.5 text-stone-500" />
-              </button>
+            <div ref={pageMenuRef} className="relative" onKeyDown={onPageMenuKeyDown}>
+              <Tooltip content="Switch page" side="bottom">
+                <button
+                  onClick={() => setPageMenuOpen((o) => !o)}
+                  disabled={draftSaving}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-stone-300 hover:bg-stone-800 transition disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+                  aria-haspopup="listbox"
+                  aria-expanded={pageMenuOpen}
+                >
+                  <FileText className="w-3.5 h-3.5" aria-hidden="true" />
+                  {pages.find((p) => p.slug === pageSlug)?.label || pageSlug}
+                  <ChevronDown className="w-3.5 h-3.5 text-stone-500" aria-hidden="true" />
+                </button>
+              </Tooltip>
               {pageMenuOpen && (
-                <div className="absolute top-full left-0 mt-1 w-48 max-h-80 overflow-y-auto rounded-lg border border-stone-800 bg-stone-900 shadow-lg z-50">
-                  {pages.map((p) => (
+                <div
+                  role="listbox"
+                  aria-label="Pages"
+                  className="absolute top-full left-0 mt-1 w-48 max-h-80 overflow-y-auto rounded-lg border border-stone-800 bg-stone-900 shadow-lg z-50"
+                >
+                  {pages.map((p, i) => (
                     <button
                       key={p.slug}
                       onClick={() => switchPage(p.slug)}
+                      role="option"
+                      aria-selected={i === pageActiveIndex}
                       className={`w-full text-left px-3 py-2 text-sm transition flex items-center gap-2 ${
                         p.slug === pageSlug
                           ? "bg-primary-600 text-cream"
-                          : "text-stone-200 hover:bg-stone-800"
+                          : i === pageActiveIndex
+                            ? "bg-stone-800 text-stone-200"
+                            : "text-stone-200 hover:bg-stone-800"
                       }`}
                     >
                       {p.label}
@@ -176,18 +297,32 @@ export function OverlayShell() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Transient status flash ("Draft saved" / "Published" / …) — the
+              provider auto-clears it after ~2.5s. */}
+          {statusFlash && (
+            <span
+              role="status"
+              aria-live="polite"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-emerald-700 bg-emerald-900/40 text-xs font-medium text-emerald-300"
+            >
+              <Check className="w-3 h-3" aria-hidden="true" /> {statusFlash}
+            </span>
+          )}
+
           {/* Preview toggle — shows the published version (draft changes hidden) */}
-          <button
-            onClick={() => setPreviewMode(!previewMode)}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition ${
-              previewMode
-                ? "bg-amber-600 text-white"
-                : "text-stone-400 hover:text-stone-200 hover:bg-stone-800"
-            }`}
-            title={previewMode ? "Exit preview" : "Preview as visitor"}
-          >
-            <Eye className="w-3.5 h-3.5" /> {previewMode ? "Previewing" : "Preview"}
-          </button>
+          <Tooltip content={previewMode ? "Exit preview" : "Preview as visitor"} side="bottom">
+            <button
+              onClick={() => setPreviewMode(!previewMode)}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
+                previewMode
+                  ? "bg-amber-600 text-white"
+                  : "text-stone-400 hover:text-stone-200 hover:bg-stone-800"
+              }`}
+              aria-pressed={previewMode}
+            >
+              <Eye className="w-3.5 h-3.5" aria-hidden="true" /> {previewMode ? "Previewing" : "Preview"}
+            </button>
+          </Tooltip>
 
           {/* Draft controls */}
           {draftChanges.length > 0 && (
@@ -195,35 +330,63 @@ export function OverlayShell() {
               <span className="text-xs text-rust-400 font-medium">
                 {draftChanges.length} unsaved
               </span>
-              <button
-                onClick={saveDraft}
-                disabled={draftSaving}
-                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-stone-300 hover:bg-stone-800 transition"
-                title="Save draft"
-              >
-                <Save className="w-3.5 h-3.5" /> Save
-              </button>
+              <Tooltip content="Save draft" side="bottom">
+                <button
+                  onClick={saveDraft}
+                  disabled={draftSaving}
+                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-stone-300 hover:bg-stone-800 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+                >
+                  <Save className="w-3.5 h-3.5" aria-hidden="true" /> Save
+                </button>
+              </Tooltip>
               <button
                 onClick={publishDraft}
                 disabled={draftSaving}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-primary-600 hover:bg-primary-700 text-cream transition disabled:opacity-50"
-                title="Publish"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-primary-600 hover:bg-primary-700 text-cream transition disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
               >
-                {draftSaving ? "..." : <Upload className="w-3.5 h-3.5" />} Publish
+                {draftSaving ? "..." : <Upload className="w-3.5 h-3.5" aria-hidden="true" />} Publish
               </button>
-              <button
-                onClick={handleDiscard}
-                disabled={draftSaving}
-                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-stone-400 hover:text-red-400 transition"
-                title="Discard"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              <Tooltip content="Discard unsaved changes" side="bottom">
+                <button
+                  onClick={handleDiscard}
+                  disabled={draftSaving}
+                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-stone-400 hover:text-red-400 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+                  aria-label="Discard unsaved changes"
+                >
+                  <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                </button>
+              </Tooltip>
             </>
           )}
 
           </div>
       </header>
+
+      {/* ── Resume-draft offer (inline, amber) ─────────── */}
+      {resumableDraft && (
+        <div className="shrink-0 px-4 py-2.5 border-b border-amber-800/40 bg-amber-950/30 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-sm text-stone-300">
+            <History className="w-4 h-4 text-amber-400 shrink-0" aria-hidden="true" />
+            <span>
+              This page has a saved draft with {resumableDraft.count} change{resumableDraft.count !== 1 ? "s" : ""} from a previous session.
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => void resumeDraft()}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+            >
+              Resume draft
+            </button>
+            <button
+              onClick={dismissResumable}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium text-stone-400 hover:text-stone-200 hover:bg-stone-800 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+            >
+              Ignore
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Override prompt (inline, not modal) ────────── */}
       {pendingPrompt && (
@@ -282,11 +445,35 @@ export function OverlayShell() {
           )}
         </div>
 
-        {/* Inspector panel — hidden in preview mode */}
+        {/* Inspector panel — hidden in preview mode. Resizable via the
+            left-edge handle (drag, arrows, Enter/double-click to reset). */}
         {!previewMode && (
-          <aside className="w-96 shrink-0 border-l border-stone-800 bg-stone-950 overflow-hidden flex flex-col">
-            <InspectorPanel />
-          </aside>
+          <>
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize inspector"
+              aria-valuemin={320}
+              aria-valuemax={560}
+              aria-valuenow={inspectorWidth}
+              tabIndex={0}
+              onPointerDown={onHandlePointerDown}
+              onPointerMove={onHandlePointerMove}
+              onPointerUp={onHandlePointerUp}
+              onPointerCancel={onHandlePointerUp}
+              onDoubleClick={() => applyInspectorWidth(384)}
+              onKeyDown={onHandleKeyDown}
+              className={`w-1.5 shrink-0 cursor-col-resize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
+                inspectorDragging ? "bg-rust-500/50" : "bg-stone-900 hover:bg-rust-500/50"
+              }`}
+            />
+            <aside
+              style={{ width: inspectorWidth }}
+              className="shrink-0 border-l border-stone-800 bg-stone-950 overflow-hidden flex flex-col"
+            >
+              <InspectorPanel />
+            </aside>
+          </>
         )}
       </div>
     </div>

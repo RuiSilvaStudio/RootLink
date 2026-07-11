@@ -368,3 +368,17 @@
      that array. When adding a new color family to `@theme` + `theme_seed.py`, also add
      its name to `selection-agent.ts`'s `COLOR_FAMILIES`. (Logo/wordmark integration,
      2026-07-11.)
+
+ 43. **A capture-phase document keydown handler that unconditionally swallows a key
+     (preventDefault + stopPropagation) breaks every OTHER consumer of that key on the
+     page.** The overlay selection agent's Esc handler (capture, iframe document) made
+     Esc unable to close the Ctrl+K CommandPalette while edit mode was on — the palette's
+     own bubble-phase Esc listener never fired (found by real user testing). Fix pattern:
+     before handling, the greedy handler must **yield to anything above it in the
+     priority order** — here, `if (document.querySelector('[role="dialog"],
+     [data-rl-dialog]')) return;` so any open dialog gets Esc first. Corollary: overlays/
+     palettes must carry real dialog semantics (`role="dialog"` — CommandPalette was
+     missing it) or a marker attribute, or they're invisible to such checks. When adding
+     any new full-page keyboard interception, enumerate who else listens for that key
+     (grep `key === "Escape"` / the specific key) before shipping. (Content Studio P2,
+     2026-07-11.)
