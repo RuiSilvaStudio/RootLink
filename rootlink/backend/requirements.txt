@@ -21,3 +21,4 @@ pillow-heif>=0.16.0
 stripe>=8.0.0
 alembic>=1.18.0
 feedparser>=6.0.0
+argostranslate>=1.9.0

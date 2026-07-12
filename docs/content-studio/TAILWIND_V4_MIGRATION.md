@@ -1,6 +1,9 @@
 # Tailwind v4 Migration — Task Brief
 
-> **Priority:** HIGH — blocking all other Content Studio work
+> **Status:** ✅ COMPLETE (2026-07-09). This file is kept as a historical record of the
+> migration. The patterns section (§"How to use v4") below is still valid as a reference.
+>
+> **Priority:** ~~HIGH — blocking all other Content Studio work~~ (done)
 > **Created:** 2026-07-09
 > **Context:** The Content Studio was built on Tailwind v3.4.0 with an RGB-channel hack for CSS variables. The user added a `tailwindcss-development` skill explicitly documenting v4 usage. The entire platform must migrate to v4.3.2 (latest).
 
@@ -73,7 +76,7 @@ Everything moves to `@theme` in CSS. The `content` paths (where to scan for clas
 ### 5. Update the Content Studio's theme backend
 - `theme_seed.py`: change all `light_value` from RGB channels (`99 77 51`) to hex (`#634d33`)
 - The `ThemeProvider` (`lib/theme-context.tsx`): no format conversion needed — hex values inject directly as CSS vars
-- The `PaletteColorPicker` (`constrained-controls.tsx`): the PALETTE array already uses hex — now it matches the backend format. The reverse-lookup bug (computed RGB can't match palette hex) is fixed by converting `getComputedStyle` RGB output to hex for comparison.
+- The `PaletteColorPicker` (`constrained-controls.tsx`): the PALETTE array already uses hex — now it matches the backend format. ~~The reverse-lookup bug (computed RGB can't match palette hex) is fixed by converting `getComputedStyle` RGB output to hex for comparison.~~ **Superseded:** the `normalizeToHex` rgb→hex hack was later removed entirely in the theme-token model rebuild — current-token detection is now name-based via `data-rl-*-token` attrs (no color-format comparison at all). See `IMPLEMENTATION_STATUS.md` → "Theme-token model rebuild."
 - The `selection-agent.ts`: remove `mapTokenToCssVar()` — in v4, setting `el.style.setProperty('--color-primary-600', '#634d33')` works natively
 
 ### 6. Verify

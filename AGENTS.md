@@ -20,7 +20,10 @@ gotcha bites, add it there in the same change. The content-platform work is docu
 **The Content Studio** \(the unified CMS-like tool managing RootLink's UI theming + content/copy\)
 is documented in `docs/content-studio/` \(spec `CONTENT_STUDIO.md`, status
 `IMPLEMENTATION_STATUS.md`\). **Before any Content Studio work, read the spec first** — it is the
-north-star contract and anti-drift mechanism.
+north-star contract and anti-drift mechanism. A **UI face-lift review** was conducted and
+implemented (2026-07-12, report + plan in `discovery/assessment/content-studio-facelift-*`); the
+studio now has a collapsible sidebar, Cmd+K command palette, Sonner toasts, and a rebuilt
+Overview page.
 
 **The old inline Content UI Editor \(`components/editor-mode/`\) is RETIRED** — superseded by the
 Content Studio's visual overlay \(`components/overlay/`\). Never wire new pages into `EditableText`/
@@ -68,7 +71,7 @@ established patterns instead of re-inventing them: the `frontend-ui-guardian` sk
 contract\) is **binding** for studio/admin/dashboard work, and
 `.opencode/skills/platform-coherence/references/design-patterns.md` → "Content Studio &
 back-office UI patterns" lists the concrete components/hooks to reuse \(Modal, LoadError,
-useDirtyGuard, Tooltip, skeletons, confirmations, debounce, optimistic updates, 12px floor\).
+useDirtyGuard, Tooltip, Toaster/Sonner, skeletons, confirmations, debounce, optimistic updates, 12px floor\).
 The checklist in `references/common-changes.md` → "Add or modify Studio/back-office UI" must
 be walked for any such change. Never ship a destructive action without a confirm, a dirty
 state without an exit guard, a fetch without loading/error/empty states, or a keyboard

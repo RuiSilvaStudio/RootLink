@@ -13,9 +13,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Trash2, Eye, EyeOff } from "lucide-react";
-import { useToast } from "@/lib/toast-context";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
-import { Button, Input, Tooltip } from "@/components/ui";
+import { Button, Input, Tooltip, EmptyState } from "@/components/ui";
 import { ListSkeleton, TextSkeleton } from "@/components/ui/LoadingSkeleton";
 import { ResizableSplit } from "@/components/ui/ResizableSplit";
 import { LoadError } from "@/components/studio/LoadError";
@@ -38,7 +38,6 @@ interface SchemaRow {
 // ── Page component ────────────────────────────────────────────────────────
 
 export default function ElementCatalogPage() {
-  const { addToast } = useToast();
   const [schemas, setSchemas] = useState<Record<string, SchemaRow[]>>({});
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -70,8 +69,8 @@ export default function ElementCatalogPage() {
       });
       setAddingProp("");
       await fetch();
-      addToast("success", "Property added");
-    } catch (e: any) { addToast("error", e?.message || "Failed"); }
+      toast.success("Property added");
+    } catch (e: any) { toast.error(e?.message || "Failed"); }
   };
 
   const updateRow = async (row: SchemaRow, field: string, value: any) => {
@@ -79,7 +78,7 @@ export default function ElementCatalogPage() {
     try {
       await api.elementSchemas.update(row.id, { [field]: value });
       await fetch();
-    } catch (e: any) { addToast("error", e?.message); }
+    } catch (e: any) { toast.error(e?.message); }
     finally { setSaving(null); }
   };
 
@@ -88,8 +87,8 @@ export default function ElementCatalogPage() {
     try {
       await api.elementSchemas.remove(row.id);
       await fetch();
-      addToast("info", "Property removed");
-    } catch (e: any) { addToast("error", e?.message); }
+      toast.info("Property removed");
+    } catch (e: any) { toast.error(e?.message); }
   };
 
   if (loading) {
@@ -125,6 +124,7 @@ export default function ElementCatalogPage() {
         minWidth={160}
         maxWidth={320}
         className="flex-1"
+        leftClassName="hidden lg:block"
         left={
           <div className="h-full border-r border-primary-200/40 dark:border-stone-800 p-3 overflow-y-auto">
             <p className="px-1 pb-2 text-xs uppercase tracking-wider text-stone-400 font-medium">Types</p>
@@ -197,7 +197,7 @@ export default function ElementCatalogPage() {
                 </Button>
               </div>
             </div>
-          ) : <div className="text-center py-20"><p className="text-sm text-stone-400 font-serif">Select an element type.</p></div>}
+          ) : <EmptyState title="No element type selected" message="Select an element type from the left to view and curate its property schema." />}
           </div>
         }
       />

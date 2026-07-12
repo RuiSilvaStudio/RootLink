@@ -52,6 +52,7 @@ from app.api import (
     taxonomy,
     theme,
     theme_manager,
+    translate,
     users,
     waste,
 )
@@ -79,12 +80,12 @@ from app.models.taxonomy import (  # noqa: F401
 )
 from app.models.theme import Theme, ThemeToken  # noqa: F401 - ensure table creation
 from app.models.theme_override import ThemeOverride  # noqa: F401 - ensure table creation
+from app.services.block_page_seed import seed_block_pages
 from app.services.element_catalog_seed import seed_default_element_catalog
 from app.services.legal_seed import seed_legal_documents
 from app.services.roles_migration import migrate_legacy_delegations, migrate_users_to_entity_rank
 from app.services.template_seed import seed_content_templates
 from app.services.theme_seed import seed_default_theme
-from app.services.block_page_seed import seed_block_pages
 
 
 @asynccontextmanager
@@ -637,6 +638,7 @@ app.include_router(entity_conversion.router)
 app.include_router(entities.router)
 app.include_router(role_requests.router)
 app.include_router(delegations.router)
+app.include_router(translate.router)
 
 # Serve uploaded media files.
 # Register image MIME types explicitly: the slim Docker image's mimetypes DB does

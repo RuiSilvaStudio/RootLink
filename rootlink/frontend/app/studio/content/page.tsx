@@ -3,10 +3,10 @@
 /**
  * Content Studio — Content/Copy module.
  *
- * A CMS UI over the existing /api/copy override layer. Replaces the ad-hoc
- * /admin/copy grid and the inline editor's text piece with a first-class
- * surface: namespace-tree navigation + per-locale (PT + EN) editor + live
- * "modified" indicators + per-key save/revert.
+ * A CMS UI over the existing /api/copy override layer: a first-class
+ * surface for editing all interface text (PT + EN) — namespace-tree
+ * navigation + per-locale editor + live "modified" indicators + per-key
+ * save/revert + bulk "Save all".
  *
  * Spec: docs/content-studio/CONTENT_STUDIO.md §5 (content/copy model).
  *
@@ -20,8 +20,8 @@
  */
 
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { Search, Check, RotateCcw, AlertCircle } from "lucide-react";
-import { useToast } from "@/lib/toast-context";
+import { Search, Check, RotateCcw, AlertCircle, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import enMessages from "@/messages/en.json";
 import ptMessages from "@/messages/pt.json";
@@ -92,7 +92,6 @@ if (ALL_NAMESPACES.some((ns) => !NAMESPACE_DOMAINS.some((d) => d.prefixes.includ
 }
 
 export default function ContentPage() {
-  const { addToast } = useToast();
   const [overrides, setOverrides] = useState<OverrideEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -101,6 +100,12 @@ export default function ContentPage() {
   const [drafts, setDrafts] = useState<Record<string, { pt?: string; en?: string }>>({});
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [savingAll, setSavingAll] = useState(false);
+  const [translatingKey, setTranslatingKey] = useState<string | null>(null);
+  const [translatingAll, setTranslatingAll] = useState(false);
+  // Origin map: { `${key}:${locale}` → "mt" | "tm" | "human" } — tracks how the
+  // current value was produced. Phase 1 only sets "mt" (from auto-translate) and
+  // "human" (from a saved override or typed edit). Phase 2 will add "tm" origins.
+  const [origins, setOrigins] = useState<Record<string, "mt" | "tm" | "human">>({});
 
   // Fetch all overrides on mount
   const fetchOverrides = useCallback(async () => {
@@ -134,7 +139,12 @@ export default function ContentPage() {
     const q = search.toLowerCase();
     return ALL_NAMESPACES.filter((ns) => {
       if (ns.includes(q)) return true;
-      return keysInNamespace(ns).some((k) => k.toLowerCase().includes(q) || EN_DEFAULTS[k]?.toLowerCase().includes(q));
+      return keysInNamespace(ns).some(
+        (k) =>
+          k.toLowerCase().includes(q) ||
+          EN_DEFAULTS[k]?.toLowerCase().includes(q) ||
+          PT_DEFAULTS[k]?.toLowerCase().includes(q)
+      );
     });
   }, [search]);
 
@@ -168,6 +178,79 @@ export default function ContentPage() {
     }));
   };
 
+  /** Origin of the current value for display: explicit origin map → "human" if
+   * there's a saved override → undefined (no badge). */
+  const getOrigin = (key: string, locale: "pt" | "en"): "mt" | "tm" | "human" | undefined => {
+    const ek = `${key}:${locale}`;
+    if (origins[ek]) return origins[ek];
+    if (overrideMap[ek] !== undefined) return "human";
+    return undefined;
+  };
+
+  /** Auto-translate a single key's EN field from its PT source. Fills the EN
+   * draft (unsaved). No-ops if the PT source is empty or EN already has a value. */
+  const autoTranslateKey = async (key: string) => {
+    const ptSource = getValue(key, "pt");
+    if (!ptSource || !ptSource.trim()) {
+      toast.error("No PT source text to translate");
+      return;
+    }
+    const enCurrent = getValue(key, "en");
+    if (enCurrent && enCurrent.trim()) {
+      toast.error("EN already has a value — clear it first to re-translate");
+      return;
+    }
+    setTranslatingKey(key);
+    try {
+      const res = await api.translate.single(ptSource, "pt", "en");
+      setDraft(key, "en", res.value);
+      setOrigins((prev) => ({ ...prev, [`${key}:en`]: res.origin === "mt" ? "mt" : "mt" }));
+      toast.success(`Translated "${key}"`);
+    } catch (e: any) {
+      toast.error(e?.message || "Translation failed");
+    } finally {
+      setTranslatingKey(null);
+    }
+  };
+
+  /** Auto-translate every empty EN field in the current namespace. Fills each
+   * as a draft (unsaved). Skips keys with no PT source or with existing EN. */
+  const autoTranslateAllEmpty = async () => {
+    const emptyKeys = currentKeys.filter((k) => {
+      const enVal = getValue(k, "en");
+      return (!enVal || !enVal.trim()) && getValue(k, "pt").trim();
+    });
+    if (emptyKeys.length === 0) {
+      toast.info("No empty EN keys in this namespace");
+      return;
+    }
+    setTranslatingAll(true);
+    try {
+      const items = emptyKeys.map((k) => ({ key: k, source_text: getValue(k, "pt") }));
+      const res = await api.translate.bulk(items, "pt", "en");
+      let filled = 0;
+      let failed = 0;
+      for (const r of res.results) {
+        if (r.value && !r.error) {
+          setDraft(r.key, "en", r.value);
+          setOrigins((prev) => ({ ...prev, [`${r.key}:en`]: "mt" }));
+          filled++;
+        } else {
+          failed++;
+        }
+      }
+      if (failed > 0) {
+        toast.error(`Translated ${filled}, ${failed} failed`);
+      } else {
+        toast.success(`Translated ${filled} ${filled === 1 ? "key" : "keys"}`);
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Bulk translation failed");
+    } finally {
+      setTranslatingAll(false);
+    }
+  };
+
   const saveKey = async (key: string) => {
     const draft = drafts[key];
     if (!draft) return;
@@ -187,9 +270,9 @@ export default function ContentPage() {
         delete next[key];
         return next;
       });
-      addToast("success", `Saved "${key}"`);
+      toast.success(`Saved "${key}"`);
     } catch (e: any) {
-      addToast("error", e?.message || "Failed to save");
+      toast.error(e?.message || "Failed to save");
     } finally {
       setSavingKey(null);
     }
@@ -206,9 +289,9 @@ export default function ContentPage() {
         delete next[key];
         return next;
       });
-      addToast("info", `Reverted "${key}" to default`);
+      toast.info(`Reverted "${key}" to default`);
     } catch (e: any) {
-      addToast("error", e?.message || "Revert failed");
+      toast.error(e?.message || "Revert failed");
     } finally {
       setSavingKey(null);
     }
@@ -250,9 +333,9 @@ export default function ContentPage() {
         return next;
       });
       if (failedCount > 0) {
-        addToast("error", `Saved ${savedKeys.length}, ${failedCount} failed`);
+        toast.error(`Saved ${savedKeys.length}, ${failedCount} failed`);
       } else {
-        addToast("success", `Saved ${savedKeys.length} ${savedKeys.length === 1 ? "key" : "keys"}`);
+        toast.success(`Saved ${savedKeys.length} ${savedKeys.length === 1 ? "key" : "keys"}`);
       }
     } finally {
       setSavingAll(false);
@@ -315,20 +398,40 @@ export default function ContentPage() {
             Marketing copy, labels, buttons, menus, warnings — PT + EN
           </p>
         </div>
-        {dirtyCount > 0 && (
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-medium text-rust-600 dark:text-rust-400 flex items-center gap-1.5">
-              <AlertCircle className="w-3.5 h-3.5" />
-              {dirtyCount} unsaved
-            </span>
-            <Button size="xs" variant="primary" onClick={saveAll} loading={savingAll}>
-              Save all ({dirtyCount})
-            </Button>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          <Button
+            size="xs"
+            variant="ghost"
+            onClick={autoTranslateAllEmpty}
+            loading={translatingAll}
+            disabled={translatingAll || savingAll}
+            title="Auto-translate every empty EN field in this namespace from its PT source (Argos Translate)"
+          >
+            {!translatingAll && <Sparkles className="w-3 h-3" />}
+            Auto-translate EN
+          </Button>
+          {dirtyCount > 0 && (
+            <>
+              <span className="text-xs font-medium text-rust-600 dark:text-rust-400 flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5" />
+                {dirtyCount} unsaved
+              </span>
+              <Button size="xs" variant="primary" onClick={saveAll} loading={savingAll}>
+                Save all ({dirtyCount})
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* ── Namespace select (mobile) ───────────────────── */}
+      {/* Auto-translate helper note — explains the safeguard so users know
+          existing translations won't be touched. */}
+      <div className="shrink-0 px-6 py-1.5 border-b border-primary-200/40 dark:border-stone-800 bg-primary-50/20 dark:bg-stone-900/40">
+        <p className="text-[11px] text-stone-500 dark:text-stone-400 font-serif">
+          <Sparkles className="w-3 h-3 inline -mt-0.5 mr-1 text-stone-400" />
+          <strong className="font-medium text-stone-600 dark:text-stone-300">Auto-translate</strong> fills only empty EN fields from their PT source as unsaved drafts — existing translations are never overwritten. Review and save each one.
+        </p>
+      </div>
       <div className="lg:hidden shrink-0 p-3 border-b border-primary-200/40 dark:border-stone-800">
         <div className="relative mb-2">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400 pointer-events-none z-10" />
@@ -359,7 +462,7 @@ export default function ContentPage() {
         minWidth={192}
         maxWidth={384}
         className="flex-1"
-        leftClassName="hidden lg:flex"
+        leftClassName="hidden lg:block"
         left={
           <div className="h-full flex flex-col border-r border-primary-200/40 dark:border-stone-800">
             <div className="p-3 border-b border-primary-200/30 dark:border-stone-800/50">
@@ -458,6 +561,27 @@ export default function ContentPage() {
                       {key}
                     </code>
                     <div className="flex items-center gap-2">
+                      {(() => {
+                        const o = getOrigin(key, "en");
+                        if (!o) return null;
+                        const labels: Record<string, { text: string; cls: string }> = {
+                          mt: { text: "MT", cls: "text-stone-500 bg-stone-100 dark:bg-stone-800" },
+                          tm: { text: "TM", cls: "text-rust-600 bg-rust-50 dark:bg-rust-950/30" },
+                          human: { text: "human", cls: "text-primary-600 bg-primary-50 dark:bg-primary-950/30" },
+                        };
+                        const l = labels[o];
+                        return (
+                          <Tooltip content={
+                            o === "mt" ? "Machine-translated draft (Argos)" :
+                            o === "tm" ? "Translation Memory match" :
+                            "Human-edited"
+                          }>
+                            <span className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ${l.cls}`}>
+                              {l.text}
+                            </span>
+                          </Tooltip>
+                        );
+                      })()}
                       {modified && !dirty && (
                         <span className="text-xs uppercase tracking-wide text-primary-600 dark:text-primary-400 px-1.5 py-0.5 rounded bg-primary-50 dark:bg-primary-950/30">
                           Modified
@@ -509,13 +633,26 @@ export default function ContentPage() {
                         size="xs"
                         variant="ghost"
                         onClick={() => revertKey(key)}
-                        disabled={saving || savingAll}
+                        disabled={saving || savingAll || !!translatingKey}
                       >
                         <RotateCcw className="w-3 h-3" /> Revert to default
                       </Button>
                     )}
+                    {!getValue(key, "en").trim() && getValue(key, "pt").trim() && (
+                      <Button
+                        size="xs"
+                        variant="ghost"
+                        onClick={() => autoTranslateKey(key)}
+                        loading={translatingKey === key}
+                        disabled={saving || savingAll || !!translatingKey}
+                        title="Auto-translate from PT (Argos Translate)"
+                      >
+                        {translatingKey !== key && <Sparkles className="w-3 h-3" />}
+                        Auto-translate
+                      </Button>
+                    )}
                     {dirty && (
-                      <Button size="xs" onClick={() => saveKey(key)} loading={saving} disabled={savingAll}>
+                      <Button size="xs" onClick={() => saveKey(key)} loading={saving} disabled={savingAll || !!translatingKey}>
                         {!saving && <Check className="w-3 h-3" />}
                         Save
                       </Button>

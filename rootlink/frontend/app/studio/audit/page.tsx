@@ -12,9 +12,9 @@
  * then decide which to merge and which to keep separate.
  */
 
-import { useState, useEffect, useCallback } from "react";
-import { ExternalLink, AlertCircle, X } from "lucide-react";
-import { Tooltip } from "@/components/ui";
+import { useState } from "react";
+import { ExternalLink, AlertCircle } from "lucide-react";
+import { Tooltip, Modal } from "@/components/ui";
 import { ComponentPreview } from "../catalog/ComponentPreview";
 import {
   COMPONENT_GROUPS,
@@ -26,14 +26,6 @@ import {
 export default function VisualAuditPage() {
   const [filter, setFilter] = useState<string>("All");
   const [modalType, setModalType] = useState<string | null>(null);
-
-  const close = useCallback(() => setModalType(null), []);
-  useEffect(() => {
-    if (!modalType) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [modalType, close]);
 
   const allTypes = Object.keys(COMPONENT_GROUPS).sort((a, b) => a.localeCompare(b));
   const types = filter === "All" ? allTypes : allTypes.filter((t) => COMPONENT_GROUPS[t] === filter);
@@ -128,34 +120,19 @@ export default function VisualAuditPage() {
         </div>
       </div>
 
-      {/* Full-size modal */}
-      {modalType && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center px-4" onClick={close}>
-          <div className="absolute inset-0 bg-stone-950/60 backdrop-blur-sm" />
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label={`${modalType} — full-size preview`}
-            className="relative w-full max-w-3xl max-h-[85vh] overflow-y-auto bg-white dark:bg-stone-900 rounded-2xl shadow-2xl border border-stone-200/60 dark:border-stone-700 p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close */}
-            <div className="absolute top-4 right-4">
-              <Tooltip content="Close (Esc)" side="left">
-                <button onClick={close} aria-label="Close preview" className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition">
-                  <X className="w-4 h-4" />
-                </button>
-              </Tooltip>
-            </div>
-
-            {/* Large preview at 1:1 scale */}
-            <ComponentPreview type={modalType} large />
-
-            {/* Info below */}
-            <div className="flex items-center gap-3 mb-2">
+      {/* Full-size modal (accessible: focus trap, Esc, focus restore, aria) */}
+      <Modal
+        open={!!modalType}
+        onClose={() => setModalType(null)}
+        title={modalType || "Preview"}
+        widthClassName="max-w-3xl"
+      >
+        {modalType && (
+          <>
+            {/* Group label + route links */}
+            <div className="flex items-center gap-3 mb-3">
               <span className={`w-2.5 h-2.5 rounded-full ${GROUP_COLORS[modalGroup] || "bg-stone-400"}`} />
-              <h2 className="font-display text-lg font-semibold text-stone-800 dark:text-stone-100">{modalType}</h2>
-              {modalGroup && <span className="text-xs text-stone-400">{modalGroup}</span>}
+              <span className="text-xs text-stone-400">{modalGroup}</span>
               {modalIsUnused && (
                 <span className="flex items-center gap-1 text-xs text-amber-600 bg-amber-100/60 dark:bg-amber-950/30 px-1.5 py-0.5 rounded-full">
                   <AlertCircle className="w-3 h-3" /> unused
@@ -163,8 +140,11 @@ export default function VisualAuditPage() {
               )}
             </div>
 
+            {/* Large preview at 1:1 scale */}
+            <ComponentPreview type={modalType} large />
+
             {/* Route links */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mt-4">
               {modalIsUnused ? (
                 <span className="text-xs text-stone-400 italic">Not rendered on any page</span>
               ) : modalIsSiteWide ? (
@@ -178,9 +158,9 @@ export default function VisualAuditPage() {
                 ))
               ) : null}
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   );
 }

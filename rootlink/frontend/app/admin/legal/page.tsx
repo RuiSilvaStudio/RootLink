@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { ShieldCheck, FileText, Scale, Save, UploadCloud, Plus, Trash2, ChevronUp, ChevronDown, History, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { useToast } from "@/lib/toast-context";
-import { Input, Textarea, Badge } from "@/components/ui";
+import { Input, Textarea, Badge, Modal, Button } from "@/components/ui";
 import {
   ApiLegalDocumentAdmin,
   LEGAL_DOC_LABELS,
@@ -40,7 +40,6 @@ function docToForm(doc: ApiLegalDocumentAdmin): FormState {
 
 export default function AdminLegalPage() {
   const { user } = useAuth();
-  const { addToast } = useToast();
   const isSuperAdmin = user?.role === "super_admin";
 
   const [active, setActive] = useState<Slug>("privacidade");
@@ -64,7 +63,7 @@ export default function AdminLegalPage() {
       });
       setDocs(byDoc);
       setForms(byForm);
-    }).catch(() => addToast("error", "Failed to load legal documents"));
+    }).catch(() => toast.error("Failed to load legal documents"));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSuperAdmin]);
 
@@ -78,7 +77,19 @@ export default function AdminLegalPage() {
   }, [doc, form]);
 
   if (!isSuperAdmin) {
-    return <p className="text-stone-500 font-serif py-8">Only super_admin can manage legal documents.</p>;
+    return (
+      <div>
+        <div className="px-6 py-4 border-b border-primary-200/40 dark:border-stone-800">
+          <h1 className="font-display text-xl font-semibold text-stone-800 dark:text-stone-100">
+            Legal Documents
+          </h1>
+          <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+            Manage privacy policy, terms, and legal pages
+          </p>
+        </div>
+        <div className="p-6 text-center text-stone-400 dark:text-stone-500 font-serif">Only super_admin can manage legal documents.</div>
+      </div>
+    );
   }
 
   if (!docs || !forms || !form) {
@@ -130,9 +141,9 @@ export default function AdminLegalPage() {
       });
       setDocs((prev) => (prev ? { ...prev, [active]: updated } : prev));
       setForms((prev) => (prev ? { ...prev, [active]: docToForm(updated) } : prev));
-      addToast("success", "Rascunho guardado");
+      toast.success("Draft saved");
     } catch (err: any) {
-      addToast("error", err.message || "Failed to save");
+      toast.error(err.message || "Failed to save");
     }
     setSaving(false);
   };
@@ -147,7 +158,7 @@ export default function AdminLegalPage() {
 
   const publish = async () => {
     if (!publishSummary.trim()) {
-      addToast("error", "Descreva o que mudou antes de publicar");
+      toast.error("Describe what changed before publishing");
       return;
     }
     setPublishing(true);
@@ -163,20 +174,27 @@ export default function AdminLegalPage() {
       setDocs((prev) => (prev ? { ...prev, [active]: updated } : prev));
       setForms((prev) => (prev ? { ...prev, [active]: docToForm(updated) } : prev));
       setShowPublish(false);
-      addToast("success", `${LEGAL_DOC_LABELS[active]} publicado (v${publishVersion})`);
+      toast.success(`${LEGAL_DOC_LABELS[active]} published (v${publishVersion})`);
     } catch (err: any) {
-      addToast("error", err.message || "Failed to publish");
+      toast.error(err.message || "Failed to publish");
     }
     setPublishing(false);
   };
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.08]">
-          Legal documents
+      <div className="px-6 py-4 border-b border-primary-200/40 dark:border-stone-800">
+        <h1 className="font-display text-xl font-semibold text-stone-800 dark:text-stone-100">
+          Legal Documents
         </h1>
-        <p className="text-sm text-stone-500 dark:text-stone-400 mt-2 font-serif max-w-2xl">
+        <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+          Manage privacy policy, terms, and legal pages
+        </p>
+      </div>
+
+      <div className="p-4 lg:p-6">
+      <div className="mb-6">
+        <p className="text-sm text-stone-500 dark:text-stone-400 font-serif max-w-2xl">
           Edit the Privacy Policy, Terms of Use and Legal Notice. Saving keeps changes as a draft —
           nothing on the public page changes until you hit <strong>Publish</strong>. Only visible to
           super_admin.
@@ -256,13 +274,13 @@ export default function AdminLegalPage() {
                     onChange={(e) => updateSection(idx, { heading: e.target.value })}
                     className="flex-1"
                   />
-                  <button onClick={() => moveSection(idx, -1)} disabled={idx === 0} className="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 disabled:opacity-30 text-stone-500">
+                  <button onClick={() => moveSection(idx, -1)} disabled={idx === 0} className="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 disabled:opacity-30 text-stone-500 dark:text-stone-400">
                     <ChevronUp className="w-4 h-4" />
                   </button>
-                  <button onClick={() => moveSection(idx, 1)} disabled={idx === form.sections.length - 1} className="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 disabled:opacity-30 text-stone-500">
+                  <button onClick={() => moveSection(idx, 1)} disabled={idx === form.sections.length - 1} className="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 disabled:opacity-30 text-stone-500 dark:text-stone-400">
                     <ChevronDown className="w-4 h-4" />
                   </button>
-                  <button onClick={() => removeSection(idx)} className="p-1.5 rounded-lg hover:bg-rust-50 dark:hover:bg-rust-900/20 text-rust-500">
+                  <button onClick={() => removeSection(idx)} className="p-1.5 rounded-lg hover:bg-rust-50 dark:hover:bg-rust-900/20 text-rust-500 dark:text-rust-400">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -281,15 +299,15 @@ export default function AdminLegalPage() {
           <button
             onClick={saveDraft}
             disabled={!dirty || saving}
-            className="inline-flex items-center gap-1.5 text-sm bg-stone-700 text-white px-4 py-2 rounded-lg hover:bg-stone-800 disabled:opacity-40 font-medium transition"
+            className="inline-flex items-center gap-1.5 text-sm bg-stone-700 dark:bg-stone-600 text-cream px-4 py-2 rounded-lg hover:bg-stone-800 dark:hover:bg-stone-500 disabled:opacity-40 font-medium transition"
           >
-            <Save className="w-4 h-4" /> {saving ? "A guardar…" : "Guardar rascunho"}
+            <Save className="w-4 h-4" /> {saving ? "Saving…" : "Save draft"}
           </button>
           <button
             onClick={openPublish}
-            className="inline-flex items-center gap-1.5 text-sm bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 font-medium transition"
+            className="inline-flex items-center gap-1.5 text-sm bg-primary-600 text-cream px-4 py-2 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-700 font-medium transition"
           >
-            <UploadCloud className="w-4 h-4" /> Publicar…
+            <UploadCloud className="w-4 h-4" /> Publish…
           </button>
         </div>
 
@@ -312,47 +330,35 @@ export default function AdminLegalPage() {
       </div>
 
       {/* Publish modal */}
-      {showPublish && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4" onClick={() => setShowPublish(false)}>
-          <div
-            className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-6 w-full max-w-md"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-display font-semibold text-stone-800 dark:text-stone-100 mb-1">
-              Publicar {LEGAL_DOC_LABELS[active]}
-            </h3>
-            <p className="text-sm text-stone-500 dark:text-stone-400 font-serif mb-4">
-              Isto torna o rascunho atual visível na página pública imediatamente.
-            </p>
-            <div className="space-y-3">
-              <Input label="Nova versão" value={publishVersion} onChange={(e) => setPublishVersion(e.target.value)} />
-              <Input label="Data efetiva" type="date" value={publishDate} onChange={(e) => setPublishDate(e.target.value)} />
-              <Textarea
-                label="O que mudou? (aparece no histórico)"
-                value={publishSummary}
-                onChange={(e) => setPublishSummary(e.target.value)}
-                rows={3}
-                placeholder="Ex.: Clarificado o âmbito da exportação de dados na secção 8."
-              />
-            </div>
-            <div className="flex items-center gap-2 mt-5">
-              <button
-                onClick={publish}
-                disabled={publishing}
-                className="inline-flex items-center gap-1.5 text-sm bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 disabled:opacity-40 font-medium transition"
-              >
-                <UploadCloud className="w-4 h-4" /> {publishing ? "A publicar…" : "Publicar"}
-              </button>
-              <button
-                onClick={() => setShowPublish(false)}
-                className="text-sm text-stone-500 dark:text-stone-400 px-4 py-2 hover:text-stone-700 dark:hover:text-stone-200 transition"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
+      <Modal
+        open={showPublish}
+        onClose={() => setShowPublish(false)}
+        title="Publish legal document"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowPublish(false)}>Cancel</Button>
+            <Button onClick={publish} loading={publishing}>
+              <UploadCloud className="w-4 h-4" /> {publishing ? "Publishing…" : "Publish"}
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-stone-500 dark:text-stone-400 font-serif mb-4">
+          This makes the current draft visible on the public page immediately.
+        </p>
+        <div className="space-y-3">
+          <Input label="New version" value={publishVersion} onChange={(e) => setPublishVersion(e.target.value)} />
+          <Input label="Effective date" type="date" value={publishDate} onChange={(e) => setPublishDate(e.target.value)} />
+          <Textarea
+            label="What changed? (appears in changelog)"
+            value={publishSummary}
+            onChange={(e) => setPublishSummary(e.target.value)}
+            rows={3}
+            placeholder="e.g. Clarified the scope of data export in section 8."
+          />
         </div>
-      )}
+      </Modal>
+      </div>
     </div>
   );
 }

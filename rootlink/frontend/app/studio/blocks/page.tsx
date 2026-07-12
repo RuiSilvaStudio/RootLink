@@ -15,12 +15,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Trash2, ChevronUp, ChevronDown, Eye, ExternalLink } from "lucide-react";
-import { useToast } from "@/lib/toast-context";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { BLOCK_REGISTRY, getBlockType, defaultPropsFor } from "@/lib/block-registry";
 import { BlockRenderer, type BlockSectionData } from "@/components/blocks";
 import { useAuth } from "@/lib/auth-context";
-import { Button, Input, Textarea, Tooltip, Modal } from "@/components/ui";
+import { Button, Input, Textarea, Tooltip, Modal, EmptyState } from "@/components/ui";
 import { ListSkeleton, CardSkeleton, TextSkeleton } from "@/components/ui/LoadingSkeleton";
 import { ResizableSplit } from "@/components/ui/ResizableSplit";
 import { LoadError } from "@/components/studio/LoadError";
@@ -34,7 +34,6 @@ interface BlockPageData {
 }
 
 export default function BlocksPage() {
-  const { addToast } = useToast();
   const { user } = useAuth();
   const [pages, setPages] = useState<BlockPageData[]>([]);
   const [selectedPageId, setSelectedPageId] = useState<number | null>(null);
@@ -78,9 +77,9 @@ export default function BlocksPage() {
       const updated = await api.blocks.adminListPages();
       const newPage = updated.find((p) => p.slug === newPageSlug);
       if (newPage) setSelectedPageId(newPage.id);
-      addToast("success", "Page created");
+      toast.success("Page created");
     } catch (e: any) {
-      addToast("error", e?.message || "Failed to create page");
+      toast.error(e?.message || "Failed to create page");
     }
   };
 
@@ -91,9 +90,9 @@ export default function BlocksPage() {
       const order = selectedPage.sections.length;
       await api.blocks.addSection(selectedPage.id, { block_type: blockTypeId, props, order });
       await fetchPages();
-      addToast("success", "Section added");
+      toast.success("Section added");
     } catch (e: any) {
-      addToast("error", e?.message || "Failed to add section");
+      toast.error(e?.message || "Failed to add section");
     }
   };
 
@@ -102,7 +101,7 @@ export default function BlocksPage() {
       await api.blocks.updateSection(sectionId, { props });
       await fetchPages();
     } catch (e: any) {
-      addToast("error", e?.message || "Failed to update");
+      toast.error(e?.message || "Failed to update");
     }
   };
 
@@ -137,7 +136,7 @@ export default function BlocksPage() {
       ]);
     } catch (e: any) {
       setPages(swapOrders); // revert the optimistic swap
-      addToast("error", e?.message || "Failed to reorder section");
+      toast.error(e?.message || "Failed to reorder section");
     }
   };
 
@@ -146,9 +145,9 @@ export default function BlocksPage() {
     try {
       await api.blocks.deleteSection(sectionId);
       await fetchPages();
-      addToast("info", "Section deleted");
+      toast.info("Section deleted");
     } catch (e: any) {
-      addToast("error", e?.message || "Failed to delete");
+      toast.error(e?.message || "Failed to delete");
     }
   };
 
@@ -156,9 +155,9 @@ export default function BlocksPage() {
     try {
       await api.blocks.updatePage(page.id, { is_published: !page.is_published });
       await fetchPages();
-      addToast("success", page.is_published ? "Unpublished" : "Published");
+      toast.success(page.is_published ? "Unpublished" : "Published");
     } catch (e: any) {
-      addToast("error", e?.message || "Failed to toggle");
+      toast.error(e?.message || "Failed to toggle");
     }
   };
 
@@ -330,11 +329,7 @@ export default function BlocksPage() {
 
               {/* Sections */}
               {selectedPage.sections.length === 0 ? (
-                <div className="text-center py-20 border-2 border-dashed border-stone-200 dark:border-stone-800 rounded-xl2">
-                  <p className="text-sm text-stone-400 font-serif">
-                    No sections yet. Add a block from the palette on the left.
-                  </p>
-                </div>
+                <EmptyState title="No sections yet" message="Add a block from the palette on the left." />
               ) : (
                 <div className="space-y-4">
                   {[...selectedPage.sections]
@@ -413,11 +408,7 @@ export default function BlocksPage() {
               )}
             </div>
           ) : (
-            <div className="text-center py-20">
-              <p className="text-sm text-stone-400 font-serif">
-                Select a page or create a new one to start composing.
-              </p>
-            </div>
+            <EmptyState title="No page selected" message="Select a page or create a new one to start composing." />
           )}
           </div>
         }

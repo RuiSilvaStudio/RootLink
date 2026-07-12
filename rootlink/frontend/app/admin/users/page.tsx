@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { Key, LogOut, PenLine, Search, CheckCircle, XCircle } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
 import { Badge } from "@/components/ui/Badge";
+import { Tooltip } from "@/components/ui";
+import { LoadError } from "@/components/studio/LoadError";
 
 // NOTE: `super_admin` was added to `UserRole` after this page was written and
 // wasn't wired in here — a `<select value={u.role}>` with no matching
@@ -51,14 +54,24 @@ export default function AdminUsers() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [accountTypeFilter, setAccountTypeFilter] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const fetchUsers = async () => {
+    setLoading(true);
+    setLoadError(false);
     const params: any = {};
     if (search) params.q = search;
     if (roleFilter) params.role = roleFilter;
     if (accountTypeFilter) params.account_type = accountTypeFilter;
-    const data = await api.admin.listUsers(params);
-    setUsers(data);
+    try {
+      const data = await api.admin.listUsers(params);
+      setUsers(data);
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { fetchUsers(); }, [roleFilter, accountTypeFilter]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -69,16 +82,24 @@ export default function AdminUsers() {
   };
 
   const handleRoleChange = async (userId: number, role: string) => {
-    await api.admin.updateUserRole(userId, role);
-    fetchUsers();
+    try {
+      await api.admin.updateUserRole(userId, role);
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
   };
 
   const handleResetPassword = async (userId: number, userName: string) => {
     const password = prompt(t("admin.password_prompt", { name: userName }));
     if (!password || password.length < 6) return;
     if (!confirm(t("admin.password_confirm", { name: userName }))) return;
-    await api.admin.resetPassword(userId, password);
-    alert(t("admin.password_success"));
+    try {
+      await api.admin.resetPassword(userId, password);
+      toast.success(t("admin.password_success"));
+    } catch (err: any) {
+      toast.error(err.message);
+    }
   };
 
   const handleVerify = async (userId: number) => {
@@ -97,7 +118,7 @@ export default function AdminUsers() {
     try {
       await api.admin.revokeUserSessions(userId);
     } catch {
-      alert(t("admin.force_logout_failed"));
+      toast.error(t("admin.force_logout_failed"));
     }
   };
 
@@ -116,7 +137,7 @@ export default function AdminUsers() {
         if (daysRaw === null) return;
         const days = parseInt(daysRaw, 10);
         if (!Number.isFinite(days) || days < 1) {
-          alert(t("admin.suspend_days_invalid"));
+          toast.error(t("admin.suspend_days_invalid"));
           return;
         }
         const reason = prompt(t("admin.suspend_reason_prompt", { name: u.name }));
@@ -140,7 +161,7 @@ export default function AdminUsers() {
       }
       fetchUsers();
     } catch (err: any) {
-      alert(t("admin.action_error", { message: err?.message || "" }));
+      toast.error(t("admin.action_error", { message: err?.message || "" }));
     }
   };
 
@@ -148,9 +169,9 @@ export default function AdminUsers() {
     if (!confirm(t("admin.force_logout_confirm", { name: u.name }))) return;
     try {
       const res = await api.admin.revokeUserSessions(u.id);
-      alert(t("admin.force_logout_success", { count: String(res.revoked_count) }));
+      toast.success(t("admin.force_logout_success", { count: String(res.revoked_count) }));
     } catch (err: any) {
-      alert(t("admin.action_error", { message: err?.message || "" }));
+      toast.error(t("admin.action_error", { message: err?.message || "" }));
     }
   };
 
@@ -161,29 +182,36 @@ export default function AdminUsers() {
       await api.admin.setSelfPublish(u.id, grant);
       fetchUsers();
     } catch (err: any) {
-      alert(t("admin.action_error", { message: err?.message || "" }));
+      toast.error(t("admin.action_error", { message: err?.message || "" }));
     }
   };
 
   return (
     <div>
+      <div className="px-6 py-4 border-b border-primary-200/40 dark:border-stone-800">
+        <h1 className="font-display text-xl font-semibold text-stone-800 dark:text-stone-100">
+          Users
+        </h1>
+        <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+          Manage user accounts, roles, and status
+        </p>
+      </div>
+
+      <div className="p-4 lg:p-6">
       <div className="mb-6">
         <Badge variant="sage" className="mb-3">{t("admin.users")}</Badge>
-        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.08]">
-          {t("admin.user_management")}
-        </h1>
       </div>
 
       {/* Search + filters */}
       <div className="flex gap-3 mb-5 items-center flex-wrap">
         <form onSubmit={handleSearch} className="flex gap-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("admin.search_user_placeholder")}
-              className="pl-9 pr-3 py-2 border border-stone-200/60 rounded-xl text-sm bg-white font-serif focus:outline-none focus:ring-2 focus:ring-primary-500/15 focus:border-primary-400 transition w-56"
+              className="pl-9 pr-3 py-2 border border-stone-200/60 dark:border-stone-700 rounded-xl text-sm bg-white dark:bg-stone-900 font-serif focus:outline-none focus:ring-2 focus:ring-primary-500/15 focus:border-primary-400 transition w-56"
             />
           </div>
           <button type="submit" className="px-4 py-2 bg-primary-600 text-cream rounded-xl text-sm font-display font-medium hover:bg-primary-700 transition">
@@ -193,7 +221,7 @@ export default function AdminUsers() {
         <select
           value={accountTypeFilter}
           onChange={(e) => setAccountTypeFilter(e.target.value)}
-          className="border border-stone-200/60 rounded-xl px-3 py-2 text-sm bg-white font-serif focus:outline-none focus:ring-2 focus:ring-primary-500/15 focus:border-primary-400 transition"
+          className="border border-stone-200/60 dark:border-stone-700 rounded-xl px-3 py-2 text-sm bg-white dark:bg-stone-900 font-serif focus:outline-none focus:ring-2 focus:ring-primary-500/15 focus:border-primary-400 transition"
         >
           <option value="">{t("admin.all_types")}</option>
           <option value="individual">{t("auth.type_individual")}</option>
@@ -203,7 +231,7 @@ export default function AdminUsers() {
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="border border-stone-200/60 rounded-xl px-3 py-2 text-sm bg-white font-serif focus:outline-none focus:ring-2 focus:ring-primary-500/15 focus:border-primary-400 transition"
+          className="border border-stone-200/60 dark:border-stone-700 rounded-xl px-3 py-2 text-sm bg-white dark:bg-stone-900 font-serif focus:outline-none focus:ring-2 focus:ring-primary-500/15 focus:border-primary-400 transition"
         >
           <option value="">{t("admin.all_roles")}</option>
           {ROLES.map((r) => (
@@ -213,17 +241,26 @@ export default function AdminUsers() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-stone-200/60 overflow-hidden">
+      {loading ? (
+        <div className="space-y-2">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-14 rounded-xl bg-stone-100 dark:bg-stone-800 animate-pulse" />
+          ))}
+        </div>
+      ) : loadError ? (
+        <LoadError onRetry={fetchUsers} />
+      ) : (
+      <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-stone-100">
-                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 uppercase tracking-wider">{t("admin.user_name")}</th>
-                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 uppercase tracking-wider hidden sm:table-cell">{t("admin.user_email")}</th>
-                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 uppercase tracking-wider">{t("admin.account_type")}</th>
-                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 uppercase tracking-wider">{t("admin.role")}</th>
-                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 uppercase tracking-wider">{t("admin.user_status")}</th>
-                <th className="text-right px-4 py-3 text-xs font-display font-semibold text-stone-400 uppercase tracking-wider">{t("admin.actions")}</th>
+              <tr className="border-b border-stone-100 dark:border-stone-800">
+                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider">{t("admin.user_name")}</th>
+                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider hidden sm:table-cell">{t("admin.user_email")}</th>
+                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider">{t("admin.account_type")}</th>
+                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider">{t("admin.role")}</th>
+                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider">{t("admin.user_status")}</th>
+                <th className="text-right px-4 py-3 text-xs font-display font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider">{t("admin.actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -235,7 +272,7 @@ export default function AdminUsers() {
                   <tr key={u.id} className="border-b border-stone-50 last:border-0 hover:bg-stone-50/50 transition">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-950/20/60 text-primary-700 flex items-center justify-center text-sm font-display font-semibold shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-950/60 text-primary-700 dark:text-primary-300 flex items-center justify-center text-sm font-display font-semibold shrink-0">
                           {u.name.charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
@@ -243,11 +280,11 @@ export default function AdminUsers() {
                             <p className="font-medium text-stone-800 dark:text-stone-100 font-serif truncate">{u.name}</p>
                             {u.is_verified && <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />}
                           </div>
-                          <p className="text-xs text-stone-400 sm:hidden font-serif">{u.email}</p>
+                          <p className="text-xs text-stone-400 dark:text-stone-500 sm:hidden font-serif">{u.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-stone-500 font-serif hidden sm:table-cell">{u.email}</td>
+                    <td className="px-4 py-3 text-stone-500 dark:text-stone-400 font-serif hidden sm:table-cell">{u.email}</td>
                     <td className="px-4 py-3">
                       <Badge variant={acctBadge.variant} className="text-[9px]">{acctBadge.label}</Badge>
                     </td>
@@ -255,7 +292,7 @@ export default function AdminUsers() {
                       <select
                         value={u.role}
                         onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                        className="text-xs border border-stone-200 rounded-lg px-2 py-1 bg-white font-serif focus:outline-none focus:ring-1 focus:ring-primary-400 transition"
+                        className="text-xs border border-stone-200 dark:border-stone-700 rounded-lg px-2 py-1 bg-white dark:bg-stone-900 font-serif focus:outline-none focus:ring-1 focus:ring-primary-400 transition"
                       >
                         {ROLES.map((r) => (
                           <option key={r} value={r}>{t("admin.role_" + r)}</option>
@@ -279,7 +316,7 @@ export default function AdminUsers() {
                           value=""
                           onChange={(e) => { if (e.target.value) handleStatusAction(u, e.target.value); }}
                           aria-label={t("admin.status_action_label", { name: u.name })}
-                          className="text-xs border border-stone-200 rounded-lg px-2 py-1 bg-white font-serif focus:outline-none focus:ring-1 focus:ring-primary-400 transition"
+                          className="text-xs border border-stone-200 dark:border-stone-700 rounded-lg px-2 py-1 bg-white dark:bg-stone-900 font-serif focus:outline-none focus:ring-1 focus:ring-primary-400 transition"
                         >
                           <option value="">{t("admin.status_" + status)}</option>
                           {transitions.map((a) => (
@@ -292,58 +329,66 @@ export default function AdminUsers() {
                       <div className="flex items-center justify-end gap-1">
                         {u.account_type !== "individual" && (
                           u.is_verified ? (
-                            <button
-                              onClick={() => handleUnverify(u.id)}
-                              className="p-1.5 text-green-500 hover:text-red-500 rounded-lg hover:bg-stone-50 transition"
-                              title={t("admin.unverify")}
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                            </button>
+                            <Tooltip content={t("admin.unverify")}>
+                              <button
+                                onClick={() => handleUnverify(u.id)}
+                                className="p-1.5 text-green-500 hover:text-red-500 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800 transition"
+                                aria-label={t("admin.unverify")}
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </button>
+                            </Tooltip>
                           ) : (
-                            <button
-                              onClick={() => handleVerify(u.id)}
-                              className="p-1.5 text-stone-400 hover:text-green-500 rounded-lg hover:bg-stone-50 transition"
-                              title={t("admin.verify")}
-                            >
-                              <XCircle className="w-4 h-4" />
-                            </button>
+                            <Tooltip content={t("admin.verify")}>
+                              <button
+                                onClick={() => handleVerify(u.id)}
+                                className="p-1.5 text-stone-400 dark:text-stone-500 hover:text-green-500 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800 transition"
+                                aria-label={t("admin.verify")}
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </button>
+                            </Tooltip>
                           )
                         )}
                         {u.can_self_publish ? (
-                          <button
-                            onClick={() => handleSelfPublish(u, false)}
-                            className="p-1.5 text-primary-600 hover:text-rust-600 rounded-lg hover:bg-stone-50 transition"
-                            title={t("admin.revoke_self_publish")}
-                            aria-label={t("admin.revoke_self_publish")}
-                          >
-                            <PenLine className="w-4 h-4" />
-                          </button>
+                          <Tooltip content={t("admin.revoke_self_publish")}>
+                            <button
+                              onClick={() => handleSelfPublish(u, false)}
+                              className="p-1.5 text-primary-600 hover:text-rust-600 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800 transition"
+                              aria-label={t("admin.revoke_self_publish")}
+                            >
+                              <PenLine className="w-4 h-4" />
+                            </button>
+                          </Tooltip>
                         ) : (
-                          <button
-                            onClick={() => handleSelfPublish(u, true)}
-                            className="p-1.5 text-stone-400 hover:text-primary-600 rounded-lg hover:bg-stone-50 transition"
-                            title={t("admin.grant_self_publish")}
-                            aria-label={t("admin.grant_self_publish")}
-                          >
-                            <PenLine className="w-4 h-4" />
-                          </button>
+                          <Tooltip content={t("admin.grant_self_publish")}>
+                            <button
+                              onClick={() => handleSelfPublish(u, true)}
+                                className="p-1.5 text-stone-400 dark:text-stone-500 hover:text-primary-600 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800 transition"
+                              aria-label={t("admin.grant_self_publish")}
+                            >
+                              <PenLine className="w-4 h-4" />
+                            </button>
+                          </Tooltip>
                         )}
-                        <button
-                          onClick={() => handleResetPassword(u.id, u.name)}
-                          className="p-1.5 text-stone-400 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition"
-                          title={t("admin.reset_password")}
-                          aria-label={t("admin.reset_password")}
-                        >
-                          <Key className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleForceLogout(u)}
-                          className="p-1.5 text-stone-400 hover:text-rust-600 rounded-lg hover:bg-rust-50 transition"
-                          title={t("admin.force_logout")}
-                          aria-label={t("admin.force_logout")}
-                        >
-                          <LogOut className="w-4 h-4" />
-                        </button>
+                        <Tooltip content={t("admin.reset_password")}>
+                          <button
+                            onClick={() => handleResetPassword(u.id, u.name)}
+                            className="p-1.5 text-stone-400 hover:text-primary-600 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/30 transition"
+                            aria-label={t("admin.reset_password")}
+                          >
+                            <Key className="w-4 h-4" />
+                          </button>
+                        </Tooltip>
+                        <Tooltip content={t("admin.force_logout")}>
+                          <button
+                            onClick={() => handleForceLogout(u)}
+                            className="p-1.5 text-stone-400 hover:text-rust-600 rounded-lg hover:bg-rust-50 dark:hover:bg-rust-900/20 transition"
+                            aria-label={t("admin.force_logout")}
+                          >
+                            <LogOut className="w-4 h-4" />
+                          </button>
+                        </Tooltip>
                       </div>
                     </td>
                   </tr>
@@ -353,8 +398,10 @@ export default function AdminUsers() {
           </table>
         </div>
         {users.length === 0 && (
-          <p className="text-stone-400 text-sm py-8 text-center font-serif">{t("admin.no_users")}</p>
+          <p className="text-stone-400 dark:text-stone-500 text-sm py-8 text-center font-serif">{t("admin.no_users")}</p>
         )}
+      </div>
+      )}
       </div>
     </div>
   );

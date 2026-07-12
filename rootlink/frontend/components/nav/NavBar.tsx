@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   Bell, Sun, Moon, Menu, Heart, Shield, FileText,
   Settings, ShoppingBag, LogOut, ArrowRight,
-  CheckCheck, Users, Star,
+  CheckCheck, Users, Star, Palette,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { api } from "@/lib/api";
@@ -136,6 +136,7 @@ export function NavBar() {
   // TECH_DEBT.md §0 / user-logic-review.md §8-9 (was missing super_admin —
   // the frontend mirror of the backend super_admin-not-superset bug).
   const isStaff = user && (user.role === "admin" || user.role === "moderator" || user.role === "contributor" || user.role === "super_admin");
+  const isSuperAdmin = !!user && (user.role === "super_admin" || (user.rank != null && user.rank >= 5));
   const initial = user?.name?.[0]?.toUpperCase() ?? "U";
 
   return (
@@ -340,6 +341,14 @@ export function NavBar() {
                               <Shield className="w-4 h-4 text-stone-400" />
                               {t("nav.admin")}
                               <span className="ml-auto text-[10px] font-display font-semibold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 px-1.5 py-0.5 rounded-full">Staff</span>
+                            </Link>
+                          )}
+                          {isSuperAdmin && (
+                            <Link href="/studio" onClick={() => setOpenDropdown(null)}
+                              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-stone-600 dark:text-stone-400 hover:bg-primary-50/40 dark:hover:bg-primary-900/20 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
+                              <Palette className="w-4 h-4 text-stone-400" />
+                              Content Studio
+                              <span className="ml-auto text-[10px] font-display font-semibold text-rust-600 dark:text-rust-400 bg-rust-50 dark:bg-rust-900/30 px-1.5 py-0.5 rounded-full">Studio</span>
                             </Link>
                           )}
                           <Link href="/profile" onClick={() => setOpenDropdown(null)}

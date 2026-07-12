@@ -54,12 +54,12 @@ export default function AdminGroups() {
       <div className="flex gap-2 mb-5">
         <form onSubmit={handleSearch} className="flex gap-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("admin.search_group_placeholder")}
-              className="pl-9 pr-3 py-2 border border-stone-200/60 rounded-xl text-sm bg-white font-serif focus:outline-none focus:ring-2 focus:ring-primary-500/15 focus:border-primary-400 transition w-56"
+              className="pl-9 pr-3 py-2 border border-stone-200/60 dark:border-stone-800 rounded-xl text-sm bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 font-serif focus:outline-none focus:ring-2 focus:ring-primary-500/15 focus:border-primary-400 transition w-56"
             />
           </div>
           <button type="submit" className="px-4 py-2 bg-primary-600 text-cream rounded-xl text-sm font-display font-medium hover:bg-primary-700 transition">
@@ -68,19 +68,19 @@ export default function AdminGroups() {
         </form>
       </div>
 
-      <div className="bg-white rounded-2xl border border-stone-200/60 overflow-hidden">
+      <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-stone-100">
-                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 uppercase tracking-wider">{t("admin.group_name")}</th>
-                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 uppercase tracking-wider hidden sm:table-cell">{t("admin.category")}</th>
-                <th className="text-right px-4 py-3 text-xs font-display font-semibold text-stone-400 uppercase tracking-wider">{t("admin.actions")}</th>
+              <tr className="border-b border-stone-100 dark:border-stone-800">
+                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider">{t("admin.group_name")}</th>
+                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider hidden sm:table-cell">{t("admin.category")}</th>
+                <th className="text-right px-4 py-3 text-xs font-display font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider">{t("admin.actions")}</th>
               </tr>
             </thead>
             <tbody>
               {groups.map((g: any) => (
-                <tr key={g.id} className="border-b border-stone-50 last:border-0 hover:bg-stone-50/50 transition">
+                <tr key={g.id} className="border-b border-stone-50 dark:border-stone-800 last:border-0 hover:bg-stone-50/50 dark:hover:bg-stone-800/50 transition">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       {g.image_url ? (
@@ -95,7 +95,7 @@ export default function AdminGroups() {
                           {g.name}
                           {g.status === "archived" && <Badge variant="stone" className="text-[10px]">Archived</Badge>}
                         </p>
-                        <p className="text-xs text-stone-400 font-serif sm:hidden">{g.slug}</p>
+                        <p className="text-xs text-stone-400 dark:text-stone-500 font-serif sm:hidden">{g.slug}</p>
                       </div>
                     </div>
                   </td>
@@ -104,7 +104,7 @@ export default function AdminGroups() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     {g.status === "archived" ? (
-                      <span className="text-xs text-stone-400 font-serif">Archived</span>
+                      <span className="text-xs text-stone-400 dark:text-stone-500 font-serif">Archived</span>
                     ) : isSuperAdmin ? (
                       <button
                         onClick={() => handleArchive(g)}
@@ -113,7 +113,7 @@ export default function AdminGroups() {
                         Archive
                       </button>
                     ) : (
-                      <span className="text-xs text-stone-300 font-serif" title="Only a super admin can archive groups">Super admin only</span>
+                      <span className="text-xs text-stone-300 dark:text-stone-500 font-serif" title="Only a super admin can archive groups">Super admin only</span>
                     )}
                   </td>
                 </tr>
@@ -122,7 +122,7 @@ export default function AdminGroups() {
           </table>
         </div>
         {groups.length === 0 && (
-          <p className="text-stone-400 text-sm py-8 text-center font-serif">{t("admin.no_groups")}</p>
+          <p className="text-stone-400 dark:text-stone-500 text-sm py-8 text-center font-serif">{t("admin.no_groups")}</p>
         )}
       </div>
     </div>

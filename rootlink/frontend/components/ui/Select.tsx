@@ -1,15 +1,20 @@
 "use client";
 
-import { SelectHTMLAttributes, forwardRef } from "react";
+import { ReactNode, SelectHTMLAttributes, forwardRef } from "react";
 
 type Props = SelectHTMLAttributes<HTMLSelectElement> & {
   label?: string;
   error?: string;
-  options: { value: string; label: string }[];
+  /** Simple option list. Use this for straightforward value/label pairs. */
+  options?: { value: string; label: string }[];
+  /** Arbitrary <option> children — use when options need custom rendering
+   *  (e.g. per-option style for font previews). Mutually exclusive with
+   *  `options`; if both are passed, `children` wins. */
+  children?: ReactNode;
 };
 
 export const Select = forwardRef<HTMLSelectElement, Props>(
-  ({ label, error, options, className = "", id, ...props }, ref) => {
+  ({ label, error, options, children, className = "", id, ...props }, ref) => {
     const selectId = id || label?.toLowerCase().replace(/\s+/g, "-");
     return (
       <div data-rl-component="Select" className="space-y-1.5">
@@ -30,7 +35,7 @@ export const Select = forwardRef<HTMLSelectElement, Props>(
           `.trim()}
           {...props}
         >
-          {options.map((o) => (
+          {children ?? options?.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>

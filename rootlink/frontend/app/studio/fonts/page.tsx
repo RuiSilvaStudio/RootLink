@@ -12,7 +12,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Trash2, Type, Link as LinkIcon } from "lucide-react";
-import { useToast } from "@/lib/toast-context";
+import { toast } from "sonner";
 import { Button, EmptyState, Input, Modal, Toggle, Tooltip } from "@/components/ui";
 import { CardSkeleton } from "@/components/ui/LoadingSkeleton";
 import { api } from "@/lib/api";
@@ -27,7 +27,6 @@ interface FontRow {
 }
 
 export default function FontLibraryPage() {
-  const { addToast } = useToast();
   const [fonts, setFonts] = useState<FontRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -48,17 +47,17 @@ export default function FontLibraryPage() {
       await api.fonts.create({ name: newName, family: newFamily, url: newUrl || undefined });
       setNewName(""); setNewFamily(""); setNewUrl(""); setAdding(false);
       await fetch();
-      addToast("success", "Font added");
-    } catch (e: any) { addToast("error", e?.message || "Failed"); }
+      toast.success("Font added");
+    } catch (e: any) { toast.error(e?.message || "Failed"); }
   };
 
   const toggleActive = async (font: FontRow) => {
-    try { await api.fonts.update(font.id, { is_active: !font.is_active }); await fetch(); } catch (e: any) { addToast("error", e?.message || "Failed to update font"); }
+    try { await api.fonts.update(font.id, { is_active: !font.is_active }); await fetch(); } catch (e: any) { toast.error(e?.message || "Failed to update font"); }
   };
 
   const removeFont = async (font: FontRow) => {
     if (!window.confirm(`Delete the font "${font.name}" from the library? Elements using it will fall back to the theme default.`)) return;
-    try { await api.fonts.remove(font.id); await fetch(); addToast("info", "Font removed"); } catch (e: any) { addToast("error", e?.message); }
+    try { await api.fonts.remove(font.id); await fetch(); toast.info("Font removed"); } catch (e: any) { toast.error(e?.message); }
   };
 
   if (loading) {

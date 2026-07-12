@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Settings, Plus, Trash2, Save, Tag, ChevronDown, ChevronRight } from "lucide-react";
+import { Settings, Plus, Trash2, Tag, ChevronDown, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
-import { useToast } from "@/lib/toast-context";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -32,7 +32,6 @@ type Category = {
 
 export default function AdminConfigPage() {
   const { t, locale } = useLocale();
-  const { addToast } = useToast();
   const [tree, setTree] = useState<Family[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedFamilies, setExpandedFamilies] = useState<Set<number>>(new Set());
@@ -44,11 +43,11 @@ export default function AdminConfigPage() {
       const data = await api.taxonomy.tree();
       setTree(data);
     } catch {
-      addToast("error", "Failed to load taxonomy");
+      toast.error("Failed to load taxonomy");
     } finally {
       setLoading(false);
     }
-  }, [addToast]);
+  }, []);
 
   useEffect(() => {
     fetchTree();
@@ -65,7 +64,7 @@ export default function AdminConfigPage() {
 
   const handleAddFamily = async () => {
     if (!newFamily.value || !newFamily.label) {
-      addToast("error", "Value and English label are required");
+      toast.error("Value and English label are required");
       return;
     }
     try {
@@ -78,9 +77,9 @@ export default function AdminConfigPage() {
       });
       setNewFamily({ value: "", label: "", label_pt: "", icon: "" });
       await fetchTree();
-      addToast("success", "Family added");
+      toast.success("Family added");
     } catch (err: any) {
-      addToast("error", err.message);
+      toast.error(err.message);
     }
   };
 
@@ -89,16 +88,16 @@ export default function AdminConfigPage() {
     try {
       await api.taxonomy.adminDeleteFamily(id);
       await fetchTree();
-      addToast("success", "Family deleted");
+      toast.success("Family deleted");
     } catch (err: any) {
-      addToast("error", err.message);
+      toast.error(err.message);
     }
   };
 
   const handleAddCategory = async (familyId: number) => {
     const nc = newCategory[familyId];
     if (!nc || !nc.value || !nc.label) {
-      addToast("error", "Value and English label are required");
+      toast.error("Value and English label are required");
       return;
     }
     try {
@@ -110,9 +109,9 @@ export default function AdminConfigPage() {
       });
       setNewCategory({ ...newCategory, [familyId]: { value: "", label: "", label_pt: "" } });
       await fetchTree();
-      addToast("success", "Category added");
+      toast.success("Category added");
     } catch (err: any) {
-      addToast("error", err.message);
+      toast.error(err.message);
     }
   };
 
@@ -121,9 +120,9 @@ export default function AdminConfigPage() {
     try {
       await api.taxonomy.adminDeleteCategory(id);
       await fetchTree();
-      addToast("success", "Category deleted");
+      toast.success("Category deleted");
     } catch (err: any) {
-      addToast("error", err.message);
+      toast.error(err.message);
     }
   };
 
@@ -131,7 +130,7 @@ export default function AdminConfigPage() {
     try {
       await api.taxonomy.adminUpdateFamily(id, { [field]: value });
     } catch (err: any) {
-      addToast("error", err.message);
+      toast.error(err.message);
     }
   };
 
@@ -139,30 +138,34 @@ export default function AdminConfigPage() {
     try {
       await api.taxonomy.adminUpdateCategory(id, { [field]: value });
     } catch (err: any) {
-      addToast("error", err.message);
+      toast.error(err.message);
     }
   };
 
   return (
     <div>
+      <div className="px-6 py-4 border-b border-primary-200/40 dark:border-stone-800">
+        <h1 className="font-display text-xl font-semibold text-stone-800 dark:text-stone-100">
+          Configuration
+        </h1>
+        <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+          Manage taxonomy and system configuration
+        </p>
+      </div>
+
+      <div className="p-4 lg:p-6">
       <div className="mb-6">
         <Badge variant="sage" className="mb-3">
           <Settings className="w-3 h-3 mr-1" />
           {t("admin.config")}
         </Badge>
-        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.08]">
-          {t("admin.config_title")}
-        </h1>
-        <p className="mt-3 text-stone-500 font-serif text-sm max-w-lg">
-          {t("admin.config_description")}
-        </p>
       </div>
 
       {/* Taxonomy Management */}
       <Card variant="plain" className="p-6 mb-6">
         <div className="flex items-center gap-2 mb-5">
           <Tag className="w-5 h-5 text-primary-500" />
-          <h2 className="text-lg font-display font-semibold text-stone-800">
+          <h2 className="text-lg font-display font-semibold text-stone-800 dark:text-stone-100">
             {t("admin.taxonomy") || "Taxonomy"}
           </h2>
         </div>
@@ -170,7 +173,7 @@ export default function AdminConfigPage() {
         {loading ? (
           <div className="space-y-3 animate-pulse">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-12 bg-primary-100 dark:bg-primary-950/20/40 rounded-xl" />
+              <div key={i} className="h-12 bg-primary-100 dark:bg-primary-950/40 rounded-xl" />
             ))}
           </div>
         ) : (
@@ -178,12 +181,12 @@ export default function AdminConfigPage() {
             {/* Families list */}
             <div className="space-y-2 mb-6">
               {tree.map((fam) => (
-                <div key={fam.id} className="border border-primary-100/60 rounded-xl overflow-hidden">
+                <div key={fam.id} className="border border-primary-100/60 dark:border-stone-800 rounded-xl overflow-hidden">
                   {/* Family row */}
-                  <div className="flex items-center gap-2 bg-primary-50/30 p-3">
+                  <div className="flex items-center gap-2 bg-primary-50/30 dark:bg-primary-900/30 p-3">
                     <button
                       onClick={() => toggleFamily(fam.id)}
-                      className="p-1 text-stone-400 hover:text-primary-600 transition"
+                      className="p-1 text-stone-400 dark:text-stone-500 hover:text-primary-600 dark:hover:text-primary-400 transition"
                       aria-label={expandedFamilies.has(fam.id) ? "Collapse" : "Expand"}
                     >
                       {expandedFamilies.has(fam.id) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
@@ -196,7 +199,7 @@ export default function AdminConfigPage() {
                           setTree(tree.map((f) => f.id === fam.id ? { ...f, value: e.target.value } : f));
                         }}
                         onBlur={(e) => handleUpdateFamily(fam.id, "value", e.target.value)}
-                        className="px-2 py-1.5 rounded-lg border border-primary-100 bg-white text-xs font-mono text-stone-700 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
+                        className="px-2 py-1.5 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-xs font-mono text-stone-700 dark:text-stone-200 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
                         aria-label="Family value"
                       />
                       <input
@@ -206,7 +209,7 @@ export default function AdminConfigPage() {
                           setTree(tree.map((f) => f.id === fam.id ? { ...f, label: e.target.value } : f));
                         }}
                         onBlur={(e) => handleUpdateFamily(fam.id, "label", e.target.value)}
-                        className="px-2 py-1.5 rounded-lg border border-primary-100 bg-white text-sm text-stone-700 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
+                        className="px-2 py-1.5 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-sm text-stone-700 dark:text-stone-200 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
                         aria-label="English label"
                       />
                       <input
@@ -216,7 +219,7 @@ export default function AdminConfigPage() {
                           setTree(tree.map((f) => f.id === fam.id ? { ...f, label_pt: e.target.value } : f));
                         }}
                         onBlur={(e) => handleUpdateFamily(fam.id, "label_pt", e.target.value)}
-                        className="px-2 py-1.5 rounded-lg border border-primary-100 bg-white text-sm text-stone-700 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
+                        className="px-2 py-1.5 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-sm text-stone-700 dark:text-stone-200 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
                         aria-label="Portuguese label"
                       />
                       <input
@@ -226,14 +229,14 @@ export default function AdminConfigPage() {
                           setTree(tree.map((f) => f.id === fam.id ? { ...f, icon: e.target.value } : f));
                         }}
                         onBlur={(e) => handleUpdateFamily(fam.id, "icon", e.target.value)}
-                        className="px-2 py-1.5 rounded-lg border border-primary-100 bg-white text-xs font-mono text-stone-700 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
+                        className="px-2 py-1.5 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-xs font-mono text-stone-700 dark:text-stone-200 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
                         placeholder="Lucide icon"
                         aria-label="Icon name"
                       />
                     </div>
-                    <button
-                      onClick={() => handleDeleteFamily(fam.id)}
-                      className="p-2 text-stone-400 hover:text-red-500 transition shrink-0"
+                       <button
+                       onClick={() => handleDeleteFamily(fam.id)}
+                       className="p-2 text-stone-400 dark:text-stone-500 hover:text-red-500 dark:hover:text-red-400 transition shrink-0"
                       aria-label={t("admin.remove_category")}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -242,7 +245,7 @@ export default function AdminConfigPage() {
 
                   {/* Categories (expanded) */}
                   {expandedFamilies.has(fam.id) && (
-                    <div className="p-3 space-y-2 bg-white">
+                    <div className="p-3 space-y-2 bg-white dark:bg-stone-900">
                       {fam.categories?.map((cat) => (
                         <div key={cat.id} className="flex items-center gap-2 pl-8">
                           <div className="flex-1 grid grid-cols-3 gap-2">
@@ -256,7 +259,7 @@ export default function AdminConfigPage() {
                                 } : f));
                               }}
                               onBlur={(e) => handleUpdateCategory(cat.id, "value", e.target.value)}
-                              className="px-2 py-1.5 rounded-lg border border-primary-100 bg-white text-xs font-mono text-stone-700 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
+                              className="px-2 py-1.5 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-xs font-mono text-stone-700 dark:text-stone-200 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
                             />
                             <input
                               type="text"
@@ -268,7 +271,7 @@ export default function AdminConfigPage() {
                                 } : f));
                               }}
                               onBlur={(e) => handleUpdateCategory(cat.id, "label", e.target.value)}
-                              className="px-2 py-1.5 rounded-lg border border-primary-100 bg-white text-sm text-stone-700 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
+                              className="px-2 py-1.5 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-sm text-stone-700 dark:text-stone-200 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
                             />
                             <input
                               type="text"
@@ -280,12 +283,12 @@ export default function AdminConfigPage() {
                                 } : f));
                               }}
                               onBlur={(e) => handleUpdateCategory(cat.id, "label_pt", e.target.value)}
-                              className="px-2 py-1.5 rounded-lg border border-primary-100 bg-white text-sm text-stone-700 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
+                              className="px-2 py-1.5 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-sm text-stone-700 dark:text-stone-200 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
                             />
                           </div>
                           <button
                             onClick={() => handleDeleteCategory(cat.id)}
-                            className="p-2 text-stone-400 hover:text-red-500 transition shrink-0"
+                            className="p-2 text-stone-400 dark:text-stone-500 hover:text-red-500 dark:hover:text-red-400 transition shrink-0"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -293,27 +296,27 @@ export default function AdminConfigPage() {
                       ))}
 
                       {/* Add category row */}
-                      <div className="flex items-center gap-2 pl-8 pt-2 border-t border-primary-50">
+                       <div className="flex items-center gap-2 pl-8 pt-2 border-t border-primary-50 dark:border-stone-800">
                         <div className="flex-1 grid grid-cols-3 gap-2">
                           <input
                             type="text"
                             value={newCategory[fam.id]?.value || ""}
                             onChange={(e) => setNewCategory({ ...newCategory, [fam.id]: { ...(newCategory[fam.id] || { value: "", label: "", label_pt: "" }), value: e.target.value } })}
-                            className="px-2 py-1.5 rounded-lg border border-primary-100 bg-white text-xs font-mono text-stone-700 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
+                            className="px-2 py-1.5 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-xs font-mono text-stone-700 dark:text-stone-200 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
                             placeholder="slug"
                           />
                           <input
                             type="text"
                             value={newCategory[fam.id]?.label || ""}
                             onChange={(e) => setNewCategory({ ...newCategory, [fam.id]: { ...(newCategory[fam.id] || { value: "", label: "", label_pt: "" }), label: e.target.value } })}
-                            className="px-2 py-1.5 rounded-lg border border-primary-100 bg-white text-sm text-stone-700 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
+                            className="px-2 py-1.5 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-sm text-stone-700 dark:text-stone-200 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
                             placeholder="English label"
                           />
                           <input
                             type="text"
                             value={newCategory[fam.id]?.label_pt || ""}
                             onChange={(e) => setNewCategory({ ...newCategory, [fam.id]: { ...(newCategory[fam.id] || { value: "", label: "", label_pt: "" }), label_pt: e.target.value } })}
-                            className="px-2 py-1.5 rounded-lg border border-primary-100 bg-white text-sm text-stone-700 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
+                            className="px-2 py-1.5 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-sm text-stone-700 dark:text-stone-200 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
                             placeholder="Portuguese label"
                           />
                         </div>
@@ -328,8 +331,8 @@ export default function AdminConfigPage() {
             </div>
 
             {/* Add new family */}
-            <div className="border-t border-primary-100 pt-4">
-              <p className="text-xs font-display font-semibold text-stone-500 uppercase tracking-wider mb-3">
+            <div className="border-t border-primary-100 dark:border-stone-800 pt-4">
+              <p className="text-xs font-display font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-3">
                 {t("admin.add_family") || "Add Family"}
               </p>
               <div className="flex items-center gap-2">
@@ -337,7 +340,7 @@ export default function AdminConfigPage() {
                   type="text"
                   value={newFamily.value}
                   onChange={(e) => setNewFamily({ ...newFamily, value: e.target.value })}
-                  className="flex-1 px-3 py-2 rounded-lg border border-primary-100 bg-white text-xs font-mono text-stone-700 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
+                  className="flex-1 px-3 py-2 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-xs font-mono text-stone-700 dark:text-stone-200 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
                   placeholder="family_slug"
                   aria-label="New family value"
                 />
@@ -345,7 +348,7 @@ export default function AdminConfigPage() {
                   type="text"
                   value={newFamily.label}
                   onChange={(e) => setNewFamily({ ...newFamily, label: e.target.value })}
-                  className="flex-1 px-3 py-2 rounded-lg border border-primary-100 bg-white text-sm text-stone-700 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
+                  className="flex-1 px-3 py-2 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-sm text-stone-700 dark:text-stone-200 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
                   placeholder="English label"
                   aria-label="New English label"
                 />
@@ -353,7 +356,7 @@ export default function AdminConfigPage() {
                   type="text"
                   value={newFamily.label_pt}
                   onChange={(e) => setNewFamily({ ...newFamily, label_pt: e.target.value })}
-                  className="flex-1 px-3 py-2 rounded-lg border border-primary-100 bg-white text-sm text-stone-700 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
+                  className="flex-1 px-3 py-2 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-sm text-stone-700 dark:text-stone-200 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
                   placeholder="Portuguese label"
                   aria-label="New Portuguese label"
                 />
@@ -361,7 +364,7 @@ export default function AdminConfigPage() {
                   type="text"
                   value={newFamily.icon}
                   onChange={(e) => setNewFamily({ ...newFamily, icon: e.target.value })}
-                  className="w-24 px-3 py-2 rounded-lg border border-primary-100 bg-white text-xs font-mono text-stone-700 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
+                  className="w-24 px-3 py-2 rounded-lg border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-xs font-mono text-stone-700 dark:text-stone-200 focus:border-primary-400 focus:ring-1 focus:ring-primary-500/15"
                   placeholder="Icon"
                   aria-label="Icon name"
                 />
@@ -375,9 +378,10 @@ export default function AdminConfigPage() {
       </Card>
 
       <div className="text-center py-8">
-        <p className="text-xs text-stone-400 font-serif italic">
+        <p className="text-xs text-stone-400 dark:text-stone-500 font-serif italic">
           {t("admin.more_config_coming")}
         </p>
+      </div>
       </div>
     </div>
   );

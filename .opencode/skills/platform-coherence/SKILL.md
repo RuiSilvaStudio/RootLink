@@ -106,8 +106,8 @@ cd rootlink/frontend && npm run lint
 - See `references/privacy-rules.md` for details
 
 ### Design Rules
-- Earth/nature color theme (Tailwind tokens)
-- Bilingual PT/EN — always use `t()` function for strings
+- Earth/nature color theme (Tailwind v4 `@theme` tokens — hex, not oklch)
+- Bilingual PT/EN — editable copy uses `<Text k="copy.key">` (auto-marks `data-rl-text`); non-editable strings use `t()`
 - Framer Motion for page transitions
 - Mobile-first responsive design
 - See `references/design-patterns.md` for component patterns
@@ -125,5 +125,9 @@ cd rootlink/frontend && npm run lint
 | `frontend/lib/auth-context.tsx` | Auth provider |
 | `frontend/lib/locale-context.tsx` | i18n provider |
 | `frontend/app/` | Next.js App Router pages |
+| `frontend/components/ui/` | Shared UI primitives (Button, Modal, Tooltip, Toaster, etc.) |
+| `frontend/components/studio/` | Content Studio dashboard (StudioShell, StudioCommandPalette, LoadError) |
+| `frontend/components/overlay/` | Visual overlay editor (selection agent, inspector, constrained controls) |
+| `frontend/lib/toast-context.tsx` | Legacy toast provider (non-studio pages); studio uses Sonner |
 | `frontend/components/` | Reusable UI components |
 | `graphify-out/graph.json` | Live knowledge graph |

@@ -28,10 +28,48 @@ import {
   fontFamilyCSS,
   RADIUS_STOPS,
 } from "./constrained-controls";
-import { MousePointer2, ChevronRight, Undo2, Redo2, AlertTriangle, RotateCcw } from "lucide-react";
+import { MousePointer2, ChevronRight, Undo2, Redo2, AlertTriangle, X } from "lucide-react";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { api } from "@/lib/api";
-import { useState, useEffect } from "react";
+import { useState, useEffect, ReactNode } from "react";
+import { ResetButton } from "./ResetButton";
+
+/** Collapsible inspector section — clickable header with a chevron that
+ *  toggles the body. Default open; collapse state persists per section key
+ *  (scoped to the selected component type). */
+function CollapsibleSection({ title, children, defaultOpen = true, storageKey }: {
+  title: string;
+  children: ReactNode;
+  defaultOpen?: boolean;
+  storageKey?: string;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  useEffect(() => {
+    if (!storageKey) return;
+    const stored = localStorage.getItem(storageKey);
+    if (stored !== null) setOpen(stored === "true");
+  }, [storageKey]);
+  const toggle = () => {
+    const next = !open;
+    setOpen(next);
+    if (storageKey) {
+      try { localStorage.setItem(storageKey, String(next)); } catch {}
+    }
+  };
+  return (
+    <div className="border-b border-stone-800/50">
+      <button
+        onClick={toggle}
+        aria-expanded={open}
+        className="w-full flex items-center gap-1.5 px-4 pt-3 pb-1 text-xs uppercase tracking-wider text-stone-400 font-semibold hover:text-stone-200 transition"
+      >
+        <ChevronRight className={`w-3 h-3 transition-transform ${open ? "rotate-90" : ""}`} />
+        {title}
+      </button>
+      {open && <div className="px-4 pb-3 space-y-2.5">{children}</div>}
+    </div>
+  );
+}
 
 // ── Property → control mapping (theme-value properties only) ───────
 // Structural CSS (display, flex-direction, justify-content, align-items,
@@ -327,16 +365,17 @@ export function InspectorPanel() {
           <Tooltip content="Undo (Ctrl+Z)" side="left">
             <button
               onClick={sendUndo}
-              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-stone-400 hover:text-stone-200 hover:bg-stone-800 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+              aria-label="Undo"
+              className="flex items-center justify-center p-1.5 rounded-md text-stone-400 hover:text-stone-200 hover:bg-stone-800 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
             >
-              <Undo2 className="w-3.5 h-3.5" aria-hidden="true" /> Undo
+              <Undo2 className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
           </Tooltip>
           <Tooltip content="Redo (Ctrl+Shift+Z)" side="left">
             <button
               onClick={redo}
               aria-label="Redo"
-              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-stone-400 hover:text-stone-200 hover:bg-stone-800 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+              className="flex items-center justify-center p-1.5 rounded-md text-stone-400 hover:text-stone-200 hover:bg-stone-800 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
             >
               <Redo2 className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
@@ -390,7 +429,7 @@ export function InspectorPanel() {
 
         {/* Text — font / size / weight / color of the block's text (or the
             block itself when it's a text tag like a Button). Reads from / applies
-            to the text element via sourceFor(). */}
+            to the text element via sourceFor()). */}
         {hasText && (() => {
           const props = TEXT_GROUP
             .filter((p) => PROPERTY_CONFIG[p])
@@ -398,29 +437,19 @@ export function InspectorPanel() {
             .filter((p) => p.value && !BORING_VALUES.has(p.value));
           if (props.length === 0) return null;
           return (
-            <div className="border-b border-stone-800/50">
-              <p className="px-4 pt-3 pb-1 text-xs uppercase tracking-wider text-stone-400 font-semibold">Text</p>
-              <div className="px-4 pb-3 space-y-2.5">
-                {props.map((prop) => (
-                  <div key={prop.name}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <p className="text-xs text-stone-400 font-mono">{prop.name}</p>
-                      {isOverridden(prop.name) && (
-                        <Tooltip content="Revert to theme default" side="left">
-                          <button
-                            onClick={() => sendReset(prop.name)}
-                            className="flex items-center gap-1 text-xs text-stone-400 hover:text-primary-300 transition rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
-                          >
-                            <RotateCcw className="w-3 h-3" aria-hidden="true" /> reset
-                          </button>
-                        </Tooltip>
-                      )}
-                    </div>
-                    {renderControl(prop.name)}
+            <CollapsibleSection title="Text" storageKey="rl-inspector-text-open">
+              {props.map((prop) => (
+                <div key={prop.name}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-xs text-stone-400 font-mono">{prop.name}</p>
+                    {isOverridden(prop.name) && (
+                      <ResetButton property={prop.name} onClick={() => sendReset(prop.name)} />
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
+                  {renderControl(prop.name)}
+                </div>
+              ))}
+            </CollapsibleSection>
           );
         })()}
 
@@ -429,29 +458,19 @@ export function InspectorPanel() {
             controls fallback. No raw CSS dump. */}
         {hasSchema ? (
           allSchemaGroups.map((group) => (
-            <div key={group.label} className="border-b border-stone-800/50">
-              <p className="px-4 pt-3 pb-1 text-xs uppercase tracking-wider text-stone-400 font-semibold">{group.label}</p>
-              <div className="px-4 pb-3 space-y-2.5">
-                {group.props.map((prop) => (
-                  <div key={prop.property_name}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <p className="text-xs text-stone-400 font-mono">{prop.property_name}</p>
-                      {isOverridden(prop.property_name) && (
-                        <Tooltip content="Revert to theme default" side="left">
-                          <button
-                            onClick={() => sendReset(prop.property_name)}
-                            className="flex items-center gap-1 text-xs text-stone-400 hover:text-primary-300 transition rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
-                          >
-                            <RotateCcw className="w-3 h-3" aria-hidden="true" /> reset
-                          </button>
-                        </Tooltip>
-                      )}
-                    </div>
-                    {renderSchemaControl(prop)}
+            <CollapsibleSection key={group.label} title={group.label} storageKey={`rl-inspector-schema-${group.label}`}>
+              {group.props.map((prop) => (
+                <div key={prop.property_name}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-xs text-stone-400 font-mono">{prop.property_name}</p>
+                    {isOverridden(prop.property_name) && (
+                      <ResetButton property={prop.property_name} onClick={() => sendReset(prop.property_name)} />
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
+                  {renderSchemaControl(prop)}
+                </div>
+              ))}
+            </CollapsibleSection>
           ))
         ) : (
           <>
@@ -469,41 +488,56 @@ export function InspectorPanel() {
                 .filter((p) => p.value && !BORING_VALUES.has(p.value));
               if (props.length === 0) return null;
               return (
-                <div key={group.label} className="border-b border-stone-800/50">
-                  <p className="px-4 pt-3 pb-1 text-xs uppercase tracking-wider text-stone-400 font-semibold">{group.label}</p>
-                  <div className="px-4 pb-3 space-y-2.5">
-                    {props.map((prop) => (
-                      <div key={prop.name}>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <p className="text-xs text-stone-400 font-mono">{prop.name}</p>
-                          {isOverridden(prop.name) && (
-                            <Tooltip content="Revert to theme default" side="left">
-                              <button
-                                onClick={() => sendReset(prop.name)}
-                                className="flex items-center gap-1 text-xs text-stone-400 hover:text-primary-300 transition rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
-                              >
-                                <RotateCcw className="w-3 h-3" aria-hidden="true" /> reset
-                              </button>
-                            </Tooltip>
-                          )}
-                        </div>
-                        {renderControl(prop.name)}
+                <CollapsibleSection key={group.label} title={group.label} storageKey={`rl-inspector-fallback-${group.label}`}>
+                  {props.map((prop) => (
+                    <div key={prop.name}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <p className="text-xs text-stone-400 font-mono">{prop.name}</p>
+                        {isOverridden(prop.name) && (
+                          <ResetButton property={prop.name} onClick={() => sendReset(prop.name)} />
+                        )}
                       </div>
-                    ))}
-                  </div>
-                </div>
+                      {renderControl(prop.name)}
+                    </div>
+                  ))}
+                </CollapsibleSection>
               );
             })}
           </>
         )}
       </div>
 
-      {/* ── Footer ──────────────────────────────────────── */}
-      <div className="shrink-0 px-4 py-2.5 border-t border-stone-800 bg-stone-900/50">
-        <p className="text-xs text-stone-400 font-serif text-center">
-          Pick from the theme. Changes preview live; dark mode follows. Undo: Ctrl+Z.
-        </p>
-      </div>
+      {/* ── Footer (dismissible hint) ────────────────────── */}
+      <DismissibleFooter />
+    </div>
+  );
+}
+
+/** Dismissible footer hint — shows the keyboard/model cheat sheet until the
+ *  user dismisses it. Persists dismissal in localStorage. */
+function DismissibleFooter() {
+  const [dismissed, setDismissed] = useState(false);
+  useEffect(() => {
+    try {
+      setDismissed(localStorage.getItem("rl-inspector-hint-dismissed") === "true");
+    } catch {}
+  }, []);
+  if (dismissed) return null;
+  return (
+    <div className="shrink-0 px-4 py-2.5 border-t border-stone-800 bg-stone-900/50 flex items-center gap-2">
+      <p className="flex-1 text-xs text-stone-400 font-serif text-center">
+        Pick from the theme. Changes preview live; dark mode follows. Undo: Ctrl+Z.
+      </p>
+      <button
+        onClick={() => {
+          setDismissed(true);
+          try { localStorage.setItem("rl-inspector-hint-dismissed", "true"); } catch {}
+        }}
+        aria-label="Dismiss hint"
+        className="shrink-0 p-0.5 rounded-sm text-stone-500 hover:text-stone-300 transition"
+      >
+        <X className="w-3 h-3" />
+      </button>
     </div>
   );
 }

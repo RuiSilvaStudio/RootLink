@@ -896,6 +896,25 @@ export const api = {
       request<any>(`/api/copy/${encodeURIComponent(key)}?locale=${locale}`, { method: "DELETE" }),
   },
 
+  translate: {
+    // Machine translation via Argos Translate (super_admin only).
+    // Phase 1: MT only. Phase 2 will add Translation Memory (tm_exact/tm_fuzzy origins).
+    single: (source_text: string, source_locale: string, target_locale: string) =>
+      request<{ value: string; origin: string }>("/api/translate", {
+        method: "POST",
+        body: JSON.stringify({ source_text, source_locale, target_locale }),
+      }),
+    bulk: (
+      items: { key: string; source_text: string }[],
+      source_locale: string,
+      target_locale: string
+    ) =>
+      request<{ results: { key: string; value: string; origin: string; error: string | null }[] }>(
+        "/api/translate/bulk",
+        { method: "POST", body: JSON.stringify({ items, source_locale, target_locale }) }
+      ),
+  },
+
   legal: {
     // Public: always the last *published* snapshot. 404 if never published yet
     // — pages fall back to their bundled static copy (content/legal/*.ts) in

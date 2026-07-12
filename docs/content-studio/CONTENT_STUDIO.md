@@ -75,7 +75,7 @@ Solves the click-conflict problem with an **iframe + inspector** architecture: t
 2. The inspector panel docks on the right.
 3. The selection agent activates inside the iframe.
 
-**Selection (site-builder convention):** hover shows an outline + label snapping to the nearest *component* (an element carrying `data-rl-component`), not the raw DOM node under the cursor. **First click selects** that component (outline + inspector). **Second click on text** edits that text directly on the page (contentEditable) — there is no drilling into structural tags like `<div>`. The breadcrumb at the top of the inspector shows the component hierarchy (Page > Section > Card) — click any level to select it. Keyboard: Esc exits text editing, then jumps up to the parent component; Ctrl+Z undoes the last change.
+**Selection (site-builder convention):** hover shows an outline + label snapping to the nearest *component* (an element carrying `data-rl-component`), not the raw DOM node under the cursor. **First click selects** that component (outline + inspector). **Second click on text** edits that text directly on the page (contentEditable) — there is no drilling into structural tags like `<div>`. The breadcrumb at the top of the inspector shows the component hierarchy (Page > Section > Card) — click any level to select it. Keyboard: Esc exits text editing, then jumps up to the parent component; Ctrl+Z undoes the last change, Ctrl+Shift+Z / Ctrl+Y redoes.
 
 **Inspector:** shows grouped properties for the selected element (Content, Typography, Color, Spacing, etc.). Initially derived from the element's **computed styles** at runtime. The dashboard can curate which properties show per element type (add/remove).
 
@@ -128,7 +128,7 @@ When an element's property deviates from its **default value** (the theme's defa
 
 ### What happens
 
-1. **Inline prompt** (not a modal): "This deviates from the default [property: old_value]. [Confirm] [Cancel]"
+1. **Inline prompt** (not a modal): "This deviates from the default [property: old_value]. [Confirm] [Cancel]" — the prompt also shows a **visual preview** of the new value (color swatch for color properties, mono token-name chip for font/size/spacing)
 2. If confirmed → the override is **logged** (element_path, property, old_value, new_value, user, timestamp)
 3. A **badge** appears on the element showing it has an override
 4. Click the badge → **revert** to the default value
@@ -150,7 +150,7 @@ When an element's property deviates from its **default value** (the theme's defa
 - **Preview as visitor** — toggle to see the published version (draft hidden).
 - **Publish page** — the draft goes live for all visitors.
 - **Discard draft** — throw away all uncommitted changes on that page.
-- **Undo** — Ctrl+Z works before saving to draft. After save, revert (per-element) is the only way back.
+- **Undo** — Ctrl+Z works before saving to draft. **Redo** — Ctrl+Shift+Z / Ctrl+Y re-applies the last undone change. After save, revert (per-element) is the only way back. Undo/redo reconcile the draft's `draftChanges` list so the "N unsaved" counter always agrees with the page.
 
 ### Theme revisions (dashboard)
 
@@ -214,10 +214,10 @@ Multiple named themes exist (Default, Christmas, Halloween). Each is a **full pa
 
 | Infrastructure | Status | Reuse |
 |---|---|---|
-| Token CSS-variable layer (`globals.css` + `tailwind.config.ts`) | ✅ Live | Foundation for named tokens — extend with light/dark pairs |
+| Token CSS-variable layer (`globals.css` `@theme`) | ✅ Live | Foundation for named tokens — extend with light/dark pairs |
 | Backend APIs (`/api/theme`, `/api/copy`, `/api/blocks`) | ✅ Live | Extend for multi-theme + drafts + override logs |
 | Block registry + BlockRenderer + block components | ✅ Live | Reuse for the dashboard's page builder |
-| `/studio` dashboard shell (StudioShell) | ✅ Live | Repurpose as the control room |
+| `/studio` dashboard shell (StudioShell) | ✅ Live | Control room — collapsible sidebar, Cmd+K palette, breadcrumb, Sonner toasts |
 | `editor-mode` components | ✅ Live | Patterns reusable (portal-to-body, dirty-guard); components retired |
 | 6 seeded BlockPages | ✅ Live | Keep |
 

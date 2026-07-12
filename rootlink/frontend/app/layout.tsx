@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { AuthProvider } from "@/lib/auth-context";
 import { LocaleProvider, useLocale } from "@/lib/locale-context";
 import { ToastProvider } from "@/lib/toast-context";
+import { Toaster } from "@/components/ui/Toaster";
 import { ThemeProvider } from "@/lib/theme-context";
 import { OverlayProvider } from "@/components/overlay/overlay-provider";
 import { OverlayShell } from "@/components/overlay/overlay-shell";
@@ -56,7 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <CommandPalette />
                 {/* NavBar renders MobileNav (drawer+sheets) and MobileBottomBar internally.
                     Studio routes have their own chrome (components/studio/StudioShell.tsx). */}
-                {!isStudio && <NavBar />}
+                {!isStudio && !isAdmin && <NavBar />}
                 {(isAdmin || isStudio) ? (
                   <main className="flex-1">{children}</main>
                 ) : (
@@ -81,6 +82,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <OverlayShell />
                 <OverlayToggle />
               </OverlayProvider>
+              <Toaster />
             </ToastProvider>
           </AuthProvider>
         </LocaleProvider>

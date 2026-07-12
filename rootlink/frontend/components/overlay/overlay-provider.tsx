@@ -103,8 +103,10 @@ interface OverlayContextType {
   // P2 polish
   /** Post overlay:redo to the iframe (Ctrl+Shift+Z / Ctrl+Y also work inside it). */
   redo: () => void;
-  /** Transient status message ("Draft saved" / "Published" / "Draft discarded"); auto-clears after ~2.5s. */
-  statusFlash: string | null;
+  /** Transient status message ("Draft saved" / "Published" / "Draft discarded" /
+   *  "Couldn't publish"); auto-clears after ~2.5s. The variant controls the
+   *  chip color (emerald = success, rust = error). */
+  statusFlash: { msg: string; variant: "success" | "error" } | null;
   /** A saved (unpublished) draft exists for this page and nothing is staged yet — offer to resume it. */
   resumableDraft: { count: number } | null;
   /** Load the saved draft into draftChanges and re-apply its style changes live in the iframe. */
@@ -141,7 +143,7 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
   // The change awaiting prompt confirmation (held so confirm can apply it)
   const [, setPendingChange] = useState<DraftChange | null>(null);
   // P2 polish: transient status message + resumable saved draft.
-  const [statusFlash, setStatusFlash] = useState<string | null>(null);
+  const [statusFlash, setStatusFlash] = useState<{ msg: string; variant: "success" | "error" } | null>(null);
   const [resumableDraft, setResumableDraft] = useState<{ count: number } | null>(null);
   // The saved draft's changes, held while the resume offer is showing.
   const savedDraftRef = useRef<DraftChange[] | null>(null);
@@ -153,8 +155,8 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
   const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /** Show a transient status message; auto-clears after ~2.5s. */
-  const flash = useCallback((msg: string) => {
-    setStatusFlash(msg);
+  const flash = useCallback((msg: string, variant: "success" | "error" = "success") => {
+    setStatusFlash({ msg, variant });
     if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
     flashTimerRef.current = setTimeout(() => setStatusFlash(null), 2500);
   }, []);
@@ -304,6 +306,27 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
         // Ctrl/Cmd+S inside the iframe — save the draft (no-op when nothing
         // is unsaved; saveDraft already guards).
         void saveDraftRef.current?.();
+      } else if (e.data.type === "overlay:undo-applied") {
+        // The agent reverted a style change visually — drop the matching draft
+        // entry so the "N unsaved" counter agrees with the page and Publish
+        // doesn't re-apply the reverted change.
+        const { path, property } = e.data as { path: string; property: string };
+        setDraftChanges((prev) => prev.filter(
+          (c) => !(c.kind === "style" && c.elementPath === path && c.property === property)
+        ));
+      } else if (e.data.type === "overlay:redo-applied") {
+        // The agent re-applied a style change visually — re-add (or remove) the
+        // matching draft entry to keep the counter in sync.
+        const { path, property, value, oldValue } = e.data as { path: string; property: string; value: string | null; oldValue: string };
+        setDraftChanges((prev) => {
+          const filtered = prev.filter(
+            (c) => !(c.kind === "style" && c.elementPath === path && c.property === property)
+          );
+          if (value !== null) {
+            return [...filtered, { kind: "style" as const, elementPath: path, property, value, oldValue }];
+          }
+          return filtered;
+        });
       } else if (e.data.type === "overlay:agent-ready") {
         // The agent just injected — check for a previously saved (unpublished)
         // draft for this page and offer to resume it, but only when nothing is
@@ -343,6 +366,8 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
     try {
       await api.drafts.save({ page_slug: pageSlug, changes: draftChanges });
       flash("Draft saved");
+    } catch {
+      flash("Couldn't save — check connection and try again", "error");
     } finally {
       setDraftSaving(false);
     }
@@ -387,6 +412,8 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
       }
       setDraftChanges([]);
       flash("Published");
+    } catch {
+      flash("Couldn't publish — check connection and try again", "error");
     } finally {
       setDraftSaving(false);
     }

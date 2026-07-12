@@ -113,7 +113,7 @@ export function SliderWithStops({ value, onChange, label, stops = SPACING_STOPS 
               key={stop.value}
               type="button"
               onClick={() => onChange(stop.value)}
-              className={`flex-1 px-1 py-1 rounded-md text-xs font-mono transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
+              className={`flex-1 px-1 py-1 rounded-md text-xs font-mono transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
                 active
                   ? "bg-primary-600 text-cream"
                   : "text-stone-400 hover:bg-stone-800 hover:text-stone-200"
@@ -230,7 +230,7 @@ export function PaletteColorPicker({ value, onChange, label }: ControlProps) {
               key={color.name}
               type="button"
               onClick={() => onChange(color.name)}
-              className={`flex flex-col items-center gap-1 rounded-md p-1 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
+              className={`flex flex-col items-center gap-1 rounded-md p-1 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
                 active
                   ? "ring-2 ring-primary-400 bg-stone-800"
                   : "hover:bg-stone-800"
@@ -284,7 +284,7 @@ export function Toggle({ value, onChange, label, onValue, offValue }: ToggleProp
           }`}
         >
           <span
-            className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-cream shadow-sm transition-transform ${
+            className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-cream shadow-sm transition-transform duration-150 ease-out ${
               isOn ? "translate-x-4" : "translate-x-0"
             }`}
           />
@@ -320,7 +320,7 @@ export function ButtonGroup({ value, onChange, label, options }: ButtonGroupProp
               key={opt.value}
               type="button"
               onClick={() => onChange(opt.value)}
-              className={`px-2 py-1 rounded-md text-xs font-mono transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
+              className={`px-2 py-1 rounded-md text-xs font-mono transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
                 active
                   ? "bg-primary-600 text-cream"
                   : "text-stone-400 hover:bg-stone-800 hover:text-stone-200"
@@ -377,7 +377,7 @@ export function TypeScaleButtons({ value, onChange, label }: ControlProps) {
               key={opt.value}
               type="button"
               onClick={() => onChange(opt.value)}
-              className={`flex flex-col items-center justify-center px-2 py-1 rounded-md min-w-[2.25rem] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
+              className={`flex flex-col items-center justify-center px-2 py-1 rounded-md min-w-[2.25rem] max-h-12 overflow-hidden transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 active:scale-95 ${
                 active
                   ? "bg-primary-600 text-cream"
                   : "text-stone-300 hover:bg-stone-800"

@@ -2,10 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import { Search, Plus, Pencil, Trash2, Upload, ExternalLink, Sprout, Flower2, ChevronDown } from "lucide-react";
+import { toast } from "sonner";
+import { Search, Plus, Pencil, Trash2, Upload, Sprout, Flower2, ChevronDown } from "lucide-react";
 import { useLocale } from "@/lib/locale-context";
 import { Collapsible } from "@/components/Collapsible";
 import { ImageUpload } from "@/components/ui/ImageUpload";
+import { Button, EmptyState, Modal } from "@/components/ui";
+import { ListSkeleton } from "@/components/ui/LoadingSkeleton";
+import { LoadError } from "@/components/studio/LoadError";
 
 export default function AdminPlantsPage() {
   const { t } = useLocale();
@@ -19,21 +23,17 @@ export default function AdminPlantsPage() {
   const [crawling, setCrawling] = useState(false);
   const [crawlingAll, setCrawlingAll] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
-  useEffect(() => {
-    if (message) {
-      const t = setTimeout(() => setMessage(null), 5000);
-      return () => clearTimeout(t);
-    }
-  }, [message]);
+  const [loadError, setLoadError] = useState(false);
 
   const loadPlants = async (q?: string) => {
     setLoading(true);
+    setLoadError(false);
     try {
       const res = await api.plants.search({ q: q || "", limit: 100 });
       setPlants(res);
-    } catch {} finally {
+    } catch {
+      setLoadError(true);
+    } finally {
       setLoading(false);
     }
   };
@@ -46,25 +46,25 @@ export default function AdminPlantsPage() {
     if (!confirm(t("admin.delete_plant_confirm"))) return;
     try {
       await api.plants.delete(id);
-      setMessage({ type: "success", text: "Plant deleted." });
+      toast.success("Plant deleted.");
       loadPlants();
     } catch (err: any) {
-      setMessage({ type: "error", text: err?.message || "Delete failed" });
+      toast.error(err?.message || "Delete failed");
     }
   };
 
   const handleCrawlAll = async () => {
     if (!confirm("Crawl all plants from UTAD? This may take a while.")) return;
     setCrawlingAll(true);
-    setMessage(null);
+    ;
     try {
       const res = await api.plants.crawlUtadAll();
       const updated = res.results?.filter((r: any) => r.status === "updated").length || 0;
       const notFound = res.results?.filter((r: any) => r.status === "not_found").length || 0;
       loadPlants();
-      setMessage({ type: "success", text: `Crawl complete: ${updated} updated, ${notFound} not found (${res.total} total).` });
+      toast.success(`Crawl complete: ${updated} updated, ${notFound} not found (${res.total} total).`);
     } catch (err: any) {
-      setMessage({ type: "error", text: err?.message || "Batch crawl failed" });
+      toast.error(err?.message || "Batch crawl failed");
     } finally {
       setCrawlingAll(false);
     }
@@ -73,14 +73,14 @@ export default function AdminPlantsPage() {
   const handleCrawl = async () => {
     if (!crawlName.trim()) return;
     setCrawling(true);
-    setMessage(null);
+    ;
     try {
       const result = await api.plants.crawlUtad(crawlName.trim());
       loadPlants();
       setCrawlName("");
-      setMessage({ type: "success", text: `"${result.scientific_name || crawlName.trim()}" imported from UTAD.` });
+      toast.success(`"${result.scientific_name || crawlName.trim()}" imported from UTAD.`);
     } catch (err: any) {
-      setMessage({ type: "error", text: err?.message || "Crawl failed" });
+      toast.error(err?.message || "Crawl failed");
     } finally {
       setCrawling(false);
     }
@@ -88,7 +88,7 @@ export default function AdminPlantsPage() {
 
   const handleSave = async (data: any) => {
     setSaving(true);
-    setMessage(null);
+    ;
     try {
       if (editing?.id) {
         await api.plants.update(editing.id, data);
@@ -97,39 +97,32 @@ export default function AdminPlantsPage() {
       }
       setEditing(null);
       setShowAdd(false);
-      setMessage({ type: "success", text: editing ? "Plant updated." : "Plant created." });
+      toast.success(editing ? "Plant updated." : "Plant created.");
       loadPlants();
     } catch (err: any) {
-      setMessage({ type: "error", text: err?.message || "Save failed" });
+      toast.error(err?.message || "Save failed");
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div>
-      {message && (
-        <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium ${
-          message.type === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-        }`}>
-          {message.text}
-          <button className="float-right font-bold" onClick={() => setMessage(null)}>×</button>
-        </div>
-      )}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-stone-800">{t("admin.plants_title")}</h1>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowAdd(true)}
-            className="flex items-center gap-1 bg-primary-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-primary-700"
-          >
+    <div className="flex flex-col h-full">
+      <div className="shrink-0 px-6 py-4 border-b border-primary-200/40 dark:border-stone-800">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-display text-xl font-semibold text-stone-800 dark:text-stone-100">{t("admin.plants_title")}</h1>
+            <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">Manage the plant database and UTAD crawl</p>
+          </div>
+          <Button size="sm" variant="primary" onClick={() => setShowAdd(true)}>
             <Plus className="w-4 h-4" /> {t("admin.plant_add")}
-          </button>
+          </Button>
         </div>
       </div>
 
+      <div className="flex-1 overflow-y-auto p-6">
       {/* UTAD crawl */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+      <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-xl p-4 mb-6">
         <div className="flex items-center gap-3">
           <Sprout className="w-5 h-5 text-amber-600 shrink-0" />
           <input
@@ -137,12 +130,12 @@ export default function AdminPlantsPage() {
             value={crawlName}
             onChange={(e) => setCrawlName(e.target.value)}
             placeholder={t("admin.crawl_placeholder")}
-            className="flex-1 border border-amber-300 rounded-lg px-3 py-2 text-sm"
+            className="flex-1 border border-amber-300 dark:border-amber-800 rounded-xl2 px-3 py-2 text-sm"
           />
           <button
             onClick={handleCrawl}
             disabled={crawling || !crawlName.trim()}
-            className="flex items-center gap-1 bg-amber-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-amber-700 disabled:opacity-50"
+            className="flex items-center gap-1 bg-amber-600 text-cream px-3 py-2 rounded-xl2 text-sm hover:bg-amber-700 disabled:opacity-50"
           >
             <Upload className="w-4 h-4" /> {crawling ? t("common.loading") : t("admin.crawl_button")}
           </button>
@@ -167,18 +160,20 @@ export default function AdminPlantsPage() {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           placeholder={t("admin.search_plants_placeholder")}
-          className="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm"
+          className="flex-1 border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none"
         />
-        <button onClick={handleSearch} className="bg-stone-100 text-stone-600 px-3 py-2 rounded-lg hover:bg-stone-200">
+        <Button size="sm" variant="ghost" onClick={handleSearch}>
           <Search className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Plant list */}
       {loading ? (
-        <p className="text-stone-400 text-center py-8">{t("common.loading")}</p>
+        <ListSkeleton rows={6} />
+      ) : loadError ? (
+        <div className="max-w-xl"><LoadError onRetry={() => loadPlants()} /></div>
       ) : plants.length === 0 ? (
-        <p className="text-stone-400 text-center py-8">{t("admin.no_plants")}</p>
+        <EmptyState title="No plants found" message={t("admin.no_plants")} />
       ) : (
         <div className="space-y-2">
           {plants.map((p) => (
@@ -204,6 +199,7 @@ export default function AdminPlantsPage() {
           t={t}
         />
       )}
+      </div>
     </div>
   );
 }
@@ -221,17 +217,17 @@ function PlantCard({ plant, expanded, onToggle, onEdit, onDelete }: {
   const hasDetail = plant.habitat || flowering || plant.distribution_general || plant.image_url;
 
   return (
-    <div className="bg-white border border-stone-200 rounded-xl overflow-hidden">
+    <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl overflow-hidden">
       <div className="flex items-start gap-3 p-3">
         {plant.image_url ? (
           <img
             src={plant.image_url}
             alt={plant.scientific_name}
             loading="lazy"
-            className="w-14 h-14 rounded-lg object-cover border border-stone-200 shrink-0"
+            className="w-14 h-14 rounded-lg object-cover border border-stone-200 dark:border-stone-700 shrink-0"
           />
         ) : (
-          <div className="w-14 h-14 rounded-lg bg-stone-100 flex items-center justify-center text-stone-300 shrink-0">
+          <div className="w-14 h-14 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-stone-300 dark:text-stone-600 shrink-0">
             <Sprout className="w-6 h-6" />
           </div>
         )}
@@ -353,15 +349,10 @@ function PlantFormModal({ plant, onSave, onClose, saving, t }: {
   );
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-start justify-center z-50 pt-10" onClick={onClose}>
-      <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[85vh] overflow-y-auto shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-lg font-bold text-stone-800 dark:text-stone-100 mb-5">
-          {plant ? t("admin.plant_edit") : t("admin.plant_add")}
-        </h2>
-
+    <Modal open={true} onClose={onClose} title={plant ? t("admin.plant_edit") : t("admin.plant_add")} widthClassName="max-w-2xl">
         {/* Image preview */}
         {plant?.image_url && (
-          <div className="mb-5 rounded-lg overflow-hidden border border-stone-200">
+          <div className="mb-5 rounded-lg overflow-hidden border border-stone-200 dark:border-stone-700">
             <img src={plant.image_url} alt="" loading="lazy" className="w-full max-h-48 object-cover" />
           </div>
         )}
@@ -373,35 +364,35 @@ function PlantFormModal({ plant, onSave, onClose, saving, t }: {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Scientific name *</Label>
-                <input value={form.scientific_name || ""} onChange={str("scientific_name")} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" required />
+                <input value={form.scientific_name || ""} onChange={str("scientific_name")} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none" required />
               </div>
               <div>
                 <Label>Full name</Label>
-                <input value={form.scientific_name_full || ""} onChange={str("scientific_name_full")} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+                <input value={form.scientific_name_full || ""} onChange={str("scientific_name_full")} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none" />
               </div>
               <div>
                 <Label>Common names (pt)</Label>
-                <input value={(form.common_names_pt || []).join(", ")} onChange={(e) => set("common_names_pt", e.target.value.split(",").map((s: string) => s.trim()).filter(Boolean))} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+                <input value={(form.common_names_pt || []).join(", ")} onChange={(e) => set("common_names_pt", e.target.value.split(",").map((s: string) => s.trim()).filter(Boolean))} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none" />
               </div>
               <div>
                 <Label>Common names (en)</Label>
-                <input value={(form.common_names_en || []).join(", ")} onChange={(e) => set("common_names_en", e.target.value.split(",").map((s: string) => s.trim()).filter(Boolean))} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+                <input value={(form.common_names_en || []).join(", ")} onChange={(e) => set("common_names_en", e.target.value.split(",").map((s: string) => s.trim()).filter(Boolean))} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none" />
               </div>
               <div>
                 <Label>Genus</Label>
-                <input value={form.genus || ""} onChange={str("genus")} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+                <input value={form.genus || ""} onChange={str("genus")} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none" />
               </div>
               <div>
                 <Label>Family</Label>
-                <input value={form.family || ""} onChange={str("family")} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+                <input value={form.family || ""} onChange={str("family")} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none" />
               </div>
               <div>
                 <Label>Order</Label>
-                <input value={form.order_name || ""} onChange={str("order_name")} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+                <input value={form.order_name || ""} onChange={str("order_name")} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none" />
               </div>
               <div>
                 <Label>Growth form</Label>
-                <input value={form.growth_form || ""} onChange={str("growth_form")} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+                <input value={form.growth_form || ""} onChange={str("growth_form")} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none" />
               </div>
             </div>
           </fieldset>
@@ -412,7 +403,7 @@ function PlantFormModal({ plant, onSave, onClose, saving, t }: {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Plant type</Label>
-                <select value={form.plant_type || "vegetable"} onChange={(e) => set("plant_type", e.target.value)} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm">
+                <select value={form.plant_type || "vegetable"} onChange={(e) => set("plant_type", e.target.value)} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none">
                   <option value="fruit_tree">Fruit tree</option>
                   <option value="vegetable">Vegetable</option>
                   <option value="herb">Herb</option>
@@ -422,7 +413,7 @@ function PlantFormModal({ plant, onSave, onClose, saving, t }: {
               </div>
               <div>
                 <Label>Sun requirement</Label>
-                <select value={form.sun_requirement || ""} onChange={(e) => set("sun_requirement", e.target.value)} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm">
+                <select value={form.sun_requirement || ""} onChange={(e) => set("sun_requirement", e.target.value)} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none">
                   <option value="">—</option>
                   <option value="full_sun">Full sun</option>
                   <option value="partial_shade">Partial shade</option>
@@ -431,7 +422,7 @@ function PlantFormModal({ plant, onSave, onClose, saving, t }: {
               </div>
               <div>
                 <Label>Soil drainage</Label>
-                <select value={form.soil_drainage || ""} onChange={(e) => set("soil_drainage", e.target.value)} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm">
+                <select value={form.soil_drainage || ""} onChange={(e) => set("soil_drainage", e.target.value)} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none">
                   <option value="">—</option>
                   <option value="well_drained">Well drained</option>
                   <option value="moist">Moist</option>
@@ -448,19 +439,19 @@ function PlantFormModal({ plant, onSave, onClose, saving, t }: {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Flowering start</Label>
-                <input value={form.flowering_start || ""} onChange={str("flowering_start")} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+                <input value={form.flowering_start || ""} onChange={str("flowering_start")} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none" />
               </div>
               <div>
                 <Label>Flowering end</Label>
-                <input value={form.flowering_end || ""} onChange={str("flowering_end")} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+                <input value={form.flowering_end || ""} onChange={str("flowering_end")} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none" />
               </div>
               <div className="col-span-2">
                 <Label>Habitat / Ecology</Label>
-                <input value={form.habitat || ""} onChange={str("habitat")} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+                <input value={form.habitat || ""} onChange={str("habitat")} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none" />
               </div>
               <div className="col-span-2">
                 <Label>General distribution</Label>
-                <textarea value={form.distribution_general || ""} onChange={str("distribution_general")} rows={2} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm resize-none" />
+                <textarea value={form.distribution_general || ""} onChange={str("distribution_general")} rows={2} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none resize-none" />
               </div>
             </div>
           </fieldset>
@@ -471,27 +462,27 @@ function PlantFormModal({ plant, onSave, onClose, saving, t }: {
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label>Kc initial</Label>
-                <input type="number" step="0.01" value={form.kc_initial ?? ""} onChange={num("kc_initial")} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+                <input type="number" step="0.01" value={form.kc_initial ?? ""} onChange={num("kc_initial")} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none" />
               </div>
               <div>
                 <Label>Kc mid</Label>
-                <input type="number" step="0.01" value={form.kc_mid ?? ""} onChange={num("kc_mid")} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+                <input type="number" step="0.01" value={form.kc_mid ?? ""} onChange={num("kc_mid")} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none" />
               </div>
               <div>
                 <Label>Kc late</Label>
-                <input type="number" step="0.01" value={form.kc_late ?? ""} onChange={num("kc_late")} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+                <input type="number" step="0.01" value={form.kc_late ?? ""} onChange={num("kc_late")} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none" />
               </div>
               <div>
                 <Label>Root depth (cm)</Label>
-                <input type="number" step="1" value={form.root_depth_cm ?? ""} onChange={num("root_depth_cm")} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+                <input type="number" step="1" value={form.root_depth_cm ?? ""} onChange={num("root_depth_cm")} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none" />
               </div>
               <div>
                 <Label>Row spacing (cm)</Label>
-                <input type="number" step="1" value={form.row_spacing_cm ?? ""} onChange={num("row_spacing_cm")} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+                <input type="number" step="1" value={form.row_spacing_cm ?? ""} onChange={num("row_spacing_cm")} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none" />
               </div>
               <div>
                 <Label>Plant spacing (cm)</Label>
-                <input type="number" step="1" value={form.plant_spacing_cm ?? ""} onChange={num("plant_spacing_cm")} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+                <input type="number" step="1" value={form.plant_spacing_cm ?? ""} onChange={num("plant_spacing_cm")} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none" />
               </div>
             </div>
           </fieldset>
@@ -507,11 +498,11 @@ function PlantFormModal({ plant, onSave, onClose, saving, t }: {
               />
               <div>
                 <Label>Or paste Image URL</Label>
-                <input value={form.image_url || ""} onChange={str("image_url")} placeholder="https://..." className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" />
+                <input value={form.image_url || ""} onChange={str("image_url")} placeholder="https://..." className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none" />
               </div>
               <div>
                 <Label>Notes</Label>
-                <textarea value={form.notes || ""} onChange={str("notes")} rows={2} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm resize-none" />
+                <textarea value={form.notes || ""} onChange={str("notes")} rows={2} className="w-full border border-primary-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 rounded-xl2 px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none resize-none" />
               </div>
             </div>
           </fieldset>
@@ -521,12 +512,11 @@ function PlantFormModal({ plant, onSave, onClose, saving, t }: {
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-stone-600 hover:text-stone-800">
               {t("common.cancel")}
             </button>
-            <button type="submit" disabled={saving} className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-primary-700 disabled:opacity-50">
+            <button type="submit" disabled={saving} className="bg-primary-600 text-cream px-4 py-2 rounded-lg text-sm hover:bg-primary-700 disabled:opacity-50">
               {saving ? t("common.saving") : t("common.save")}
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

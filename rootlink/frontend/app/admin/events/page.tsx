@@ -69,12 +69,12 @@ export default function AdminEvents() {
       <div className="flex gap-2 mb-5">
         <form onSubmit={handleSearch} className="flex gap-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("admin.search_event_placeholder")}
-              className="pl-9 pr-3 py-2 border border-stone-200/60 rounded-xl text-sm bg-white font-serif focus:outline-none focus:ring-2 focus:ring-primary-500/15 focus:border-primary-400 transition w-56"
+              className="pl-9 pr-3 py-2 border border-stone-200/60 dark:border-stone-800 rounded-xl text-sm bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 font-serif focus:outline-none focus:ring-2 focus:ring-primary-500/15 focus:border-primary-400 transition w-56"
             />
           </div>
           <button type="submit" className="px-4 py-2 bg-primary-600 text-cream rounded-xl text-sm font-display font-medium hover:bg-primary-700 transition">
@@ -83,21 +83,21 @@ export default function AdminEvents() {
         </form>
       </div>
 
-      <div className="bg-white rounded-2xl border border-stone-200/60 overflow-hidden">
+      <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-stone-100">
-                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 uppercase tracking-wider">{t("admin.event_name")}</th>
-                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 uppercase tracking-wider hidden sm:table-cell">{t("admin.event_date")}</th>
-                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 uppercase tracking-wider hidden md:table-cell">{t("admin.event_creator")}</th>
-                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 uppercase tracking-wider hidden sm:table-cell">{t("admin.event_status")}</th>
-                <th className="text-right px-4 py-3 text-xs font-display font-semibold text-stone-400 uppercase tracking-wider">{t("admin.actions")}</th>
+              <tr className="border-b border-stone-100 dark:border-stone-800">
+                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider">{t("admin.event_name")}</th>
+                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider hidden sm:table-cell">{t("admin.event_date")}</th>
+                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider hidden md:table-cell">{t("admin.event_creator")}</th>
+                <th className="text-left px-4 py-3 text-xs font-display font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider hidden sm:table-cell">{t("admin.event_status")}</th>
+                <th className="text-right px-4 py-3 text-xs font-display font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider">{t("admin.actions")}</th>
               </tr>
             </thead>
             <tbody>
               {events.map((ev: any) => (
-                <tr key={ev.id} className="border-b border-stone-50 last:border-0 hover:bg-stone-50/50 transition">
+                <tr key={ev.id} className="border-b border-stone-50 dark:border-stone-800 last:border-0 hover:bg-stone-50/50 dark:hover:bg-stone-800/50 transition">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       {ev.image_url ? (
@@ -112,24 +112,24 @@ export default function AdminEvents() {
                           {ev.title}
                           {ev.status === "archived" && <Badge variant="stone" className="text-[10px]">{t("admin.archived")}</Badge>}
                         </p>
-                        <p className="text-xs text-stone-400 font-serif sm:hidden">
+                        <p className="text-xs text-stone-400 dark:text-stone-500 font-serif sm:hidden">
                           {ev.date ? new Date(ev.date).toLocaleDateString() : "—"}
                         </p>
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
-                    <span className="text-stone-500 font-serif text-xs">{ev.date ? new Date(ev.date).toLocaleDateString() : "—"}</span>
+                    <span className="text-stone-500 dark:text-stone-300 font-serif text-xs">{ev.date ? new Date(ev.date).toLocaleDateString() : "—"}</span>
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
-                    <span className="text-stone-500 font-serif text-xs">{ev.creator_name || "—"}</span>
+                    <span className="text-stone-500 dark:text-stone-300 font-serif text-xs">{ev.creator_name || "—"}</span>
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
                     <Badge variant={STATUS_VARIANT[ev.status] || "stone"} className="text-[10px]">{statusLabel(ev.status)}</Badge>
                   </td>
                   <td className="px-4 py-3 text-right">
                     {ev.status === "archived" ? (
-                      <span className="text-xs text-stone-400 font-serif">{t("admin.archived")}</span>
+                      <span className="text-xs text-stone-400 dark:text-stone-500 font-serif">{t("admin.archived")}</span>
                     ) : canArchive ? (
                       <button
                         onClick={() => handleArchive(ev)}
@@ -138,7 +138,7 @@ export default function AdminEvents() {
                         {t("admin.archive")}
                       </button>
                     ) : (
-                      <span className="text-xs text-stone-300 font-serif" title={t("admin.archive_event_super_admin_hint")}>{t("admin.super_admin_only")}</span>
+                      <span className="text-xs text-stone-300 dark:text-stone-500 font-serif" title={t("admin.archive_event_super_admin_hint")}>{t("admin.super_admin_only")}</span>
                     )}
                   </td>
                 </tr>
@@ -147,7 +147,7 @@ export default function AdminEvents() {
           </table>
         </div>
         {events.length === 0 && (
-          <p className="text-stone-400 text-sm py-8 text-center font-serif">{t("admin.no_events")}</p>
+          <p className="text-stone-400 dark:text-stone-500 text-sm py-8 text-center font-serif">{t("admin.no_events")}</p>
         )}
       </div>
     </div>

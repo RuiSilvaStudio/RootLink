@@ -123,7 +123,11 @@ Binding for ANY change to `/studio`, `/admin`, dashboards, or the overlay editor
 `references/design-patterns.md` → "Content Studio & back-office UI patterns".
 
 - [ ] **Kit only:** `Modal` / `Button size="xs"` / `Input` / `Textarea` / `Toggle` / `Tooltip` /
-      `EmptyState` / `LoadingSkeleton` from `components/ui/` — no bespoke buttons/fields/modals
+      `EmptyState` / `LoadingSkeleton` / `Toaster` (Sonner) from `components/ui/` — no bespoke
+      buttons/fields/modals
+- [ ] **Toasts:** studio pages use Sonner (`toast.success/error/info` via `components/ui/Toaster.tsx`);
+      ~30 non-studio pages still use the legacy `useToast()` from `lib/toast-context.tsx`. New studio
+      work = Sonner; new non-studio work = `useToast()` until the legacy migration completes.
 - [ ] **Destructive actions confirm** (`window.confirm`, OK/Cancel wording) — delete, revert,
       discard, exit-with-unsaved
 - [ ] **Dirty state guarded** — `useDirtyGuard(dirty, { message })` for anything with unsaved input

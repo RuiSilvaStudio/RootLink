@@ -1,6 +1,6 @@
 # Architecture Overview
 
-> Last updated: 2026-06-22
+> Last updated: 2026-07-12
 
 ## Tech Stack
 
@@ -9,7 +9,7 @@
 | Backend | FastAPI + SQLAlchemy (async) | Python 3.12+ |
 | Database | SQLite (aiosqlite) | — |
 | Frontend | Next.js (App Router) + React | 14 / 18 |
-| Styling | Tailwind CSS | 3.4 |
+| Styling | Tailwind CSS | v4 (CSS-first `@theme`, hex tokens, no `tailwind.config.ts`) |
 | Animation | Framer Motion | 12 |
 | Icons | lucide-react | — |
 | i18n | Custom locale context (static JSON) | PT/EN |
@@ -17,7 +17,8 @@
 | Payments | Stripe Connect | — |
 | Search | sentence-transformers (all-MiniLM-L6-v2) + keyword | — |
 | Images | Pillow, content-addressed WebP storage | — |
-| PWA | next-pwa | 5.6 |
+| Toasts (studio) | Sonner | 2.x |
+| Command palette (studio) | cmdk | 1.x |
 | Linting | ruff (backend), eslint 8 (frontend) | — |
 | Deployment | Docker (backend) + Vercel (frontend) | — |
 
@@ -38,13 +39,18 @@ rootlink/
 ├── frontend/
 │   ├── app/                      # Next.js App Router (23 page directories)
 │   ├── components/               # Reusable UI components
-│   │   ├── ui/                   # Primitives (Button, Card, Badge, etc.)
+│   │   ├── ui/                   # Primitives (Button, Card, Modal, Tooltip, Toaster, etc.)
+│   │   ├── studio/               # Content Studio dashboard (StudioShell, StudioCommandPalette, LoadError)
+│   │   ├── overlay/              # Visual overlay editor (iframe + selection agent + inspector)
 │   │   ├── search/               # Search components
 │   │   └── [feature]/            # Feature-specific components
 │   ├── lib/
-│   │   ├── api.ts                # API client (737 lines)
+│   │   ├── api.ts                # API client
 │   │   ├── auth-context.tsx      # Auth provider
-│   │   └── locale-context.tsx    # i18n provider
+│   │   ├── locale-context.tsx    # i18n provider
+│   │   ├── toast-context.tsx     # Legacy toast provider (non-studio pages)
+│   │   ├── theme-context.tsx     # Runtime theme token provider
+│   │   └── use-dirty-guard.ts    # Unsaved-changes exit guard
 │   ├── messages/                 # PT/EN translation JSONs
 │   └── package.json
 ├── docker-compose.prod.yml

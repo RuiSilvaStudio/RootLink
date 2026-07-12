@@ -1,7 +1,7 @@
 # Content Studio — Implementation Status
 
 > **Spec:** [`CONTENT_STUDIO.md`](./CONTENT_STUDIO.md)
-> **Last updated:** 2026-07-11 (UX hardening — P2 polish: keyboard, resume-draft, skeletons)
+> **Last updated:** 2026-07-12 (UI face-lift — Phases 0–4)
 
 ---
 
@@ -290,8 +290,11 @@ inside the iframe. (LESSONS.md #43.)
 
 **Keyboard:**
 - **Redo** — redo stack in the agent (undo pushes onto it; any new edit clears it); Ctrl+Shift+Z /
-  Ctrl+Y inside the iframe, `overlay:redo` message, Redo button beside Undo in the inspector.
-  Undo/redo are DOM-level (they deliberately don't mutate `draftChanges`, matching existing undo).
+   Ctrl+Y inside the iframe, `overlay:redo` message, Redo button beside Undo in the inspector.
+   ~~Undo/redo are DOM-level (they deliberately don't mutate `draftChanges`, matching existing undo).~~
+   **Superseded by Phase 0 O2** (2026-07-12): undo/redo now reconcile `draftChanges` via
+   `overlay:undo-applied` / `overlay:redo-applied` messages so the "N unsaved" counter agrees with
+   the page and Publish no longer re-applies reverted changes.
 - **Ctrl/Cmd+S** — saves the overlay draft from either side of the iframe boundary
   (`overlay:request-save` from the agent + parent-side listener); on `/studio/content` it
   triggers the new **"Save all (N)"** (also a header button; per-key failures stay dirty,
@@ -303,7 +306,9 @@ inside the iframe. (LESSONS.md #43.)
 
 **Feedback & drafts:**
 - **Status flash** — emerald "Draft saved" / "Published" / "Draft discarded" chip in the top bar
-  (`role="status"`, auto-clears 2.5s).
+   (`role="status"`, auto-clears 2.5s). **Phase 0 O1** (2026-07-12) upgraded `statusFlash` from
+   `string` to `{msg, variant}` — failures now show a rust-colored error chip
+   ("Couldn't save — check connection and try again").
 - **Resume saved draft** — the agent posts `overlay:agent-ready`; the provider fetches
   `api.drafts.get(pageSlug)` and, when a saved draft exists and nothing is unsaved locally,
   offers an amber bar: "This page has a saved draft with N changes" → Resume (re-applies style
@@ -343,7 +348,179 @@ message for visual draft-text resume.
 | **5** | Element catalog (property schema, control type, visibility), font library (import/preview/activate) | Playwright 7/7 |
 | **6** | Override report (all deviations, filter, revert), stale-override warnings in overlay | Playwright 5/5 |
 
-**Backend:** 68+ Content Studio tests. **Frontend:** tsc + lint + build clean. **Graphify:** 3678+ nodes.
+---
+
+## UI Face-Lift (2026-07-12)
+
+From the face-lift review (`discovery/assessment/content-studio-facelift-review.md` +
+implementation plan `content-studio-facelift-plan.md`). Execution order: Phase 0 → 1 → 2 → 3 → 4.
+
+### Phase 0 — Correctness ✅
+
+- **O2 (undo/draft disagreement — real bug):** the selection agent's `undo()` now posts
+  `overlay:undo-applied` to the parent, which drops the matching `draftChanges` entry so the
+  "N unsaved" counter agrees with the page and Publish no longer re-applies reverted changes.
+  `redo()` posts `overlay:redo-applied` to re-add the entry. Also: undo now clears the
+  `data-rl-*-token` attr (the inspector correctly shows the default after undo, not the old
+  override).
+- **O1 (silent save/publish failure):** `saveDraft`/`publishDraft` now catch + `flash(msg,
+  "error")`. `statusFlash` upgraded from `string` to `{msg, variant}` — the shell renders
+  rust-colored error chips vs emerald success.
+- **0.3 (iframe load-error state):** 15s timeout on iframe load — if the page never fires
+  `onLoad` (404, network error), the spinner is replaced with a rust error notice + "Try
+  again" (reloads the iframe).
+- **S3 (Audit modal a11y):** replaced the bespoke `fixed inset-0` dialog with the kit `<Modal>`
+  (focus trap, Esc, focus restore, `aria-labelledby`, body scroll lock).
+
+Verified: tsc + lint clean (build not run — dev server live on :3001, LESSONS.md #2).
+
+### Phase 1 — Kit gaps ✅
+
+- **S4 (Select API gap):** kit `Select` now accepts `children` (for per-option `style` — font
+  previews) in addition to `options`. Existing bypass sites noted: the inline compact selects
+  (theming font pickers, catalog property type/control type) need a compact variant to migrate
+  cleanly — left as raw `<select>` for now; the API gap is closed for future use.
+- **S5 (LoadError → rust):** swapped Tailwind `red` → brand `rust` — the one off-theme
+  semantic is gone.
+- **S2 (EmptyState adoption):** 6 bespoke empty states → kit `<EmptyState>`: theming (5
+  category empties + no-theme-selected), blocks (no sections + no page selected), catalog
+  (no type selected), overrides (no overrides).
+- **S8 (sidebar footer):** removed the raw `font-mono` spec path leak.
+- **S12 (mobile rail hiding):** catalog + theming + content + blocks `ResizableSplit` now pass
+  `leftClassName="hidden lg:block"` (rail hides on mobile, matching other pages). **Note:** use
+  `lg:block`, NOT `lg:flex` — `lg:flex` makes the panel wrapper a flex container, causing the inner
+  `border-r` div to shrink to content width instead of stretching (the border detaches from the
+  edge, showing a vertical line and constraining content). See LESSONS.md #44.
+- **O13 (ResetButton extraction):** extracted `components/overlay/ResetButton.tsx` — replaces
+  the 3× duplicated inline reset button pattern in `inspector-panel.tsx`.
+
+Verified: tsc + lint clean.
+
+### Phase 2 — Studio structural face lift ✅
+
+- **S7 (collapsible sidebar):** `StudioShell` now has a collapse-to-icons toggle
+  (`PanelLeftClose`/`PanelLeftOpen`) in the top bar. Collapsed state: `w-16`, icon-only with
+  tooltips on hover. Preference persisted to `localStorage["rl-studio-sidebar-collapsed"]`.
+  A `⌘K` hint chip in the top bar signals the command palette.
+- **S7 (Cmd+K command palette):** new `StudioCommandPalette` (`components/studio/`).
+  Uses `cmdk` (the primitive shadcn's Command wraps), themed to dark tool-chrome
+  (stone-950 + primary + cream). Lists all 8 studio modules, filters by label, Enter
+  navigates. Opens on Ctrl/Cmd+K (studio routes only). Has `role="dialog"` + `aria-modal`
+  + Esc handler that stops propagation (LESSONS #43 — doesn't conflict with the overlay's
+  greedy Esc handler).
+- **Breadcrumb in header:** "Studio › {module}" breadcrumb (hidden on `/studio` itself,
+  hidden on mobile). Uses `ChevronRight` separators.
+- **S1 (Overview rebuilt):** replaced the marketing-register welcome (eyebrow + text-4xl
+  greeting + hover-arrow cards + max-w-5xl padding) with a real tool-density home:
+  - **System status row** — 3 status cards (active theme, total overrides, stale overrides)
+    that fetch live data from `/api/themes/active` + `/api/overrides/all` on mount.
+    Stale count highlights in amber when > 0. Each links to its module.
+  - **Modules grid** — compact rows (icon + name + one-line description + arrow), not
+    marketing hover-arrow. `sm:grid-cols-2` at tool density.
+  - Same header template as every other studio page (`px-6 py-4 border-b`).
+- **Sonner toasts:** new themed `components/ui/Toaster.tsx` (cream/stone/primary/rust
+  theming, not Sonner's default zinc). Mounted globally in `app/layout.tsx` alongside the
+  existing `ToastProvider` (which stays for non-studio pages). All 6 studio pages migrated
+  from `useToast()` → Sonner's `toast.success()`/`toast.error()`/`toast.info()` (49 calls
+  across theming, blocks, catalog, content, fonts, overrides).
+- **Approach note:** did NOT run `npx shadcn init` — it would create a `tailwind.config.ts`
+  and modify `globals.css`, conflicting with the existing Tailwind v4 CSS-first setup. The
+  shadcn sidebar component is ~500 lines and would conflict with the existing sidebar's
+  state management + ResizableSplit. Instead, extended the existing `StudioShell` sidebar
+  with collapse-to-icons (less risk, same UX outcome). Used `cmdk` + `sonner` directly
+  (the underlying libraries shadcn wraps) with custom themed wrappers.
+
+Verified: tsc + lint clean (build not run — dev server live on :3001, LESSONS.md #2).
+
+### Phase 3 — Overlay chrome polish ✅
+
+- **O3 (override prompt shows value):** the override prompt bar now renders a visual
+  preview of the new value — a color swatch (resolving `var(--color-{token})`) for color
+  properties, a mono token-name chip for font/size/spacing. The user sees what they're
+  confirming instead of confirming blind.
+- **O4 (undo/redo symmetry):** both are now icon-only buttons with tooltips carrying the
+  labels ("Undo (Ctrl+Z)" / "Redo (Ctrl+Shift+Z)"). Symmetric, tighter (matches Webflow).
+- **O5 (page dropdown cursor vs selected):** selected page = `bg-primary-600 text-cream`
+  (fill); keyboard cursor = `ring-2 ring-primary-400 ring-inset` (ring, no fill).
+  Mirrors the FontFamilyPicker's 3-state treatment.
+- **O6 (dark loading state):** done in Phase 0 (loading overlay now `bg-stone-950`).
+- **O7 (publish spinner):** done in Phase 0 (replaced `...` with a spinner).
+- **O14 (collapsible inspector sections):** new `CollapsibleSection` component — clickable
+  header with a rotating chevron, persists collapse state per section in localStorage
+  (`rl-inspector-{text|schema|fallback}-{label}-open`). Footer hint is now dismissible
+  with an × button, persisted in `localStorage["rl-inspector-hint-dismissed"]`.
+
+### Phase 4 — Control micro-interactions ✅
+
+- **O8 (toggle thumb transition):** added `duration-150 ease-out` to the toggle thumb's
+  `transition-transform` — no longer snaps, smoothly slides.
+- **O9 (TypeScaleButtons overflow):** added `max-h-12 overflow-hidden` to the "Aa" buttons
+  — the 9xl/8xl glyphs now clip cleanly instead of pushing the row height to unusable
+  proportions. Also added `active:scale-95`.
+- **O12 (micro-interactions):** `active:scale-95` added to every control button (slider
+  stops, button-group options, palette swatches, type-scale buttons). The controls now
+  have press feedback — they feel alive instead of flat.
+  Reduced-motion is globally respected (LESSONS: `globals.css` override zeroes durations).
+
+Verified: tsc + lint clean across all 4 phases (build not run — dev server live on :3001).
+
+**Backend:** 68+ Content Studio tests. **Frontend:** tsc + lint clean. **Graphify:** 4008+ nodes.
+
+---
+
+## Admin area face-lift (2026-07-12)
+
+The admin area (`/admin/*`) was brought up to the Content Studio level. The mobile bug (`/admin`
+not working on mobile — `<main hidden lg:block>` hid all content below 1024px) was the root cause.
+
+### Phase 0+1 — AdminShell + mobile fix ✅
+
+- **New `AdminShell`** (`components/admin/AdminShell.tsx`): mirrors `StudioShell` — sticky `h-12`
+  header (menu trigger + collapse toggle + "Admin" breadcrumb + theme toggle + view site), cream
+  sidebar with `border-r` (replaces the old glassmorphism `liquid-glass`), collapse-to-icons
+  (persisted to `localStorage`), mobile drawer with Escape-to-close.
+- **Mobile fix:** `layout.tsx` rewritten to use `<AdminShell>` — the broken `hidden lg:block` on
+  `<main>` is gone; content is always visible; the left gutter is `lg:`-scoped.
+- **`AdminSidebarSection` re-themed:** from light-on-dark glassmorphism (`text-cream/50`,
+  `bg-primary-400/20`) to dark-on-light (`text-stone-600`, `bg-primary-600 text-cream`) matching
+  the studio. Added `collapsed` prop for icon-only mode with tooltips.
+- Old `AdminSidebar.tsx` is dead code (no longer imported) — kept for reference.
+
+### Phase 2 — Loading/error/empty + kit adoption + Sonner (14 pages) ✅
+
+- **Loading skeletons + LoadError:** added to all 10 pages that were missing them (comments,
+  donations, tickets, sponsors, vendors, events, groups, entity-verification, content, users).
+  Every admin fetch page now shows `ListSkeleton` while loading and `LoadError` + retry on failure.
+- **EmptyState:** all ad-hoc `<p className="text-stone-400 ...">` empty states replaced with kit
+  `EmptyState`.
+- **Kit Button adoption:** raw `<button>` → `<Button size="sm" variant="primary|ghost|danger">`
+  across all pages.
+- **Tooltip:** `title=` on icon-only buttons replaced with kit `Tooltip` wrappers (vendors,
+  sponsors, users).
+- **Sonner migration:** all `useToast()` calls → `toast.success/error/info` (events, groups,
+  entity-verification, config, legal). All `alert()` calls → `toast` (notifications, users, plants).
+- **Modal:** `legal/page.tsx` hand-rolled publish modal → kit `Modal`.
+- **Studio page header template:** every admin page now has the `px-6 py-4 border-b` header with
+  consistent `<h1>` + subtitle.
+
+### Phase 3 — Dark mode + plants alignment + polish ✅
+
+- **Dark mode:** comprehensive `dark:` variant pass on all 14 admin pages (tables, cards, inputs,
+  selects, modals, badges, icons).
+- **Plants page alignment:** the most divergent page was brought in line:
+  - Title: `text-2xl font-bold` → `font-display text-xl font-semibold` (standard template)
+  - `text-white` → `text-cream` (brand surface color)
+  - Custom toast box (green/red panel) → Sonner `toast.success/error`
+  - `catch {}` → `LoadError` + retry
+  - `<p>{t("common.loading")}</p>` → `ListSkeleton`
+  - Hand-rolled modal (`fixed inset-0 bg-black/40`) → kit `Modal`
+  - Raw `<button>` → kit `Button`
+  - Search input aligned to `border-primary-200/60 rounded-xl2` (standard)
+- **Notifications:** `alert()` → Sonner; raw `<textarea>` → kit `Textarea`
+- **Users:** all 6 `alert()` calls → `toast`; `title=` → `Tooltip`
+- **Config:** fixed broken skeleton class `dark:bg-primary-950/20/40` → `dark:bg-primary-950/40`
+
+Verified: tsc + lint clean.
 
 ---
 

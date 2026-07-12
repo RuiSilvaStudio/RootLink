@@ -615,15 +615,15 @@ export function injectSelectionAgent() {
   function undo() {
     const entry = undoStack.pop();
     if (!entry) return;
-    // Capture what's being undone so redo can re-apply it. Note: like undo
-    // itself, this only touches the DOM — the provider's draftChanges list is
-    // NOT reconciled (existing behavior, mirrored exactly).
+    // Capture what's being undone so redo can re-apply it.
     const attr = tokenAttrFor(entry.property);
+    const preUndoAppliedValue = entry.el.style.getPropertyValue(entry.property);
+    const preUndoTokenValue = attr && entry.el.hasAttribute(attr) ? entry.el.getAttribute(attr) : null;
     redoStack.push({
       el: entry.el,
       property: entry.property,
-      appliedValue: entry.el.style.getPropertyValue(entry.property),
-      tokenValue: attr && entry.el.hasAttribute(attr) ? entry.el.getAttribute(attr) : null,
+      appliedValue: preUndoAppliedValue,
+      tokenValue: preUndoTokenValue,
       oldValue: entry.oldValue,
     });
     if (entry.oldValue) {
@@ -631,6 +631,20 @@ export function injectSelectionAgent() {
     } else {
       entry.el.style.removeProperty(entry.property);
     }
+    // Revert the token attr when undoing an apply (the attr still holds the
+    // overridden token; removing it makes the inspector read the class default
+    // again — matching resetProperty's behavior). Undo of a reset leaves the
+    // attr absent (reset already removed it).
+    if (attr && preUndoTokenValue !== null) {
+      entry.el.removeAttribute(attr);
+    }
+    // Tell the parent to drop the matching draft entry (the element is back to
+    // its pre-change state, so there's nothing to publish for this property).
+    parent.postMessage({
+      type: "overlay:undo-applied",
+      path: buildPath(entry.el),
+      property: entry.property,
+    }, "*");
     if (selected === entry.el) selectElement(selected);
   }
 
@@ -649,6 +663,15 @@ export function injectSelectionAgent() {
     }
     // Re-arm undo for the re-applied change (same original oldValue).
     undoStack.push({ el: entry.el, property: entry.property, oldValue: entry.oldValue });
+    // Tell the parent to re-add (or remove) the matching draft entry so the
+    // "N unsaved" counter agrees with the page after a redo.
+    parent.postMessage({
+      type: "overlay:redo-applied",
+      path: buildPath(entry.el),
+      property: entry.property,
+      value: entry.tokenValue,
+      oldValue: entry.oldValue,
+    }, "*");
     if (selected === entry.el) selectElement(selected);
   }
 

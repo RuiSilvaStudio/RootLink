@@ -12,10 +12,10 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { AlertTriangle, RotateCcw, Filter } from "lucide-react";
-import { useToast } from "@/lib/toast-context";
+import { AlertTriangle, RotateCcw, Filter, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
-import { Button, Tooltip } from "@/components/ui";
+import { Button, Tooltip, EmptyState } from "@/components/ui";
 import { ListSkeleton } from "@/components/ui/LoadingSkeleton";
 import { LoadError } from "@/components/studio/LoadError";
 
@@ -31,7 +31,6 @@ interface OverrideRow {
 }
 
 export default function OverrideReportPage() {
-  const { addToast } = useToast();
   const [overrides, setOverrides] = useState<OverrideRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -45,10 +44,10 @@ export default function OverrideReportPage() {
 
   const revert = async (id: number) => {
     if (!window.confirm("Revert this override? The element returns to its theme default.")) return;
-    try { await api.overrides.remove(id); await fetch(); addToast("info", "Override reverted"); } catch (e: any) { addToast("error", e?.message); }
+    try { await api.overrides.remove(id); await fetch(); toast.info("Override reverted"); } catch (e: any) { toast.error(e?.message); }
   };
   const markStale = async (id: number) => {
-    try { await api.overrides.markStale(id); await fetch(); } catch (e: any) { addToast("error", e?.message); }
+    try { await api.overrides.markStale(id); await fetch(); } catch (e: any) { toast.error(e?.message); }
   };
 
   if (loading) {
@@ -86,9 +85,11 @@ export default function OverrideReportPage() {
 
       <div className="flex-1 overflow-y-auto p-4 lg:p-6">
         {filtered.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-sm text-stone-400 font-serif">No overrides {filter !== "all" ? `(${filter})` : ""}. The site matches the theme defaults.</p>
-          </div>
+          <EmptyState
+            icon={<CheckCircle2 className="w-7 h-7 text-rust-500" />}
+            title={filter !== "all" ? `No ${filter} overrides` : "No overrides"}
+            message={filter !== "all" ? `No overrides are currently marked as ${filter}.` : "The site matches the theme defaults. Every element uses its theme-defined value."}
+          />
         ) : (
           <div className="max-w-4xl space-y-2">
             {filtered.map((row) => (

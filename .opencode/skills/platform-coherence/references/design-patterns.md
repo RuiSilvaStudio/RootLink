@@ -61,12 +61,21 @@ text-3xl   /* 30px - hero text */
 ## Component Patterns
 
 ### Shared UI Primitives (`components/ui/`)
-- `Button` — primary, secondary, ghost variants
-- `Card` — content container with consistent padding
-- `Badge` — status labels, category tags
+- `Button` — primary, secondary, ghost, danger variants; `size="xs"` for tool density
+- `Card` — content container (variants: default/lift/glass/plain)
+- `Badge` — status labels, category tags (variants: sage/green/earth/blue/stone/amber/red)
+- `Input` / `Textarea` / `Select` / `Toggle` — form primitives (Select accepts `options` or `children`)
+- `Modal` — accessible dialog (portal, Esc, focus trap, `aria-modal`, footer slot)
+- `Tooltip` — hover/focus tooltip (`role="tooltip"`, keyboard-accessible)
+- `EmptyState` — centered empty-state with icon + action
+- `LoadingSkeleton` — skeleton compositions (Card/List/Text/Page/Profile)
+- `Toaster` — Sonner wrapper, themed to RootLink palette (mounted globally in `app/layout.tsx`)
+- `Text` — editable-copy renderer (`<Text k="copy.key">` auto-marks `data-rl-text`)
 - `StatCounter` — animated number display
-- `LoadingSkeleton` — loading states
-- `Collapsible` — animated expand/collapse
+- `PageHeader` / `Section` — marketing page headers/sections
+- `ResizableSplit` — two-panel split with drag + keyboard resize
+- `InfoPopover` — "(i)" help button with popover
+- `ImageUpload` — drag-drop image uploader with preview
 
 ### Component Naming
 - PascalCase for component files and exports
@@ -248,7 +257,8 @@ chapter. The concrete implementations to REUSE (never re-invent):
 | Tooltip | `components/ui/Tooltip` + `aria-label` on icon-only buttons | Native `title=` is banned (keyboard/touch-invisible) |
 | Buttons/fields | Kit `Button` (`size="xs"` for tool density, `danger` for destructive), `Input`, `Textarea`, `Toggle` | Segmented tabs/selection rows may stay raw with `aria-pressed`/`aria-current` |
 | Empty states | Kit `EmptyState`; quiet `text-sm` line in small panes | A blank pane is a bug |
-| Save feedback | Status-flash chip (`role="status"`, `aria-live="polite"`, ~2.5s) | See `overlay-provider.tsx` `statusFlash` |
+| Save feedback (studio) | Sonner `toast.success()` / `toast.error()` via `components/ui/Toaster.tsx` | Silence after save |
+| Save feedback (overlay) | Status-flash chip (`role="status"`, `aria-live="polite"`, ~2.5s; `{msg, variant}` — emerald=success, rust=error) | Silence after save |
 | Input → API | Local state instant, API debounced ~400ms per item | See theming token editor |
 | List mutations | Optimistic update, revert + toast on failure, no refetch flash | See blocks section reorder |
 | Type floor | 12px (`text-xs`) minimum everywhere | Exception: scaled miniature previews (`catalog/ComponentPreview.tsx`) |
@@ -261,7 +271,11 @@ save all · `Ctrl+Shift+E` enter overlay edit mode.
 
 Overlay-specific: selectable components carry `data-rl-component`; editable copy carries
 `data-rl-text` via `<Text k>`; the inspector is resizable (`localStorage["rl-inspector-width"]`);
-new color families must be added to `COLOR_FAMILIES` in `selection-agent.ts` (LESSONS.md #42).
+inspector sections are collapsible (`CollapsibleSection` with `storageKey`, persisted per-section);
+the footer hint is dismissible (`localStorage["rl-inspector-hint-dismissed"]`); undo/redo are
+icon-only + tooltip (symmetric); `ResetButton` is the shared per-property reset control
+(`components/overlay/ResetButton.tsx`); new color families must be added to `COLOR_FAMILIES` in
+`selection-agent.ts` (LESSONS.md #42).
 
 ## Accessibility
 

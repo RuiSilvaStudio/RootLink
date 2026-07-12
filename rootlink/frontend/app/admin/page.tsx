@@ -7,21 +7,23 @@ import { useLocale } from "@/lib/locale-context";
 import { Send, CheckCircle, Globe, Leaf, ExternalLink, TrendingUp, AlertTriangle, CheckSquare, Eye } from "lucide-react";
 import { StatCounter } from "@/components/ui/StatCounter";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 
 export default function AdminDashboard() {
   const { t } = useLocale();
   const [stats, setStats] = useState<any>(null);
   const [trending, setTrending] = useState<{ query: string; count: number }[]>([]);
+  const [trendingError, setTrendingError] = useState(false);
 
   useEffect(() => {
     api.admin.dashboard().then(setStats);
-    api.admin.trendingSearches(10).then(setTrending).catch(() => {});
+    api.admin.trendingSearches(10).then(setTrending).catch(() => setTrendingError(true));
   }, []);
 
   if (!stats) return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {[1, 2, 3, 4].map((i) => (
-        <div key={i} className="rounded-2xl p-5 bg-stone-200/40 animate-pulse h-28" />
+        <div key={i} className="rounded-2xl p-5 bg-stone-200/40 dark:bg-stone-800 animate-pulse h-28" />
       ))}
     </div>
   );
@@ -35,24 +37,31 @@ export default function AdminDashboard() {
   ];
 
   const contentStatus = [
-    { label: t("admin.stat_unreviewed"), value: stats.unreviewed_content, icon: AlertTriangle, color: "bg-amber-100/60 text-amber-700 border-amber-200/40" },
-    { label: t("admin.stat_cross_referenced"), value: stats.cross_referenced_content, icon: Eye, color: "bg-sky-100/60 text-sky-700 border-sky-200/40" },
-    { label: t("admin.stat_reviewed"), value: (stats.content || 0) - (stats.unreviewed_content || 0) - (stats.cross_referenced_content || 0), icon: CheckSquare, color: "bg-emerald-100/60 text-emerald-700 border-emerald-200/40" },
+    { label: t("admin.stat_unreviewed"), value: stats.unreviewed_content, icon: AlertTriangle, color: "bg-amber-100/60 text-amber-700 border-amber-200/40 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800/40" },
+    { label: t("admin.stat_cross_referenced"), value: stats.cross_referenced_content, icon: Eye, color: "bg-sky-100/60 text-sky-700 border-sky-200/40 dark:bg-sky-950/30 dark:text-sky-300 dark:border-sky-800/40" },
+    { label: t("admin.stat_reviewed"), value: (stats.content || 0) - (stats.unreviewed_content || 0) - (stats.cross_referenced_content || 0), icon: CheckSquare, color: "bg-emerald-100/60 text-emerald-700 border-emerald-200/40 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800/40" },
   ];
 
   return (
     <div>
+      <div className="px-6 py-4 border-b border-primary-200/40 dark:border-stone-800">
+        <h1 className="font-display text-xl font-semibold text-stone-800 dark:text-stone-100">
+          Dashboard
+        </h1>
+        <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+          Platform overview and quick actions
+        </p>
+      </div>
+
+      <div className="p-4 lg:p-6">
       <div className="mb-8">
         <Badge variant="sage" className="mb-3">{t("admin.dashboard")}</Badge>
-        <h1 className="text-3xl sm:text-4xl font-display font-semibold text-stone-800 dark:text-stone-100 leading-[1.08]">
-          {t("admin.dashboard_title")}
-        </h1>
       </div>
 
       {/* Overview stats — editorial grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-8">
         {overviewStats.map((s) => (
-          <div key={s.label} className="bg-white rounded-2xl border border-stone-200/60 p-5">
+          <div key={s.label} className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-800 p-5">
             <StatCounter value={s.value} label={s.label} duration={800} />
           </div>
         ))}
@@ -60,7 +69,7 @@ export default function AdminDashboard() {
 
       {/* Content status — task count pattern (GoAgri inspired) */}
       <div className="mb-8">
-        <h2 className="text-sm font-display font-semibold text-stone-500 uppercase tracking-[0.12em] mb-3">
+        <h2 className="text-sm font-display font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-[0.12em] mb-3">
           {t("admin.content_status")}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -82,7 +91,7 @@ export default function AdminDashboard() {
 
       {/* Quick actions */}
       <div className="mb-8">
-        <h2 className="text-sm font-display font-semibold text-stone-500 uppercase tracking-[0.12em] mb-3">
+        <h2 className="text-sm font-display font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-[0.12em] mb-3">
           {t("admin.quick_actions")}
         </h2>
         <div className="flex flex-wrap gap-2">
@@ -92,13 +101,11 @@ export default function AdminDashboard() {
             { href: "/admin/plants", label: t("admin.plant_add"), icon: Leaf },
             { href: "/admin/submit", label: t("admin.submit_url"), icon: Globe },
           ].map((a) => (
-            <Link
-              key={a.href}
-              href={a.href}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-stone-200/60 rounded-xl text-sm text-stone-600 hover:border-primary-300 hover:text-primary-700 hover:bg-primary-50/30 transition font-serif"
-            >
-              <a.icon className="w-4 h-4" />
-              {a.label}
+            <Link key={a.href} href={a.href}>
+              <Button variant="secondary" size="sm">
+                <a.icon className="w-4 h-4" />
+                {a.label}
+              </Button>
             </Link>
           ))}
         </div>
@@ -107,22 +114,23 @@ export default function AdminDashboard() {
       {/* Trending searches */}
       {trending.length > 0 && (
         <div>
-          <h2 className="text-sm font-display font-semibold text-stone-500 uppercase tracking-[0.12em] mb-3">
+          <h2 className="text-sm font-display font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-[0.12em] mb-3">
             {t("admin.trending_searches")}
           </h2>
-          <div className="bg-white rounded-2xl border border-stone-200/60 divide-y divide-stone-100 max-w-lg">
+          <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-800 divide-y divide-stone-100 dark:divide-stone-800 max-w-lg">
             {trending.map((item, i) => (
               <div key={item.query} className="flex items-center justify-between px-4 py-3 text-sm">
-                <span className="text-stone-700 font-serif flex items-center gap-2">
-                  <span className="text-stone-300 font-display text-xs w-5 text-right">#{i + 1}</span>
+                <span className="text-stone-700 dark:text-stone-200 font-serif flex items-center gap-2">
+                  <span className="text-stone-300 dark:text-stone-600 font-display text-xs w-5 text-right">#{i + 1}</span>
                   {item.query}
                 </span>
-                <span className="text-stone-400 text-xs font-display">{item.count}</span>
+                <span className="text-stone-400 dark:text-stone-500 text-xs font-display">{item.count}</span>
               </div>
             ))}
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

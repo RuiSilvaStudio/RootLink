@@ -382,3 +382,35 @@
      any new full-page keyboard interception, enumerate who else listens for that key
      (grep `key === "Escape"` / the specific key) before shipping. (Content Studio P2,
      2026-07-11.)
+
+  44. **`ResizableSplit`'s `leftClassName="hidden lg:flex"` causes the inner panel's `border-r`
+     to detach from the edge and the content to look constrained.** The `lg:flex` makes the
+     panel wrapper a flex container — its inner `<div className="h-full border-r ...">` becomes a
+     flex item that shrinks to content width instead of stretching to the full panel width. The
+     `border-r` then renders at the content's edge (a visible "vertical line" floating inside the
+     panel), and the content looks squeezed. Fix: always use `leftClassName="hidden lg:block"` —
+     `block` makes the inner div stretch naturally as a block child. Symptom: content/theming/
+     catalog studio pages showed a detached vertical line and constrained content when the left
+     panel was widened; blocks page (which already used `lg:block`) was fine. (Content Studio
+      face-lift Phase 1 S12, 2026-07-12.)
+
+  45. **Hiding `<main>` with `hidden lg:block` to "hide the sidebar gutter on mobile" actually
+     hides ALL content — the mobile drawer works but closes to a blank page.** The old
+     `app/admin/layout.tsx` used `<main className="ml-[272px] ... hidden lg:block">` — the
+     `hidden lg:block` was intended to avoid the fixed sidebar gutter on mobile, but it made
+     the entire content area `display: none` below 1024px. The mobile drawer (which lives
+     outside `<main>`) opened fine, but closing it left the user staring at a blank cream page.
+     Fix: use `lg:ml-[272px]` (scope the gutter to desktop only) and never hide `<main>` —
+     the sidebar itself should use `hidden lg:flex` (hide the sidebar on mobile, not the
+     content). The Content Studio's `StudioShell` already does this correctly. (Admin area
+     face-lift, 2026-07-12.)
+
+  46. **A subagent running `git stash` inside a session with uncommitted work will stash ALL
+     working-tree changes, including other agents' in-flight edits and your own prior changes.**
+     This happened during the admin face-lift: one subagent stashed 52 files of WIP (including
+     the entire Content Studio face-lift from earlier in the same session), restored only its
+     own 5 files, and the rest of the work was lost from the working tree until manually
+     recovered via `git checkout 'stash@{0}' -- <files>`. **Rule: never let a subagent run
+     `git stash` or `git checkout` — it has no visibility into what else is in the working
+     tree.** If a subagent needs to verify state, use `git status` or `git diff` (read-only),
+     never `git stash`. (Admin face-lift Phase 2, 2026-07-12.)

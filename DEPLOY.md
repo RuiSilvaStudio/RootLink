@@ -100,6 +100,10 @@ STRIPE_SECRET_KEY=sk_test_...        # or sk_live_ in production
 STRIPE_PUBLISHABLE_KEY=pk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 LIBERAPAY_WEBHOOK_SECRET=            # empty until Liberapay is wired
+# Argos Translate (machine translation for site copy — docs/content-platform/)
+# ARGOS_DEVICE_TYPE is set to "cpu" in docker-compose.prod.yml (no GPU on server).
+# Models auto-download on first translate call (~50MB per language pair, one-time)
+# and persist to ./backend-data/argos-models/ via the volume mount.
 ```
 
 **Vercel env (dashboard → Settings → Environment Variables):**
@@ -305,6 +309,17 @@ These cost real time. Read before debugging.
     on the server (a copy of the rogue version was saved off-server first). If a future deploy's
     pull fails on "local changes would be overwritten", suspect server-side agent sessions and
     inspect before discarding.
+15. **Argos Translate first-call delay** (added 2026-07-12): the `/api/translate` endpoint uses
+    Argos Translate (MIT-licensed OpenNMT). Language models (~50MB per pair) auto-download on the
+    FIRST translate call after a fresh deploy and persist to `./backend-data/argos-models/` via
+    the volume mount. The first call for a language pair takes ~10–30s (download + model load);
+    subsequent calls are fast (model stays loaded in process memory). If a translate request
+    times out on a freshly deployed container, retry — the model is now installed. To pre-warm
+    after a deploy: `docker compose -f docker-compose.prod.yml exec backend python3 -c
+    "import argostranslate.package, argostranslate.translate; argostranslate.package.update_package_index();
+    [argostranslate.package.install_from_path(p.download()) for p in argostranslate.package.get_available_packages() if p.from_code=='pt' and p.to_code=='en'];
+    argostranslate.translate.translate('teste', 'pt', 'en')"`. The volume mount means this only
+    needs to happen once per language pair, ever (survives restarts).
 
 ---
 

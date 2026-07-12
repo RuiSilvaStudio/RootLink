@@ -21,8 +21,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Plus, Check, Trash2, Moon, Sun, Copy } from "lucide-react";
-import { useToast } from "@/lib/toast-context";
-import { Button, Input, Modal, Tooltip } from "@/components/ui";
+import { toast } from "sonner";
+import { Button, Input, Modal, Tooltip, EmptyState } from "@/components/ui";
 import { ListSkeleton, CardSkeleton, TextSkeleton } from "@/components/ui/LoadingSkeleton";
 import { ResizableSplit } from "@/components/ui/ResizableSplit";
 import { useTheme } from "@/lib/theme-context";
@@ -61,17 +61,7 @@ function toDisplayHex(value: string): string {
 
 const CATEGORIES = ["color", "font", "size", "spacing", "radius"] as const;
 
-/** Quiet empty state for a token category tab. */
-function EmptyCategory({ category }: { category: string }) {
-  return (
-    <p className="text-center py-10 text-sm text-stone-400 dark:text-stone-500 font-serif">
-      No {category} tokens yet. Add one with “Add token”.
-    </p>
-  );
-}
-
 export default function ThemeManagerPage() {
-  const { addToast } = useToast();
   const { refresh: refreshTheme } = useTheme();
   const [themes, setThemes] = useState<ThemeInfo[]>([]);
   const [selectedThemeId, setSelectedThemeId] = useState<number | null>(null);
@@ -141,9 +131,9 @@ export default function ThemeManagerPage() {
       setNewTokenValue("");
       setAddingToken(false);
       await fetchTokens();
-      addToast("success", "Token added");
+      toast.success("Token added");
     } catch (e: any) {
-      addToast("error", e?.message || "Failed to add token");
+      toast.error(e?.message || "Failed to add token");
     }
   };
 
@@ -152,9 +142,9 @@ export default function ThemeManagerPage() {
     try {
       await api.themes.removeToken(token.id);
       await fetchTokens();
-      addToast("success", "Token deleted");
+      toast.success("Token deleted");
     } catch (e: any) {
-      addToast("error", e?.message || "Failed to delete token");
+      toast.error(e?.message || "Failed to delete token");
     }
   };
 
@@ -168,7 +158,7 @@ export default function ThemeManagerPage() {
       setEditingThemeName(false);
       await fetchThemes();
     } catch (e: any) {
-      addToast("error", e?.message || "Failed to rename theme");
+      toast.error(e?.message || "Failed to rename theme");
     }
   };
 
@@ -180,9 +170,9 @@ export default function ThemeManagerPage() {
       await fetchThemes();
       const remaining = themes.filter((t) => t.id !== theme.id);
       if (remaining.length > 0) setSelectedThemeId(remaining[0].id);
-      addToast("success", `Theme "${theme.name}" deleted`);
+      toast.success(`Theme "${theme.name}" deleted`);
     } catch (e: any) {
-      addToast("error", e?.message || "Failed to delete theme");
+      toast.error(e?.message || "Failed to delete theme");
     }
   };
 
@@ -193,9 +183,9 @@ export default function ThemeManagerPage() {
       setNewThemeName("");
       setCreatingTheme(false);
       await fetchThemes();
-      addToast("success", "Theme created (draft)");
+      toast.success("Theme created (draft)");
     } catch (e: any) {
-      addToast("error", e?.message || "Failed to create theme");
+      toast.error(e?.message || "Failed to create theme");
     }
   };
 
@@ -224,7 +214,7 @@ export default function ThemeManagerPage() {
         try {
           await api.themes.updateToken(token.id, payload);
         } catch (e: any) {
-          addToast("error", e?.message || "Failed to update token");
+          toast.error(e?.message || "Failed to update token");
         }
       }, 400)
     );
@@ -235,9 +225,9 @@ export default function ThemeManagerPage() {
       await api.themes.activate(theme.id);
       await fetchThemes();
       await refreshTheme(); // re-inject tokens site-wide
-      addToast("success", `"${theme.name}" is now the active theme`);
+      toast.success(`"${theme.name}" is now the active theme`);
     } catch (e: any) {
-      addToast("error", e?.message || "Failed to activate theme");
+      toast.error(e?.message || "Failed to activate theme");
     }
   };
 
@@ -245,9 +235,9 @@ export default function ThemeManagerPage() {
     try {
       await api.themes.update(theme.id, { is_published: true });
       await fetchThemes();
-      addToast("success", `"${theme.name}" published`);
+      toast.success(`"${theme.name}" published`);
     } catch (e: any) {
-      addToast("error", e?.message || "Failed to publish theme");
+      toast.error(e?.message || "Failed to publish theme");
     }
   };
 
@@ -255,9 +245,9 @@ export default function ThemeManagerPage() {
     try {
       await api.themes.create({ name: `${theme.name} (copy)`, description: theme.description || undefined, copy_from: theme.id });
       await fetchThemes();
-      addToast("success", "Theme duplicated (draft)");
+      toast.success("Theme duplicated (draft)");
     } catch (e: any) {
-      addToast("error", e?.message || "Failed to duplicate theme");
+      toast.error(e?.message || "Failed to duplicate theme");
     }
   };
 
@@ -312,6 +302,7 @@ export default function ThemeManagerPage() {
         minWidth={160}
         maxWidth={320}
         className="flex-1"
+        leftClassName="hidden lg:block"
         left={
           <div className="h-full border-r border-primary-200/40 dark:border-stone-800 p-3 overflow-y-auto">
             <p className="px-1 pb-2 text-xs uppercase tracking-wider text-stone-400 dark:text-stone-500 font-medium">Themes</p>
@@ -518,7 +509,7 @@ export default function ThemeManagerPage() {
                       </Tooltip>
                     </div>
                   ))}
-                  {colorTokens.length === 0 && <EmptyCategory category="color" />}
+                  {colorTokens.length === 0 && <EmptyState title="No color tokens" message={`No ${"color"} tokens in this theme yet. Add one with “Add token”.`} />}
                 </div>
               )}
 
@@ -594,7 +585,7 @@ export default function ThemeManagerPage() {
                       </div>
                     );
                   })}
-                  {fontTokens.length === 0 && <EmptyCategory category="font" />}
+                  {fontTokens.length === 0 && <EmptyState title="No font tokens" message="No font tokens in this theme yet. Add one with “Add token”." />}
                 </div>
               )}
 
@@ -629,7 +620,7 @@ export default function ThemeManagerPage() {
                       </div>
                     );
                   })}
-                  {radiusTokens.length === 0 && <EmptyCategory category="radius" />}
+                  {radiusTokens.length === 0 && <EmptyState title="No radius tokens" message="No radius tokens in this theme yet. Add one with “Add token”." />}
                 </div>
               )}
 
@@ -672,7 +663,7 @@ export default function ThemeManagerPage() {
                       </div>
                     );
                   })}
-                  {sizeTokens.length === 0 && <EmptyCategory category="size" />}
+                  {sizeTokens.length === 0 && <EmptyState title="No size tokens" message="No size tokens in this theme yet. Add one with “Add token”." />}
                 </div>
               )}
 
@@ -718,14 +709,12 @@ export default function ThemeManagerPage() {
                       </div>
                     );
                   })}
-                  {spacingTokens.length === 0 && <EmptyCategory category="spacing" />}
+                  {spacingTokens.length === 0 && <EmptyState title="No spacing tokens" message="No spacing tokens in this theme yet. Add one with “Add token”." />}
                 </div>
               )}
             </div>
           ) : (
-            <div className="text-center py-20">
-              <p className="text-sm text-stone-400 font-serif">Select a theme to edit its tokens.</p>
-            </div>
+            <EmptyState title="No theme selected" message="Select a theme from the left to edit its tokens." />
           )}
           </div>
         }

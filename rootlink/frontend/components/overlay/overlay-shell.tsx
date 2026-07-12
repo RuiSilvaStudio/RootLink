@@ -16,6 +16,7 @@ import { usePathname } from "next/navigation";
 import { PenLine, Eye, X, AlertTriangle, Check, Undo2, Save, Upload, Trash2, ChevronDown, FileText, History } from "lucide-react";
 import { useOverlay } from "./overlay-provider";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { BrandIcon } from "@/components/ui/BrandIcon";
 import { InspectorPanel } from "./inspector-panel";
 import { injectSelectionAgent } from "./selection-agent";
 import { api } from "@/lib/api";
@@ -32,6 +33,7 @@ export function OverlayShell() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [agentReady, setAgentReady] = useState(false);
+  const [iframeError, setIframeError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [pages, setPages] = useState<{ slug: string; label: string }[]>([]);
   const [pageMenuOpen, setPageMenuOpen] = useState(false);
@@ -188,6 +190,15 @@ export function OverlayShell() {
     }
   }, [active, pathname, iframeUrl, setIframeUrl]);
 
+  // Iframe load-error timeout: if the page doesn't load within 15s (network
+  // error, 404 slug), show an error notice instead of hanging on the spinner.
+  useEffect(() => {
+    if (!active || !iframeUrl || iframeLoaded) return;
+    setIframeError(false);
+    const timer = setTimeout(() => setIframeError(true), 15000);
+    return () => clearTimeout(timer);
+  }, [active, iframeUrl, iframeLoaded, reloadKey]);
+
   // Inject the selection agent after the iframe loads + a short settling
   // delay (lets the page's own JS — framer-motion, HeroParticleCanvas, etc.
   // — finish reading layout, so the agent doesn't cause "layout forced"
@@ -239,7 +250,8 @@ export function OverlayShell() {
           >
             <X className="w-3.5 h-3.5" aria-hidden="true" /> Exit
           </button>
-          <span className="font-display text-sm font-semibold text-primary-300">
+          <span className="flex items-center gap-2 font-display text-sm font-semibold text-primary-300">
+            <BrandIcon className="w-4 h-4" />
             Content Studio — Edit Mode
           </span>
           {/* Editing-locale indicator — which language inline text edits save to */}
@@ -283,7 +295,7 @@ export function OverlayShell() {
                         p.slug === pageSlug
                           ? "bg-primary-600 text-cream"
                           : i === pageActiveIndex
-                            ? "bg-stone-800 text-stone-200"
+                            ? "text-stone-200 ring-2 ring-primary-400 ring-inset"
                             : "text-stone-200 hover:bg-stone-800"
                       }`}
                     >
@@ -297,15 +309,21 @@ export function OverlayShell() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Transient status flash ("Draft saved" / "Published" / …) — the
-              provider auto-clears it after ~2.5s. */}
+          {/* Transient status flash ("Draft saved" / "Published" / "Couldn't publish")
+               — the provider auto-clears it after ~2.5s. Variant controls color. */}
           {statusFlash && (
             <span
               role="status"
               aria-live="polite"
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-emerald-700 bg-emerald-900/40 text-xs font-medium text-emerald-300"
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-medium ${
+                statusFlash.variant === "error"
+                  ? "border-rust-700 bg-rust-900/40 text-rust-300"
+                  : "border-emerald-700 bg-emerald-900/40 text-emerald-300"
+              }`}
             >
-              <Check className="w-3 h-3" aria-hidden="true" /> {statusFlash}
+              {statusFlash.variant === "error"
+                ? <AlertTriangle className="w-3 h-3" aria-hidden="true" />
+                : <Check className="w-3 h-3" aria-hidden="true" />} {statusFlash.msg}
             </span>
           )}
 
@@ -344,7 +362,7 @@ export function OverlayShell() {
                 disabled={draftSaving}
                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-primary-600 hover:bg-primary-700 text-cream transition disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
               >
-                {draftSaving ? "..." : <Upload className="w-3.5 h-3.5" aria-hidden="true" />} Publish
+                {draftSaving ? <div className="w-3.5 h-3.5 border-2 border-cream/30 border-t-cream rounded-full animate-spin" /> : <Upload className="w-3.5 h-3.5" aria-hidden="true" />} Publish
               </button>
               <Tooltip content="Discard unsaved changes" side="bottom">
                 <button
@@ -391,13 +409,17 @@ export function OverlayShell() {
       {/* ── Override prompt (inline, not modal) ────────── */}
       {pendingPrompt && (
         <div className="shrink-0 px-4 py-2.5 border-b border-rust-800 bg-rust-950/30 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-sm text-stone-300">
+          <div className="flex items-center gap-2 text-sm text-stone-300 min-w-0">
             <AlertTriangle className="w-4 h-4 text-rust-400 shrink-0" />
-            <span>
+            <span className="min-w-0">
               This deviates from the default{" "}
               <code className="text-rust-300 font-mono">{pendingPrompt.property}</code>{" "}
               (was <code className="text-stone-400 font-mono">{pendingPrompt.oldValue}</code>).
             </span>
+            {/* Visual preview of the new value — swatch for colors, name for fonts */}
+            {pendingPrompt.newValue && (
+              <ValuePreview property={pendingPrompt.property} value={pendingPrompt.newValue} />
+            )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
@@ -434,13 +456,32 @@ export function OverlayShell() {
             </div>
           )}
           {!previewMode && !agentReady && (
-            <div className="absolute inset-0 flex items-center justify-center bg-stone-100 z-10">
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-6 h-6 border-2 border-stone-300 border-t-primary-500 rounded-full animate-spin" />
-                <div className="text-sm text-stone-400 font-serif">
-                  {iframeLoaded ? "Preparing editor…" : "Loading page…"}
+            <div className="absolute inset-0 flex items-center justify-center bg-stone-950 z-10">
+              {iframeError ? (
+                <div className="flex flex-col items-center gap-3 px-6 text-center">
+                  <AlertTriangle className="w-6 h-6 text-rust-400" aria-hidden="true" />
+                  <div className="text-sm text-stone-300 font-serif">
+                    Couldn&apos;t load this page for editing.
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIframeError(false);
+                      setIframeLoaded(false);
+                      setReloadKey((k) => k + 1);
+                    }}
+                    className="mt-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary-600 hover:bg-primary-700 text-cream transition"
+                  >
+                    Try again
+                  </button>
                 </div>
-              </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-6 h-6 border-2 border-stone-700 border-t-primary-500 rounded-full animate-spin" />
+                  <div className="text-sm text-stone-400 font-serif">
+                    {iframeLoaded ? "Preparing editor…" : "Loading page…"}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -477,5 +518,29 @@ export function OverlayShell() {
         )}
       </div>
     </div>
+  );
+}
+
+/** Visual preview of an override value — a color swatch for color properties,
+ *  the token name for font/size/spacing. Lets the user SEE what they're about
+ *  to confirm instead of confirming blind. */
+function ValuePreview({ property, value }: { property: string; value: string }) {
+  const isColor = property === "color" || property === "background-color" || property === "border-color";
+  if (isColor) {
+    return (
+      <span className="flex items-center gap-1.5 shrink-0 px-2 py-1 rounded-md bg-stone-900 border border-stone-700">
+        <span
+          className="w-3.5 h-3.5 rounded border border-stone-600"
+          style={{ background: `var(--color-${value}, ${value})` }}
+        />
+        <code className="text-xs font-mono text-stone-200">{value}</code>
+      </span>
+    );
+  }
+  // Font, size, spacing, radius — show the token name in mono
+  return (
+    <span className="flex items-center gap-1.5 shrink-0 px-2 py-1 rounded-md bg-stone-900 border border-stone-700">
+      <code className="text-xs font-mono text-primary-300">{value}</code>
+    </span>
   );
 }
