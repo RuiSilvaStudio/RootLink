@@ -4,7 +4,7 @@
 > If anything here changes (server, domains, secrets, process, gotchas), UPDATE THIS FILE
 > in the same change. AGENTS.md instructs every agent to keep this current.
 >
-> Last verified working: 2026-07-11 (unified UX hardening P0–P2 deploy — clean run, health 200 first try)
+> Last verified working: 2026-07-12 (Argos Translate + admin/copy removal + studio face-lift deploy)
 
 ---
 
