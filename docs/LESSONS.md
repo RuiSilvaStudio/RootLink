@@ -414,3 +414,13 @@
      `git stash` or `git checkout` — it has no visibility into what else is in the working
      tree.** If a subagent needs to verify state, use `git status` or `git diff` (read-only),
      never `git stash`. (Admin face-lift Phase 2, 2026-07-12.)
+
+47. **`npm run build` passes locally when `node_modules` has a package that's NOT in `package.json`,
+     but Vercel does a clean install from `package.json` only — so the Vercel build fails with
+     "Module not found".** This happened when another agent ran `npm install sonner` (and `cmdk`)
+     without `--save`, so they landed in `node_modules` but not `package.json`. Local `npm run build`
+     passed because `node_modules/sonner` existed; Vercel's clean install failed. **Fix: before
+     deploying, do `rm -rf node_modules package-lock.json && npm install && npm run build` to mirror
+     Vercel's clean install. Also: whenever you (or another agent) `npm install` a new package,
+     always verify it's in `package.json` — if it's not, re-add it with `npm install <pkg>`.**
+     (Argos Translate deploy, 2026-07-12 — cost two failed Vercel builds.)
