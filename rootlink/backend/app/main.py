@@ -33,6 +33,7 @@ from app.api import (
     external,
     farmers_guide,
     feeds,
+    glossary,
     groups,
     images,
     learning,
@@ -66,6 +67,7 @@ from app.models.block_page import BlockPage, BlockSection  # noqa: F401 - ensure
 from app.models.element_schema import ElementSchema  # noqa: F401 - ensure table creation
 from app.models.entity import DelegationGrant, Entity  # noqa: F401 - ensure table creation
 from app.models.font import Font  # noqa: F401 - ensure table creation
+from app.models.glossary_term import GlossaryTerm  # noqa: F401 - ensure table creation
 from app.models.image_asset import ImageAsset  # noqa: F401 - ensure table creation
 from app.models.override_log import OverrideLog  # noqa: F401 - ensure table creation
 from app.models.page_draft import PageDraft  # noqa: F401 - ensure table creation
@@ -640,6 +642,7 @@ app.include_router(entities.router)
 app.include_router(role_requests.router)
 app.include_router(delegations.router)
 app.include_router(translate.router)
+app.include_router(glossary.router)
 
 # Serve uploaded media files.
 # Register image MIME types explicitly: the slim Docker image's mimetypes DB does

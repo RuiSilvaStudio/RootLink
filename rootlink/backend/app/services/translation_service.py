@@ -1,15 +1,16 @@
 """Machine translation service built on Argos Translate.
 
-Phase 1 of the translation pipeline (docs/content-platform/ — site copy only).
-Argos is an MIT-licensed OpenNMT-based library; models are downloaded lazily
-on first use and persisted to the package data directory so they survive
-container restarts.
+Full translation pipeline (docs/content-platform/):
+  Phase 1: Argos MT (machine translation)
+  Phase 2: Translation Memory check before MT (exact/fuzzy match)
+  Phase 3: Glossary protection (brand/domain terms applied before/after MT)
 
-Resolution order (Phase 1 = MT only):
-  1. Machine translation via Argos (this module)
-
-Phase 2 will insert a Translation Memory check before MT — see
-translation_service.translate() docstring.
+Resolution order in translate():
+  1. Translation Memory (exact match → tm_exact, fuzzy → tm_fuzzy)
+  2. Glossary protection (swap terms for tokens before MT)
+  3. Argos MT translates the rest
+  4. Glossary restore (put chosen translations back)
+  5. Placeholder restore ({variable} tokens back to {variable})
 
 Argos is synchronous and CPU-bound, so all translate calls are wrapped in
 asyncio.to_thread(). Model loading is guarded by a threading.Lock so
@@ -121,20 +122,139 @@ def _restore_placeholders(text: str, mapping: dict[str, str]) -> str:
     return text
 
 
+# ── Glossary (Phase 3) ──────────────────────────────────────────────
+
+# In-process cache of glossary terms, keyed by (source_locale, target_locale).
+# Populated lazily on first use, invalidated by _invalidate_glossary_cache()
+# when a glossary term is added/updated/deleted via the API.
+_glossary_cache: dict[tuple[str, str], list[dict]] = {}
+_glossary_lock = threading.Lock()
+
+
+def _invalidate_glossary_cache() -> None:
+    """Clear the glossary cache — call after any glossary mutation."""
+    with _glossary_lock:
+        _glossary_cache.clear()
+
+
+def _load_glossary_sync(source: str, target: str) -> list[dict]:
+    """Load glossary terms for a (source, target) pair from the DB (sync).
+
+    Returns a list of ``{term_source, term_target, is_brand}`` dicts,
+    sorted by term_source length descending (longer terms matched first
+    so "RootLink Content Studio" is matched before "RootLink").
+    Cached in-process; invalidated on glossary mutations.
+    """
+    cache_key = (source, target)
+    with _glossary_lock:
+        if cache_key in _glossary_cache:
+            return _glossary_cache[cache_key]
+
+    # Run sync query in a thread-safe manner — this is called from within
+    # _translate_sync which already runs in a thread (asyncio.to_thread).
+    import asyncio
+
+    from sqlalchemy import select
+
+    from app.core.database import async_session_factory
+    from app.models.glossary_term import GlossaryTerm
+
+    async def _fetch():
+        async with async_session_factory() as db:
+            rows = (await db.execute(
+                select(GlossaryTerm).where(
+                    GlossaryTerm.source_locale == source,
+                    GlossaryTerm.target_locale == target,
+                )
+            )).scalars().all()
+            return [
+                {"term_source": r.term_source, "term_target": r.term_target, "is_brand": r.is_brand}
+                for r in rows
+            ]
+
+    loop = asyncio.new_event_loop()
+    try:
+        terms = loop.run_until_complete(_fetch())
+    finally:
+        loop.close()
+
+    # Sort by source term length descending — match longer terms first.
+    terms.sort(key=lambda t: len(t["term_source"]), reverse=True)
+
+    with _glossary_lock:
+        _glossary_cache[cache_key] = terms
+    return terms
+
+
+def _protect_glossary(text: str, terms: list[dict]) -> tuple[str, dict[str, str]]:
+    """Swap glossary terms for opaque tokens before MT (same pattern as
+    _protect_placeholders). Returns (protected_text, mapping).
+
+    For brand terms (is_brand=True), the token maps back to the SOURCE term
+    (so "RootLink" comes back as "RootLink" in every language).
+    For domain terms, the token maps to the TARGET term (your chosen
+    rendering replaces whatever Argos produced).
+    """
+    mapping: dict[str, str] = {}
+
+    def _replace(match: re.Match, term: dict) -> str:
+        token = f"RLGLOS{len(mapping)}"
+        if term["is_brand"]:
+            mapping[token] = term["term_source"]
+        else:
+            mapping[token] = term["term_target"]
+        return token
+
+    for term in terms:
+        source = term["term_source"]
+        # Case-insensitive whole-word matching.
+        pattern = re.compile(re.escape(source), re.IGNORECASE)
+        text, count = pattern.subn(
+            lambda m, t=term: _replace(m, t),
+            text,
+        )
+    return text, mapping
+
+
+def _restore_glossary(text: str, mapping: dict[str, str]) -> str:
+    """Reverse _protect_glossary — put brand terms / chosen translations back."""
+    for token, replacement in mapping.items():
+        text = text.replace(token, replacement)
+    return text
+
+
 def _translate_sync(source_text: str, source: str, target: str) -> str:
     """Synchronous Argos translate call. Runs in a thread via to_thread.
 
-    Variable placeholders ({category}, {count}, etc.) are protected before
-    translation and restored after — see _protect_placeholders.
+    Pipeline (Phase 3):
+      1. Protect {variable} placeholders
+      2. Protect glossary terms (brand + domain)
+      3. Argos MT translates the rest
+      4. Restore glossary (brand names pass through, domain terms replaced)
+      5. Restore placeholders
     """
     with _models_lock:
         _ensure_packages_installed(source, target)
 
     import argostranslate.translate as argos_translate
 
-    protected, mapping = _protect_placeholders(source_text)
-    translated = argos_translate.translate(protected, source, target)
-    return _restore_placeholders(translated, mapping)
+    # 1. Protect {variable} placeholders
+    text, ph_mapping = _protect_placeholders(source_text)
+
+    # 2. Protect glossary terms
+    glossary = _load_glossary_sync(source, target)
+    text, gl_mapping = _protect_glossary(text, glossary)
+
+    # 3. MT
+    translated = argos_translate.translate(text, source, target)
+
+    # 4. Restore glossary
+    translated = _restore_glossary(translated, gl_mapping)
+
+    # 5. Restore placeholders
+    translated = _restore_placeholders(translated, ph_mapping)
+
+    return translated
 
 
 async def _check_translation_memory(

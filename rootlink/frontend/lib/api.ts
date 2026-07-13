@@ -75,6 +75,15 @@ async function request<T>(
   return res.json();
 }
 
+export interface GlossaryEntry {
+  term_source: string;
+  source_locale: string;
+  target_locale: string;
+  term_target: string;
+  is_brand: boolean;
+  notes: string | null;
+}
+
 export const api = {
   auth: {
     register: (data: { email: string; name: string; password: string; account_type?: string; entity_type?: string; registration_number?: string; services?: string[]; service_area?: string; modality?: string; certifications?: string[] }) =>
@@ -901,7 +910,7 @@ export const api = {
 
   translate: {
     // Machine translation via Argos Translate (super_admin only).
-    // Phase 1: MT only. Phase 2 will add Translation Memory (tm_exact/tm_fuzzy origins).
+    // Phase 1: MT. Phase 2: TM (tm_exact/tm_fuzzy). Phase 3: Glossary.
     single: (source_text: string, source_locale: string, target_locale: string) =>
       request<{ value: string; origin: string }>("/api/translate", {
         method: "POST",
@@ -916,6 +925,21 @@ export const api = {
         "/api/translate/bulk",
         { method: "POST", body: JSON.stringify({ items, source_locale, target_locale }) }
       ),
+  },
+
+  glossary: {
+    // Glossary — brand and domain term management (Phase 3, super_admin only).
+    list: (q?: string) =>
+      request<GlossaryEntry[]>(`/api/translate/glossary${q ? `?q=${encodeURIComponent(q)}` : ""}`),
+    upsert: (entry: GlossaryEntry) =>
+      request<GlossaryEntry>(`/api/translate/glossary/${encodeURIComponent(entry.term_source)}`, {
+        method: "PUT",
+        body: JSON.stringify(entry),
+      }),
+    remove: (term_source: string, source_locale: string, target_locale: string) =>
+      request<any>(`/api/translate/glossary/${encodeURIComponent(term_source)}?source_locale=${source_locale}&target_locale=${target_locale}`, {
+        method: "DELETE",
+      }),
   },
 
   legal: {
