@@ -45,6 +45,7 @@ from app.models.setting import Setting
 from app.models.taxonomy import TaxonomyCategory, TaxonomyFamily
 from app.models.theme import Theme, ThemeToken
 from app.models.theme_override import ThemeOverride
+from app.models.translation_memory import TranslationMemory
 from app.models.user import User
 from app.models.waste import (
     CompostingDeposit,
@@ -82,6 +83,7 @@ __all__ = [
     "Font",
     "OverrideLog",
     "PageDraft",
+    "TranslationMemory",
     "BlockPage", "BlockSection",
     "Entity", "EntityKind", "EntityVerificationStatus", "DelegationGrant", "EntityDocument",
     "Session", "EmailVerificationToken", "PasswordResetToken",

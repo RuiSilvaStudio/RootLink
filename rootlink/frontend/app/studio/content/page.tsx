@@ -102,10 +102,11 @@ export default function ContentPage() {
   const [savingAll, setSavingAll] = useState(false);
   const [translatingKey, setTranslatingKey] = useState<string | null>(null);
   const [translatingAll, setTranslatingAll] = useState(false);
-  // Origin map: { `${key}:${locale}` → "mt" | "tm" | "human" } — tracks how the
-  // current value was produced. Phase 1 only sets "mt" (from auto-translate) and
-  // "human" (from a saved override or typed edit). Phase 2 will add "tm" origins.
-  const [origins, setOrigins] = useState<Record<string, "mt" | "tm" | "human">>({});
+  // Origin map: { `${key}:${locale}` → origin } — tracks how the current value
+  // was produced. Origins from the API: "tm_exact" (TM exact match), "tm_fuzzy"
+  // (TM near-match), "mt" (machine translation). "human" is inferred from
+  // saved overrides (not stored in this map — getOrigin handles it).
+  const [origins, setOrigins] = useState<Record<string, string>>({});
 
   // Fetch all overrides on mount
   const fetchOverrides = useCallback(async () => {
@@ -180,7 +181,7 @@ export default function ContentPage() {
 
   /** Origin of the current value for display: explicit origin map → "human" if
    * there's a saved override → undefined (no badge). */
-  const getOrigin = (key: string, locale: "pt" | "en"): "mt" | "tm" | "human" | undefined => {
+  const getOrigin = (key: string, locale: "pt" | "en"): string | undefined => {
     const ek = `${key}:${locale}`;
     if (origins[ek]) return origins[ek];
     if (overrideMap[ek] !== undefined) return "human";
@@ -204,8 +205,10 @@ export default function ContentPage() {
     try {
       const res = await api.translate.single(ptSource, "pt", "en");
       setDraft(key, "en", res.value);
-      setOrigins((prev) => ({ ...prev, [`${key}:en`]: res.origin === "mt" ? "mt" : "mt" }));
-      toast.success(`Translated "${key}"`);
+      setOrigins((prev) => ({ ...prev, [`${key}:en`]: res.origin }));
+      const originLabel = res.origin === "tm_exact" ? "TM exact match" :
+        res.origin === "tm_fuzzy" ? "TM fuzzy match" : "machine translation";
+      toast.success(`Translated "${key}" (${originLabel})`);
     } catch (e: any) {
       toast.error(e?.message || "Translation failed");
     } finally {
@@ -233,7 +236,7 @@ export default function ContentPage() {
       for (const r of res.results) {
         if (r.value && !r.error) {
           setDraft(r.key, "en", r.value);
-          setOrigins((prev) => ({ ...prev, [`${r.key}:en`]: "mt" }));
+          setOrigins((prev) => ({ ...prev, [`${r.key}:en`]: r.origin }));
           filled++;
         } else {
           failed++;
@@ -261,7 +264,10 @@ export default function ContentPage() {
         tasks.push(api.copy.set(key, "pt", draft.pt));
       }
       if (draft.en !== undefined && draft.en !== (overrideMap[`${key}:en`] ?? EN_DEFAULTS[key] ?? "")) {
-        tasks.push(api.copy.set(key, "en", draft.en));
+        // Send the PT source text so the backend can upsert a Translation
+        // Memory entry (source → accepted value) for future auto-translations.
+        const ptSource = getValue(key, "pt");
+        tasks.push(api.copy.set(key, "en", draft.en, ptSource));
       }
       await Promise.all(tasks);
       await fetchOverrides();
@@ -315,7 +321,8 @@ export default function ContentPage() {
               tasks.push(api.copy.set(key, "pt", draft.pt));
             }
             if (draft?.en !== undefined && draft.en !== (overrideMap[`${key}:en`] ?? EN_DEFAULTS[key] ?? "")) {
-              tasks.push(api.copy.set(key, "en", draft.en));
+              const ptSource = getValue(key, "pt");
+              tasks.push(api.copy.set(key, "en", draft.en, ptSource));
             }
             await Promise.all(tasks);
             return { key, ok: true };
@@ -564,18 +571,16 @@ export default function ContentPage() {
                       {(() => {
                         const o = getOrigin(key, "en");
                         if (!o) return null;
-                        const labels: Record<string, { text: string; cls: string }> = {
-                          mt: { text: "MT", cls: "text-stone-500 bg-stone-100 dark:bg-stone-800" },
-                          tm: { text: "TM", cls: "text-rust-600 bg-rust-50 dark:bg-rust-950/30" },
-                          human: { text: "human", cls: "text-primary-600 bg-primary-50 dark:bg-primary-950/30" },
+                        const labels: Record<string, { text: string; cls: string; tip: string }> = {
+                          mt: { text: "MT", cls: "text-stone-500 bg-stone-100 dark:bg-stone-800", tip: "Machine-translated draft (Argos)" },
+                          tm_exact: { text: "TM", cls: "text-rust-600 bg-rust-50 dark:bg-rust-950/30", tip: "Translation Memory exact match (human-accepted)" },
+                          tm_fuzzy: { text: "TM~", cls: "text-rust-500 bg-rust-50/50 dark:bg-rust-950/20", tip: "Translation Memory fuzzy match (review recommended)" },
+                          human: { text: "human", cls: "text-primary-600 bg-primary-50 dark:bg-primary-950/30", tip: "Human-edited" },
                         };
                         const l = labels[o];
+                        if (!l) return null;
                         return (
-                          <Tooltip content={
-                            o === "mt" ? "Machine-translated draft (Argos)" :
-                            o === "tm" ? "Translation Memory match" :
-                            "Human-edited"
-                          }>
+                          <Tooltip content={l.tip}>
                             <span className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ${l.cls}`}>
                               {l.text}
                             </span>

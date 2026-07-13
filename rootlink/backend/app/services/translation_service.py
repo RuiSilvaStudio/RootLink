@@ -21,6 +21,7 @@ import logging
 import os
 import re
 import threading
+from difflib import SequenceMatcher
 
 logger = logging.getLogger(__name__)
 
@@ -136,6 +137,64 @@ def _translate_sync(source_text: str, source: str, target: str) -> str:
     return _restore_placeholders(translated, mapping)
 
 
+async def _check_translation_memory(
+    source_text: str,
+    source_locale: str,
+    target_locale: str,
+) -> dict | None:
+    """Check Translation Memory for a match before falling back to MT.
+
+    Returns ``{"value": str, "origin": "tm_exact" | "tm_fuzzy"}`` on match,
+    or ``None`` if no match (caller should fall back to MT).
+
+    Exact match: same source_text (case-sensitive). Fuzzy match: Levenshtein
+    ratio ≥ 0.85 via SequenceMatcher. Fuzzy matches are returned so the user
+    can review — they're not as reliable as exact matches but still better
+    than MT for near-identical source text.
+    """
+    from sqlalchemy import select
+
+    from app.core.database import async_session_factory
+    from app.models.translation_memory import TranslationMemory
+
+    async with async_session_factory() as db:
+        # Exact match first
+        exact = await db.scalar(
+            select(TranslationMemory).where(
+                TranslationMemory.source_text == source_text,
+                TranslationMemory.source_locale == source_locale,
+                TranslationMemory.target_locale == target_locale,
+            )
+        )
+        if exact:
+            return {"value": exact.accepted_value, "origin": "tm_exact"}
+
+        # Fuzzy match: fetch all TM rows for this (source, target) pair and
+        # find the best ratio. This is O(n) per call — fine for the expected
+        # TM size (hundreds to low thousands of entries). If the TM grows large,
+        # this should be replaced with a proper similarity index (pg_trgm on
+        # Postgres, or a pre-computed embedding).
+        rows = (await db.execute(
+            select(TranslationMemory).where(
+                TranslationMemory.source_locale == source_locale,
+                TranslationMemory.target_locale == target_locale,
+            )
+        )).scalars().all()
+
+        best_ratio = 0.0
+        best_value = None
+        for row in rows:
+            ratio = SequenceMatcher(None, source_text, row.source_text).ratio()
+            if ratio > best_ratio:
+                best_ratio = ratio
+                best_value = row.accepted_value
+
+        if best_ratio >= 0.85 and best_value:
+            return {"value": best_value, "origin": "tm_fuzzy"}
+
+    return None
+
+
 async def translate(
     source_text: str,
     source_locale: str,
@@ -144,9 +203,14 @@ async def translate(
     """Translate a single string from source_locale to target_locale.
 
     Returns ``{"value": str, "origin": str}`` where origin indicates how the
-    result was produced. Phase 1 only returns ``"mt"`` (machine translation).
-    Phase 2 will add ``"tm_exact"`` and ``"tm_fuzzy"`` when a Translation
-    Memory match is found before falling back to MT.
+    result was produced:
+
+    - ``"tm_exact"`` — Translation Memory has an exact match (a human
+      previously accepted this translation for the same source text).
+    - ``"tm_fuzzy"`` — TM has a near-match (≥0.85 similarity). Better than MT
+      but should be reviewed.
+    - ``"mt"`` — Machine translation via Argos (no TM match found).
+    - ``"identity"`` — source and target locales are the same.
 
     Raises ``ValueError`` for unsupported locale pairs or empty input.
     """
@@ -160,6 +224,12 @@ async def translate(
             f"Supported: {SUPPORTED_LOCALES}"
         )
 
+    # Phase 2: check Translation Memory before MT.
+    tm_result = await _check_translation_memory(source_text, source_locale, target_locale)
+    if tm_result:
+        return tm_result
+
+    # Fall back to MT.
     try:
         result = await asyncio.to_thread(_translate_sync, source_text, source_locale, target_locale)
         return {"value": result, "origin": "mt"}

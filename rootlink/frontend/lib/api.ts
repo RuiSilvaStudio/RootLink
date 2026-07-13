@@ -890,8 +890,11 @@ export const api = {
   copy: {
     get: (locale: string) => request<Record<string, string>>(`/api/copy?locale=${locale}`),
     all: () => request<{ key: string; locale: string; value: string }[]>("/api/copy/all"),
-    set: (key: string, locale: string, value: string) =>
-      request<any>(`/api/copy/${encodeURIComponent(key)}?locale=${locale}`, { method: "PUT", body: JSON.stringify({ value }) }),
+    set: (key: string, locale: string, value: string, sourceText?: string) =>
+      request<any>(`/api/copy/${encodeURIComponent(key)}?locale=${locale}`, {
+        method: "PUT",
+        body: JSON.stringify({ value, source_text: sourceText }),
+      }),
     revert: (key: string, locale: string) =>
       request<any>(`/api/copy/${encodeURIComponent(key)}?locale=${locale}`, { method: "DELETE" }),
   },

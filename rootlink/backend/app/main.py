@@ -80,6 +80,7 @@ from app.models.taxonomy import (  # noqa: F401
 )
 from app.models.theme import Theme, ThemeToken  # noqa: F401 - ensure table creation
 from app.models.theme_override import ThemeOverride  # noqa: F401 - ensure table creation
+from app.models.translation_memory import TranslationMemory  # noqa: F401 - ensure table creation
 from app.services.block_page_seed import seed_block_pages
 from app.services.element_catalog_seed import seed_default_element_catalog
 from app.services.legal_seed import seed_legal_documents
