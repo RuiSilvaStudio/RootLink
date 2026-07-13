@@ -4,7 +4,7 @@
 > If anything here changes (server, domains, secrets, process, gotchas), UPDATE THIS FILE
 > in the same change. AGENTS.md instructs every agent to keep this current.
 >
-> Last verified working: 2026-07-13 (Translation Memory Phase 2 deploy)
+> Last verified working: 2026-07-13 (Glossary Phase 3 deploy)
 
 ---
 
