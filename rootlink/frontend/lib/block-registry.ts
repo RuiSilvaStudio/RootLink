@@ -19,6 +19,7 @@
 
 import type { ComponentType } from "react";
 import { HeroBlock, TextBlock, CardGridBlock, CtaBlock } from "@/components/blocks/BlockComponents";
+import { AnimatedSectionBlock } from "@/components/blocks/AnimatedSectionBlock";
 import { HomeHeroBlock, HomeCategoriesBlock, HomeToolsBlock, HomeCommunityBlock, HomeRecentBlock, HomeCtaBlock } from "@/components/blocks/HomeBlocks";
 import {
   DonateHeroBlock, DonateBalanceBlock, DonateTiersBlock, DonateLeaderboardBlock, DonateHowItWorksBlock,
@@ -95,6 +96,31 @@ export const BLOCK_REGISTRY: BlockType[] = [
       { name: "button_href", label: "Button link", type: "text", default: "/auth/sign-in" },
     ],
     Component: CtaBlock,
+  },
+  {
+    id: "animated-section",
+    label: "Animated section",
+    category: "media",
+    fields: [
+      {
+        name: "animation",
+        label: "Animation",
+        type: "select",
+        default: "particles",
+        options: [
+          { value: "particles", label: "Particles (blobs + dots)" },
+          { value: "seeds", label: "Seeds wave (grid)" },
+          { value: "halo", label: "Halo (glowing ring)" },
+          { value: "birds", label: "Birds (flocking)" },
+          { value: "clouds", label: "Clouds (animated sky)" },
+          { value: "topology", label: "Topology (network mesh)" },
+        ],
+      },
+      { name: "badge", label: "Badge text", type: "text" },
+      { name: "heading", label: "Heading (overrides i18n)", type: "text" },
+      { name: "subtitle", label: "Subtitle (overrides i18n)", type: "textarea" },
+    ],
+    Component: AnimatedSectionBlock,
   },
   // ── Homepage blocks (Phase 4) ──────────────────────────
   // These are self-contained sections that fetch their own dynamic data

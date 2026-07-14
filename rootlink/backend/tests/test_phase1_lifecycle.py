@@ -124,6 +124,37 @@ async def test_admin_approve_publishes_and_badges(client, make_user, make_conten
         assert fresh.verification_status == VerificationStatus.community_reviewed
 
 
+async def test_bulk_approve_publishes_eligible_skips_own_and_wrong_status(
+    client, make_user, make_content, session_factory
+):
+    author, _ = await make_user(email="bulk1@example.com")
+    other_author, _ = await make_user(email="bulk2@example.com")
+    mod, mod_headers = await make_user(email="bulkmod@example.com", role="moderator")
+    # eligible (other author's, in_review)
+    c1 = await make_content(created_by=author.id, status=ContentStatus.in_review)
+    # blocked: the moderator's own submission
+    c_self = await make_content(created_by=mod.id, status=ContentStatus.in_review)
+    # blocked: already published
+    c_pub = await make_content(created_by=other_author.id, status=ContentStatus.published)
+    # blocked: not found
+    missing_id = 999999
+    r = await client.post(
+        "/api/admin/content/bulk-approve",
+        json={"content_ids": [c1.id, c_self.id, c_pub.id, missing_id]},
+        headers=mod_headers,
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["approved"] == 1
+    assert body["skipped"] == 3
+    async with session_factory() as s:
+        fresh = await s.get(Content, c1.id)
+        assert fresh.status == ContentStatus.published
+        assert fresh.verification_status == VerificationStatus.community_reviewed
+        self_row = await s.get(Content, c_self.id)
+        assert self_row.status == ContentStatus.in_review  # unchanged
+
+
 async def test_reject_is_soft_and_logged(client, make_user, make_content, session_factory):
     author, _ = await make_user(email="a2@example.com")
     _, admin_headers = await make_user(email="mod2@example.com", role="moderator")

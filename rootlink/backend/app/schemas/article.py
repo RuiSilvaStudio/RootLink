@@ -9,6 +9,7 @@ class ArticleCreate(BaseModel):
     body: dict | None = None
     category: str | None = None
     family: str | None = None
+    language: str | None = None
     image_url: str | None = None
     content_type: str = "article"
 
@@ -19,6 +20,7 @@ class ArticleUpdate(BaseModel):
     body: dict | None = None
     category: str | None = None
     family: str | None = None
+    language: str | None = None
     image_url: str | None = None
 
 
@@ -28,8 +30,10 @@ class ArticleResponse(BaseModel):
     slug: str | None = None
     summary: str | None = None
     body: dict | None = None
+    full_text: str | None = None
     category: str | None = None
     family: str | None = None
+    language: str | None = None
     image_url: str | None = None
     status: str = "draft"
     review_note: str | None = None

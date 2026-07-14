@@ -1,0 +1,317 @@
+[
+  {
+    "url": "https://www.agroportal.pt/governo-dos-acores-destaca-dinamismo-do-setor-vitivinicola-regional/",
+    "family": "agricultura",
+    "category": "fruticultura",
+    "language": "pt",
+    "title": "Governo dos Açores destaca dinamismo do setor vitivinícola regional"
+  },
+  {
+    "url": "https://fnap.pt/dia-da-apicultura-na-feira-nacional-da-agricultura-2026-10-06-2026/",
+    "family": "pecuaria",
+    "category": "apicultura",
+    "language": "pt",
+    "title": "Dia da Apicultura na Feira Nacional da Agricultura 2026"
+  },
+  {
+    "url": "https://fnap.pt/coloss-inquerito-2025-2026/",
+    "family": "pecuaria",
+    "category": "apicultura",
+    "language": "pt",
+    "title": "COLOSS - Inquérito 2025 | 2026"
+  },
+  {
+    "url": "https://fnap.pt/fnap-integra-projeto-beexpert-financiado-pelo-programa-erasmus/",
+    "family": "pecuaria",
+    "category": "apicultura",
+    "language": "pt",
+    "title": "FNAP integra projeto BEEXPERT financiado pelo programa Erasmus+"
+  },
+  {
+    "url": "https://fnap.pt/comissao-europeia-aprova-ato-delegado-para-a-monitorizacao-de-polinizadores/",
+    "family": "pecuaria",
+    "category": "apicultura",
+    "language": "pt",
+    "title": "Comissão Europeia aprova ato delegado para a monitorização de polinizadores"
+  },
+  {
+    "url": "https://fnap.pt/onda-de-solidariedade-ajuda-apicultores-portugueses-a-alimentar-abelhas/",
+    "family": "pecuaria",
+    "category": "apicultura",
+    "language": "pt",
+    "title": "Onda de solidariedade ajuda apicultores portugueses a alimentar abelhas"
+  },
+  {
+    "url": "https://fnap.pt/publicada-portaria-que-estabelece-a-intervencao-c-1-1-6-do-pepac/",
+    "family": "pecuaria",
+    "category": "apicultura",
+    "language": "pt",
+    "title": "Publicada portaria que estabelece a intervenção C.1.1.6 do PEPAC"
+  },
+  {
+    "url": "https://www.agroportal.pt/ministro-da-agricultura-destaca-sucesso-portugues-da-pastoricia-extensiva/",
+    "family": "pecuaria",
+    "category": "bovinocultura",
+    "language": "pt",
+    "title": "Ministro da Agricultura destaca sucesso português da pastorícia extensiva"
+  },
+  {
+    "url": "https://www.lipor.pt/pt/noticias/participacao-na-5-reuniao-anual-da-polli-net-reforca-compromisso-da-lipor-com-a-biodiversidade-e-a-protecao-dos-polinizadores/",
+    "family": "pecuaria",
+    "category": "apicultura",
+    "language": "pt",
+    "title": "Participação na 5.ª Reunião Anual da Polli.NET reforça compromisso da LIPOR com a biodiversidade e a proteção dos polinizadores"
+  },
+  {
+    "url": "https://solar.lowtechmagazine.com/2026/04/rediscovering-the-handcart/",
+    "family": "carpintaria_construcao",
+    "category": "marcenaria",
+    "language": "en",
+    "title": "Rediscovering the Handcart"
+  },
+  {
+    "url": "https://solar.lowtechmagazine.com/2025/11/winter-is-coming-build-a-solar-powered-foot-stove/",
+    "family": "carpintaria_construcao",
+    "category": "bioconstrucao",
+    "language": "en",
+    "title": "Winter is Coming: Build a Solar Powered Foot Stove"
+  },
+  {
+    "url": "https://www.agroportal.pt/novo-festival-em-viana-do-alentejo-convida-a-redescobrir-patrimonio-sonoro/",
+    "family": "artesanato_oficios",
+    "category": "metalurgia",
+    "language": "pt",
+    "title": "Novo festival em Viana do Alentejo convida a redescobrir património sonoro (chocalhos)"
+  },
+  {
+    "url": "https://www.repaircafe.org/bison-legt-uit-hoe-je-schoenen-repareert/",
+    "family": "artesanato_oficios",
+    "category": "couro",
+    "language": "nl",
+    "title": "Bison legt uit hoe je schoenen repareert"
+  },
+  {
+    "url": "https://www.agroportal.pt/programa-algarve-2030-com-20-milhoes-de-euros-de-fundos-europeus-de-coesao-para-apoiar-investimentos-de-reforco-da-eficiencia-hidrica-nos-sistemas-municipais-de-abastecimento-e-saneamento/",
+    "family": "auto_suficiencia",
+    "category": "gestao_agua",
+    "language": "pt",
+    "title": "Programa Algarve 2030: 20 milhões de euros para eficiência hídrica"
+  },
+  {
+    "url": "https://www.lipor.pt/pt/noticias/dia-muda-tudo-mobiliza-participantes-para-a-prevencao-de-residuos-atraves-de-pequenas-acoes/",
+    "family": "economia_circular",
+    "category": "upcycling",
+    "language": "pt",
+    "title": "Dia Muda Tudo mobiliza participantes para a prevenção de resíduos"
+  },
+  {
+    "url": "https://www.repaircafe.org/repair-cafes-trekken-jaarlijks-15-miljoen-bezoekers/",
+    "family": "economia_circular",
+    "category": "reparo_reuso",
+    "language": "nl",
+    "title": "Repair Cafés trekken jaarlijks 1,5 miljoen bezoekers"
+  },
+  {
+    "url": "https://www.repaircafe.org/positieve-reacties-op-ons-linux-repair-cafe-webinar/",
+    "family": "economia_circular",
+    "category": "reparo_reuso",
+    "language": "nl",
+    "title": "Positieve reacties op ons Linux Repair Café-webinar"
+  },
+  {
+    "url": "https://www.repaircafe.org/onderdelenwebshop-fixpart-heeft-zijn-eigen-repair-cafe/",
+    "family": "economia_circular",
+    "category": "reparo_reuso",
+    "language": "nl",
+    "title": "Onderdelenwebshop FixPart heeft zijn eigen Repair Café"
+  },
+  {
+    "url": "https://www.repaircafe.org/wat-kan-ai-betekenen-voor-repair-cafes/",
+    "family": "economia_circular",
+    "category": "reparo_reuso",
+    "language": "nl",
+    "title": "Wat kan AI betekenen voor Repair Cafés?"
+  },
+  {
+    "url": "https://www.repaircafe.org/nederlandse-regering-wil-reparatie-breder-toegankelijk-maken/",
+    "family": "economia_circular",
+    "category": "reparo_reuso",
+    "language": "nl",
+    "title": "Nederlandse regering wil reparatie breder toegankelijk maken"
+  },
+  {
+    "url": "https://www.repaircafe.org/repair-cafes-in-zuid-holland-delen-kennis/",
+    "family": "economia_circular",
+    "category": "reparo_reuso",
+    "language": "nl",
+    "title": "Repair Cafés in Zuid-Holland delen kennis"
+  },
+  {
+    "url": "https://www.lipor.pt/pt/noticias/projeto-gresint-reuniu-especialistas-para-debater-a-digitalizacao-inteligente-na-gestao-de-residuos/",
+    "family": "gestao_residuos",
+    "category": "reciclagem",
+    "language": "pt",
+    "title": "Projeto GRESINT reuniu especialistas para debater a digitalização inteligente na gestão de resíduos"
+  },
+  {
+    "url": "https://www.lipor.pt/pt/noticias/lipor-continua-a-levar-a-reciclagem-as-festas-e-romarias-dos-municipios-associados-durante-o-verao/",
+    "family": "gestao_residuos",
+    "category": "reciclagem",
+    "language": "pt",
+    "title": "LIPOR continua a levar a reciclagem às festas e romarias dos municípios associados durante o verão"
+  },
+  {
+    "url": "https://www.lipor.pt/pt/noticias/campos-de-ferias-da-lipor-regressam-para-mais-uma-edicao-de-verao-dedicada-a-aprendizagem-e-a-sustentabilidade/",
+    "family": "gestao_residuos",
+    "category": "reducao_residuos",
+    "language": "pt",
+    "title": "Campos de Férias da LIPOR regressam para mais uma edição de verão dedicada à aprendizagem e à sustentabilidade"
+  },
+  {
+    "url": "https://www.lipor.pt/pt/noticias/casa-do-corim-o-lugar-da-sustentabilidade-voltou-a-conversar-com-historia-s/",
+    "family": "gestao_residuos",
+    "category": "reducao_residuos",
+    "language": "pt",
+    "title": "Casa do Corim – O Lugar da Sustentabilidade voltou a conversar com História(s)"
+  },
+  {
+    "url": "https://www.lipor.pt/pt/noticias/o-papel-mas-qual-papel/",
+    "family": "gestao_residuos",
+    "category": "reciclagem",
+    "language": "pt",
+    "title": "O papel. Mas qual papel?"
+  },
+  {
+    "url": "https://solar.lowtechmagazine.com/2026/03/low-tech-magazine-the-uncompressed-book-series/",
+    "family": "saude_bem_estar",
+    "category": "slow_living",
+    "language": "en",
+    "title": "Low-tech Magazine: The Uncompressed Book Series"
+  },
+  {
+    "url": "https://www.apren.pt/bioimpacte/",
+    "family": "energia_renovavel",
+    "category": "energia_solar",
+    "language": "pt",
+    "title": "BioImpacte+ - coexistência entre biodiversidade e energias renováveis"
+  },
+  {
+    "url": "https://www.jornaldenegocios.pt/empresas/energia/detalhe/renovaveis-asseguraram-75-6-da-eletricidade-produzida-no-primeiro-semestre",
+    "family": "energia_renovavel",
+    "category": "energia_solar",
+    "language": "pt",
+    "title": "Renováveis asseguraram 75,6% da eletricidade produzida no primeiro semestre"
+  },
+  {
+    "url": "https://cleantechnica.com/2026/07/13/perovskite-solar-cells-us-startups-uk-japan-australia/",
+    "family": "energia_renovavel",
+    "category": "energia_solar",
+    "language": "en",
+    "title": "Perovskite Solar Cells Will Make Solar Power Even Cheaper"
+  },
+  {
+    "url": "https://cleantechnica.com/2026/07/13/renewables-led-by-solar-were-largest-source-of-energy-supply-growth-globally-in-2025/",
+    "family": "energia_renovavel",
+    "category": "energia_solar",
+    "language": "en",
+    "title": "Renewables, Led By Solar, Were Largest Source of Energy Supply Growth Globally in 2025"
+  },
+  {
+    "url": "https://cleantechnica.com/2026/07/12/head-of-iea-roasts-europe-for-slow-electrification/",
+    "family": "energia_renovavel",
+    "category": "eficiencia_energetica",
+    "language": "en",
+    "title": "Head of IEA Roasts Europe for Slow Electrification"
+  },
+  {
+    "url": "https://cleantechnica.com/2026/07/10/world-bank-funds-more-rooftop-solar-in-india-clean-energy-in-pakistan/",
+    "family": "energia_renovavel",
+    "category": "energia_solar",
+    "language": "en",
+    "title": "World Bank Funds More Rooftop Solar in India, Clean Energy in Pakistan"
+  },
+  {
+    "url": "https://cleantechnica.com/2026/07/11/cinergy-mobile-power-debuts-smart-clean-mobile-energy-solutions-for-south-africas-film-and-live-events-industries/",
+    "family": "energia_renovavel",
+    "category": "energia_solar",
+    "language": "en",
+    "title": "Cinergy Mobile Power Debuts Smart, Clean Mobile Energy Solutions"
+  },
+  {
+    "url": "https://cleantechnica.com/2026/07/11/energy-intelligence-platform-florion-launched-to-help-south-african-businesses-navigate-a-new-era-of-energy-risk-opportunity/",
+    "family": "energia_renovavel",
+    "category": "eficiencia_energetica",
+    "language": "en",
+    "title": "Energy Intelligence Platform Florion Launched"
+  },
+  {
+    "url": "https://cleantechnica.com/2026/07/10/a-tour-of-the-jackery-energy-storage-factory-product-testing-lab-cleantechnica-field-trip/",
+    "family": "energia_renovavel",
+    "category": "energia_solar",
+    "language": "en",
+    "title": "A Tour of the Jackery Energy Storage Factory & Product Testing Lab"
+  },
+  {
+    "url": "https://cleantechnica.com/2026/07/10/volvo-electric-truck-hydrogen-strategy/",
+    "family": "energia_renovavel",
+    "category": "eficiencia_energetica",
+    "language": "en",
+    "title": "Volvo's Electric Truck Is Moving Faster Than Its Hydrogen Strategy"
+  },
+  {
+    "url": "https://news.transitionnetwork.org/transition-gathering-in-portugal-may-2027/",
+    "family": "economia_social",
+    "category": "projetos_comunitarios",
+    "language": "en",
+    "title": "It's Happening: Transition Gathering in Portugal, May 2027"
+  },
+  {
+    "url": "https://news.transitionnetwork.org/june-2026-bioregional-partnerships-world/",
+    "family": "economia_social",
+    "category": "projetos_comunitarios",
+    "language": "en",
+    "title": "June 2026: Bioregional Partnerships World"
+  },
+  {
+    "url": "https://news.transitionnetwork.org/twelve-bioregional-partnerships-lsa/",
+    "family": "economia_social",
+    "category": "projetos_comunitarios",
+    "language": "en",
+    "title": "Twelve Bioregional Partnerships"
+  },
+  {
+    "url": "https://news.transitionnetwork.org/hubs-link-mel-bivar/",
+    "family": "economia_social",
+    "category": "ajuda_mutua",
+    "language": "en",
+    "title": "Hubs Link: Mel Bivar"
+  },
+  {
+    "url": "https://news.transitionnetwork.org/our-relational-agreements/",
+    "family": "economia_social",
+    "category": "ajuda_mutua",
+    "language": "en",
+    "title": "Our Relational Agreements"
+  },
+  {
+    "url": "https://news.transitionnetwork.org/bouncing-back-isnt-the-point/",
+    "family": "economia_social",
+    "category": "projetos_comunitarios",
+    "language": "en",
+    "title": "Bouncing Back Isn't the Point"
+  },
+  {
+    "url": "https://news.transitionnetwork.org/rovira-regenerativa-spain-we-are-ready-to-grow/",
+    "family": "economia_social",
+    "category": "projetos_comunitarios",
+    "language": "en",
+    "title": "Rovira Regenerativa, Spain: We Are Ready to Grow"
+  },
+  {
+    "url": "https://news.transitionnetwork.org/may-2026-what-if-we-met/",
+    "family": "economia_social",
+    "category": "projetos_comunitarios",
+    "language": "en",
+    "title": "May 2026: What if we met?"
+  }
+]

@@ -415,12 +415,32 @@
      tree.** If a subagent needs to verify state, use `git status` or `git diff` (read-only),
      never `git stash`. (Admin face-lift Phase 2, 2026-07-12.)
 
-47. **`npm run build` passes locally when `node_modules` has a package that's NOT in `package.json`,
-     but Vercel does a clean install from `package.json` only — so the Vercel build fails with
-     "Module not found".** This happened when another agent ran `npm install sonner` (and `cmdk`)
-     without `--save`, so they landed in `node_modules` but not `package.json`. Local `npm run build`
-     passed because `node_modules/sonner` existed; Vercel's clean install failed. **Fix: before
-     deploying, do `rm -rf node_modules package-lock.json && npm install && npm run build` to mirror
-     Vercel's clean install. Also: whenever you (or another agent) `npm install` a new package,
-     always verify it's in `package.json` — if it's not, re-add it with `npm install <pkg>`.**
-     (Argos Translate deploy, 2026-07-12 — cost two failed Vercel builds.)
+ 47. **`npm run build` passes locally when `node_modules` has a package that's NOT in `package.json`,
+      but Vercel does a clean install from `package.json` only — so the Vercel build fails with
+      "Module not found".** This happened when another agent ran `npm install sonner` (and `cmdk`)
+      without `--save`, so they landed in `node_modules` but not `package.json`. Local `npm run build`
+      passed because `node_modules/sonner` existed; Vercel's clean install failed. **Fix: before
+      deploying, do `rm -rf node_modules package-lock.json && npm install && npm run build` to mirror
+      Vercel's clean install. Also: whenever you (or another agent) `npm install` a new package,
+      always verify it's in `package.json` — if it's not, re-add it with `npm install <pkg>`.**
+      (Argos Translate deploy, 2026-07-12 — cost two failed Vercel builds.)
+
+ 48. **The `_to_response(article, ...)` helper in `api/articles.py` constructs `ArticleResponse`
+     field-by-field rather than via `from_attributes` — so adding a new field to the `Content` model
+     AND the `ArticleResponse` schema does NOT make it appear in API responses.** The helper has to
+     be updated too, explicitly passing the new field. The `from_attributes = True` config on the
+     schema is dead code for this path because the helper bypasses it. Same pattern likely applies
+     to other `_to_response`-style helpers in the codebase — when wiring a new model field through
+     to a response, grep for the helper that builds that response, don't trust the schema config
+     alone. (Article seed launch — added `language` to Content + ArticleResponse, saw it return
+     `None` from the API until the helper was updated too, 2026-07-13.)
+
+ 49. **The crawler's User-Agent matters: `RootLinkBot/1.0` is blocked by some sites that a real
+     browser UA can fetch.** slowfood.com and repaircafe.org both returned 403 to the original
+     `(compatible; RootLinkBot/1.0; +https://rootlink.app/bot)` UA — switching to a standard
+     Chrome UA (plus Accept / Accept-Language / Accept-Encoding headers) unblocked repaircafe
+     immediately. slowfood.com stayed 403 even with a real-browser UA (likely Cloudflare's JS
+     challenge — don't try to bypass that; respect the site's anti-bot). For the article seed,
+     17 slowfood URLs had to be pruned rather than crawled. Lesson: when curating a URL list
+     for crawling, dry-run a fetch against each source FIRST before assuming the URLs will work.
+     (Article seed launch, 2026-07-13.)

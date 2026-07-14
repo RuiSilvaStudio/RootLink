@@ -109,6 +109,7 @@ async def hybrid_search(
                 "url": c.url,
                 "content_type": "article",
                 "category": _normalize_category(c.category),
+                "language": c.language,
                 "summary": c.summary,
                 "image_url": c.image_url,
                 "source": _normalize_category(c.source),

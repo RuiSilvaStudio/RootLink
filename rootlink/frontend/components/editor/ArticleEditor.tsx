@@ -116,8 +116,47 @@ export default function ArticleEditor({ data, onChange, readOnly = false, onErro
 
     initEditor();
 
+    // After Editor.js renders, ensure all links open in a new tab and
+    // images get a fallback on repeated load failure.
+    const ensureLinkTargets = () => {
+      if (!containerRef.current) return;
+      const links = containerRef.current.querySelectorAll("a[href]");
+      links.forEach((a: Element) => {
+        const anchor = a as HTMLAnchorElement;
+        anchor.target = "_blank";
+        anchor.rel = "noopener noreferrer";
+      });
+    };
+
+    const handleImageError = (e: Event) => {
+      const img = e.target as HTMLImageElement;
+      if (!img || !img.src) return;
+      const key = img.src;
+      const count = (img.dataset.failCount as unknown as number) || 0;
+      const next = Number(count) + 1;
+      img.dataset.failCount = String(next);
+      if (next >= 3) {
+        img.src = "/images/placeholder-card.svg";
+        img.alt = "Image unavailable";
+      }
+    };
+
+    // Run after Editor.js has time to render (it's async).
+    const interval = setInterval(ensureLinkTargets, 1000);
+    setTimeout(ensureLinkTargets, 500);
+    setTimeout(ensureLinkTargets, 2000);
+
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener("error", handleImageError, true);
+    }
+
     return () => {
       mounted = false;
+      clearInterval(interval);
+      if (container) {
+        container.removeEventListener("error", handleImageError, true);
+      }
       if (editor && typeof editor.destroy === "function") {
         editor.destroy();
       }

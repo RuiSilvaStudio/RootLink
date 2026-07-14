@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { safeImageUrl } from "@/lib/image-url";
+import { flagFor } from "@/lib/language";
 
 export function PopularContentCard({ item }: { item: any }) {
-  const isExternal = Boolean(item.url);
+  const isExternal = !item.slug && Boolean(item.url);
   const Tag = isExternal ? "a" : Link;
   const extraProps = isExternal ? { target: "_blank", rel: "noopener noreferrer" as const } : {};
 
@@ -25,7 +26,8 @@ export function PopularContentCard({ item }: { item: any }) {
       </div>
       <div className="min-w-0 flex-1">
         <h3 className="font-medium text-sm text-stone-800 dark:text-stone-100 line-clamp-2">{item.title}</h3>
-        <div className="flex gap-1 mt-1">
+        <div className="flex gap-1 mt-1 items-center">
+          {flagFor(item.language) && <span className="text-sm leading-none" title={item.language}>{flagFor(item.language)}</span>}
           <Badge variant="sage" className="text-[10px]">{item.category}</Badge>
         </div>
       </div>

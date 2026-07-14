@@ -255,7 +255,10 @@ export default function AdminContent() {
                       className="font-display font-semibold text-stone-800 dark:text-stone-100 text-base"
                       t={t}
                     />
-                    {statusBadge(c.verification_status)}
+                    {c.status === "published" && <Badge variant="green" className="text-[10px]">Published</Badge>}
+                    {c.status === "in_review" && <Badge variant="amber" className="text-[10px]">In Review</Badge>}
+                    {c.status === "draft" && <Badge variant="stone" className="text-[10px]">Draft</Badge>}
+                    {c.status === "rejected" && <Badge variant="red" className="text-[10px]">Rejected</Badge>}
                   </div>
                   <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400 mb-1">
                     <InlineSelect
@@ -280,15 +283,15 @@ export default function AdminContent() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0 mt-1">
-                  {c.verification_status === "community_reviewed" ? (
+                  {c.status === "published" ? (
                     <Button size="xs" variant="ghost" onClick={() => handleRevertApproval(c.id)}>
                       {t("admin.revert_approval")}
                     </Button>
-                  ) : (
+                  ) : c.status === "in_review" || c.status === "reviewed" ? (
                     <Button size="xs" variant="primary" onClick={() => handleApprove(c.id)}>
                       {t("admin.approve")}
                     </Button>
-                  )}
+                  ) : null}
                   <Button size="xs" variant="danger" onClick={() => handleDelete(c.id)}>
                     {t("admin.delete")}
                   </Button>

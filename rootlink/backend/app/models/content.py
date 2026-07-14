@@ -72,6 +72,9 @@ class Content(TimestampMixin, Base):
     content_type: Mapped[ContentType] = mapped_column(SAEnum(ContentType))
     category: Mapped[str | None] = mapped_column(String(100), nullable=True)
     family: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    # ISO 639-1 language code (pt, en, es, fr, ...) — nullable so legacy rows
+    # are unaffected. Used to surface language and filter PT content.
+    language: Mapped[str | None] = mapped_column(String(10), nullable=True)
     full_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     embedding: Mapped[list[float] | None] = mapped_column(JSON, nullable=True)

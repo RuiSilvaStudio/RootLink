@@ -15,6 +15,7 @@ class NotificationType(enum.StrEnum):
     event_rsvp = "event_rsvp"
     system = "system"
     message = "message"
+    feed_digest = "feed_digest"
 
 
 class Notification(TimestampMixin, Base):

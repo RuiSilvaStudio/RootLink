@@ -235,28 +235,39 @@ async def lifespan(app: FastAPI):
             await conn.execute(text("ALTER TABLE content ADD COLUMN review_comment TEXT"))
         except Exception:
             pass
-        # NOTE: authored vs crawled is discriminated by `url` (NULL for editor
-        # articles, always set for crawled rows). We deliberately do NOT use
-        # `body IS NULL`: SQLAlchemy's JSON column stores Python None as JSON
-        # 'null', not SQL NULL, so that predicate never matches.
-        # 1) Authored articles that were "published but unreviewed" (hidden under
-        #    the old verification gate) -> in_review (still hidden, now in the queue).
+        # Article language tag (ISO 639-1: pt, en, es, fr, ...). Nullable so
+        # legacy rows are unaffected; used to surface language and filter
+        # PT-PT content on the platform. Added for the launch article seed.
+        try:
+            await conn.execute(text("ALTER TABLE content ADD COLUMN language VARCHAR(10)"))
+        except Exception:
+            pass
+        # Feed source language tag (ISO 639-1). Admin sets it when creating a
+        # feed; the crawler inherits it on ingested articles.
+        try:
+            await conn.execute(text("ALTER TABLE feed_sources ADD COLUMN language VARCHAR(10)"))
+        except Exception:
+            pass
+        # Blocked feed sources denylist (rejected feeds that provide no
+        # content or were removed for quality reasons).
         try:
             await conn.execute(text(
-                "UPDATE content SET status='in_review' "
-                "WHERE status='published' AND verification_status='unreviewed' AND url IS NULL"
+                "CREATE TABLE IF NOT EXISTS blocked_feeds ("
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                "feed_url VARCHAR(2000) UNIQUE, "
+                "reason TEXT, "
+                "blocked_by INTEGER, "
+                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+                "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
             ))
         except Exception:
             pass
-        # 2) Crawled rows that were published-but-unreviewed -> draft (hidden, not in
-        #    the human queue; cross-reference will publish them when corroborated).
-        try:
-            await conn.execute(text(
-                "UPDATE content SET status='draft' "
-                "WHERE status='published' AND verification_status='unreviewed' AND url IS NOT NULL"
-            ))
-        except Exception:
-            pass
+        # NOTE: The old Phase-1 migration that reset crawled content from
+        # `published` to `draft` (statements #1 and #2 below) has been removed.
+        # It was designed for the pre-auto-publish era when crawled content
+        # should stay hidden until cross-referenced. Now that admin-managed
+        # feeds auto-publish, running it on every restart would fight the
+        # feed crawler by resetting published RSS articles back to draft.
         # 3) Everything corroborated/approved under the old gate -> published.
         try:
             await conn.execute(text(

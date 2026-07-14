@@ -25,6 +25,14 @@ implemented (2026-07-12, report + plan in `discovery/assessment/content-studio-f
 studio now has a collapsible sidebar, Cmd+K command palette, Sonner toasts, and a rebuilt
 Overview page.
 
+**The Self-Sufficient Platform guide** \(`docs/self-sufficient-platform/GUIDE.md`\) is the
+north-star contract for platform self-sufficiency: every feature ships full-circle \(end-user
+surface + owner/manager surface + adjustment surface that a non-dev can retune without a
+deploy\). **Before any feature, fix, or expansion work, read this guide first** — walk the
+per-feature rubric in §6. Non-goals \(multi-tenancy, custom domains, page export, a full
+generic block library as a project\) are explicit in §5; don't let future sessions suggest
+them as "natural next steps."
+
 **The old inline Content UI Editor \(`components/editor-mode/`\) is RETIRED** — superseded by the
 Content Studio's visual overlay \(`components/overlay/`\). Never wire new pages into `EditableText`/
 `EditableImage`/`EditableIcon`. Editable copy now uses the `<Text k="copy.key">` convention \(see

@@ -20,7 +20,7 @@ import { api } from "@/lib/api";
 import { BLOCK_REGISTRY, getBlockType, defaultPropsFor } from "@/lib/block-registry";
 import { BlockRenderer, type BlockSectionData } from "@/components/blocks";
 import { useAuth } from "@/lib/auth-context";
-import { Button, Input, Textarea, Tooltip, Modal, EmptyState } from "@/components/ui";
+import { Button, Input, Select, Textarea, Tooltip, Modal, EmptyState } from "@/components/ui";
 import { ListSkeleton, CardSkeleton, TextSkeleton } from "@/components/ui/LoadingSkeleton";
 import { ResizableSplit } from "@/components/ui/ResizableSplit";
 import { LoadError } from "@/components/studio/LoadError";
@@ -487,7 +487,15 @@ function SectionEditor({
     <div className="p-4 space-y-3">
       {blockType.fields.map((field) => (
         <div key={field.name}>
-          {field.type === "textarea" ? (
+          {field.type === "select" ? (
+            <Select
+              label={field.label}
+              id={`block-field-${field.name}`}
+              options={field.options}
+              value={props[field.name] || field.default || ""}
+              onChange={(e) => setProps((prev) => ({ ...prev, [field.name]: e.target.value }))}
+            />
+          ) : field.type === "textarea" ? (
             <Textarea
               label={field.label}
               id={`block-field-${field.name}`}

@@ -67,12 +67,13 @@ export default function LearningPage() {
   if (loading) return <div className="flex items-center justify-center py-32 text-stone-00 dark:text-stone-500 font-light"><BookOpen className="w-5 h-5 animate-pulse mr-2" /> {t("common.loading")}</div>;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
+    <>
       {heroSections && heroSections.length > 0 && (
         <BlockRenderer sections={heroSections} />
       )}
 
-      {/* Header */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
+        {/* Header */}
       <div className="flex flex-wrap justify-between items-start gap-4 mb-8">
         <div>
           <div className="flex items-center gap-3 mb-1">
@@ -194,6 +195,7 @@ export default function LearningPage() {
           )}
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 }

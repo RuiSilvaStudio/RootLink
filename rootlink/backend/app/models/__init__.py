@@ -1,5 +1,6 @@
 from app.models.auth_tokens import EmailVerificationToken, PasswordResetToken
 from app.models.block_page import BlockPage, BlockSection
+from app.models.blocked_feed import BlockedFeed
 from app.models.checklist import ChecklistItem
 from app.models.comment import Comment
 from app.models.content import Bookmark, Content, ContentStatus, SearchQueryLog, VerificationStatus

@@ -146,12 +146,13 @@ export default function EventsPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-8 py-12">
+    <>
       {heroSections && heroSections.length > 0 && (
         <BlockRenderer sections={heroSections} />
       )}
 
-      <PageHeader
+      <div className="max-w-5xl mx-auto px-4 sm:px-8 py-12">
+        <PageHeader
         icon={<Calendar className="w-5 h-5 text-primary-500" />}
         title={<Text k="events.title" as="span" />}
         subtitle={<Text k="events.subtitle" as="span" />}
@@ -370,6 +371,7 @@ export default function EventsPage() {
           })}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }

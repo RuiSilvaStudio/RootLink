@@ -24,19 +24,30 @@ class ParsedFeed:
     items: list[ParsedFeedItem]
 
 
+USER_AGENT = (
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/124.0.0.0 Safari/537.36"
+)
+
+
 async def fetch_and_parse(feed_url: str, timeout: float = 30.0) -> ParsedFeed | None:
     try:
         async with httpx.AsyncClient(follow_redirects=True, timeout=timeout) as client:
-            resp = await client.get(feed_url, headers={"User-Agent": "RootLink/1.0 (+https://rootlink.org)"})
+            resp = await client.get(feed_url, headers={
+                "User-Agent": USER_AGENT,
+                "Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
+            })
             resp.raise_for_status()
     except Exception as e:
         logger.warning("Failed to fetch feed %s: %s", feed_url, e)
         return None
 
     parsed = feedparser.parse(resp.text)
-    if parsed.bozo and not parsed.entries:
-        logger.warning("Feed %s is malformed: %s", feed_url, parsed.bozo_exception)
+    if not parsed.entries:
+        logger.warning("Feed %s has no parseable entries: %s", feed_url, getattr(parsed, "bozo_exception", "unknown"))
         return None
+    if parsed.bozo:
+        logger.info("Feed %s is malformed but has %d entries — accepting", feed_url, len(parsed.entries))
 
     items = []
     for entry in parsed.entries:
@@ -67,16 +78,3 @@ async def fetch_and_parse(feed_url: str, timeout: float = 30.0) -> ParsedFeed | 
         site_url=parsed.feed.get("link"),
         items=items,
     )
-
-
-async def verify_feed_ownership(feed_url: str, site_url: str, token: str) -> bool:
-    if not site_url:
-        return False
-    try:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=15.0) as client:
-            resp = await client.get(site_url, headers={"User-Agent": "RootLink/1.0"})
-            if resp.status_code != 200:
-                return False
-            return f'content="{token}"' in resp.text or f"content={token}" in resp.text
-    except Exception:
-        return False

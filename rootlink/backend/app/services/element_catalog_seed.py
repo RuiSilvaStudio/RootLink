@@ -55,6 +55,9 @@ _COMPONENT_TYPES = [
     "ProfileCommentRow",
     # Phase 3 — Minor page cards (3)
     "MarketplaceSellerCard", "GroupMemberChip", "PopularContentCard",
+    # Phase 4 — Background animations (6)
+    "AnimatedSectionBlock", "SeedsCanvas", "VantaHalo", "VantaBirds",
+    "VantaClouds", "VantaTopology",
 ]
 
 # ── 14 default properties for every component type ──
@@ -138,6 +141,13 @@ _USED: dict[str, set[str]] = {
     "ScrollReveal": set(),
     "GrainOverlay": {"border-radius"},
     "HeroParticleCanvas": set(),
+    # Phase 4 — Background animations
+    "SeedsCanvas": set(),
+    "VantaHalo": set(),
+    "VantaBirds": set(),
+    "VantaClouds": set(),
+    "VantaTopology": set(),
+    "AnimatedSectionBlock": {"font-family", "font-size", "font-weight", "text-align", "color", "line-height", "background-color", "padding", "gap", "border-radius"},
     # Phase 1-3 extracted cards — default to all properties visible (not pruned)
     # since their source was extracted from inline JSX that uses the same
     # Tailwind classes as the original pages.

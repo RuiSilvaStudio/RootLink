@@ -22,6 +22,7 @@ class FeedSource(TimestampMixin, Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     priority: Mapped[int] = mapped_column(Integer, default=2)
     auto_sync: Mapped[bool] = mapped_column(Boolean, default=False)
+    language: Mapped[str | None] = mapped_column(String(10), nullable=True)
 
 
 class FeedItem(Base):

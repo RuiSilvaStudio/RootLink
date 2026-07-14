@@ -503,13 +503,36 @@ export const api = {
     // /api/auth, app/api/auth_security.py), NOT under /api/admin.
     revokeUserSessions: (userId: number) =>
       request<{ revoked_count: number }>(`/api/auth/sessions/${userId}/revoke`, { method: "POST" }),
-    listContent: (params?: { q?: string; verification_status?: string; content_type?: string }) => {
+    listContent: (params?: { q?: string; verification_status?: string; content_type?: string; source?: string; family?: string; status?: string; limit?: number; offset?: number }) => {
       const qs = new URLSearchParams();
       if (params?.q) qs.set("q", params.q);
       if (params?.verification_status) qs.set("verification_status", params.verification_status);
       if (params?.content_type) qs.set("content_type", params.content_type);
+      if (params?.source) qs.set("source", params.source);
+      if (params?.family) qs.set("family", params.family);
+      if (params?.status) qs.set("status", params.status);
+      if (params?.limit) qs.set("limit", String(params.limit));
+      if (params?.offset) qs.set("offset", String(params.offset));
       return request<any[]>(`/api/admin/content?${qs}`);
     },
+    contentSummary: () =>
+      request<{ total: number; by_source: Record<string, { total: number; by_status: Record<string, number> }> }>(`/api/admin/content/summary`),
+    contentBySource: () =>
+      request<any[]>(`/api/admin/content/sources`),
+    listFeeds: () =>
+      request<any[]>(`/api/admin/feeds`),
+    createFeed: (data: { feed_url: string; site_url?: string; title?: string; priority?: number; auto_sync?: boolean; language?: string }) =>
+      request<any>(`/api/admin/feeds`, { method: "POST", body: JSON.stringify(data) }),
+    updateFeed: (feedId: number, data: { title?: string; priority?: number; site_url?: string; is_active?: boolean; language?: string }) =>
+      request<any>(`/api/admin/feeds/${feedId}`, { method: "PATCH", body: JSON.stringify(data) }),
+    toggleFeedActive: (feedId: number) =>
+      request<{ ok: boolean; is_active: boolean }>(`/api/admin/feeds/${feedId}/toggle-active`, { method: "PATCH" }),
+    deleteFeed: (feedId: number, reason?: string) =>
+      request<{ ok: boolean }>(`/api/admin/feeds/${feedId}${reason ? `?reason=${encodeURIComponent(reason)}` : ""}`, { method: "DELETE" }),
+    listBlockedFeeds: () =>
+      request<any[]>(`/api/admin/blocked-feeds`),
+    removeBlockedFeed: (blockId: number) =>
+      request<void>(`/api/admin/blocked-feeds/${blockId}`, { method: "DELETE" }),
     reviewContent: (id: number, comment?: string) =>
       request<any>(`/api/admin/content/${id}/review${comment ? `?comment=${encodeURIComponent(comment)}` : ""}`, { method: "PATCH" }),
     approveContent: (id: number) =>
@@ -1134,14 +1157,7 @@ export const api = {
   },
 
   feeds: {
-    connect: (data: { feed_url: string; site_url?: string; auto_sync?: boolean }) =>
-      request<any>("/api/feeds/connect", { method: "POST", body: JSON.stringify(data) }),
-    verify: (feedId: number) =>
-      request<any>(`/api/feeds/${feedId}/verify`, { method: "POST" }),
     list: () => request<any[]>("/api/feeds/"),
-    status: (feedId: number) => request<any>(`/api/feeds/${feedId}/status`),
-    refresh: (feedId: number) => request<{ new_items: number; total_parsed: number }>(`/api/feeds/${feedId}/refresh`, { method: "POST" }),
-    disconnect: (feedId: number) => request<void>(`/api/feeds/${feedId}`, { method: "DELETE" }),
   },
 
   permissions: {

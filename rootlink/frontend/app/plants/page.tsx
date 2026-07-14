@@ -57,12 +57,13 @@ export default function PlantsPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
+    <>
       {heroSections && heroSections.length > 0 && (
         <BlockRenderer sections={heroSections} />
       )}
 
-      <div className="flex items-center gap-3 mb-2">
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
+        <div className="flex items-center gap-3 mb-2">
         <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center">
           <Sprout className="w-5 h-5 text-primary-500" />
         </div>
@@ -123,6 +124,7 @@ export default function PlantsPage() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }

@@ -1,6 +1,8 @@
+import re
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,9 +10,11 @@ from app.core.database import get_db
 from app.core.entity_resolution import ROLE_RANK
 from app.core.permissions import can, rank_at_least
 from app.core.security import get_current_user, hash_password
+from app.models.blocked_feed import BlockedFeed
 from app.models.comment import Comment
 from app.models.content import Content, ContentStatus, SearchQueryLog, VerificationStatus
 from app.models.event import Event, EventDonation, EventRSVP, EventSponsor, EventTicket, EventVendor
+from app.models.feed import FeedItem, FeedSource
 from app.models.group import Group, GroupMember, GroupStatus
 from app.models.learning import Course, Enrollment
 from app.models.moderation import ModerationAction
@@ -20,10 +24,12 @@ from app.models.user import AccountStatus, User, UserRole
 from app.schemas.comment import CommentResponse
 from app.schemas.content import ContentResponse
 from app.schemas.event import SponsorUpdate, VendorUpdate
+from app.schemas.feed import FeedSourceCreate, FeedSourceUpdate
 from app.schemas.group import GroupResponse
 from app.schemas.moderation import BanRequest, RestrictRequest, SelfPublishGrant, SuspendRequest
 from app.schemas.setting import SettingResponse, SettingUpdate
 from app.services.audit import log_moderation
+from app.services.feed_parser import fetch_and_parse
 from app.services.trust import self_publish_eligibility
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -387,6 +393,9 @@ async def list_content(
     q: str | None = Query(None),
     verification_status: str | None = Query(None),
     content_type: str | None = Query(None),
+    source: str | None = Query(None),
+    family: str | None = Query(None),
+    status: str | None = Query(None),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
@@ -399,9 +408,318 @@ async def list_content(
         stmt = stmt.where(Content.verification_status == verification_status)
     if content_type:
         stmt = stmt.where(Content.content_type == content_type)
+    if source:
+        stmt = stmt.where(Content.source == source)
+    if family:
+        stmt = stmt.where(Content.family == family)
+    if status:
+        stmt = stmt.where(Content.status == status)
     stmt = stmt.offset(offset).limit(limit)
     result = await db.execute(stmt)
     return result.scalars().all()
+
+
+@router.get("/content/summary")
+async def content_summary(
+    db: AsyncSession = Depends(get_db),
+    _=require_mod,
+):
+    """Counts of content grouped by source type (crawled/user/curated) and
+    status. Used by the admin Resources page to show the per-type totals."""
+    rows = await db.execute(
+        select(
+            Content.source,
+            Content.status,
+            func.count(Content.id),
+        )
+        .group_by(Content.source, Content.status)
+    )
+    by_source: dict[str, dict] = {}
+    total = 0
+    for source_val, status_val, count in rows.fetchall():
+        source_key = source_val.value if hasattr(source_val, "value") else str(source_val)
+        if source_key not in by_source:
+            by_source[source_key] = {"total": 0, "by_status": {}}
+        by_source[source_key]["total"] += count
+        by_source[source_key]["by_status"][status_val or "unknown"] = count
+        total += count
+    return {"total": total, "by_source": by_source}
+
+
+@router.get("/content/sources")
+async def content_by_source(
+    db: AsyncSession = Depends(get_db),
+    _=require_mod,
+):
+    """Content grouped by source hostname. One row per URL source (e.g.
+    ``news.transitionnetwork.org``) with article count, source type, and
+    families covered. Authored articles (no source_url) are grouped as
+    ``Authored (Editor.js)``. Used by the admin Resources page."""
+    from urllib.parse import urlparse
+
+    rows = await db.execute(
+        select(Content).order_by(Content.created_at.desc())
+    )
+    grouped: dict[str, dict] = {}
+    for c in rows.scalars().all():
+        if c.source_url:
+            try:
+                host = urlparse(c.source_url).hostname or c.source_url
+            except Exception:
+                host = c.source_url
+            host = host.replace("www.", "")
+        else:
+            host = "Authored (Editor.js)"
+        if host not in grouped:
+            grouped[host] = {
+                "hostname": host,
+                "source": c.source.value if hasattr(c.source, "value") else str(c.source),
+                "article_count": 0,
+                "families": set(),
+                "languages": set(),
+                "statuses": set(),
+                "source_url": c.source_url,
+                "sample_title": c.title,
+            }
+        g = grouped[host]
+        g["article_count"] += 1
+        if c.family:
+            g["families"].add(c.family)
+        if c.language:
+            g["languages"].add(c.language)
+        g["statuses"].add(c.status)
+        if not g["source_url"] and c.source_url:
+            g["source_url"] = c.source_url
+    result = []
+    for g in grouped.values():
+        result.append({
+            "hostname": g["hostname"],
+            "source": g["source"],
+            "article_count": g["article_count"],
+            "families": sorted(g["families"]),
+            "languages": sorted(g["languages"]),
+            "statuses": sorted(g["statuses"]),
+            "source_url": g["source_url"],
+            "sample_title": g["sample_title"],
+        })
+    result.sort(key=lambda x: -x["article_count"])
+    return result
+
+
+@router.post("/feeds", status_code=201)
+async def create_feed_admin(
+    body: FeedSourceCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = require_mod,
+):
+    """Admin creates an RSS feed source directly. Auto-verified (no meta-tag
+    verification — admin vouches for the source). Used by the admin Resources
+    page to curate the platform's library of trusted RSS feeds."""
+    existing = await db.scalar(
+        select(FeedSource).where(FeedSource.feed_url == body.feed_url)
+    )
+    if existing:
+        raise HTTPException(status_code=400, detail="Feed URL already exists")
+
+    blocked = await db.scalar(
+        select(BlockedFeed).where(BlockedFeed.feed_url == body.feed_url)
+    )
+    if blocked:
+        raise HTTPException(
+            status_code=400,
+            detail=f"This feed was previously rejected: {blocked.reason or 'no reason given'}. "
+            f"Remove it from the blocklist first if you want to re-add it.",
+        )
+
+    parsed = await fetch_and_parse(body.feed_url)
+    if not parsed:
+        raise HTTPException(status_code=400, detail="Could not parse feed URL. Ensure it is a valid RSS/Atom feed.")
+
+    feed = FeedSource(
+        user_id=current_user.id,
+        feed_url=body.feed_url,
+        site_url=body.site_url or parsed.site_url,
+        title=body.title or parsed.title,
+        verified=True,
+        verification_method="admin",
+        is_active=True,
+        priority=body.priority,
+        auto_sync=body.auto_sync,
+        language=body.language,
+    )
+    db.add(feed)
+    await db.commit()
+    await db.refresh(feed)
+    return {
+        "id": feed.id,
+        "feed_url": feed.feed_url,
+        "site_url": feed.site_url,
+        "title": feed.title,
+        "verified": feed.verified,
+        "is_active": feed.is_active,
+        "priority": feed.priority,
+        "auto_sync": feed.auto_sync,
+        "language": feed.language,
+        "last_crawled_at": feed.last_crawled_at,
+        "last_error": feed.last_error,
+        "created_at": feed.created_at,
+    }
+
+
+@router.patch("/feeds/{feed_id}")
+async def update_feed_admin(
+    feed_id: int,
+    body: FeedSourceUpdate,
+    db: AsyncSession = Depends(get_db),
+    _=require_mod,
+):
+    """Admin updates an RSS feed source's metadata (title, priority, site_url,
+    is_active). Used by the admin Resources page edit button."""
+    feed = await db.get(FeedSource, feed_id)
+    if not feed:
+        raise HTTPException(status_code=404, detail="Feed source not found")
+    if body.title is not None:
+        feed.title = body.title
+    if body.priority is not None:
+        feed.priority = body.priority
+    if body.site_url is not None:
+        feed.site_url = body.site_url
+    if body.is_active is not None:
+        feed.is_active = body.is_active
+    if body.language is not None:
+        feed.language = body.language
+    await db.commit()
+    await db.refresh(feed)
+    return {
+        "id": feed.id,
+        "feed_url": feed.feed_url,
+        "site_url": feed.site_url,
+        "title": feed.title,
+        "verified": feed.verified,
+        "is_active": feed.is_active,
+        "priority": feed.priority,
+        "auto_sync": feed.auto_sync,
+        "language": feed.language,
+        "last_crawled_at": feed.last_crawled_at,
+        "last_error": feed.last_error,
+    }
+
+
+@router.get("/blocked-feeds")
+async def list_blocked_feeds(
+    db: AsyncSession = Depends(get_db),
+    _=require_mod,
+):
+    """List all blocked feed URLs."""
+    rows = await db.execute(select(BlockedFeed).order_by(BlockedFeed.created_at.desc()))
+    return [
+        {
+            "id": b.id,
+            "feed_url": b.feed_url,
+            "reason": b.reason,
+            "created_at": b.created_at,
+        }
+        for b in rows.scalars().all()
+    ]
+
+
+@router.delete("/blocked-feeds/{block_id}", status_code=204)
+async def remove_blocked_feed(
+    block_id: int,
+    db: AsyncSession = Depends(get_db),
+    _=require_mod,
+):
+    """Remove a feed from the blocklist (allow re-adding)."""
+    entry = await db.get(BlockedFeed, block_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Blocked feed not found")
+    await db.delete(entry)
+    await db.commit()
+
+
+@router.get("/feeds")
+async def list_all_feeds(
+    db: AsyncSession = Depends(get_db),
+    _=require_mod,
+):
+    """List all RSS feed sources on the platform with item counts.
+    Platform-wide (moderator+) — used by the admin Resources page."""
+    stmt = (
+        select(
+            FeedSource,
+            func.count(FeedItem.id).label("item_count"),
+        )
+        .outerjoin(FeedItem, FeedItem.feed_source_id == FeedSource.id)
+        .group_by(FeedSource.id)
+        .order_by(FeedSource.created_at.desc())
+    )
+    rows = await db.execute(stmt)
+    feeds = []
+    for feed, item_count in rows.fetchall():
+        feeds.append({
+            "id": feed.id,
+            "feed_url": feed.feed_url,
+            "site_url": feed.site_url,
+            "title": feed.title,
+            "verified": feed.verified,
+            "is_active": feed.is_active,
+            "priority": feed.priority,
+            "auto_sync": feed.auto_sync,
+            "language": feed.language,
+            "last_crawled_at": feed.last_crawled_at,
+            "last_error": feed.last_error,
+            "user_id": feed.user_id,
+            "item_count": item_count,
+            "created_at": feed.created_at,
+            "updated_at": feed.updated_at,
+        })
+    return feeds
+
+
+@router.patch("/feeds/{feed_id}/toggle-active")
+async def toggle_feed_active(
+    feed_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = require_mod,
+):
+    """Toggle an RSS feed source's is_active flag (moderator+)."""
+    feed = await db.get(FeedSource, feed_id)
+    if not feed:
+        raise HTTPException(status_code=404, detail="Feed source not found")
+    feed.is_active = not feed.is_active
+    await db.commit()
+    return {"ok": True, "is_active": feed.is_active}
+
+
+@router.delete("/feeds/{feed_id}")
+async def delete_feed_admin(
+    feed_id: int,
+    reason: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = require_mod,
+):
+    """Delete an RSS feed source and its items (moderator+).
+    Optionally adds the feed URL to the blocklist so it can't be re-added."""
+    feed = await db.get(FeedSource, feed_id)
+    if not feed:
+        raise HTTPException(status_code=404, detail="Feed source not found")
+    # Add to blocklist if a reason is provided
+    if reason:
+        existing_block = await db.scalar(
+            select(BlockedFeed).where(BlockedFeed.feed_url == feed.feed_url)
+        )
+        if not existing_block:
+            db.add(BlockedFeed(
+                feed_url=feed.feed_url,
+                reason=reason,
+                blocked_by=current_user.id,
+            ))
+    await db.execute(
+        delete(FeedItem).where(FeedItem.feed_source_id == feed_id)
+    )
+    await db.delete(feed)
+    await db.commit()
+    return {"ok": True}
 
 
 @router.patch("/content/{content_id}/review")
@@ -465,6 +783,8 @@ async def approve_content(
     content.status = ContentStatus.published
     content.verification_status = VerificationStatus.community_reviewed
     content.validated_by = current_user.id
+    if not content.slug:
+        content.slug = await _unique_slug(db, content.title)
     if content.published_at is None:
         content.published_at = datetime.now(UTC)
     await log_moderation(
@@ -476,6 +796,79 @@ async def approve_content(
     )
     await db.commit()
     return {"ok": True, "status": "published", "verification_status": "community_reviewed"}
+
+
+class BulkApproveRequest(BaseModel):
+    content_ids: list[int]
+
+
+def _slugify(title: str) -> str:
+    slug = title.lower().strip()
+    slug = re.sub(r"[^\w\s-]", "", slug)
+    slug = re.sub(r"[\s_]+", "-", slug)
+    slug = re.sub(r"-+", "-", slug)
+    return slug[:480]
+
+
+async def _unique_slug(db: AsyncSession, title: str) -> str:
+    base = _slugify(title)
+    slug = base
+    n = 2
+    while True:
+        existing = await db.scalar(select(Content.id).where(Content.slug == slug))
+        if not existing:
+            return slug
+        slug = f"{base}-{n}"
+        n += 1
+
+
+@router.post("/content/bulk-approve")
+async def bulk_approve_content(
+    body: BulkApproveRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = require_mod,
+):
+    """Approve a list of content ids in one call. Same rules as the single
+    `approve` endpoint (moderator+, separation of duties, only in_review or
+    reviewed rows move to published) — applied per item, with a per-item
+    result list so partial successes are visible. Built for the launch
+    article seed: avoids clicking 150 individual approve buttons."""
+    results: list[dict] = []
+    approved = 0
+    skipped = 0
+    for cid in body.content_ids:
+        row = await db.execute(select(Content).where(Content.id == cid))
+        content = row.scalar_one_or_none()
+        if not content:
+            results.append({"id": cid, "ok": False, "error": "not_found"})
+            skipped += 1
+            continue
+        if content.status not in (ContentStatus.in_review, ContentStatus.reviewed):
+            results.append({"id": cid, "ok": False, "error": f"status_is_{content.status}"})
+            skipped += 1
+            continue
+        if content.created_by is not None and content.created_by == current_user.id:
+            results.append({"id": cid, "ok": False, "error": "self_approval_blocked"})
+            skipped += 1
+            continue
+        content.status = ContentStatus.published
+        content.verification_status = VerificationStatus.community_reviewed
+        content.validated_by = current_user.id
+        if not content.slug:
+            content.slug = await _unique_slug(db, content.title)
+        if content.published_at is None:
+            content.published_at = datetime.now(UTC)
+        await log_moderation(
+            db,
+            action=ModerationAction.approve,
+            target_type="content",
+            target_id=content.id,
+            actor_id=current_user.id,
+        )
+        results.append({"id": cid, "ok": True})
+        approved += 1
+    await db.commit()
+    return {"ok": True, "approved": approved, "skipped": skipped, "results": results}
 
 
 @router.patch("/content/{content_id}/reject")

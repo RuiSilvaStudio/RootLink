@@ -43,6 +43,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   ChevronLeft,
+  Library,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
@@ -63,6 +64,7 @@ function getAdminSections(t: (key: string) => string, isAdmin: boolean, isSuperA
       labelKey: "admin.section_content",
       items: [
         { href: "/admin/review-queue", label: t("admin.review_queue"), icon: Search },
+        { href: "/admin/resources", label: "Resources", icon: Library },
         { href: "/admin/plants", label: t("admin.plants"), icon: Leaf },
         { href: "/admin/content", label: t("admin.content"), icon: FileText },
         { href: "/admin/comments", label: t("admin.comments"), icon: MessageSquare },

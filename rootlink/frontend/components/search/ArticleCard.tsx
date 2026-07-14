@@ -4,13 +4,17 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { safeImageUrl } from "@/lib/image-url";
+import { flagFor } from "@/lib/language";
 
 const PLACEHOLDER = "/images/placeholder-card.svg";
 
 export function ArticleCard({ item }: { item: any }) {
   const c = item.content;
-  const hostname = c.source_url ? new URL(c.source_url).hostname.replace("www.", "") : null;
-  const isExternal = Boolean(c.url);
+  const hostname = c.source_url ? (() => { try { return new URL(c.source_url).hostname.replace("www.", ""); } catch { return null; } })() : null;
+  // Articles with a slug link to the RootLink article page. Only articles
+  // without a slug (legacy, should not exist anymore) fall back to opening
+  // the external source URL in a new tab.
+  const hasRootLinkPage = Boolean(c.slug);
 
   const img = (alt: string) => (
     <img
@@ -20,11 +24,28 @@ export function ArticleCard({ item }: { item: any }) {
     />
   );
 
-  if (isExternal) {
+  const badgeRow = (
+    <div className="flex items-center gap-2 mt-3 flex-wrap">
+      {c.verification_status === "community_reviewed" && <Badge variant="green" className="text-[10px]">Reviewed</Badge>}
+      {c.verification_status === "cross_referenced" && <Badge variant="blue" className="text-[10px]">Cross-ref</Badge>}
+      {c.category && <Badge variant="sage" className="text-[10px]">{c.category}</Badge>}
+      {hostname && (
+        <span className="text-[10px] text-stone-400 ml-auto inline-flex items-center gap-1">
+          {hostname}
+          {flagFor(c.language) && <span className="text-sm leading-none" title={c.language}>{flagFor(c.language)}</span>}
+        </span>
+      )}
+      {!hostname && flagFor(c.language) && (
+        <span className="text-sm leading-none ml-auto" title={c.language}>{flagFor(c.language)}</span>
+      )}
+    </div>
+  );
+
+  if (!hasRootLinkPage && c.url) {
     return (
       <a
         data-rl-component="ResultCard"
-        href={c.url || `/content/${c.id}`}
+        href={c.url}
         target="_blank"
         rel="noopener noreferrer"
         className="group block rounded-2xl border border-stone-200/60 bg-white p-5 transition-all hover:shadow-md hover:border-stone-300/60"
@@ -41,12 +62,7 @@ export function ArticleCard({ item }: { item: any }) {
             {c.summary && (
               <p className="text-sm text-stone-500 mt-1.5 line-clamp-2 font-serif leading-relaxed">{c.summary.slice(0, 200)}</p>
             )}
-            <div className="flex items-center gap-2 mt-3 flex-wrap">
-              {c.verification_status === "community_reviewed" && <Badge variant="green" className="text-[10px]">Reviewed</Badge>}
-              {c.verification_status === "cross_referenced" && <Badge variant="blue" className="text-[10px]">Cross-ref</Badge>}
-              {c.category && <Badge variant="sage" className="text-[10px]">{c.category}</Badge>}
-              {hostname && <span className="text-[10px] text-stone-400 ml-auto">{hostname}</span>}
-            </div>
+            {badgeRow}
           </div>
         </div>
       </a>
@@ -70,11 +86,7 @@ export function ArticleCard({ item }: { item: any }) {
           {c.summary && (
             <p className="text-sm text-stone-500 mt-1.5 line-clamp-2 font-serif leading-relaxed">{c.summary.slice(0, 200)}</p>
           )}
-          <div className="flex items-center gap-2 mt-3 flex-wrap">
-            {c.verification_status === "community_reviewed" && <Badge variant="green" className="text-[10px]">Reviewed</Badge>}
-            {c.verification_status === "cross_referenced" && <Badge variant="blue" className="text-[10px]">Cross-ref</Badge>}
-            {c.category && <Badge variant="sage" className="text-[10px]">{c.category}</Badge>}
-          </div>
+          {badgeRow}
         </div>
       </div>
     </Link>

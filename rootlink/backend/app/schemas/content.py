@@ -12,6 +12,7 @@ class ContentResponse(BaseModel):
     content_type: ContentType
     category: str | None = None
     family: str | None = None
+    language: str | None = None
     summary: str | None = None
     full_text: str | None = None
     image_url: str | None = None
@@ -54,6 +55,7 @@ class SearchContentResponse(BaseModel):
     url: str | None = None
     content_type: str
     category: str
+    language: str | None = None
     summary: str | None = None
     full_text: str | None = None
     image_url: str | None = None

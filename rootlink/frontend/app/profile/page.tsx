@@ -866,16 +866,6 @@ function ProfilePage() {
               </Link>
             )}
 
-            {/* Feed Settings */}
-            <Link href="/settings/feeds"
-              className="flex items-center gap-3 bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-700 p-4 hover:shadow-md transition group">
-              <Rss className="w-5 h-5 text-primary-500 group-hover:text-primary-600" />
-              <div>
-                <p className="text-sm font-medium text-stone-700 dark:text-stone-300">RSS Feed Settings</p>
-                <p className="text-xs text-stone-400 dark:text-stone-500 font-serif">Connect your blog or website to import articles</p>
-              </div>
-            </Link>
-
             {/* Bookmarks */}
             {activity?.bookmarks?.length > 0 && (
               <div>

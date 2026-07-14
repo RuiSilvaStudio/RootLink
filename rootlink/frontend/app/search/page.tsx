@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Search, Filter, ArrowRight, TrendingUp, Sparkles, X } from "lucide-react";
 import { api } from "@/lib/api";
@@ -41,17 +41,21 @@ const ResultCard = ({ item }: { item: any }) => {
 function SearchContent() {
   const { t } = useLocale();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [query, setQuery] = useState(searchParams.get("q") || "");
   const [category, setCategory] = useState(searchParams.get("category") || "");
   const [family, setFamily] = useState(searchParams.get("family") || "");
-  const [contentType, setContentType] = useState("");
+  const [contentType, setContentType] = useState(searchParams.get("content_type") || "");
   const [results, setResults] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(() => {
+    const p = parseInt(searchParams.get("page") || "1");
+    return isNaN(p) || p < 1 ? 1 : p;
+  });
   const [popular, setPopular] = useState<any[]>([]);
   const [trending, setTrending] = useState<{ query: string; count: number }[]>([]);
   const [initLoading, setInitLoading] = useState(true);
@@ -111,7 +115,8 @@ function SearchContent() {
     }
     if (q) {
       setQuery(q);
-      doSearch(q, cat || "", fam || "");
+      const p = parseInt(searchParams.get("page") || "1") || 1;
+      doSearch(q, cat || "", searchParams.get("content_type") || "", p, fam || "");
     } else {
       Promise.all([
         api.content.popular(3).catch(() => []),
@@ -165,18 +170,42 @@ function SearchContent() {
     setSearched(true);
     setShowSuggestions(false);
     const pg = p ?? page;
+    const useFam = fam !== undefined ? fam : family;
+    const useCat = cat !== undefined ? cat : category;
+    const useCt = ct !== undefined ? ct : contentType;
     try {
       const res = await api.content.search({
         q,
-        category: cat || category,
-        family: fam || family,
-        content_type: ct || contentType,
+        category: useCat,
+        family: useFam,
+        content_type: useCt,
         limit: PAGE_SIZE,
         offset: (pg - 1) * PAGE_SIZE,
       });
       setResults(res.results);
       setTotal(res.total);
       setPage(pg);
+
+      // Sync URL so browser back button preserves the exact search state
+      const params = new URLSearchParams();
+      params.set("q", q);
+      if (pg > 1) params.set("page", String(pg));
+      if (useCat) params.set("category", useCat);
+      if (useFam) params.set("family", useFam);
+      if (useCt) params.set("content_type", useCt);
+      const url = `/search?${params.toString()}`;
+      router.replace(url, { scroll: false });
+
+      // Save context to sessionStorage so article pages can offer
+      // a "Back to search" button that restores the exact state
+      try {
+        sessionStorage.setItem("rl_search_context", JSON.stringify({
+          url,
+          query: q,
+          page: pg,
+        }));
+      } catch {}
+
       saveRecentSearch(q.trim());
     } catch {
       setResults([]);

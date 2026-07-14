@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { safeImageUrl } from "@/lib/image-url";
+import { flagFor } from "@/lib/language";
 import { useLocale } from "@/lib/locale-context";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -272,13 +273,16 @@ export function HomeRecentBlock({ props }: BlockProps) {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {recent.slice(0, 8).map((item: any) => {
-              const isExternal = !!item.url;
+              const isExternal = !item.slug && !!item.url;
               const href = isExternal ? item.url : `/articles/${item.slug}`;
               return (
-                <Link key={item.id} href={href} target={isExternal ? "_blank" : undefined} rel={isExternal ? "noopener noreferrer" : undefined} className="card-lift overflow-hidden group">
+                <Link key={item.id} href={href} target={isExternal ? "_blank" : undefined} rel={isExternal ? "noopener noreferrer" : undefined} className="card-lift overflow-hidden group relative">
                   <div className="h-40 bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center overflow-hidden">
                     <img src={safeImageUrl(item.image_url, "/images/placeholder-card.svg")} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
                   </div>
+                  {flagFor(item.language) && (
+                    <span className="absolute top-2 right-2 text-base leading-none drop-shadow-md" title={item.language}>{flagFor(item.language)}</span>
+                  )}
                   <div className="p-5">
                     <div className="flex items-center gap-2 mb-3 flex-wrap">
                       <Badge variant="sage" className="text-[10px]">{item.category}</Badge>

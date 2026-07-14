@@ -1,16 +1,59 @@
+import html as html_module
 import logging
+import re
 from datetime import UTC, datetime
 
 from sqlalchemy import select
 
 from app.core.database import async_session_factory
-from app.models.content import Content, ContentSource, ContentType, VerificationStatus
+from app.models.content import Content, ContentSource, ContentStatus, ContentType, VerificationStatus
 from app.models.feed import FeedItem, FeedSource
 from app.services.embeddings import embed_text
 from app.services.feed_parser import fetch_and_parse
+from app.services.html_to_editorjs import editorjs_to_plain_text, html_to_editorjs
 from app.tasks.celery_app import celery_app
 
 logger = logging.getLogger("app.tasks.feed_crawler")
+
+_TAG_RE = re.compile(r"<[^>]+>")
+_BLOCK_TAGS_RE = re.compile(r"</\s*(p|div|br|h[1-6]|li|tr)\s*>", re.IGNORECASE)
+_BR_RE = re.compile(r"<\s*br\s*/?\s*>", re.IGNORECASE)
+
+
+def _strip_html(text: str | None) -> str | None:
+    """Convert HTML to plain text, preserving paragraph breaks and
+    unescaping HTML entities (&ccedil; → ç, &amp; → &)."""
+    if not text:
+        return None
+    text = _BR_RE.sub("\n\n", text)
+    text = _BLOCK_TAGS_RE.sub("\n\n", text)
+    text = _TAG_RE.sub("", text)
+    text = html_module.unescape(text)
+    lines = text.split("\n")
+    lines = [re.sub(r"[ \t]+", " ", ln).strip() for ln in lines]
+    text = "\n\n".join(ln for ln in lines if ln)
+    return text or None
+
+
+def _slugify(title: str) -> str:
+    slug = title.lower().strip()
+    slug = re.sub(r"[^\w\s-]", "", slug)
+    slug = re.sub(r"[\s_]+", "-", slug)
+    slug = re.sub(r"-+", "-", slug)
+    return slug[:480]
+
+
+async def _unique_slug(db, title: str) -> str:
+    from app.models.content import Content as ContentModel
+    base = _slugify(title)
+    slug = base
+    n = 2
+    while True:
+        existing = await db.scalar(select(ContentModel.id).where(ContentModel.slug == slug))
+        if not existing:
+            return slug
+        slug = f"{base}-{n}"
+        n += 1
 
 
 @celery_app.task(name="app.tasks.feed_crawler.crawl_feeds_by_priority")
@@ -57,7 +100,11 @@ async def _crawl_feeds_async(priority: int):
                     )
                     db.add(feed_item)
 
-                    text_for_embedding = item.full_text or item.summary or item.title
+                    # Convert feed HTML to Editor.js JSON for rendering
+                    raw_html = item.full_text or item.summary or ""
+                    body_json = html_to_editorjs(raw_html) if raw_html else None
+                    full_text = editorjs_to_plain_text(body_json) if body_json else (item.title or "")
+                    text_for_embedding = full_text or item.title
                     embedding = await embed_text(text_for_embedding)
 
                     content = Content(
@@ -66,18 +113,22 @@ async def _crawl_feeds_async(priority: int):
                         content_type=ContentType.article,
                         source=ContentSource.crawled,
                         source_url=feed.feed_url,
-                        summary=item.summary,
-                        full_text=item.full_text,
+                        summary=_strip_html(item.summary),
+                        full_text=full_text,
+                        body=body_json,
                         embedding=embedding,
                         created_by=feed.user_id,
                         feed_source_id=feed.id,
                         canonical_url=item.url,
+                        language=feed.language,
                         verification_status=VerificationStatus.unreviewed,
-                        # Crawled feed items stay hidden until corroborated by
-                        # cross-reference, which then sets status=published.
-                        # status is now the single visibility gate (§2.1).
-                        status="draft",
+                        # Admin-managed feeds are trusted sources: auto-publish.
+                        # Admins can revert via /api/admin/content/{id}/revert-approval
+                        # if quality is poor.
+                        status=ContentStatus.published,
+                        published_at=datetime.now(UTC),
                         crawled_at=datetime.now(UTC),
+                        slug=await _unique_slug(db, item.title),
                     )
                     db.add(content)
                     await db.flush()

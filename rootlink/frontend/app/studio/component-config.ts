@@ -56,6 +56,12 @@ export const COMPONENT_GROUPS: Record<string, string> = {
   GrainOverlay: "Internal effect",
   HeroParticleCanvas: "Internal effect",
   ScrollReveal: "Internal effect",
+  SeedsCanvas: "Internal effect",
+  VantaHalo: "Internal effect",
+  VantaBirds: "Internal effect",
+  VantaClouds: "Internal effect",
+  VantaTopology: "Internal effect",
+  AnimatedSectionBlock: "Layout block",
   // Technical helpers
   ImageUpload: "Technical helper",
   InfoPopover: "Technical helper",
@@ -180,6 +186,12 @@ export const COMPONENT_ROUTES: Record<string, { label: string; href: string }[] 
   GrainOverlay: "unused",
   HeroParticleCanvas: [{ label: "Homepage", href: "/" }, { label: "Dynamic pages", href: "/p/[slug]" }],
   ScrollReveal: "unused",
+  SeedsCanvas: "unused",
+  VantaHalo: "unused",
+  VantaBirds: "unused",
+  VantaClouds: "unused",
+  VantaTopology: "unused",
+  AnimatedSectionBlock: "unused",
 
   // Technical helpers
   ImageUpload: [{ label: "Profile", href: "/profile" }, { label: "Groups", href: "/groups" }, { label: "Events", href: "/events" }, { label: "Articles (new)", href: "/articles/new" }],

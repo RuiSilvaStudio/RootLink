@@ -1,28 +1,35 @@
+import html as html_module
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, HttpUrl
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.models.content import Category, Content, ContentSource, ContentType, VerificationStatus
+from app.models.content import Content, ContentSource, ContentType, VerificationStatus
 from app.models.user import User
 from app.schemas.content import ContentResponse
 from app.services.crawler import crawl_url, search_web
 from app.services.cross_reference import auto_cross_reference
 from app.services.embeddings import embed_batch, embed_text
+from app.services.html_to_editorjs import editorjs_to_plain_text, html_to_editorjs
 
 router = APIRouter(prefix="/api/crawl", tags=["crawl"])
 
 
 class CrawlRequest(BaseModel):
     url: HttpUrl
-    category: Category
+    category: str
+    family: str | None = None
+    language: str | None = None
     content_type: ContentType = ContentType.article
 
 
 class SearchCrawlRequest(BaseModel):
     query: str
-    category: Category
+    category: str
+    family: str | None = None
+    language: str | None = None
     num_results: int = 5
 
 
@@ -37,8 +44,11 @@ async def submit_url(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to fetch URL: {e}")
 
-    full_text = extracted["text"]
-    summary = extracted["description"] or full_text[:500] if full_text else ""
+    # Convert article HTML to Editor.js JSON for rendering
+    body_html = extracted.get("body_html") or ""
+    body_json = html_to_editorjs(body_html) if body_html else None
+    full_text = editorjs_to_plain_text(body_json) if body_json else extracted["text"]
+    summary = html_module.unescape(extracted["description"] or (full_text[:500] if full_text else ""))
     title = extracted["title"] or "Untitled"
 
     embedding = await embed_text(full_text or title)
@@ -48,7 +58,10 @@ async def submit_url(
         url=str(body.url),
         content_type=body.content_type,
         category=body.category,
+        family=body.family,
+        language=body.language,
         full_text=full_text,
+        body=body_json,
         summary=summary,
         embedding=embedding,
         image_url=extracted["image_url"],
@@ -89,7 +102,10 @@ async def search_and_crawl(
             continue
 
         full_text = extracted["text"]
-        summary = extracted["description"] or (full_text[:500] if full_text else "")
+        body_html = extracted.get("body_html") or ""
+        body_json = html_to_editorjs(body_html) if body_html else None
+        full_text = editorjs_to_plain_text(body_json) if body_json else full_text
+        summary = html_module.unescape(extracted["description"] or (full_text[:500] if full_text else ""))
         title = extracted["title"] or sr["title"] or "Untitled"
         texts.append(full_text or title)
 
@@ -99,6 +115,7 @@ async def search_and_crawl(
             content_type=ContentType.article,
             category=body.category,
             full_text=full_text,
+            body=body_json,
             summary=summary,
             image_url=extracted["image_url"],
             source=ContentSource.user,
