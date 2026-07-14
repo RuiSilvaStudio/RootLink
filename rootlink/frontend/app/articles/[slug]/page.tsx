@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Eye, MessageSquare, Bookmark, ExternalLink, Search } from "lucide-react";
+import { ArrowLeft, Calendar, Eye, MessageSquare, Bookmark, ExternalLink, Rss, Check } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/locale-context";
 import { Badge } from "@/components/ui";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { toast } from "sonner";
 import ArticleEditor from "@/components/editor/ArticleEditor";
 import ContentRating from "@/components/ContentRating";
 import { CommentSection } from "@/components/CommentSection";
@@ -23,6 +24,7 @@ export default function ArticleViewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [searchContext, setSearchContext] = useState<{ url: string; query: string; page: number } | null>(null);
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
     // Check if the user came from the search page (via sessionStorage)
@@ -32,7 +34,10 @@ export default function ArticleViewPage() {
     } catch {}
 
     api.articles.get(slug)
-      .then(setArticle)
+      .then((a) => {
+        setArticle(a);
+        setIsSubscribed(a.is_subscribed || false);
+      })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [slug]);
@@ -77,6 +82,23 @@ export default function ArticleViewPage() {
     // If the first 80 chars match, it's a duplicate
     return paraText.slice(0, 80).toLowerCase() === summaryText.slice(0, 80).toLowerCase();
   })();
+
+  const toggleSubscription = async () => {
+    if (!article.feed_source_id) return;
+    try {
+      if (isSubscribed) {
+        await api.feeds.unsubscribe(article.feed_source_id);
+        setIsSubscribed(false);
+        toast.success(`Unsubscribed from ${article.feed_title || "feed"}`);
+      } else {
+        await api.feeds.subscribe(article.feed_source_id);
+        setIsSubscribed(true);
+        toast.success(`Subscribed to ${article.feed_title || "feed"}`);
+      }
+    } catch {
+      toast.error("Failed to update subscription");
+    }
+  };
 
   return (
     <article className="max-w-3xl mx-auto px-4 sm:px-8 py-12">
@@ -161,17 +183,32 @@ export default function ArticleViewPage() {
           </span>
         </div>
 
-        {(article.canonical_url || article.source_url) && (
-          <a
-            href={article.canonical_url || article.source_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 mt-3 text-xs text-primary-600 hover:underline"
-          >
-            <ExternalLink size={12} />
-            Original source
-          </a>
-        )}
+        <div className="flex flex-wrap items-center gap-3 mt-3">
+          {(article.canonical_url || article.source_url) && (
+            <a
+              href={article.canonical_url || article.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-primary-600 hover:underline"
+            >
+              <ExternalLink size={12} />
+              Original source
+            </a>
+          )}
+          {article.feed_source_id && article.feed_title && (
+            <button
+              onClick={toggleSubscription}
+              className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${
+                isSubscribed
+                  ? "bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 border border-primary-200/40 dark:border-primary-800/30"
+                  : "bg-primary-600 text-cream hover:bg-primary-500"
+              }`}
+            >
+              {isSubscribed ? <Check size={12} /> : <Rss size={12} />}
+              {isSubscribed ? "Subscribed" : `Subscribe to ${article.feed_title}`}
+            </button>
+          )}
+        </div>
       </header>
 
       {article.image_url && (

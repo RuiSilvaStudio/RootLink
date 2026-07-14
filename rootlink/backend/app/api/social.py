@@ -352,6 +352,43 @@ async def activity_feed(
         if d.user_id in followed_set:
             following_items.append(item)
 
+    # --- Gather RSS articles from subscribed feeds (interleaved into Following) ---
+    from app.models.content import ContentStatus
+    from app.models.feed import FeedSource, FeedSubscription
+    sub_result = await db.execute(
+        select(FeedSubscription.feed_source_id)
+        .where(FeedSubscription.user_id == current_user.id)
+    )
+    subscribed_feed_ids = [r[0] for r in sub_result.all()]
+    if subscribed_feed_ids:
+        # Look up feed titles for display
+        feed_result = await db.execute(
+            select(FeedSource.id, FeedSource.title)
+            .where(FeedSource.id.in_(subscribed_feed_ids))
+        )
+        feed_titles = {r[0]: r[1] or "RSS Feed" for r in feed_result.all()}
+
+        rss_result = await db.execute(
+            select(Content)
+            .where(
+                Content.feed_source_id.in_(subscribed_feed_ids),
+                Content.status == ContentStatus.published,
+            )
+            .order_by(Content.created_at.desc())
+            .limit(limit)
+        )
+        for c in rss_result.scalars().all():
+            item = {
+                "type": "feed_article",
+                "action": "new article from",
+                "actor_id": c.created_by,
+                "actor_name": feed_titles.get(c.feed_source_id, "RSS Feed"),
+                "target": {"id": c.id, "title": c.title, "type": "article"},
+                "link": f"/articles/{c.slug}" if c.slug else f"/content/{c.id}",
+                "created_at": c.created_at.isoformat() if c.created_at else None,
+            }
+            following_items.append(item)
+
     # Build discover feed: merge all and sort by date
     discover = content_items + event_items + group_items + course_items + listing_items + comment_items + rsvp_items + donation_items
     discover.sort(key=lambda x: x["created_at"] or "", reverse=True)

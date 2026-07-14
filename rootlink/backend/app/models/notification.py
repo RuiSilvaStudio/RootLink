@@ -23,7 +23,7 @@ class Notification(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
-    actor_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    actor_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     type: Mapped[NotificationType] = mapped_column(SAEnum(NotificationType))
     message: Mapped[str] = mapped_column(String(500))
     link: Mapped[str | None] = mapped_column(String(2000), nullable=True)

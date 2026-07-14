@@ -1158,6 +1158,14 @@ export const api = {
 
   feeds: {
     list: () => request<any[]>("/api/feeds/"),
+    subscribe: (feedId: number) =>
+      request<{ ok: boolean; feed_id: number; title: string | null }>(`/api/feeds/${feedId}/subscribe`, { method: "POST" }),
+    unsubscribe: (feedId: number) =>
+      request<void>(`/api/feeds/${feedId}/subscribe`, { method: "DELETE" }),
+  },
+
+  me: {
+    feedSubscriptions: () => request<any[]>("/api/me/feed-subscriptions"),
   },
 
   permissions: {

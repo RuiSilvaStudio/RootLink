@@ -90,6 +90,23 @@ async def _to_response(article: Content, db: AsyncSession, current_user: User | 
             if user and user.boost_active:
                 is_boosted = True
 
+    # Look up feed title and subscription status
+    feed_title = None
+    is_subscribed = False
+    if article.feed_source_id:
+        from app.models.feed import FeedSource, FeedSubscription
+        feed = await db.get(FeedSource, article.feed_source_id)
+        if feed:
+            feed_title = feed.title
+        if current_user:
+            existing = await db.scalar(
+                select(FeedSubscription).where(
+                    FeedSubscription.user_id == current_user.id,
+                    FeedSubscription.feed_source_id == article.feed_source_id,
+                )
+            )
+            is_subscribed = existing is not None
+
     return ArticleResponse(
         id=article.id,
         title=article.title,
@@ -106,6 +123,9 @@ async def _to_response(article: Content, db: AsyncSession, current_user: User | 
         source=article.source.value if hasattr(article.source, "value") else str(article.source),
         source_url=article.source_url,
         canonical_url=article.canonical_url,
+        feed_source_id=article.feed_source_id,
+        feed_title=feed_title,
+        is_subscribed=is_subscribed,
         created_by=article.created_by,
         author_name=author_name,
         author_avatar=author_avatar,

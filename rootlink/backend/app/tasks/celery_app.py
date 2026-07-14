@@ -33,7 +33,7 @@ celery_app.conf.update(
 # unregistered task" only when its schedule next fires. Explicit imports
 # are the fix (task modules self-register via the `@celery_app.task`
 # decorator on import) — no discovery magic to get wrong again.
-from app.tasks import draft_cleanup, feed_crawler, point_decay  # noqa: E402,F401
+from app.tasks import draft_cleanup, feed_crawler, feed_digest, point_decay  # noqa: E402,F401
 
 celery_app.conf.beat_schedule = {
     "point-decay-daily": {
@@ -58,5 +58,9 @@ celery_app.conf.beat_schedule = {
     "draft-cleanup-monthly": {
         "task": "app.tasks.draft_cleanup.cleanup_stale_drafts",
         "schedule": crontab(hour=2, minute=0, day_of_month=1),
+    },
+    "feed-digest-daily": {
+        "task": "app.tasks.feed_digest.send_daily_digest",
+        "schedule": crontab(hour=17, minute=0),
     },
 }

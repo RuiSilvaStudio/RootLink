@@ -140,6 +140,8 @@ class User(TimestampMixin, Base):
 
     boost_active: Mapped[bool] = mapped_column(Boolean, default=False)
     boost_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Feed digest: when the last daily digest notification was sent.
+    last_digest_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Content platform: trusted-author self-publish (see docs/content-platform/CONTENT_PLATFORM.md §3).
     # Still the live, unchanged mechanism — the roles/permissions redesign

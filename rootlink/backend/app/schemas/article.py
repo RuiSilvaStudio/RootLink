@@ -40,6 +40,9 @@ class ArticleResponse(BaseModel):
     source: str = "user"
     source_url: str | None = None
     canonical_url: str | None = None
+    feed_source_id: int | None = None
+    feed_title: str | None = None
+    is_subscribed: bool = False
     created_by: int | None = None
     author_name: str | None = None
     author_avatar: str | None = None

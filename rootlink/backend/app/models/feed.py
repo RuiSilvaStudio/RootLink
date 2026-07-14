@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin
@@ -36,3 +36,15 @@ class FeedItem(Base):
     content_id: Mapped[int | None] = mapped_column(ForeignKey("content.id"), nullable=True)
     ingested: Mapped[bool] = mapped_column(Boolean, default=False)
     skipped_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+
+class FeedSubscription(TimestampMixin, Base):
+    __tablename__ = "feed_subscriptions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    feed_source_id: Mapped[int] = mapped_column(ForeignKey("feed_sources.id", ondelete="CASCADE"), index=True)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "feed_source_id", name="uq_feed_sub_user_source"),
+    )

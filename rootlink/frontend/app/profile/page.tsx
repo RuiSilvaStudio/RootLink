@@ -882,9 +882,70 @@ function ProfilePage() {
                 </div>
               </div>
             )}
+
+            {/* RSS Subscriptions */}
+            {isOwnProfile && (
+              <RSSSubscriptions />
+            )}
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function RSSSubscriptions() {
+  const [subs, setSubs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { addToast } = useToast();
+
+  useEffect(() => {
+    api.me.feedSubscriptions()
+      .then(setSubs)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const unsubscribe = async (feedId: number) => {
+    try {
+      await api.feeds.unsubscribe(feedId);
+      setSubs((prev) => prev.filter((s) => s.feed_id !== feedId));
+      addToast("success", "Unsubscribed");
+    } catch {
+      addToast("error", "Failed to unsubscribe");
+    }
+  };
+
+  if (loading) return null;
+
+  return (
+    <div>
+      <h3 className="font-display font-semibold text-stone-800 dark:text-stone-200 mb-3 flex items-center gap-2">
+        <Rss className="w-4 h-4 text-primary-500" /> RSS Subscriptions
+      </h3>
+      {subs.length === 0 ? (
+        <p className="text-sm text-stone-400 dark:text-stone-500 font-serif italic">
+          You haven&apos;t subscribed to any RSS feeds yet. Subscribe from any article that came from a feed.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {subs.map((s) => (
+            <div key={s.subscription_id} className="flex items-center gap-3 bg-white dark:bg-stone-900 rounded-xl border border-primary-100/40 dark:border-stone-700/40 p-3">
+              <Rss className="w-4 h-4 text-primary-400 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-stone-700 dark:text-stone-300 truncate">{s.title}</p>
+                {s.language && <span className="text-xs text-stone-400">{s.language}</span>}
+              </div>
+              <button
+                onClick={() => unsubscribe(s.feed_id)}
+                className="text-xs text-stone-400 hover:text-red-500 transition-colors"
+              >
+                Unsubscribe
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

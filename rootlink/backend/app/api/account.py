@@ -14,6 +14,7 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.comment import Comment
 from app.models.content import Bookmark, Content
+from app.models.feed import FeedSource, FeedSubscription
 from app.models.group import GroupMember
 from app.models.notification import Notification
 from app.models.rating import ContentRating
@@ -85,3 +86,29 @@ async def delete_my_account(
     # Delete the user row last.
     await db.execute(delete(User).where(User.id == uid))
     await db.commit()
+
+
+@router.get("/feed-subscriptions")
+async def my_feed_subscriptions(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return the current user's RSS feed subscriptions with feed metadata."""
+    rows = await db.execute(
+        select(FeedSubscription, FeedSource)
+        .join(FeedSource, FeedSubscription.feed_source_id == FeedSource.id)
+        .where(FeedSubscription.user_id == current_user.id)
+        .order_by(FeedSubscription.created_at.desc())
+    )
+    result = []
+    for sub, feed in rows.fetchall():
+        result.append({
+            "subscription_id": sub.id,
+            "feed_id": feed.id,
+            "title": feed.title,
+            "feed_url": feed.feed_url,
+            "site_url": feed.site_url,
+            "language": feed.language,
+            "created_at": sub.created_at,
+        })
+    return result

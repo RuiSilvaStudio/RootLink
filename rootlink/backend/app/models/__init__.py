@@ -20,7 +20,7 @@ from app.models.event import (
     EventVendor,
     EventVenue,
 )
-from app.models.feed import FeedItem, FeedSource
+from app.models.feed import FeedItem, FeedSource, FeedSubscription
 from app.models.font import Font
 from app.models.glossary_term import GlossaryTerm
 from app.models.group import Follow, Group, GroupMember

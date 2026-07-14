@@ -262,6 +262,45 @@ async def lifespan(app: FastAPI):
             ))
         except Exception:
             pass
+        # Feed subscriptions table (user subscribes to RSS feed sources).
+        try:
+            await conn.execute(text(
+                "CREATE TABLE IF NOT EXISTS feed_subscriptions ("
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                "user_id INTEGER NOT NULL, "
+                "feed_source_id INTEGER NOT NULL, "
+                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+                "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+                "UNIQUE(user_id, feed_source_id))"
+            ))
+        except Exception:
+            pass
+        # User.last_digest_at — when the last feed digest notification was sent.
+        try:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN last_digest_at TIMESTAMP"))
+        except Exception:
+            pass
+        # Notification.actor_id nullable — feed digest notifications have no
+        # human actor. SQLite can't drop NOT NULL in place, so we rebuild the
+        # table once (same pattern as groups.category fix, LESSONS.md #7).
+        try:
+            info = await conn.execute(text("PRAGMA table_info(notifications)"))
+            actor_col = next((r for r in info.fetchall() if r[1] == "actor_id"), None)
+            if actor_col is not None and actor_col[3] == 1:  # NOT NULL
+                async with conn.begin_nested():
+                    recheck = await conn.execute(text("PRAGMA table_info(notifications)"))
+                    ractor = next((r for r in recheck.fetchall() if r[1] == "actor_id"), None)
+                    if ractor is not None and ractor[3] == 1:
+                        await conn.execute(text("DROP TABLE IF EXISTS notifications_legacy"))
+                        await conn.execute(text("ALTER TABLE notifications RENAME TO notifications_legacy"))
+                        await conn.run_sync(Base.metadata.tables["notifications"].create)
+                        await conn.execute(text(
+                            "INSERT INTO notifications (id, user_id, actor_id, type, message, link, read, created_at, updated_at) "
+                            "SELECT id, user_id, actor_id, type, message, link, read, created_at, updated_at FROM notifications_legacy"
+                        ))
+                        await conn.execute(text("DROP TABLE notifications_legacy"))
+        except Exception as e:
+            print(f"notifications actor_id rebuild (skipped, will retry): {e}")
         # NOTE: The old Phase-1 migration that reset crawled content from
         # `published` to `draft` (statements #1 and #2 below) has been removed.
         # It was designed for the pre-auto-publish era when crawled content

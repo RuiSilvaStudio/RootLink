@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 
 const typeIcons: Record<string, any> = {
   content: FileText,
+  feed_article: Rss,
   event: Calendar,
   group: Users,
   course: BookOpen,
@@ -18,6 +19,7 @@ const typeIcons: Record<string, any> = {
 
 const typeColors: Record<string, string> = {
   content: "bg-primary-100 dark:bg-primary-950/20 text-primary-600",
+  feed_article: "bg-primary-100 dark:bg-primary-950/20 text-primary-600",
   event: "bg-earth-100 text-earth-600",
   group: "bg-blue-100 text-blue-600",
   course: "bg-green-100 text-green-600",
@@ -30,6 +32,7 @@ const typeColors: Record<string, string> = {
 
 const typeLabels: Record<string, string> = {
   content: "Article",
+  feed_article: "RSS",
   event: "Event",
   group: "Group",
   course: "Course",
