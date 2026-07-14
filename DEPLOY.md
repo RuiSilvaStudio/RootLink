@@ -4,7 +4,7 @@
 > If anything here changes (server, domains, secrets, process, gotchas), UPDATE THIS FILE
 > in the same change. AGENTS.md instructs every agent to keep this current.
 >
-> Last verified working: 2026-07-13 (Glossary Phase 3 deploy)
+> Last verified working: 2026-07-14 (article platform deploy)
 
 ---
 
@@ -47,7 +47,7 @@ deploy — but running `./scripts/deploy.sh` is always safe (backend steps are i
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  Home server 192.168.1.230 (Ubuntu)                             │
+│  Home server 192.168.1.228 (Ubuntu)                             │
 │  Caddy (80/443) → TLS termination + reverse proxy               │
 │    ├─ api.ruisilvastudio.com    → localhost:8000  (RootLink)   │
 │    └─ media.ruisilvastudio.com  → localhost:8096  (Jellyfin)   │
@@ -70,7 +70,7 @@ deploy — but running `./scripts/deploy.sh` is always safe (backend steps are i
 
 | Thing | Value |
 |---|---|
-| SSH | `ssh rui@192.168.1.230` (password: `R71977ui`; key-based also works) |
+| SSH | `ssh rui@192.168.1.228` (password: `R71977ui`; key-based also works) |
 | Repo on server | `/home/rui/RootLink` |
 | Compose dir on server | `/home/rui/RootLink/rootlink` |
 | Compose file | `docker-compose.prod.yml` |

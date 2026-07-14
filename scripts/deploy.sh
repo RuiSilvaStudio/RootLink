@@ -26,7 +26,7 @@
 
 set -euo pipefail
 
-SERVER="rui@192.168.1.230"
+SERVER="rui@192.168.1.228"
 REMOTE_REPO="/home/rui/RootLink"
 REMOTE_COMPOSE_DIR="/home/rui/RootLink/rootlink"
 COMPOSE_FILE="docker-compose.prod.yml"
