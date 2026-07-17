@@ -44,6 +44,7 @@ import {
   PanelLeftOpen,
   ChevronLeft,
   Library,
+  GraduationCap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
@@ -75,6 +76,7 @@ function getAdminSections(t: (key: string) => string, isAdmin: boolean, isSuperA
       items: [
         { href: "/admin/users", label: t("admin.users"), icon: Users },
         { href: "/admin/groups", label: t("admin.groups"), icon: Users },
+        { href: "/admin/graduation", label: "Graduation", icon: GraduationCap },
         ...(isAdmin ? [{ href: "/admin/entity-verification", label: "Entity Verification", icon: ShieldCheck }] : []),
       ],
     },

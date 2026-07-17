@@ -203,3 +203,20 @@ export function parseConfig(raw: string | null | undefined): Record<string, bool
     return {};
   }
 }
+
+
+export interface GroupGraduationRequest {
+  id: number;
+  group_id: number;
+  requested_by: number;
+  nipc: string;
+  legal_form: string;
+  organization_name: string;
+  certificate_url: string | null;
+  notes: string | null;
+  status: "pending" | "approved" | "rejected" | string;
+  reviewed_by: number | null;
+  reviewed_at: string | null;
+  review_notes: string | null;
+  created_at: string | null;
+}

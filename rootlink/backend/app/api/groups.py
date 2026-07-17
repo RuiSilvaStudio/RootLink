@@ -19,6 +19,7 @@ from app.models.group import (
     GroupContact, GroupBoardMember, GroupDocument, GroupProgram,
     GroupProgramSubField, GroupAnnouncement, GroupChatLink,
     GroupInvite, GroupJoinRequest, GroupContent, GroupGalleryItem,
+    GroupGraduationRequest,
 )
 from app.models.learning import Course
 from app.models.notification import Notification, NotificationType
@@ -37,6 +38,7 @@ from app.schemas.group import (
     GroupInviteResponse,
     GroupJoinRequestResponse, GroupJoinRequestCreate,
     GroupGalleryItemResponse, GroupGalleryItemCreate,
+    GroupGraduationRequestCreate, GroupGraduationRequestResponse,
 )
 from app.services.default_cover import default_cover_for
 
@@ -1388,3 +1390,149 @@ async def delete_gallery_item(group_id: int, item_id: int, current_user: User = 
         raise HTTPException(status_code=404, detail="Gallery item not found")
     await db.delete(item)
     await db.commit()
+
+
+# ── Graduation (informal → formal) ──────────────────────────────────────────
+
+@router.post("/{group_id}/graduation", response_model=GroupGraduationRequestResponse, status_code=201)
+async def request_graduation(
+    group_id: int,
+    body: GroupGraduationRequestCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Group owner initiates the informal→formal transition (§9.6).
+    Provides the org's legal info (NIPC, legal form, certificate).
+    A super_admin reviews and approves/rejects. Irreversible on approval."""
+    group = await _get_group_or_404(db, group_id, current_user)
+    if not await _is_group_owner(db, group, current_user):
+        raise HTTPException(status_code=403, detail="Only the group owner can request graduation")
+    if group.group_type != "organic":
+        raise HTTPException(status_code=400, detail="This group is already formal (structured)")
+    # Check for an existing pending request
+    existing = await db.scalar(
+        select(GroupGraduationRequest).where(
+            GroupGraduationRequest.group_id == group_id,
+            GroupGraduationRequest.status == "pending",
+        )
+    )
+    if existing:
+        raise HTTPException(status_code=409, detail="A graduation request is already pending for this group")
+    req = GroupGraduationRequest(
+        group_id=group_id,
+        requested_by=current_user.id,
+        nipc=body.nipc,
+        legal_form=body.legal_form,
+        organization_name=body.organization_name,
+        certificate_url=body.certificate_url,
+        notes=body.notes,
+    )
+    db.add(req)
+    await db.commit()
+    await db.refresh(req)
+    return req
+
+
+@router.get("/{group_id}/graduation", response_model=GroupGraduationRequestResponse | None)
+async def get_graduation_status(
+    group_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get the latest graduation request for this group (owner + managers only)."""
+    group = await _get_group_or_404(db, group_id, current_user)
+    if not await _can_manage_group(db, group, current_user):
+        raise HTTPException(status_code=403, detail="Not authorized")
+    # Return the most recent request (pending or otherwise)
+    result = await db.execute(
+        select(GroupGraduationRequest)
+        .where(GroupGraduationRequest.group_id == group_id)
+        .order_by(GroupGraduationRequest.created_at.desc())
+        .limit(1)
+    )
+    return result.scalar_one_or_none()
+
+
+@router.get("/graduation-requests", response_model=list[GroupGraduationRequestResponse])
+async def list_graduation_requests(
+    status: str = Query("pending", max_length=20),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Super_admin: list graduation requests for review."""
+    if not rank_at_least(current_user, Rank.super_admin):
+        raise HTTPException(status_code=403, detail="Super admin only")
+    result = await db.execute(
+        select(GroupGraduationRequest)
+        .where(GroupGraduationRequest.status == status)
+        .order_by(GroupGraduationRequest.created_at.desc())
+        .offset(offset).limit(limit)
+    )
+    return result.scalars().all()
+
+
+@router.post("/graduation-requests/{request_id}/approve")
+async def approve_graduation(
+    request_id: int,
+    review_notes: str | None = Query(None, max_length=2000),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Super_admin: approve a graduation request. Flips the group to
+    'structured' (irreversible) and notifies the requester."""
+    if not rank_at_least(current_user, Rank.super_admin):
+        raise HTTPException(status_code=403, detail="Super admin only")
+    req = await db.get(GroupGraduationRequest, request_id)
+    if not req or req.status != "pending":
+        raise HTTPException(status_code=404, detail="Pending request not found")
+    group = await db.get(Group, req.group_id)
+    if not group:
+        raise HTTPException(status_code=404, detail="Group no longer exists")
+    # The irreversible transition
+    group.group_type = "structured"
+    req.status = "approved"
+    req.reviewed_by = current_user.id
+    req.reviewed_at = datetime.now(UTC)
+    if review_notes:
+        req.review_notes = review_notes
+    # Notify the requester
+    db.add(Notification(
+        user_id=req.requested_by, actor_id=current_user.id,
+        type=NotificationType.group_join,
+        message=f"O seu pedido de graduação para «{group.name}» foi aprovado — o grupo é agora formal.",
+        link=f"/groups/{group.slug}/manage",
+    ))
+    await db.commit()
+    return {"ok": True, "group_type": "structured"}
+
+
+@router.post("/graduation-requests/{request_id}/reject")
+async def reject_graduation(
+    request_id: int,
+    review_notes: str | None = Query(None, max_length=2000),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Super_admin: reject a graduation request with optional notes."""
+    if not rank_at_least(current_user, Rank.super_admin):
+        raise HTTPException(status_code=403, detail="Super admin only")
+    req = await db.get(GroupGraduationRequest, request_id)
+    if not req or req.status != "pending":
+        raise HTTPException(status_code=404, detail="Pending request not found")
+    group = await db.get(Group, req.group_id)
+    req.status = "rejected"
+    req.reviewed_by = current_user.id
+    req.reviewed_at = datetime.now(UTC)
+    if review_notes:
+        req.review_notes = review_notes
+    if group:
+        db.add(Notification(
+            user_id=req.requested_by, actor_id=current_user.id,
+            type=NotificationType.group_join,
+            message=f"O seu pedido de graduação para «{group.name}» não foi aprovado.",
+            link=f"/groups/{group.slug}/manage",
+        ))
+    await db.commit()
+    return {"ok": True}

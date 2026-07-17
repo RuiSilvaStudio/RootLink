@@ -4,7 +4,7 @@ import type {
   Group, GroupViewer, GroupMember, GroupContact, GroupBoardMember,
   GroupDocument, GroupProgram, GroupProgramSubField, GroupAnnouncement,
   GroupChatLink, GroupInvite, GroupInviteInfo, GroupJoinRequest,
-  GroupContentLink, GroupGalleryItem, GroupBadge,
+  GroupContentLink, GroupGalleryItem, GroupBadge, GroupGraduationRequest,
 } from "./groups-types";
 
 // Fired when a request that WAS sending a token gets rejected as
@@ -311,6 +311,17 @@ export const api = {
       request<GroupGalleryItem>(`/api/groups/${groupId}/gallery`, { method: "POST", body: JSON.stringify(data) }),
     deleteGalleryItem: (groupId: number, itemId: number) =>
       request<void>(`/api/groups/${groupId}/gallery/${itemId}`, { method: "DELETE" }),
+    // Graduation (informal → formal)
+    requestGraduation: (groupId: number, data: { nipc: string; legal_form: string; organization_name: string; certificate_url?: string; notes?: string }) =>
+      request<GroupGraduationRequest>(`/api/groups/${groupId}/graduation`, { method: "POST", body: JSON.stringify(data) }),
+    getGraduationStatus: (groupId: number) =>
+      request<GroupGraduationRequest | null>(`/api/groups/${groupId}/graduation`),
+    listGraduationRequests: (status = "pending") =>
+      request<GroupGraduationRequest[]>(`/api/groups/graduation-requests?status=${status}`),
+    approveGraduation: (requestId: number, reviewNotes?: string) =>
+      request<{ ok: boolean; group_type: string }>(`/api/groups/graduation-requests/${requestId}/approve${reviewNotes ? `?review_notes=${encodeURIComponent(reviewNotes)}` : ""}`, { method: "POST" }),
+    rejectGraduation: (requestId: number, reviewNotes?: string) =>
+      request<{ ok: boolean }>(`/api/groups/graduation-requests/${requestId}/reject${reviewNotes ? `?review_notes=${encodeURIComponent(reviewNotes)}` : ""}`, { method: "POST" }),
   },
   events: {
     list: (upcoming = true, category?: string, group_id?: number, status?: string, family?: string) => {

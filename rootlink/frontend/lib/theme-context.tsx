@@ -36,14 +36,17 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | null>(null);
 
 function applyTokens(tokens: ThemeToken[]) {
-  const root = document.documentElement;
-  for (const token of tokens) {
-    root.style.setProperty(token.token_name, token.light_value);
-  }
+  // Build both :root (light) and .dark (dark) rules in a single <style>
+  // element. Previously, light values were set as inline styles on <html>,
+  // which have higher specificity than any CSS rule — so the .dark override
+  // never took effect. Using :root + .dark with equal specificity lets
+  // source order (.dark is later) resolve correctly. (TECH_DEBT #8)
+  let lightCss = "";
   let darkCss = "";
   for (const token of tokens) {
+    lightCss += `  ${token.token_name}: ${token.light_value};\n`;
     if (token.dark_value) {
-      darkCss += `    ${token.token_name}: ${token.dark_value};\n`;
+      darkCss += `  ${token.token_name}: ${token.dark_value};\n`;
     }
   }
   let styleEl = document.getElementById("theme-dark-overrides");
@@ -52,7 +55,12 @@ function applyTokens(tokens: ThemeToken[]) {
     styleEl.id = "theme-dark-overrides";
     document.head.appendChild(styleEl);
   }
-  styleEl.textContent = `.dark {\n${darkCss}}`;
+  styleEl.textContent = `:root {\n${lightCss}}\n.dark {\n${darkCss}}`;
+  // Clear any previously-set inline styles from the old approach
+  const root = document.documentElement;
+  for (const token of tokens) {
+    root.style.removeProperty(token.token_name);
+  }
 }
 
 function applyFonts(fonts: { name: string; url: string | null }[]) {

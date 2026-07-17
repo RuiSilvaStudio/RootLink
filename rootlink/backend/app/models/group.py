@@ -225,3 +225,27 @@ class Follow(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     follower_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     following_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+
+
+class GroupGraduationRequest(TimestampMixin, Base):
+    """Graduation request — informal group → formal organization (§9.6).
+
+    The group owner initiates the transition by providing the organization's
+    legal registration info (NIPC, legal form, certificate). A super_admin
+    reviews and approves/rejects. On approval, the group's group_type changes
+    from 'organic' to 'structured' (irreversible per §9.6.3).
+    """
+    __tablename__ = "group_graduation_requests"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    group_id: Mapped[int] = mapped_column(ForeignKey("groups.id"), index=True)
+    requested_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    nipc: Mapped[str] = mapped_column(String(20))  # 9-digit Portuguese entity ID
+    legal_form: Mapped[str] = mapped_column(String(50))  # associacao, cooperativa, etc.
+    organization_name: Mapped[str] = mapped_column(String(255))  # official registered name
+    certificate_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="pending")  # pending/approved/rejected
+    reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    review_notes: Mapped[str | None] = mapped_column(Text, nullable=True)

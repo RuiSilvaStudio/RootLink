@@ -9,11 +9,12 @@ import { MembersSection } from "@/components/groups/manage/MembersSection";
 import { InvitesSection } from "@/components/groups/manage/InvitesSection";
 import { RecordsSection } from "@/components/groups/manage/RecordsSection";
 import { ContentSection } from "@/components/groups/manage/ContentSection";
+import { GraduationSection } from "@/components/groups/manage/GraduationSection";
 import {
-  Settings, Users, Ticket, BookOpen, CalendarPlus,
+  Settings, Users, Ticket, BookOpen, CalendarPlus, GraduationCap,
 } from "lucide-react";
 
-type SectionId = "settings" | "members" | "invites" | "records" | "content";
+type SectionId = "settings" | "members" | "invites" | "records" | "content" | "graduation";
 
 export default function GroupManagePage() {
   const { group, viewer, refresh } = useGroup();
@@ -35,6 +36,7 @@ export default function GroupManagePage() {
     { id: "invites", label: t("groups.manage.section_invites"), icon: <Ticket className="w-4 h-4" aria-hidden /> },
     { id: "records", label: t("groups.manage.section_contacts"), icon: <BookOpen className="w-4 h-4" aria-hidden /> },
     { id: "content", label: t("groups.manage.section_content"), icon: <CalendarPlus className="w-4 h-4" aria-hidden /> },
+    { id: "graduation", label: t("groups.graduation_title"), icon: <GraduationCap className="w-4 h-4" aria-hidden /> },
   ];
 
   return (
@@ -67,6 +69,7 @@ export default function GroupManagePage() {
       {section === "invites" && <InvitesSection group={group} />}
       {section === "records" && <RecordsSection group={group} />}
       {section === "content" && <ContentSection group={group} />}
+      {section === "graduation" && <GraduationSection group={group} onGraduated={refresh} />}
     </div>
   );
 }

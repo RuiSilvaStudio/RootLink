@@ -261,7 +261,7 @@ Deferred during the content-platform initiative (also tracked in
 - **Liability-disclaimer legal sign-off** (CONTENT_PLATFORM.md §6.2) and **per-Kind retention
   periods** (§8) — product/legal, not code.
 
-## 8. ThemeProvider inline-style bug — dark-mode token swap is dead code
+## 8. ThemeProvider inline-style bug — dark-mode token swap is dead code (✅ FIXED 2026-07-17)
 
 **Found:** 2026-07-11 (logo/wordmark integration — see LESSONS.md #41).
 

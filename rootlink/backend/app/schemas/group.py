@@ -408,3 +408,52 @@ class GroupGalleryItemCreate(BaseModel):
         if out is None:
             raise ValueError("Image URL is required")
         return out
+
+
+# ── Graduation ──────────────────────────────────────────────────────────────
+
+LEGAL_FORMS = ("associacao", "cooperativa", "sociedade", "fundacao", "ipss", "misericordia", "outra")
+
+
+def _valid_nipc(v: str) -> str:
+    """Validate a Portuguese NIPC (9-digit entity ID with check digit)."""
+    v = v.strip().replace(" ", "").replace("-", "")
+    if not v.isdigit() or len(v) != 9:
+        raise ValueError("NIPC deve ter 9 dígitos")
+    digits = [int(d) for d in v]
+    weights = [9, 8, 7, 6, 5, 4, 3, 2]
+    s = sum(d * w for d, w in zip(digits[:8], weights))
+    check = 11 - (s % 11)
+    if check >= 10:
+        check = 0
+    if check != digits[8]:
+        raise ValueError("NIPC inválido (dígito de controlo incorreto)")
+    return v
+
+
+class GroupGraduationRequestCreate(BaseModel):
+    nipc: str = Field(min_length=9, max_length=20)
+    legal_form: Literal["associacao", "cooperativa", "sociedade", "fundacao", "ipss", "misericordia", "outra"]
+    organization_name: str = Field(min_length=2, max_length=255)
+    certificate_url: str | None = Field(None, max_length=1000)
+    notes: str | None = Field(None, max_length=2000)
+
+    _nipc = field_validator("nipc")(_valid_nipc)
+
+
+class GroupGraduationRequestResponse(BaseModel):
+    id: int
+    group_id: int
+    requested_by: int
+    nipc: str
+    legal_form: str
+    organization_name: str
+    certificate_url: str | None = None
+    notes: str | None = None
+    status: str = "pending"
+    reviewed_by: int | None = None
+    reviewed_at: datetime | None = None
+    review_notes: str | None = None
+    created_at: datetime | None = None
+
+    model_config = {"from_attributes": True}
