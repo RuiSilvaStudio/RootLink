@@ -17,9 +17,15 @@ DEFAULT_THEME_NAME = "Default"
 
 # (token_name, light_value, dark_value, category). Colors are hex (readable,
 # matches the @theme directive in globals.css). Sizes/spacing/radii mirror
-# Tailwind v4's default theme exactly. Dark values: lighter shades work better
-# on dark backgrounds, so the palette roughly reverses (light↔dark) for stone;
-# accents shift to lighter shades to preserve contrast on dark surfaces.
+# Tailwind v4's default theme exactly.
+#
+# Stone tokens are NOT inverted for dark mode. The stone scale is a neutral
+# gray ramp where stone-950 is always the darkest swatch, in both modes.
+# Inverting it broke @layer base rules like `.dark body { @apply bg-stone-950; }`
+# which expect stone-950 to remain dark. Components use explicit `dark:`
+# variants (dark:bg-stone-900, dark:text-stone-200) to pick surfaces.
+# Brand/primary/earth/rust accents DO invert — lighter shades work better
+# on dark backgrounds for accent colors.
 _DEFAULT_TOKENS: list[tuple[str, str, str, str]] = [
     # ── Primary (earth-brown) ──
     ("--color-primary-50", "#f3f0eb", "#291f16", "color"),
@@ -58,18 +64,18 @@ _DEFAULT_TOKENS: list[tuple[str, str, str, str]] = [
     ("--color-rust-700", "#714029", "#f0dcd1", "color"),
     ("--color-rust-800", "#5c3422", "#f9f0ec", "color"),
     ("--color-rust-900", "#4a2a1c", "#f9f0ec", "color"),
-    # ── Stone (override v4 default oklch with hex) ──
-    ("--color-stone-50", "#fafaf9", "#292524", "color"),
-    ("--color-stone-100", "#f5f5f4", "#1c1917", "color"),
-    ("--color-stone-200", "#e7e5e4", "#0c0a09", "color"),
-    ("--color-stone-300", "#d6d3d1", "#1c1917", "color"),
-    ("--color-stone-400", "#a8a29e", "#44403c", "color"),
-    ("--color-stone-500", "#78716c", "#57534e", "color"),
-    ("--color-stone-600", "#57534e", "#a8a29e", "color"),
-    ("--color-stone-700", "#44403c", "#d6d3d1", "color"),
-    ("--color-stone-800", "#292524", "#f5f5f4", "color"),
-    ("--color-stone-900", "#1c1917", "#fafaf9", "color"),
-    ("--color-stone-950", "#0c0a09", "#e7e5e4", "color"),
+    # ── Stone (neutral — NOT inverted; same values in both modes) ──
+    ("--color-stone-50", "#fafaf9", "#fafaf9", "color"),
+    ("--color-stone-100", "#f5f5f4", "#f5f5f4", "color"),
+    ("--color-stone-200", "#e7e5e4", "#e7e5e4", "color"),
+    ("--color-stone-300", "#d6d3d1", "#d6d3d1", "color"),
+    ("--color-stone-400", "#a8a29e", "#a8a29e", "color"),
+    ("--color-stone-500", "#78716c", "#78716c", "color"),
+    ("--color-stone-600", "#57534e", "#57534e", "color"),
+    ("--color-stone-700", "#44403c", "#44403c", "color"),
+    ("--color-stone-800", "#292524", "#292524", "color"),
+    ("--color-stone-900", "#1c1917", "#1c1917", "color"),
+    ("--color-stone-950", "#0c0a09", "#0c0a09", "color"),
     # ── Fonts ──
     ("--font-display", '"Fraunces", Georgia, serif', '"Fraunces", Georgia, serif', "font"),
     ("--font-serif", '"Source Serif 4", Georgia, serif', '"Source Serif 4", Georgia, serif', "font"),

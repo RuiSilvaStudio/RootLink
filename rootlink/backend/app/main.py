@@ -650,6 +650,29 @@ async def lifespan(app: FastAPI):
                 ))
             except Exception as e:
                 print(f"group_content is_public migration: {e}")
+            # Fix inverted stone dark values — the seed originally inverted
+            # the stone scale for dark mode, breaking .dark body { bg-stone-950 }
+            # (stone-950's dark_value was #e7e5e4 = light). Now stone tokens
+            # keep the same values in both modes. Also dedupes triplicate rows.
+            try:
+                # Dedupe: keep one row per token_name per theme_id
+                await conn.execute(text(
+                    "DELETE FROM theme_tokens WHERE id NOT IN ("
+                    "SELECT MIN(id) FROM theme_tokens GROUP BY theme_id, token_name)"
+                ))
+                # Fix stone dark values = same as light values
+                for shade, hex_val in [
+                    ("50", "#fafaf9"), ("100", "#f5f5f4"), ("200", "#e7e5e4"),
+                    ("300", "#d6d3d1"), ("400", "#a8a29e"), ("500", "#78716c"),
+                    ("600", "#57534e"), ("700", "#44403c"), ("800", "#292524"),
+                    ("900", "#1c1917"), ("950", "#0c0a09"),
+                ]:
+                    await conn.execute(text(
+                        f"UPDATE theme_tokens SET dark_value = '{hex_val}' "
+                        f"WHERE token_name = '--color-stone-{shade}'"
+                    ))
+            except Exception as e:
+                print(f"stone dark-value fix: {e}")
             # Dedupe memberships then enforce one-row-per-user-per-group (S5).
             # Keeps the lowest id (earliest join) for each (group_id, user_id).
             try:
