@@ -1,6 +1,6 @@
 "use client";
 
-import { InputHTMLAttributes, forwardRef } from "react";
+import { InputHTMLAttributes, forwardRef, useId } from "react";
 
 type Props = InputHTMLAttributes<HTMLInputElement> & {
   label?: string;
@@ -9,7 +9,11 @@ type Props = InputHTMLAttributes<HTMLInputElement> & {
 
 export const Input = forwardRef<HTMLInputElement, Props>(
   ({ label, error, className = "", id, ...props }, ref) => {
-    const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
+    // useId guarantees uniqueness — label-derived ids collided when two
+    // inputs shared a label anywhere on the page
+    const autoId = useId();
+    const inputId = id || autoId;
+    const errorId = `${inputId}-error`;
     return (
       <div data-rl-component="Input" className="space-y-1.5">
         {label && (
@@ -20,6 +24,8 @@ export const Input = forwardRef<HTMLInputElement, Props>(
         <input
           ref={ref}
           id={inputId}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
           className={`
             w-full px-4 py-2.5 bg-white dark:bg-stone-900 border rounded-xl2 text-stone-800 dark:text-stone-100 text-sm
             transition-all duration-200
@@ -30,7 +36,11 @@ export const Input = forwardRef<HTMLInputElement, Props>(
           `.trim()}
           {...props}
         />
-        {error && <p className="text-xs text-rust-600 dark:text-rust-400 font-display tracking-wide">{error}</p>}
+        {error && (
+          <p id={errorId} role="alert" className="text-xs text-rust-600 dark:text-rust-400 font-display tracking-wide">
+            {error}
+          </p>
+        )}
       </div>
     );
   }

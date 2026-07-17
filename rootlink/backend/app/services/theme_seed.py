@@ -73,6 +73,25 @@ _DEFAULT_TOKENS: list[tuple[str, str, str, str]] = [
     # ── Fonts ──
     ("--font-display", '"Fraunces", Georgia, serif', '"Fraunces", Georgia, serif', "font"),
     ("--font-serif", '"Source Serif 4", Georgia, serif', '"Source Serif 4", Georgia, serif', "font"),
+    # ── Font axes (variable-font variation settings, theme-driven) ──
+    # These replace the hardcoded font-variation-settings values that were
+    # baked into globals.css @layer base. Each controls a specific axis on a
+    # specific typographic context — fine-grained so the dashboard can tune
+    # headings, blockquotes, drop-caps, accent words, and numbers independently.
+    ("--font-soft-heading", "60", "60", "font-axis"),
+    ("--font-wonk-heading", "0", "0", "font-axis"),
+    ("--font-opsz-heading", "144", "144", "font-axis"),
+    ("--font-soft-accent", "100", "100", "font-axis"),
+    ("--font-wonk-accent", "1", "1", "font-axis"),
+    ("--font-opsz-accent", "144", "144", "font-axis"),
+    ("--font-soft-blockquote", "80", "80", "font-axis"),
+    ("--font-opsz-blockquote", "144", "144", "font-axis"),
+    ("--font-soft-dropcap", "30", "30", "font-axis"),
+    ("--font-opsz-dropcap", "144", "144", "font-axis"),
+    ("--font-soft-number", "100", "100", "font-axis"),
+    ("--font-opsz-number", "144", "144", "font-axis"),
+    ("--font-wght-display", "560", "560", "font-axis"),
+    ("--font-wght-accent", "520", "520", "font-axis"),
     # ── Radius (px) ──
     ("--radius-sm", "2px", "2px", "radius"),
     ("--radius-md", "6px", "6px", "radius"),

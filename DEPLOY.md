@@ -4,7 +4,7 @@
 > If anything here changes (server, domains, secrets, process, gotchas), UPDATE THIS FILE
 > in the same change. AGENTS.md instructs every agent to keep this current.
 >
-> Last verified working: 2026-07-14 (article platform deploy)
+> Last verified working: 2026-07-16 (groups + font system + GSAP migration + plants admin deploy)
 
 ---
 
@@ -268,21 +268,14 @@ These cost real time. Read before debugging.
     purge by prefix `https://api.ruisilvastudio.com/media/`) or wait out the TTL. New uploads get a
     fresh hash-based URL (cache MISS) so they render immediately; only already-cached URLs are stale.
     There is no Cloudflare API token on the server — purge is a manual dashboard action.
-11. **The server's checked-out repo branch is literally named `feature/event-manager-and-fixes`,
-    not `main`** (confirmed 2026-07-04, roles/permissions redesign deploy pre-flight check) —
-    `git branch -vv` on the server shows this branch tracking its own same-named `origin` branch,
-    63 commits ahead of *that* remote branch, while content-wise it's a strict ancestor of
-    `origin/main` (0 unique commits). This is harmless *in practice* because `deploy.sh` runs
-    `git pull origin main` explicitly (not a plain `git pull`), which fetches `origin/main` and
-    fast-forwards whatever is checked out, regardless of its name — but it means the server is
-    NOT actually "on `main`" the way the architecture diagram implies, and if this branch ever
-    picks up local-only commits (making the pull a real merge instead of a fast-forward), the
-    result would be a merge commit on a branch with a stale/confusing name, not `main`. Checked via
-    `git rev-list --left-right --count HEAD...origin/main` before every deploy if you want to
-    confirm it's still a clean fast-forward. Not fixed as part of this deploy (pre-existing,
-    orthogonal risk, would need to be a deliberate `git checkout main` on the server done outside
-    a deploy window) — flagged here so a future session doesn't assume the server is on a branch
-    literally called `main`.
+11. **Server branch is now `main`** (resolved 2026-07-16, groups deploy pre-flight check):
+    the server's checked-out branch was previously a stale `feature/event-manager-and-fixes`
+    (see history below) but has since been switched to `main`, and `git rev-list --left-right
+    --count HEAD...origin/main` now reports `0  0` — a clean fast-forward. No special handling
+    needed; the old text below is preserved for posterity but no longer applies.
+    *(Historical, 2026-07-04: the server was on a branch literally named
+    `feature/event-manager-and-fixes` that content-wise was a strict ancestor of `origin/main`.
+    Harmless because `deploy.sh` ran `git pull origin main` explicitly, but confusing.)*
 12. **Celery never actually ran any background job in prod, until 2026-07-05** — see
     `docs/LESSONS.md` #36 (`autodiscover_tasks(["app.tasks"])` registered zero tasks; found live
     2026-07-04 while verifying the roles/permissions deploy). Point decay / RSS crawl / draft

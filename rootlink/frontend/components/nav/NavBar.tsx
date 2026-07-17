@@ -7,7 +7,8 @@ import {
   Settings, ShoppingBag, LogOut, ArrowRight,
   CheckCheck, Users, Star, Palette,
 } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useGSAPToggle } from "@/lib/gsap";
+
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/locale-context";
@@ -97,6 +98,8 @@ export function NavBar() {
   const [notifTab, setNotifTab] = useState<NotifTab>("notifications");
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+  const notifToggle = useGSAPToggle(openDropdown === "notifications", { duration: 0.15 });
+  const profileToggle = useGSAPToggle(openDropdown === "profile", { duration: 0.15 });
 
   useEffect(() => {
     if (!openDropdown) return;
@@ -196,15 +199,11 @@ export function NavBar() {
                     )}
                   </button>
 
-                  <AnimatePresence>
-                    {openDropdown === "notifications" && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 4, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 4, scale: 0.98 }}
-                        transition={{ duration: 0.15, ease: "easeOut" }}
-                        className="absolute right-0 mt-2 w-[380px] bg-white dark:bg-stone-900 rounded-xl2 shadow-xl border border-primary-200/40 dark:border-primary-800/40 z-50 overflow-hidden"
-                      >
+                  {notifToggle.shouldRender && (
+                    <div
+                      ref={notifToggle.ref as any}
+                      className="absolute right-0 mt-2 w-[380px] bg-white dark:bg-stone-900 rounded-xl2 shadow-xl border border-primary-200/40 dark:border-primary-800/40 z-50 overflow-hidden"
+                    >
                         {/* Tabs */}
                         <div className="flex border-b border-stone-200 dark:border-stone-800 px-4 pt-3 gap-0.5">
                           {(["notifications", "messages", "activity"] as NotifTab[]).map((tab) => (
@@ -294,9 +293,8 @@ export function NavBar() {
                             </div>
                           </div>
                         )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                    </div>
+                  )}
                 </div>
 
                 {/* Create menu (circle +) */}
@@ -314,15 +312,11 @@ export function NavBar() {
                     <SafeAvatar url={user?.avatar_url} iconClassName="w-4 h-4" />
                   </button>
 
-                  <AnimatePresence>
-                    {openDropdown === "profile" && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 4, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 4, scale: 0.98 }}
-                        transition={{ duration: 0.15, ease: "easeOut" }}
-                        className="absolute right-0 mt-2 w-60 bg-white dark:bg-stone-900 rounded-xl2 shadow-xl border border-primary-200/40 dark:border-primary-800/40 z-50 overflow-hidden"
-                      >
+                  {profileToggle.shouldRender && (
+                    <div
+                      ref={profileToggle.ref as any}
+                      className="absolute right-0 mt-2 w-60 bg-white dark:bg-stone-900 rounded-xl2 shadow-xl border border-primary-200/40 dark:border-primary-800/40 z-50 overflow-hidden"
+                    >
                         {/* User header */}
                         <div className="p-4 border-b border-stone-200 dark:border-stone-800 flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-700/50 text-primary-700 dark:text-primary-300 flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -377,9 +371,8 @@ export function NavBar() {
                             <LogOut className="w-4 h-4" />{t("nav.sign_out")}
                           </button>
                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                    </div>
+                  )}
                 </div>
               </>
             )}

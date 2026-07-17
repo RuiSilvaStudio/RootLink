@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
 import { AuthProvider } from "@/lib/auth-context";
 import { LocaleProvider, useLocale } from "@/lib/locale-context";
 import { ToastProvider } from "@/lib/toast-context";
@@ -15,6 +14,7 @@ import { StyleOverrideApplier } from "@/components/overlay/StyleOverrideApplier"
 import { CommandPalette } from "@/components/CommandPalette";
 import { NavBar } from "@/components/nav/NavBar";
 import { Footer } from "@/components/Footer";
+import { useGSAPPageTransition } from "@/lib/gsap";
 import "./globals.css";
 
 function LangUpdater() {
@@ -23,6 +23,16 @@ function LangUpdater() {
     document.documentElement.lang = locale;
   }, [locale]);
   return null;
+}
+
+function PageMain({ children, isAuth }: { children: React.ReactNode; isAuth: boolean }) {
+  const pathname = usePathname();
+  const ref = useGSAPPageTransition(pathname);
+  return (
+    <main ref={ref as any} className={`flex-1 ${isAuth ? "" : "pt-16"} pb-20 lg:pb-0`}>
+      {children}
+    </main>
+  );
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -61,18 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 {(isAdmin || isStudio) ? (
                   <main className="flex-1">{children}</main>
                 ) : (
-                  <AnimatePresence mode="wait">
-                    <motion.main
-                      key={pathname}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.25, ease: "easeOut" }}
-                      className={`flex-1 ${isAuth ? "" : "pt-16"} pb-20 lg:pb-0`}
-                    >
-                      {children}
-                    </motion.main>
-                  </AnimatePresence>
+                  <PageMain isAuth={isAuth}>{children}</PageMain>
                 )}
                 {!isAdmin && !isAuth && !isStudio && <Footer />}
               </ThemeProvider>

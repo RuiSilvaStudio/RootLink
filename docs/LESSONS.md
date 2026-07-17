@@ -444,3 +444,37 @@
      17 slowfood URLs had to be pruned rather than crawled. Lesson: when curating a URL list
      for crawling, dry-run a fetch against each source FIRST before assuming the URLs will work.
      (Article seed launch, 2026-07-13.)
+
+48. **`.next/` can contain root-owned files (written by the Docker dev container), so a host
+    `npm run build` fails with `EACCES: permission denied, unlink ...`.** Fix: wipe it via the
+    container before building on the host — `docker compose run --rm --no-deps frontend sh -c
+    "rm -rf /app/.next"` — then build, then `rm -rf .next` and `docker compose start frontend`
+    so dev regenerates a fresh cache. (Groups hardening pass, 2026-07-16.)
+
+49. **Never park mockup/sandbox pages under `app/` — Next.js compiles every route in the tree,
+    so a frozen mockup importing a removed dependency breaks the whole build.** The gitignored
+    groups sandbox (importing the uninstalled framer-motion) lives in
+    `frontend/sandbox-archive/` now, outside the compiled tree, and is excluded in tsconfig.
+    Also: after moving/deleting routes, stale generated types in `.next/types` can fail
+    `tsc` — remove them inside the container (they're root-owned, see #48).
+    (Groups hardening pass, 2026-07-16.)
+
+50. **`-z-10` on an absolutely-positioned hero image puts it BEHIND ancestor backgrounds**
+    (the page's `bg-cream`), making the image invisible and cream hero text unreadable on
+    cream. Give the section a fallback bg + keep media at default z and content `relative
+    z-10` instead. (Group landing port, 2026-07-16.)
+
+51. **A leftover `transform` on an ancestor (even the identity `translate(0,0)` GSAP leaves
+    behind after an animation) makes that ancestor the containing block for every
+    `position: fixed` descendant** — fixed panels then scroll away with the page instead of
+    pinning to the viewport. The page-transition tween on `<main>` (lib/gsap.ts) did exactly
+    this to the group pages' floating root-nav. Fix: `clearProps: "transform,opacity"` when
+    the transition completes. Related: `position: sticky` elements under the fixed platform
+    navbar must stick at `top-16` (the navbar is `fixed h-16`), or they "stick" invisibly
+    behind it. (Groups landing fixes, 2026-07-16.)
+
+52. **Never key a modal's focus-management effect on a handler prop.** `Modal.tsx`'s
+    focus-trap effect depended on `onKeyDown` → which depended on `onClose` → which callers
+    pass inline — so EVERY keystroke inside the dialog re-ran the effect and yanked focus to
+    the first focusable control, making modal text fields untypable. Focus management is
+    keyed on `open` only; the keydown listener lives in its own effect. (2026-07-16.)

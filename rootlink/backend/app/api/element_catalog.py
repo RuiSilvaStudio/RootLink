@@ -22,7 +22,9 @@ name); retire a font with PUT `is_active=false` instead of re-creating.
 """
 
 from collections import defaultdict
+import json
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import delete, select
@@ -217,25 +219,117 @@ async def delete_element_schema(
 # ── Fonts ─────────────────────────────────────────────────────────────────
 
 
+# Axis sort order for URL generation (Google Fonts CSS2 requires alphabetical
+# axis names in the @-tuple). Lowercase axes come before uppercase per CSS2 spec.
+_AXIS_ORDER = ["ital", "opsz", "slnt", "wdth", "wght", "SOFT", "WONK"]
+
+
+def _build_font_url(family: str, axes_json: str | None) -> str | None:
+    """Build a Google Fonts CSS2 URL from a family name + axes JSON.
+
+    If `axes_json` is null or invalid, returns a basic URL (family only, no
+    axes) so the font still loads with default settings.
+    """
+    # Extract the family name from the CSS stack
+    fam = family.split(",")[0].strip().strip('"').replace(" ", "+")
+
+    if not axes_json:
+        return f"https://fonts.googleapis.com/css2?family={fam}&display=swap"
+
+    try:
+        axes = json.loads(axes_json)
+    except (json.JSONDecodeError, TypeError):
+        return f"https://fonts.googleapis.com/css2?family={fam}&display=swap"
+
+    # Extract the family name from the CSS stack (e.g. '"Fraunces", Georgia, serif' → 'Fraunces')
+    fam = family.split(",")[0].strip().strip('"').replace(" ", "+")
+
+    # Build the axis declaration string
+    axis_parts = []
+    italic_axis = axes.get("ital", False)
+
+    # Determine which axes to include and their tuple values
+    axis_values = {}
+    if italic_axis:
+        axis_values["ital"] = [0, 1]  # both upright and italic
+    for ax_name in ["wght", "opsz", "slnt", "wdth", "SOFT", "WONK"]:
+        val = axes.get(ax_name)
+        if val is None:
+            continue
+        if isinstance(val, list) and len(val) == 2:
+            axis_values[ax_name] = val
+        elif isinstance(val, bool):
+            axis_values[ax_name] = [0, 1] if val else [0]
+        elif isinstance(val, (int, float)):
+            axis_values[ax_name] = [val, val]
+
+    # Sort axes per CSS2 spec
+    sorted_axes = sorted(axis_values.keys(), key=lambda a: _AXIS_ORDER.index(a) if a in _AXIS_ORDER else 99)
+
+    if not sorted_axes:
+        return f"https://fonts.googleapis.com/css2?family={fam}&display=swap"
+
+    # Build axis names string (comma-separated)
+    axis_names = ",".join(sorted_axes)
+
+    # Build tuples. For italic, we need two tuples: one for upright (ital=0)
+    # and one for italic (ital=1), each with the other axes' ranges.
+    if italic_axis:
+        # CSS2 with italic: axes are listed once, but values are semicolon-separated
+        # for upright;italic. The non-italic axes use their range for both.
+        other_ranges = []
+        for ax in sorted_axes:
+            if ax == "ital":
+                continue
+            vals = axis_values[ax]
+            other_ranges.append(f"{vals[0]}..{vals[1]}" if vals[0] != vals[1] else str(vals[0]))
+
+        # upright tuple: 0,<other ranges>
+        upright = "0," + ",".join(other_ranges) if other_ranges else "0"
+        # italic tuple: 1,<other ranges>
+        italic = "1," + ",".join(other_ranges) if other_ranges else "1"
+        axis_tuple = f"{upright};{italic}"
+    else:
+        # No italic — single tuple
+        ranges = []
+        for ax in sorted_axes:
+            vals = axis_values[ax]
+            ranges.append(f"{vals[0]}..{vals[1]}" if vals[0] != vals[1] else str(vals[0]))
+        axis_tuple = ",".join(ranges)
+
+    return f"https://fonts.googleapis.com/css2?family={fam}:{axis_names}@{axis_tuple}&display=swap"
+
+
 class FontCreate(BaseModel):
     name: str
     family: str
     url: str | None = None
+    axes: str | None = None
 
 
 class FontUpdate(BaseModel):
     name: str | None = None
     family: str | None = None
     url: str | None = None
+    axes: str | None = None
     is_active: bool | None = None
 
 
+class DetectAxesRequest(BaseModel):
+    family: str
+
+
 def _serialize_font(f: Font) -> dict:
+    """Serialize a Font, generating the URL from axes when available."""
+    url = f.url
+    if f.axes and not url:
+        url = _build_font_url(f.family, f.axes)
     return {
         "id": f.id,
         "name": f.name,
         "family": f.family,
-        "url": f.url,
+        "url": url,
+        "axes": f.axes,
         "is_active": f.is_active,
         "created_at": f.created_at.isoformat() if f.created_at else None,
         "updated_at": f.updated_at.isoformat() if f.updated_at else None,
@@ -256,7 +350,7 @@ async def list_fonts(db: AsyncSession = Depends(get_db)):
             select(Font).where(Font.is_active.is_(True)).order_by(Font.name)
         )
     ).scalars().all()
-    return [{"id": r.id, "name": r.name, "family": r.family, "url": r.url, "is_active": r.is_active} for r in rows]
+    return [_serialize_font(r) for r in rows]
 
 
 @router.post("/fonts")
@@ -269,7 +363,7 @@ async def create_font(
     existing = await db.scalar(select(Font).where(Font.name == body.name))
     if existing is not None:
         raise HTTPException(status_code=409, detail="Font with this name already exists")
-    font = Font(name=body.name, family=body.family, url=body.url, is_active=True)
+    font = Font(name=body.name, family=body.family, url=body.url, axes=body.axes, is_active=True)
     db.add(font)
     await db.flush()
     await log_moderation(
@@ -295,7 +389,7 @@ async def update_font(
     font_name = font.name
     was_active = font.is_active
     data = body.model_dump(exclude_unset=True)
-    for field in ("name", "family", "url", "is_active"):
+    for field in ("name", "family", "url", "axes", "is_active"):
         if field in data:
             setattr(font, field, data[field])
     if "is_active" in data and was_active and not data["is_active"]:
@@ -347,3 +441,100 @@ async def delete_font(
         )
     await db.commit()
     return {"ok": True, "deleted": font_id}
+
+
+# ── Font axis detection ──────────────────────────────────────────────────
+
+
+# Maps Google Fonts CSS2 axis tags to human-readable descriptions.
+# The admin can override these labels per-font for context (e.g. "Softness"
+# instead of "SOFT"). These are the defaults the detect endpoint returns.
+_AXIS_LABELS: dict[str, str] = {
+    "ital": "Italic",
+    "opsz": "Optical size",
+    "slnt": "Slant",
+    "wdth": "Width",
+    "wght": "Weight",
+    "SOFT": "Softness",
+    "WONK": "Wonky",
+}
+
+
+@router.post("/fonts/detect-axes")
+async def detect_font_axes(
+    body: DetectAxesRequest,
+    current_user: User = Depends(require_role([UserRole.super_admin])),
+):
+    """super_admin: detect which variable-font axes a Google Font supports.
+
+    Fetches the Google Fonts CSS2 API server-side (avoids CORS, keeps the
+    request off the browser) and parses the @font-face declarations to
+    determine available axes. Returns a structured description the frontend
+    renders as toggle/slider controls in the font form.
+
+    Google Fonts CSS2 always returns the full axis set for a variable font
+    when requested without axis constraints — we request with `display=swap`
+    and parse the `@font-face` src descriptors for the axis names.
+    """
+    fam = body.family.split(",")[0].strip().strip('"').replace(" ", "+")
+    css_url = f"https://fonts.googleapis.com/css2?family={fam}:ital,opsz,slnt,wdth,wght,SOFT,WONK@0,9..144,0,75..100,300..900,0..100,0..1;1,9..144,0,75..100,300..900,0..100,0..1&display=swap"
+
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(css_url, headers={"User-Agent": "RootLink/1.0"})
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not reach Google Fonts")
+
+    if resp.status_code != 200:
+        raise HTTPException(status_code=404, detail=f"Font '{body.family}' not found on Google Fonts")
+
+    css_text = resp.text
+
+    # Google Fonts CSS2 returns @font-face blocks. Variable fonts include
+    # font-variation-settings declarations with the axis names. We look for
+    # the axis names in the "src: url(...)" unicode-range descriptors AND
+    # in the font-variation-settings property.
+    #
+    # The reliable signal: if the CSS contains "font-variation-settings:",
+    # the font is variable and the axis names are in that declaration.
+    # For italic, we check if there's a separate @font-face with "font-style: italic".
+
+    axes: dict = {}
+    has_italic = "font-style: italic" in css_text
+
+    # Parse font-variation-settings to find axis names
+    import re
+    variation_matches = re.findall(r'font-variation-settings:\s*([^;]+);', css_text)
+    found_axes: set[str] = set()
+    for match in variation_matches:
+        # Each match looks like: "wght" 400, "opsz" 14, "SOFT" 50, "WONK" 0
+        axis_names = re.findall(r'"([^"]+)"', match)
+        found_axes.update(axis_names)
+
+    # Build the response with defaults
+    for ax in ["ital", "opsz", "slnt", "wdth", "wght", "SOFT", "WONK"]:
+        if ax == "ital":
+            axes[ax] = has_italic
+        elif ax in found_axes:
+            # Provide sensible default ranges; the admin adjusts
+            default_ranges = {
+                "wght": [300, 900],
+                "opsz": [9, 144],
+                "slnt": [-12, 0],
+                "wdth": [75, 100],
+                "SOFT": [0, 100],
+                "WONK": [0, 1],
+            }
+            axes[ax] = default_ranges.get(ax, [0, 1])
+        else:
+            axes[ax] = None
+
+    # Build human-readable labels
+    labels = {ax: _AXIS_LABELS.get(ax, ax) for ax, val in axes.items() if val is not None}
+
+    return {
+        "family": body.family,
+        "axes": axes,
+        "labels": labels,
+        "is_variable": len(found_axes) > 0,
+    }

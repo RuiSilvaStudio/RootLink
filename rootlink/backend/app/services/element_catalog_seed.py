@@ -153,13 +153,17 @@ _USED: dict[str, set[str]] = {
     # Tailwind classes as the original pages.
 }
 
-# (name, family, url). `family` is the CSS font-family value (internal quotes
-# + fallbacks included); `url` is the Google Fonts CSS URL the frontend injects.
-_DEFAULT_FONTS: list[tuple[str, str, str]] = [
+# (name, family, url, axes). `family` is the CSS font-family value (internal
+# quotes + fallbacks included). `url` is the Google Fonts CSS2 URL (the admin
+# pastes it from fonts.google.com). `axes` is a JSON string parsed from the URL
+# — when present, the inspector knows which variable-font axes are available.
+_DEFAULT_FONTS: list[tuple[str, str, str, str | None]] = [
     ("Fraunces", '"Fraunces", Georgia, serif',
-     "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..900&display=swap"),
+     "https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&display=swap",
+     '{"ital": true, "wght": [300, 900], "opsz": [9, 144], "SOFT": [0, 100], "WONK": [0, 1]}'),
     ("Source Serif 4", '"Source Serif 4", Georgia, serif',
-     "https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,300..700&display=swap"),
+     "https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&display=swap",
+     '{"ital": true, "wght": [300, 700], "opsz": [8, 60]}'),
 ]
 
 
@@ -196,9 +200,12 @@ async def seed_default_element_catalog(session: AsyncSession) -> None:
                     )
                 )
 
-    for name, family, url in _DEFAULT_FONTS:
+    for name, family, url, axes in _DEFAULT_FONTS:
         existing = await session.scalar(select(Font).where(Font.name == name))
         if existing is None:
-            session.add(Font(name=name, family=family, url=url, is_active=True))
+            session.add(Font(name=name, family=family, url=url, axes=axes, is_active=True))
+        elif existing.axes is None and axes is not None:
+            existing.axes = axes
+            existing.url = url
 
     await session.commit()

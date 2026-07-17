@@ -1,6 +1,6 @@
 "use client";
 
-import { TextareaHTMLAttributes, forwardRef } from "react";
+import { TextareaHTMLAttributes, forwardRef, useId } from "react";
 
 type Props = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   label?: string;
@@ -9,7 +9,11 @@ type Props = TextareaHTMLAttributes<HTMLTextAreaElement> & {
 
 export const Textarea = forwardRef<HTMLTextAreaElement, Props>(
   ({ label, error, className = "", id, ...props }, ref) => {
-    const textareaId = id || label?.toLowerCase().replace(/\s+/g, "-");
+    // useId guarantees uniqueness — label-derived ids collided when two
+    // textareas shared a label anywhere on the page
+    const autoId = useId();
+    const textareaId = id || autoId;
+    const errorId = `${textareaId}-error`;
     return (
       <div data-rl-component="Textarea" className="space-y-1.5">
         {label && (
@@ -20,6 +24,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, Props>(
         <textarea
           ref={ref}
           id={textareaId}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
           className={`
             w-full px-4 py-2.5 bg-white dark:bg-stone-900 border rounded-xl2 text-stone-800 dark:text-stone-100 text-sm
             transition-all duration-200 resize-y min-h-[100px]
@@ -30,7 +36,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, Props>(
           `.trim()}
           {...props}
         />
-        {error && <p className="text-xs text-rust-600 dark:text-rust-400 font-display tracking-wide">{error}</p>}
+        {error && (
+          <p id={errorId} role="alert" className="text-xs text-rust-600 dark:text-rust-400 font-display tracking-wide">
+            {error}
+          </p>
+        )}
       </div>
     );
   }

@@ -298,3 +298,24 @@ variant) and were *designed assuming the swap was broken* (i.e. the designer cho
 light-mode color that also looks acceptable in dark mode) would suddenly get a different
 dark color. Needs a full visual audit of the site in dark mode after the fix. Track which
 components use bare tokens without `dark:` variants before and after.
+
+## 8. Privacy — `GET /api/events/{id}/attendees` publicly leaks attendee emails (found 2026-07-16)
+Surfaced during the Groups backend security audit (same pattern as the groups S1 leak, now
+fixed for groups): `events.py:349-356` returns attendee rows including **email addresses**
+with no auth dependency. Fix: require authentication + event-owner/manager rights (or strip
+emails from the public shape). Not fixed in the groups pass because it's outside that
+feature's blast radius — needs its own quick pass + a check for sibling endpoints
+(marketplace, courses) with the same pattern.
+
+## 9. Notification messages are hardcoded strings in mixed languages (found 2026-07-16)
+Notifications store their display text at creation time (`Notification.message`). Legacy ones
+are English ("X started following you"); the Groups notifications (join requests, approvals,
+invites) were written in pt-PT per product direction. Long-term the `message` column should
+become a message KEY + params rendered through the frontend i18n system, so the bell speaks
+the viewer's language consistently. Platform-wide pass — not groups-specific.
+
+## 10. Home page hydration warning — nested `<a>` in `LinkWithArrow` (found 2026-07-16)
+Console on `/`: "In HTML, <a> cannot be a descendant of <a>. This will cause a hydration
+error." Component stack points at `LinkWithArrow` (DeFacto). Something renders a Next `Link`
+inside another anchor. Pre-existing (not from the Groups work — group pages emit 0 warnings).
+Quick fix pass needed on the home/DeFacto blocks.

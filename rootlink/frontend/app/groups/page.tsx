@@ -1,209 +1,188 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { Users, Plus, Search, ExternalLink, MessageCircle, Calendar, X } from "lucide-react";
+import { Search, Plus, MapPin } from "lucide-react";
 import { api } from "@/lib/api";
-import { safeImageUrl } from "@/lib/image-url";
+import type { Group } from "@/lib/groups-types";
+import { parseCategories } from "@/lib/groups-types";
 import { useLocale } from "@/lib/locale-context";
-import { useToast } from "@/lib/toast-context";
-import { useDirtyGuard } from "@/lib/use-dirty-guard";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
-import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { CardSkeleton } from "@/components/ui/LoadingSkeleton";
-import { ImageUpload } from "@/components/ui/ImageUpload";
-import { BlockRenderer, type BlockSectionData } from "@/components/blocks";
-import { GroupListCard } from "@/components/cards/GroupListCard";
+import { LoadError } from "@/components/studio/LoadError";
+import { safeImageUrl } from "@/lib/image-url";
+
+const FAMILIES = ["Agricultura", "Saúde e bem-estar", "Cultura e artes", "Desporto", "Ação social", "Ambiente", "Educação", "Comunidade"];
 
 export default function GroupsPage() {
-  const [groups, setGroups] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [description, setDescription] = useState("");
-  const [family, setFamily] = useState("");
-  const [category, setCategory] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [families, setFamilies] = useState<any[]>([]);
-  const [familyCategories, setFamilyCategories] = useState<any[]>([]);
-  const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [suggesting, setSuggesting] = useState(false);
-  const [headerSections, setHeaderSections] = useState<BlockSectionData[] | null>(null);
-  const dirty = !!(name || slug || description);
-  useDirtyGuard(dirty);
-  const { t, locale } = useLocale();
-  const { addToast } = useToast();
+  const { t } = useLocale();
+  const [groups, setGroups] = useState<Group[] | null>(null);
+  const [error, setError] = useState(false);
+  const [query, setQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"all" | "organic" | "structured">("all");
+  const [familyFilter, setFamilyFilter] = useState("");
+  const [locationFilter, setLocationFilter] = useState("");
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    api.groups.list().then(setGroups).catch(() => {}).finally(() => setLoading(false));
-    api.taxonomy.families().then(setFamilies).catch(() => {});
-    if (new URLSearchParams(window.location.search).get("new") === "1") setShowForm(true);
-    // Fetch block-composed header sections (Phase 9)
-    api.blocks.getPage("groups")
-      .then((p) => p?.sections?.length ? setHeaderSections(p.sections) : setHeaderSections([]))
-      .catch(() => setHeaderSections([]));
+  // Server-side filtering, debounced 400ms per the UX contract
+  const load = useCallback(async (opts: { q: string; type: string; family: string; location: string }) => {
+    setError(false);
+    try {
+      setGroups(await api.groups.list({
+        limit: 100,
+        q: opts.q || undefined,
+        groupType: opts.type !== "all" ? opts.type : undefined,
+        family: opts.family || undefined,
+        location: opts.location || undefined,
+      }));
+    } catch {
+      setError(true);
+    }
   }, []);
 
-  const handleFamilyChange = (famValue: string) => {
-    setFamily(famValue);
-    setCategory("");
-    if (famValue) {
-      api.taxonomy.categories(famValue).then(setFamilyCategories).catch(() => setFamilyCategories([]));
-    } else {
-      setFamilyCategories([]);
-    }
-  };
-
-  const suggestTimer = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => {
-    if (suggestTimer.current) clearTimeout(suggestTimer.current);
-    const q = `${name} ${description}`.trim();
-    if (!q || q.length < 3) { setSuggestions([]); return; }
-    setSuggesting(true);
-    suggestTimer.current = setTimeout(async () => {
-      try {
-        const results = await api.groups.search(q);
-        setSuggestions(results);
-      } catch {} finally { setSuggesting(false); }
-    }, 400);
-    return () => { if (suggestTimer.current) clearTimeout(suggestTimer.current); };
-  }, [name, description]);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      load({ q: query, type: typeFilter, family: familyFilter, location: locationFilter });
+    }, groups === null ? 0 : 400);
+    return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, typeFilter, familyFilter, locationFilter, load]);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const group = await api.groups.create({ name, slug, description, family: family || undefined, category: category || undefined, image_url: imageUrl || undefined });
-      setGroups([group, ...groups]);
-      setShowForm(false);
-      setName("");
-      setSlug("");
-      setDescription("");
-      setImageUrl("");
-      setSuggestions([]);
-    } catch (err: any) {
-      addToast("error", err.message);
-    }
-  };
+  const hasFilters = !!query || typeFilter !== "all" || !!familyFilter || !!locationFilter;
+  const clearAll = () => { setQuery(""); setTypeFilter("all"); setFamilyFilter(""); setLocationFilter(""); };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-8 py-12">
-      {/* Block-composed header (Phase 9) — renders groups-header + groups-hero */}
-      {headerSections && headerSections.length > 0 && (
-        <BlockRenderer sections={headerSections} />
-      )}
-
-      {/* Fallback header when no block page exists in the backend */}
-      {headerSections && headerSections.length === 0 && (
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center">
-            <Users className="w-5 h-5 text-primary-500" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-serif font-bold text-stone-800">{t("groups.title")}</h1>
-            <p className="text-stone-500 font-light">{t("groups.subtitle")}</p>
-          </div>
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="font-display text-3xl font-semibold text-primary-800 dark:text-primary-200">{t("groups.title")}</h1>
+          <p className="text-sm text-stone-500 mt-1">{t("groups.subtitle")}</p>
         </div>
-      )}
+        <Link href="/groups/create">
+          <Button size="sm"><Plus className="w-4 h-4" aria-hidden /> {t("groups.create_group")}</Button>
+        </Link>
+      </div>
 
-      {showForm && (
-        <Card variant="plain" className="p-6 mb-8 space-y-4">
-          <h3 className="font-serif font-bold text-stone-800">{t("groups.new_group")}</h3>
-          <form onSubmit={handleCreate} className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("groups.name_label")}</label>
-              <input type="text" value={name} onChange={(e) => { setName(e.target.value); setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")); }} required className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("groups.slug_label")}</label>
-              <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)} required className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
-            </div>
-          </div>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("groups.family_label")}</label>
-              <select value={family} onChange={(e) => handleFamilyChange(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
-                <option value="">{t("groups.family_none")}</option>
-                {families.map((fam) => (
-                  <option key={fam.value} value={fam.value}>{locale === "pt" ? fam.label_pt : fam.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("groups.category_label")}</label>
-              <select value={category} onChange={(e) => setCategory(e.target.value)} disabled={!family} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15 disabled:opacity-50">
-                <option value="">{t("groups.category_none")}</option>
-                {familyCategories.map((cat) => (
-                  <option key={cat.value} value={cat.value}>{locale === "pt" ? cat.label_pt : cat.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("groups.description_label")}</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
-          </div>
+      {/* Search bar */}
+      <label htmlFor="groups-search" className="sr-only">{t("groups.search_placeholder")}</label>
+      <input
+        id="groups-search"
+        type="search"
+        placeholder={t("groups.search_placeholder")}
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+        className="w-full px-5 py-3.5 bg-white dark:bg-stone-900 border border-primary-200/60 dark:border-stone-700 rounded-2xl text-stone-800 dark:text-stone-100 text-base placeholder:text-stone-400 focus:border-primary-400 focus:ring-2 focus:ring-primary-500/15 focus:outline-none mb-4"
+      />
 
-          <div>
-            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("groups.cover_label") || "Cover image"}</label>
-            {imageUrl ? (
-              <div className="relative inline-block">
-                <img src={safeImageUrl(imageUrl)} alt="Cover" className="max-h-40 rounded-xl object-cover border border-stone-200 dark:border-stone-700" />
-                <button type="button" onClick={() => setImageUrl("")} className="absolute top-2 right-2 p-1 rounded-full bg-stone-900/70 text-white hover:bg-stone-900" aria-label="Remove cover">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : (
-              <ImageUpload label="" requireLicense onUpload={(urls) => setImageUrl(urls.large)} onError={(m) => addToast("error", m)} />
-            )}
-          </div>
-
-          {suggestions.length > 0 && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-4">
-              <div className="flex items-center gap-1.5 text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
-                <Search className="w-4 h-4" /> {t("groups.similar_groups")}
-              </div>
-              <div className="space-y-2">
-                {suggestions.map((sg) => (
-                  <Link key={sg.id} href={`/groups/${sg.id}`}
-                    className="flex items-center justify-between bg-white dark:bg-stone-900 rounded-xl px-4 py-2.5 border border-blue-100 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-600 transition text-sm">
-                    <div>
-                      <span className="font-medium text-stone-800 dark:text-stone-100">{sg.name}</span>
-                      {sg.description && <span className="text-stone-500 dark:text-stone-400 ml-2 font-light">— {sg.description}</span>}
-                    </div>
-                    <ExternalLink className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 shrink-0 ml-2" />
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="flex items-center gap-3">
-            <Button type="submit">{t("groups.create_group")}</Button>
-            {suggesting && <span className="text-xs text-stone-400">{t("groups.searching")}</span>}
-          </div>
-          </form>
-        </Card>
-      )}
-
-      {loading ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => <CardSkeleton key={i} />)}
-        </div>
-      ) : groups.length === 0 ? (
-        <EmptyState
-          icon={<Users className="w-7 h-7" />}
-          title={t("groups.no_groups")}
-        />
-      ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {groups.map((group) => (
-            <GroupListCard key={group.id} group={group} noDescriptionText={t("groups.no_description")} />
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-4 mb-8 pb-6 border-b border-primary-100 dark:border-stone-800">
+        <div className="flex items-center gap-1.5" role="group" aria-label={t("groups.filter_type")}>
+          <span className="text-xs font-display font-medium text-stone-400 uppercase tracking-wide mr-1">{t("groups.filter_type")}</span>
+          {([["all", t("groups.filter_all")], ["organic", t("groups.type_organic")], ["structured", t("groups.type_structured")]] as const).map(([val, label]) => (
+            <button
+              key={val}
+              aria-pressed={typeFilter === val}
+              onClick={() => setTypeFilter(val)}
+              className={`px-2.5 py-1 rounded-full text-xs font-medium transition ${typeFilter === val ? "bg-primary-600 text-cream" : "bg-primary-100/50 dark:bg-stone-800 text-stone-500 hover:bg-primary-100 dark:hover:bg-stone-700"}`}
+            >
+              {label}
+            </button>
           ))}
         </div>
+        <div className="flex items-center gap-1.5">
+          <label htmlFor="groups-family" className="text-xs font-display font-medium text-stone-400 uppercase tracking-wide mr-1">{t("groups.filter_family")}</label>
+          <select
+            id="groups-family"
+            value={familyFilter}
+            onChange={e => setFamilyFilter(e.target.value)}
+            className="px-2.5 py-1 rounded-full text-xs font-medium border border-primary-200/60 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 focus:border-primary-400 focus:outline-none"
+          >
+            <option value="">{t("groups.filter_family_all")}</option>
+            {FAMILIES.map(f => <option key={f} value={f}>{f}</option>)}
+          </select>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <label htmlFor="groups-location" className="text-xs font-display font-medium text-stone-400 uppercase tracking-wide mr-1">{t("groups.filter_location")}</label>
+          <input
+            id="groups-location"
+            type="text"
+            placeholder={t("groups.location_placeholder")}
+            value={locationFilter}
+            onChange={e => setLocationFilter(e.target.value)}
+            className="px-2.5 py-1 rounded-full text-xs font-medium border border-primary-200/60 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 placeholder:text-stone-400 focus:border-primary-400 focus:outline-none w-28"
+          />
+        </div>
+        {hasFilters && (
+          <button onClick={clearAll} className="text-xs text-stone-400 hover:text-rust-500 ml-auto">{t("groups.clear_filters")}</button>
+        )}
+      </div>
+
+      {/* Error */}
+      {error && <LoadError message={t("groups.list_load_error")} onRetry={() => load({ q: query, type: typeFilter, family: familyFilter, location: locationFilter })} />}
+
+      {/* Loading */}
+      {!error && groups === null && (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5" aria-busy="true">
+          {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-64 rounded-2xl skeleton-shimmer" />)}
+        </div>
+      )}
+
+      {/* Results */}
+      {!error && groups !== null && (
+        <>
+          <p className="text-sm text-stone-400 mb-4" role="status">{t("groups.results_count", { count: groups.length })}</p>
+
+          {groups.length === 0 ? (
+            <EmptyState
+              icon={<Search className="w-7 h-7 text-primary-400" aria-hidden />}
+              title={t("groups.empty_title")}
+              message={t("groups.empty_message")}
+              action={hasFilters ? { label: t("groups.clear_filters"), onClick: clearAll } : undefined}
+            />
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {groups.map(g => {
+                const cats = parseCategories(g.categories);
+                return (
+                  <Link key={g.id} href={`/groups/${g.slug}`} className="rounded-2xl overflow-hidden border border-primary-200/60 dark:border-stone-700 bg-white dark:bg-stone-900 hover:shadow-lg hover:border-primary-300 transition group">
+                    <div className="relative h-28 overflow-hidden">
+                      {g.image_url ? (
+                        <img src={safeImageUrl(g.image_url, "/images/placeholder-card.svg")} alt="" className="w-full h-full object-cover group-hover:scale-105 transition duration-400" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-primary-200 to-earth-500/40" aria-hidden />
+                      )}
+                      <span className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-semibold ${g.group_type === "structured" ? "bg-earth-500 text-cream" : "bg-emerald-600 text-cream"}`}>
+                        {g.group_type === "structured" ? t("groups.type_structured") : t("groups.type_organic")}
+                      </span>
+                    </div>
+                    <div className="p-4">
+                      <div className="flex items-start gap-3">
+                        {g.logo_url && <img src={safeImageUrl(g.logo_url)} alt="" className="w-10 h-10 rounded-lg border border-primary-200 dark:border-stone-700 object-cover shrink-0 -mt-6 shadow-sm relative" />}
+                        <div className="min-w-0 flex-1">
+                          <h2 className="font-display text-base font-semibold text-primary-800 dark:text-primary-200 truncate">{g.name}</h2>
+                          <p className="text-xs text-stone-400 truncate flex items-center gap-1">
+                            {g.location && <><MapPin className="w-3 h-3 shrink-0" aria-hidden />{g.location} · </>}
+                            {g.description?.slice(0, 60) || t("groups.no_description")}
+                          </p>
+                        </div>
+                      </div>
+                      {cats.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-3">
+                          {cats.slice(0, 2).map(c => (
+                            <span key={c} className="text-xs px-2 py-0.5 rounded-full bg-primary-100/50 dark:bg-primary-900/30 text-primary-500 dark:text-primary-300">
+                              {c.split(" / ").pop()}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -2,13 +2,8 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Info } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useGSAPToggle } from "@/lib/gsap";
 
-/**
- * An "(i)" affordance: a small info button that opens a click-dismissable popover
- * with contextual help (CONTENT_PLATFORM.md §9.4). Use for "what does this do?"
- * explanations next to fields, buttons, and status badges.
- */
 export function InfoPopover({
   children,
   label = "More information",
@@ -20,6 +15,7 @@ export function InfoPopover({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
+  const { ref: animRef, shouldRender } = useGSAPToggle(open, { duration: 0.15 });
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -40,19 +36,14 @@ export function InfoPopover({
       >
         <Info className="w-3 h-3" />
       </button>
-      <AnimatePresence>
-        {open && (
-          <motion.span
-            initial={{ opacity: 0, y: 4, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.98 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className={`absolute z-[60] top-full mt-2 ${align === "right" ? "right-0" : "left-0"} w-64 rounded-xl bg-white dark:bg-stone-900 p-3 text-xs leading-relaxed text-stone-600 dark:text-stone-300 shadow-lg border border-primary-200/40 dark:border-primary-800/40`}
-          >
-            {children}
-          </motion.span>
-        )}
-      </AnimatePresence>
+      {shouldRender && (
+        <span
+          ref={animRef as any}
+          className={`absolute z-[60] top-full mt-2 ${align === "right" ? "right-0" : "left-0"} w-64 rounded-xl bg-white dark:bg-stone-900 p-3 text-xs leading-relaxed text-stone-600 dark:text-stone-300 shadow-lg border border-primary-200/40 dark:border-primary-800/40`}
+        >
+          {children}
+        </span>
+      )}
     </span>
   );
 }

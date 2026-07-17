@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useGSAPToggle } from "@/lib/gsap";
 
 type Side = "top" | "bottom" | "left" | "right";
 
@@ -12,10 +12,6 @@ const sidePos: Record<Side, string> = {
   right: "left-full top-1/2 -translate-y-1/2 ml-2",
 };
 
-/**
- * Lightweight hover/focus tooltip. Replaces ad-hoc native `title=` usage so help
- * text is consistent and accessible (CONTENT_PLATFORM.md §9.4).
- */
 export function Tooltip({
   content,
   side = "top",
@@ -26,6 +22,7 @@ export function Tooltip({
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const { ref, shouldRender } = useGSAPToggle(open, { duration: 0.12 });
   return (
     <span
       data-rl-component="Tooltip"
@@ -36,20 +33,15 @@ export function Tooltip({
       onBlur={() => setOpen(false)}
     >
       {children}
-      <AnimatePresence>
-        {open && (
-          <motion.span
-            role="tooltip"
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.96 }}
-            transition={{ duration: 0.12, ease: "easeOut" }}
-            className={`absolute z-[60] ${sidePos[side]} w-max max-w-[220px] rounded-lg bg-stone-900 dark:bg-stone-700 px-2.5 py-1.5 text-xs leading-snug text-stone-50 shadow-lg pointer-events-none`}
-          >
-            {content}
-          </motion.span>
-        )}
-      </AnimatePresence>
+      {shouldRender && (
+        <span
+          ref={ref as any}
+          role="tooltip"
+          className={`absolute z-[60] ${sidePos[side]} w-max max-w-[220px] rounded-lg bg-stone-900 dark:bg-stone-700 px-2.5 py-1.5 text-xs leading-snug text-stone-50 shadow-lg pointer-events-none`}
+        >
+          {content}
+        </span>
+      )}
     </span>
   );
 }

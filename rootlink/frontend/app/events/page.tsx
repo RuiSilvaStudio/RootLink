@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Calendar, Plus, Trash2 } from "lucide-react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { Calendar, Plus, Trash2, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
 import { useToast } from "@/lib/toast-context";
@@ -47,6 +48,16 @@ const defaultWeeklyHours = () => {
 };
 
 export default function EventsPage() {
+  return (
+    <Suspense>
+      <EventsContent />
+    </Suspense>
+  );
+}
+
+function EventsContent() {
+  const searchParams = useSearchParams();
+  const showFormFromUrl = searchParams.get("new") === "1";
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
@@ -80,9 +91,9 @@ export default function EventsPage() {
 
   useEffect(() => {
     setToken(localStorage.getItem("token"));
-    if (new URLSearchParams(window.location.search).get("new") === "1") setShowForm(true);
+    if (showFormFromUrl) setShowForm(true);
     api.blocks.getPage("events").then((p) => p?.sections?.length ? setHeroSections(p.sections) : setHeroSections([])).catch(() => setHeroSections([]));
-  }, []);
+  }, [showFormFromUrl]);
   useEffect(() => {
     api.taxonomy.families().then(setFamilies).catch(() => {});
     loadEvents();
@@ -192,7 +203,14 @@ export default function EventsPage() {
       </div>
 
       {showForm && (
-        <Card variant="plain" className="p-6 mb-8 space-y-4">
+        <Card variant="plain" className="p-6 mb-8 space-y-4 relative">
+          <button
+            onClick={() => setShowForm(false)}
+            className="absolute top-4 right-4 p-1.5 rounded-lg text-stone-400 hover:text-stone-700 dark:text-stone-500 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
           <h3 className="font-serif font-bold text-stone-800 dark:text-stone-100">{t("events.new_event")}</h3>
           <div>
             <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("events.title_label")}</label>

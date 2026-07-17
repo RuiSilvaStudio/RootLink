@@ -15,7 +15,12 @@ from app.models.comment import Comment
 from app.models.content import Content, ContentStatus, SearchQueryLog, VerificationStatus
 from app.models.event import Event, EventDonation, EventRSVP, EventSponsor, EventTicket, EventVendor
 from app.models.feed import FeedItem, FeedSource
-from app.models.group import Group, GroupMember, GroupStatus
+from app.models.group import (
+    Group, GroupMember, GroupStatus,
+    GroupContact, GroupBoardMember, GroupDocument, GroupProgram,
+    GroupProgramSubField, GroupAnnouncement, GroupChatLink,
+    GroupInvite, GroupJoinRequest, GroupContent, GroupGalleryItem,
+)
 from app.models.learning import Course, Enrollment
 from app.models.moderation import ModerationAction
 from app.models.notification import Notification, NotificationType
@@ -1092,7 +1097,16 @@ async def delete_group(
     _=require_super_admin,
 ):
     """Permanent hard-delete (super_admin only). Prefer /archive; this is irreversible."""
-    await db.execute(delete(GroupMember).where(GroupMember.group_id == group_id))
+    # Delete all child rows first — no FK cascades exist on these tables (D5)
+    program_ids = (await db.execute(
+        select(GroupProgram.id).where(GroupProgram.group_id == group_id)
+    )).scalars().all()
+    if program_ids:
+        await db.execute(delete(GroupProgramSubField).where(GroupProgramSubField.program_id.in_(program_ids)))
+    for model in (GroupProgram, GroupContact, GroupBoardMember, GroupDocument,
+                  GroupAnnouncement, GroupChatLink, GroupInvite, GroupJoinRequest,
+                  GroupContent, GroupGalleryItem, GroupMember):
+        await db.execute(delete(model).where(model.group_id == group_id))
     await db.execute(delete(Group).where(Group.id == group_id))
     await db.commit()
 

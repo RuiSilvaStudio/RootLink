@@ -2,7 +2,10 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..900,0..100,0..1&family=Source+Serif+4:opsz,wght@8..60,300..700&display=swap');
+/* Font loading is handled entirely by the Content Studio's font library
+   (ThemeProvider.applyFonts() injects <link> tags from the /api/fonts
+   endpoint). No hardcoded @import — the dashboard controls which font
+   faces and axes get loaded. See docs/content-studio/CONTENT_STUDIO.md. */
 
 /* ============================================================
    RootLink Design Tokens — Tailwind v4 @theme
@@ -16,6 +19,25 @@
 @theme {
   --font-display: "Fraunces", Georgia, serif;
   --font-serif: "Source Serif 4", Georgia, serif;
+
+  /* Font axes — variable-font variation settings, theme-driven (theme_seed.py).
+     These replace the hardcoded font-variation-settings values that were
+     baked into @layer base. The dashboard can edit them; the overlay
+     inspector can override per-element. */
+  --font-soft-heading: 60;
+  --font-wonk-heading: 0;
+  --font-opsz-heading: 144;
+  --font-soft-accent: 100;
+  --font-wonk-accent: 1;
+  --font-opsz-accent: 144;
+  --font-soft-blockquote: 80;
+  --font-opsz-blockquote: 144;
+  --font-soft-dropcap: 30;
+  --font-opsz-dropcap: 144;
+  --font-soft-number: 100;
+  --font-opsz-number: 144;
+  --font-wght-display: 560;
+  --font-wght-accent: 520;
 
   --color-primary-50: #f3f0eb;
   --color-primary-100: #e3ddd0;
@@ -144,8 +166,8 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
-    font-weight: 600;
-    font-variation-settings: "SOFT" 60, "WONK" 0;
+    font-weight: var(--font-wght-display);
+    font-variation-settings: "opsz" var(--font-opsz-heading), "SOFT" var(--font-soft-heading), "WONK" var(--font-wonk-heading);
   }
 
   .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
@@ -154,7 +176,6 @@
 
   h1 {
     @apply leading-[1.08] tracking-tight;
-    font-variation-settings: "SOFT" 40, "WONK" 0;
   }
 
   h2 {
@@ -169,7 +190,7 @@
     font-family: var(--font-display);
     font-weight: 400;
     font-style: italic;
-    font-variation-settings: "SOFT" 80, "WONK" 0;
+    font-variation-settings: "opsz" var(--font-opsz-blockquote), "SOFT" var(--font-soft-blockquote), "WONK" 0;
     @apply text-primary-700;
   }
 
@@ -272,14 +293,23 @@
     font-size: 3.5em;
     line-height: 0.8;
     @apply text-primary-600 float-left mr-3 mt-1;
-    font-variation-settings: "SOFT" 30, "WONK" 0;
+    font-variation-settings: "opsz" var(--font-opsz-dropcap), "SOFT" var(--font-soft-dropcap), "WONK" 0;
   }
 
   .number-lg {
     font-family: var(--font-display);
     font-weight: 300;
-    font-variation-settings: "SOFT" 100, "WONK" 0;
+    font-variation-settings: "opsz" var(--font-opsz-number), "SOFT" var(--font-soft-number), "WONK" 0;
     @apply text-primary-600;
+  }
+
+  /* Signature italic accent words — used for editorial emphasis (e.g. "grow.",
+     "here.", "us."). True italic (not faux) with the WONK axis enabled for
+     characterful letterforms. All axes are theme-driven via font-axis tokens. */
+  .wonk {
+    font-style: italic;
+    font-weight: var(--font-wght-accent);
+    font-variation-settings: "opsz" var(--font-opsz-accent), "SOFT" var(--font-soft-accent), "WONK" var(--font-wonk-accent);
   }
 
   .liquid-glass {
@@ -471,4 +501,14 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Group landing marquee (agency mockup port) — reduced-motion handled by the
+   global override above. */
+.rl-marquee {
+  animation: rl-marquee-scroll 28s linear infinite;
+}
+@keyframes rl-marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }

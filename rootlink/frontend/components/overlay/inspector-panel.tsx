@@ -95,8 +95,9 @@ const TEXT_PROPS = new Set([
   "text-align", "text-decoration", "letter-spacing", "line-height",
 ]);
 const TEXT_GROUP: string[] = [
-  "font-family", "font-size", "font-weight", "font-style", "text-align",
-  "color", "text-decoration", "letter-spacing", "line-height",
+  "font-family", "font-size", "font-weight", "font-style",
+  "font-variation-soft", "font-variation-wonk",
+  "text-align", "color", "text-decoration", "letter-spacing", "line-height",
 ];
 
 const PROPERTY_CONFIG: Record<string, PropertyConfig> = {
@@ -108,6 +109,7 @@ const PROPERTY_CONFIG: Record<string, PropertyConfig> = {
       { value: "300", label: "Light" },
       { value: "400", label: "Regular" },
       { value: "500", label: "Medium" },
+      { value: "560", label: "560" },
       { value: "600", label: "Semi" },
       { value: "700", label: "Bold" },
     ],
@@ -117,6 +119,23 @@ const PROPERTY_CONFIG: Record<string, PropertyConfig> = {
     options: [
       { value: "normal", label: "Normal" },
       { value: "italic", label: "Italic" },
+    ],
+  },
+  "font-variation-soft": {
+    control: "button-group",
+    options: [
+      { value: "0", label: "Sharp" },
+      { value: "30", label: "30" },
+      { value: "60", label: "60" },
+      { value: "80", label: "80" },
+      { value: "100", label: "Soft" },
+    ],
+  },
+  "font-variation-wonk": {
+    control: "button-group",
+    options: [
+      { value: "0", label: "Off" },
+      { value: "1", label: "On" },
     ],
   },
   "text-align": {

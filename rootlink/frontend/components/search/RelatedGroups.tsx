@@ -25,7 +25,7 @@ export function RelatedGroups({ query }: { query: string }) {
         {groups.map((g) => (
           <a
             key={g.id}
-            href={`/groups/${g.id}`}
+            href={`/groups/${g.slug}`}
             className="block p-2 rounded-lg hover:bg-stone-50 transition"
           >
             <p className="text-sm font-display font-semibold text-stone-700 line-clamp-1">{g.name}</p>

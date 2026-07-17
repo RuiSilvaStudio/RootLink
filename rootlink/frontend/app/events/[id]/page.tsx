@@ -11,6 +11,7 @@ import {
 import { api } from "@/lib/api";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { CommentSection } from "@/components/CommentSection";
+import { FeaturedInGroups } from "@/components/groups/FeaturedInGroups";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -539,6 +540,9 @@ export default function EventDetailPage() {
             {!event.description && !event.description_long && !event.contact_email && (
               <EmptyState icon={<Leaf className="w-7 h-7" />} title="No description yet." />
             )}
+
+            {/* Featured in groups (cross-group content display, Q3.1) */}
+            <FeaturedInGroups contentType="event" contentId={event.id} />
           </div>
         )}
 

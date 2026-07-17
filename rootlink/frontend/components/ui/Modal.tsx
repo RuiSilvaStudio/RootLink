@@ -65,20 +65,31 @@ export function Modal({ open, onClose, title, children, footer, widthClassName =
     [onClose]
   );
 
+  // Focus management — keyed on `open` ONLY. This effect must never re-run on
+  // ordinary re-renders: it used to depend on `onKeyDown` (recreated whenever
+  // the caller passed an inline `onClose`), so every keystroke inside the
+  // dialog re-ran it and yanked focus to the first focusable control — making
+  // it impossible to type in a modal's text field.
   useEffect(() => {
     if (!open) return;
     openerRef.current = document.activeElement as HTMLElement | null;
-    document.addEventListener("keydown", onKeyDown, true);
     // Move focus to the first focusable control inside the panel.
     const t = window.setTimeout(() => {
       const first = panelRef.current?.querySelector<HTMLElement>(FOCUSABLE);
       (first ?? panelRef.current)?.focus();
     }, 0);
     return () => {
-      document.removeEventListener("keydown", onKeyDown, true);
       window.clearTimeout(t);
       openerRef.current?.focus?.();
     };
+  }, [open]);
+
+  // Keyboard handling (Esc + Tab trap) — safe to re-bind on handler identity
+  // changes; it has no focus side effects.
+  useEffect(() => {
+    if (!open) return;
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [open, onKeyDown]);
 
   if (!open || typeof document === "undefined") return null;

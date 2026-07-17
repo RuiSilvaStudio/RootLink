@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useRef } from "react";
+import { useGSAP, gsap } from "@/lib/gsap";
 
 interface GrainOverlayProps {
   opacity?: number;
@@ -8,12 +9,15 @@ interface GrainOverlayProps {
 }
 
 export function GrainOverlay({ opacity = 0.04, className = "" }: GrainOverlayProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  useGSAP(() => {
+    if (!ref.current) return;
+    gsap.fromTo(ref.current, { opacity: 0 }, { opacity, duration: 0.3, ease: "power2.out" });
+  }, { scope: ref });
   return (
-    <motion.div
+    <div
+      ref={ref}
       data-rl-component="GrainOverlay"
-      initial={false}
-      animate={{ opacity }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
       className={`absolute inset-0 pointer-events-none overflow-hidden rounded-[inherit] ${className}`}
     >
       <div
@@ -24,6 +28,6 @@ export function GrainOverlay({ opacity = 0.04, className = "" }: GrainOverlayPro
           backgroundSize: "128px 128px",
         }}
       />
-    </motion.div>
+    </div>
   );
 }

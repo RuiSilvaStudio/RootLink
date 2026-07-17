@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { useGSAPToggle } from "@/lib/gsap";
 import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/locale-context";
 import { Menu, X, ChevronLeft } from "lucide-react";
@@ -157,74 +157,7 @@ export function AdminSidebar() {
       </aside>
 
       {/* MOBILE SIDEBAR — full-height drawer */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm lg:hidden"
-              onClick={closeMobile}
-            />
-            <motion.div
-              initial={{ x: -300 }}
-              animate={{ x: 0 }}
-              exit={{ x: -300 }}
-              transition={{ type: "spring" as const, stiffness: 500, damping: 35 }}
-              className="fixed top-0 left-0 bottom-0 z-50 w-[280px] liquid-glass-drawer flex flex-col lg:hidden"
-            >
-              <div className="flex items-center justify-between h-16 px-5 border-b border-white/5 shrink-0">
-                <h2 className="text-sm font-display font-semibold text-stone-700 uppercase tracking-[0.12em]">
-                  {t("admin.panel")}
-                </h2>
-                <button
-                  onClick={closeMobile}
-                  className="p-1.5 rounded-lg hover:bg-primary-100/40 text-stone-400 hover:text-stone-600 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <nav className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-1">
-                {sections.map((section) => (
-                  <div key={section.labelKey} className="mb-2">
-                    <p className="px-4 py-1 text-[10px] font-display font-semibold text-stone-400 uppercase tracking-[0.12em]">
-                      {t(section.labelKey)}
-                    </p>
-                    {section.items.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={closeMobile}
-                          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-serif text-stone-600 hover:bg-primary-50/40 transition"
-                        >
-                          <Icon className="w-5 h-5 shrink-0 text-stone-400" />
-                          <span>{item.label}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                ))}
-              </nav>
-
-              <div className="px-3 pb-4 pt-2 border-t border-primary-200/30 shrink-0">
-                <Link
-                  href="/"
-                  onClick={closeMobile}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm text-stone-500 hover:text-stone-700 hover:bg-primary-50/30 transition font-serif"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  {t("admin.back_to_site")}
-                </Link>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      <MobileDrawer mobileOpen={mobileOpen} closeMobile={closeMobile} t={t} pathname={pathname} sections={sections} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} />
 
       {/* MOBILE MENU TRIGGER */}
       <button
@@ -234,6 +167,84 @@ export function AdminSidebar() {
         <Menu className="w-5 h-5" />
         <span className="text-xs font-display font-semibold text-stone-400 uppercase tracking-[0.12em]">{t("admin.panel")}</span>
       </button>
+    </>
+  );
+}
+
+function MobileDrawer({ mobileOpen, closeMobile, t, pathname, sections, isAdmin, isSuperAdmin }: {
+  mobileOpen: boolean;
+  closeMobile: () => void;
+  t: (k: string) => string;
+  pathname: string;
+  sections: AdminSection[];
+  isAdmin: boolean;
+  isSuperAdmin: boolean;
+}) {
+  const overlayToggle = useGSAPToggle(mobileOpen, { duration: 0.2, from: { opacity: 0 }, to: { opacity: mobileOpen ? 1 : 0, y: 0, scale: 1 } });
+  const drawerToggle = useGSAPToggle(mobileOpen, { duration: 0.3, from: { x: -300, opacity: 1 }, to: { x: 0, opacity: 1, y: 0, scale: 1 } });
+
+  return (
+    <>
+      {overlayToggle.shouldRender && (
+        <div
+          ref={overlayToggle.ref as any}
+          className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm lg:hidden"
+          onClick={closeMobile}
+        />
+      )}
+      {drawerToggle.shouldRender && (
+        <div
+          ref={drawerToggle.ref as any}
+          className="fixed top-0 left-0 bottom-0 z-50 w-[280px] liquid-glass-drawer flex flex-col lg:hidden"
+        >
+          <div className="flex items-center justify-between h-16 px-5 border-b border-white/5 shrink-0">
+            <h2 className="text-sm font-display font-semibold text-stone-700 uppercase tracking-[0.12em]">
+              {t("admin.panel")}
+            </h2>
+            <button
+              onClick={closeMobile}
+              className="p-1.5 rounded-lg hover:bg-primary-100/40 text-stone-400 hover:text-stone-600 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <nav className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-1">
+            {sections.map((section) => (
+              <div key={section.labelKey} className="mb-2">
+                <p className="px-4 py-1 text-[10px] font-display font-semibold text-stone-400 uppercase tracking-[0.12em]">
+                  {t(section.labelKey)}
+                </p>
+                {section.items.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={closeMobile}
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-serif text-stone-600 hover:bg-primary-50/40 transition"
+                    >
+                      <Icon className="w-5 h-5 shrink-0 text-stone-400" />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
+          </nav>
+
+          <div className="px-3 pb-4 pt-2 border-t border-primary-200/30 shrink-0">
+            <Link
+              href="/"
+              onClick={closeMobile}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm text-stone-500 hover:text-stone-700 hover:bg-primary-50/30 transition font-serif"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              {t("admin.back_to_site")}
+            </Link>
+          </div>
+        </div>
+      )}
     </>
   );
 }

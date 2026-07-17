@@ -1,5 +1,12 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
 
+import type {
+  Group, GroupViewer, GroupMember, GroupContact, GroupBoardMember,
+  GroupDocument, GroupProgram, GroupProgramSubField, GroupAnnouncement,
+  GroupChatLink, GroupInvite, GroupInviteInfo, GroupJoinRequest,
+  GroupContentLink, GroupGalleryItem, GroupBadge,
+} from "./groups-types";
+
 // Fired when a request that WAS sending a token gets rejected as
 // unauthenticated (401) — i.e. our session is gone (logged out elsewhere,
 // expired, or revoked — see docs/roles-permissions/ROLES_PERMISSIONS.md §1's
@@ -173,30 +180,135 @@ export const api = {
     },
   },
   groups: {
-    list: (limit?: number, offset?: number, family?: string, category?: string) => {
+    list: (opts?: { limit?: number; offset?: number; q?: string; family?: string; category?: string; groupType?: string; location?: string }) => {
       const qs = new URLSearchParams();
-      if (limit) qs.set("limit", String(limit));
-      if (offset) qs.set("offset", String(offset));
-      if (family) qs.set("family", family);
-      if (category) qs.set("category", category);
+      if (opts?.limit) qs.set("limit", String(opts.limit));
+      if (opts?.offset) qs.set("offset", String(opts.offset));
+      if (opts?.q) qs.set("q", opts.q);
+      if (opts?.family) qs.set("family", opts.family);
+      if (opts?.category) qs.set("category", opts.category);
+      if (opts?.groupType) qs.set("group_type", opts.groupType);
+      if (opts?.location) qs.set("location", opts.location);
       const params = qs.toString();
-      return request<any[]>(`/api/groups/${params ? `?${params}` : ""}`);
+      return request<Group[]>(`/api/groups/${params ? `?${params}` : ""}`);
     },
     categories: () => request<any[]>("/api/taxonomy/families"),
-    search: (q: string, limit = 5) => request<any[]>(`/api/groups/search?q=${encodeURIComponent(q)}&limit=${limit}`),
-    get: (id: number) => request<any>(`/api/groups/${id}`),
-    create: (data: any) =>
-      request<any>("/api/groups/", {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
-    update: (id: number, data: any) =>
-      request<any>(`/api/groups/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
-    join: (id: number) =>
-      request<any>(`/api/groups/${id}/join`, { method: "POST" }),
-    leave: (id: number) =>
-      request<void>(`/api/groups/${id}/leave`, { method: "DELETE" }),
-    members: (id: number) => request<any[]>(`/api/groups/${id}/members`),
+    search: (q: string, limit = 5) => request<Group[]>(`/api/groups/search?q=${encodeURIComponent(q)}&limit=${limit}`),
+    get: (id: number) => request<Group>(`/api/groups/${id}`),
+    getBySlug: (slug: string) => request<Group>(`/api/groups/by-slug/${encodeURIComponent(slug)}`),
+    create: (data: Partial<Group>) =>
+      request<Group>("/api/groups/", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: number, data: Partial<Group>) =>
+      request<Group>(`/api/groups/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+
+    // Viewer relationship (drives view modes + manage gate)
+    me: (groupId: number) => request<GroupViewer>(`/api/groups/${groupId}/me`),
+
+    // Members
+    members: (id: number) => request<GroupMember[]>(`/api/groups/${id}/members`),
+    updateMemberRole: (groupId: number, memberId: number, role: string) =>
+      request<{ ok: boolean; role: string }>(`/api/groups/${groupId}/members/${memberId}?role=${encodeURIComponent(role)}`, { method: "PATCH" }),
+    removeMember: (groupId: number, memberId: number) =>
+      request<void>(`/api/groups/${groupId}/members/${memberId}`, { method: "DELETE" }),
+    transferOwnership: (groupId: number, newOwnerUserId: number) =>
+      request<GroupMember>(`/api/groups/${groupId}/transfer-ownership?new_owner_user_id=${newOwnerUserId}`, { method: "POST" }),
+
+    // Join / Leave
+    join: (id: number) => request<GroupMember>(`/api/groups/${id}/join`, { method: "POST" }),
+    leave: (id: number) => request<void>(`/api/groups/${id}/leave`, { method: "DELETE" }),
+
+    // Join requests
+    createJoinRequest: (groupId: number, note?: string) =>
+      request<GroupJoinRequest>(`/api/groups/${groupId}/join-request`, { method: "POST", body: JSON.stringify({ note }) }),
+    listJoinRequests: (groupId: number, status = "pending") =>
+      request<GroupJoinRequest[]>(`/api/groups/${groupId}/join-requests?status=${encodeURIComponent(status)}`),
+    approveJoinRequest: (groupId: number, requestId: number) =>
+      request<GroupMember>(`/api/groups/${groupId}/join-requests/${requestId}/approve`, { method: "POST" }),
+    declineJoinRequest: (groupId: number, requestId: number) =>
+      request<{ ok: boolean }>(`/api/groups/${groupId}/join-requests/${requestId}/decline`, { method: "POST" }),
+
+    // Invites
+    listInvites: (groupId: number, status?: string) =>
+      request<GroupInvite[]>(`/api/groups/${groupId}/invites${status ? `?status=${encodeURIComponent(status)}` : ""}`),
+    createInvite: (groupId: number, method = "link", invitedUserId?: number) =>
+      request<GroupInvite>(`/api/groups/${groupId}/invites?method=${encodeURIComponent(method)}${invitedUserId ? `&invited_user_id=${invitedUserId}` : ""}`, { method: "POST" }),
+    cancelInvite: (groupId: number, inviteId: number) =>
+      request<{ ok: boolean }>(`/api/groups/${groupId}/invites/${inviteId}/cancel`, { method: "POST" }),
+    getInviteInfo: (token: string) =>
+      request<GroupInviteInfo>(`/api/groups/invite/${encodeURIComponent(token)}`),
+    acceptInvite: (token: string) =>
+      request<GroupMember>(`/api/groups/invite/${encodeURIComponent(token)}/accept`, { method: "POST" }),
+
+    // Content linking
+    linkContent: (groupId: number, contentType: string, contentId: number) =>
+      request<{ ok: boolean }>(`/api/groups/${groupId}/content/${contentType}/${contentId}`, { method: "POST" }),
+    unlinkContent: (groupId: number, contentType: string, contentId: number) =>
+      request<void>(`/api/groups/${groupId}/content/${contentType}/${contentId}`, { method: "DELETE" }),
+    listGroupContent: (groupId: number, contentType: string) =>
+      request<GroupContentLink[]>(`/api/groups/${groupId}/content/${contentType}`),
+    getGroupsForContent: (contentType: string, contentId: number) =>
+      request<GroupBadge[]>(`/api/groups/content/${contentType}/${contentId}/groups`),
+
+    // Contacts
+    contacts: (groupId: number) => request<GroupContact[]>(`/api/groups/${groupId}/contacts`),
+    createContact: (groupId: number, data: Partial<GroupContact>) =>
+      request<GroupContact>(`/api/groups/${groupId}/contacts`, { method: "POST", body: JSON.stringify(data) }),
+    updateContact: (groupId: number, contactId: number, data: Partial<GroupContact>) =>
+      request<GroupContact>(`/api/groups/${groupId}/contacts/${contactId}`, { method: "PATCH", body: JSON.stringify(data) }),
+    deleteContact: (groupId: number, contactId: number) =>
+      request<void>(`/api/groups/${groupId}/contacts/${contactId}`, { method: "DELETE" }),
+
+    // Board
+    board: (groupId: number) => request<GroupBoardMember[]>(`/api/groups/${groupId}/board`),
+    createBoardMember: (groupId: number, data: Partial<GroupBoardMember>) =>
+      request<GroupBoardMember>(`/api/groups/${groupId}/board`, { method: "POST", body: JSON.stringify(data) }),
+    deleteBoardMember: (groupId: number, memberId: number) =>
+      request<void>(`/api/groups/${groupId}/board/${memberId}`, { method: "DELETE" }),
+
+    // Documents
+    documents: (groupId: number) => request<GroupDocument[]>(`/api/groups/${groupId}/documents`),
+    createDocument: (groupId: number, data: Partial<GroupDocument>) =>
+      request<GroupDocument>(`/api/groups/${groupId}/documents`, { method: "POST", body: JSON.stringify(data) }),
+    updateDocument: (groupId: number, docId: number, data: Partial<GroupDocument>) =>
+      request<GroupDocument>(`/api/groups/${groupId}/documents/${docId}`, { method: "PATCH", body: JSON.stringify(data) }),
+    deleteDocument: (groupId: number, docId: number) =>
+      request<void>(`/api/groups/${groupId}/documents/${docId}`, { method: "DELETE" }),
+
+    // Programs
+    programs: (groupId: number) => request<GroupProgram[]>(`/api/groups/${groupId}/programs`),
+    createProgram: (groupId: number, data: Partial<GroupProgram>) =>
+      request<GroupProgram>(`/api/groups/${groupId}/programs`, { method: "POST", body: JSON.stringify(data) }),
+    deleteProgram: (groupId: number, programId: number) =>
+      request<void>(`/api/groups/${groupId}/programs/${programId}`, { method: "DELETE" }),
+
+    // Program subfields
+    subfields: (groupId: number, programId: number) =>
+      request<GroupProgramSubField[]>(`/api/groups/${groupId}/programs/${programId}/subfields`),
+    createSubfield: (groupId: number, programId: number, data: Partial<GroupProgramSubField>) =>
+      request<GroupProgramSubField>(`/api/groups/${groupId}/programs/${programId}/subfields`, { method: "POST", body: JSON.stringify(data) }),
+    deleteSubfield: (groupId: number, programId: number, subfieldId: number) =>
+      request<void>(`/api/groups/${groupId}/programs/${programId}/subfields/${subfieldId}`, { method: "DELETE" }),
+
+    // Announcements
+    announcements: (groupId: number) => request<GroupAnnouncement[]>(`/api/groups/${groupId}/announcements`),
+    createAnnouncement: (groupId: number, body: string) =>
+      request<GroupAnnouncement>(`/api/groups/${groupId}/announcements`, { method: "POST", body: JSON.stringify({ body }) }),
+    deleteAnnouncement: (groupId: number, annId: number) =>
+      request<void>(`/api/groups/${groupId}/announcements/${annId}`, { method: "DELETE" }),
+
+    // Chat links
+    chats: (groupId: number) => request<GroupChatLink[]>(`/api/groups/${groupId}/chats`),
+    createChat: (groupId: number, data: Partial<GroupChatLink>) =>
+      request<GroupChatLink>(`/api/groups/${groupId}/chats`, { method: "POST", body: JSON.stringify(data) }),
+    deleteChat: (groupId: number, chatId: number) =>
+      request<void>(`/api/groups/${groupId}/chats/${chatId}`, { method: "DELETE" }),
+
+    // Gallery
+    gallery: (groupId: number) => request<GroupGalleryItem[]>(`/api/groups/${groupId}/gallery`),
+    createGalleryItem: (groupId: number, data: Partial<GroupGalleryItem>) =>
+      request<GroupGalleryItem>(`/api/groups/${groupId}/gallery`, { method: "POST", body: JSON.stringify(data) }),
+    deleteGalleryItem: (groupId: number, itemId: number) =>
+      request<void>(`/api/groups/${groupId}/gallery/${itemId}`, { method: "DELETE" }),
   },
   events: {
     list: (upcoming = true, category?: string, group_id?: number, status?: string, family?: string) => {
@@ -1087,13 +1199,15 @@ export const api = {
   fonts: {
     // Font library (docs/content-studio/CONTENT_STUDIO.md §3.1)
     list: () =>
-      request<{ id: number; name: string; family: string; url: string | null; is_active: boolean }[]>("/api/fonts"),
-    create: (data: { name: string; family: string; url?: string }) =>
+      request<{ id: number; name: string; family: string; url: string | null; axes: string | null; is_active: boolean }[]>("/api/fonts"),
+    create: (data: { name: string; family: string; url?: string; axes?: string }) =>
       request<any>("/api/fonts", { method: "POST", body: JSON.stringify(data) }),
-    update: (id: number, data: { name?: string; family?: string; url?: string; is_active?: boolean }) =>
+    update: (id: number, data: { name?: string; family?: string; url?: string; axes?: string; is_active?: boolean }) =>
       request<any>(`/api/fonts/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     remove: (id: number) =>
       request<any>(`/api/fonts/${id}`, { method: "DELETE" }),
+    detectAxes: (family: string) =>
+      request<{ family: string; axes: Record<string, any>; labels: Record<string, string>; is_variable: boolean }>("/api/fonts/detect-axes", { method: "POST", body: JSON.stringify({ family }) }),
   },
 
   drafts: {

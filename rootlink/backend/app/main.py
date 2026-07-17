@@ -592,6 +592,79 @@ async def lifespan(app: FastAPI):
     # Seed the Content Studio default theme + its named tokens (CONTENT_STUDIO.md
     # §8/§9) — idempotent. The themes/theme_tokens tables are created by the
     # create_all above (the models are imported up top for that purpose).
+    # Font system overhaul: add `axes` column to fonts table (structured
+    # variable-font axis configuration — replaces the free-text Google Fonts URL).
+    try:
+        async with engine.begin() as conn:
+            await conn.execute(text("ALTER TABLE fonts ADD COLUMN axes TEXT"))
+    except Exception:
+        pass
+    # Groups feature: extend the groups table with new columns for the
+    # full group landing page system (organic/structured types, categories,
+    # visibility config, membership config, logo, location, etc.).
+    try:
+        async with engine.begin() as conn:
+            for col, typedef in [
+                ("description_long", "TEXT"),
+                ("categories", "TEXT"),
+                ("logo_url", "VARCHAR(500)"),
+                ("location", "VARCHAR(255)"),
+                ("group_type", "VARCHAR(20) DEFAULT 'organic'"),
+                ("entity_id", "INTEGER"),
+                ("is_open", "BOOLEAN DEFAULT 1"),
+                ("visibility_config", "TEXT"),
+                ("membership_config", "TEXT"),
+                ("conduct", "TEXT"),
+            ]:
+                try:
+                    await conn.execute(text(f"ALTER TABLE groups ADD COLUMN {col} {typedef}"))
+                except Exception:
+                    pass
+            # Migrate legacy group member roles: admin→owner, moderator→staff
+            try:
+                await conn.execute(text("UPDATE group_members SET role = 'owner' WHERE role = 'admin'"))
+                await conn.execute(text("UPDATE group_members SET role = 'staff' WHERE role = 'moderator'"))
+            except Exception:
+                pass
+            # Add display_order to group_contacts if missing (was omitted in initial model)
+            try:
+                await conn.execute(text("ALTER TABLE group_contacts ADD COLUMN display_order INTEGER DEFAULT 0"))
+            except Exception:
+                pass
+            # 3-level program hierarchy: a sub-field may belong to a parent
+            # sub-field (program → category → item). Self-referential, nullable.
+            try:
+                await conn.execute(text(
+                    "ALTER TABLE group_program_subfields ADD COLUMN parent_id INTEGER REFERENCES group_program_subfields(id)"
+                ))
+                await conn.execute(text(
+                    "CREATE INDEX IF NOT EXISTS ix_group_program_subfields_parent_id "
+                    "ON group_program_subfields(parent_id)"
+                ))
+            except Exception as e:
+                print(f"subfield parent_id migration: {e}")
+            # Dedupe memberships then enforce one-row-per-user-per-group (S5).
+            # Keeps the lowest id (earliest join) for each (group_id, user_id).
+            try:
+                await conn.execute(text(
+                    "DELETE FROM group_members WHERE id NOT IN ("
+                    "SELECT MIN(id) FROM group_members GROUP BY group_id, user_id)"
+                ))
+                await conn.execute(text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS uq_group_members_group_user "
+                    "ON group_members(group_id, user_id)"
+                ))
+            except Exception as e:
+                print(f"group_members unique index migration: {e}")
+            # Missing FK index on groups.created_by
+            try:
+                await conn.execute(text(
+                    "CREATE INDEX IF NOT EXISTS ix_groups_created_by ON groups(created_by)"
+                ))
+            except Exception:
+                pass
+    except Exception as e:
+        print(f"groups migration block failed: {e}")
     try:
         async with async_session_factory() as session:
             await seed_default_theme(session)

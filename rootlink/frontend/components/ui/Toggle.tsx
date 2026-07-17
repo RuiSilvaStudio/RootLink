@@ -1,19 +1,23 @@
 "use client";
 
-import { InputHTMLAttributes } from "react";
+import { InputHTMLAttributes, useId } from "react";
 
 type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
   label: string;
 };
 
 export function Toggle({ label, id, className = "", ...props }: Props) {
-  const toggleId = id || label.toLowerCase().replace(/\s+/g, "-");
+  // useId guarantees uniqueness — deriving ids from labels caused collisions
+  // (two toggles labelled "Private" shared an id, so clicking one flipped the other)
+  const autoId = useId();
+  const toggleId = id || autoId;
   return (
     <label data-rl-component="Toggle" htmlFor={toggleId} className={`inline-flex items-center gap-3 cursor-pointer group ${className}`}>
       <div className="relative">
         <input
           type="checkbox"
           id={toggleId}
+          role="switch"
           className="sr-only peer"
           {...props}
         />
