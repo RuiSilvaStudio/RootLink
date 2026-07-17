@@ -8,6 +8,7 @@ import { useToast } from "@/lib/toast-context";
 import type { GroupMember, GroupAnnouncement, GroupChatLink, GroupGalleryItem } from "@/lib/groups-types";
 import { RootNav, Reveal } from "@/components/groups/RootNav";
 import { GroupPageHero, SectionHead } from "@/components/groups/GroupPageChrome";
+import { Text } from "@/components/ui/Text";
 import { MembersGate } from "@/components/groups/MembersGate";
 import { LoadError } from "@/components/studio/LoadError";
 import { Button } from "@/components/ui/Button";
@@ -121,15 +122,15 @@ export default function GroupCommunityPage() {
       <RootNav sections={navSections} />
       <div className="max-w-4xl mx-auto px-4 pb-16">
         <GroupPageHero
-          eyebrow={t("groups.community_title")}
-          title={t("groups.pagehero_community_title")}
-          intro={t("groups.pagehero_community_intro")}
+          eyebrowKey="groups.community_title"
+          titleKey="groups.pagehero_community_title"
+          introKey="groups.pagehero_community_intro"
         />
         <div className="space-y-14 pt-12">
 
         {/* Announcements */}
         <Reveal id="avisos">
-          <SectionHead eyebrow={t("groups.announcements_title")} title={t("groups.announcements_headline")} />
+          <SectionHead eyebrowKey="groups.announcements_title" titleKey="groups.announcements_headline" />
           {!announcementsVisible ? (
             <MembersGate title={t("groups.announcements_title")} />
           ) : (
@@ -152,7 +153,7 @@ export default function GroupCommunityPage() {
                 </div>
               )}
               {(announcements ?? []).length === 0 && (
-                <p className="text-sm text-stone-400">{t("groups.no_announcements")}</p>
+                <p className="text-sm text-stone-400" data-rl-text="groups.no_announcements">{t("groups.no_announcements")}</p>
               )}
               {(announcements ?? []).map(a => (
                 <article key={a.id} className="rounded-2xl border border-primary-100 dark:border-stone-800 bg-white dark:bg-stone-900 p-5">
@@ -173,7 +174,7 @@ export default function GroupCommunityPage() {
 
         {/* Members */}
         <Reveal id="membros">
-          <SectionHead eyebrow={t("groups.members_title")} title={t("groups.members_headline")} />
+          <SectionHead eyebrowKey="groups.members_title" titleKey="groups.members_headline" />
           {!membersVisible ? (
             <MembersGate title={t("groups.members_title")} />
           ) : (
@@ -202,7 +203,7 @@ export default function GroupCommunityPage() {
         {/* Gallery */}
         {(galleryVisible ? gallery.length > 0 || viewer.is_manager : true) && (
           <Reveal id="galeria">
-            <SectionHead eyebrow={t("groups.gallery_title")} title={t("groups.gallery_headline")} />
+            <SectionHead eyebrowKey="groups.gallery_title" titleKey="groups.gallery_headline" />
             {!galleryVisible ? (
               <MembersGate title={t("groups.gallery_title")} />
             ) : gallery.length === 0 ? (
@@ -236,7 +237,7 @@ export default function GroupCommunityPage() {
         {/* Chats */}
         {chatsVisible && (chats.length > 0 || viewer.is_manager) && (
           <Reveal id="conversas">
-            <SectionHead eyebrow={t("groups.chats_title")} title={t("groups.chats_headline")} />
+            <SectionHead eyebrowKey="groups.chats_title" titleKey="groups.chats_headline" />
             <div className="space-y-2">
               {chats.map(ch => (
                 <a

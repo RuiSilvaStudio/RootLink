@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadError } from "@/components/studio/LoadError";
 import { safeImageUrl } from "@/lib/image-url";
+import { Text } from "@/components/ui/Text";
 
 const FAMILIES = ["Agricultura", "Saúde e bem-estar", "Cultura e artes", "Desporto", "Ação social", "Ambiente", "Educação", "Comunidade"];
 
@@ -56,11 +57,11 @@ export default function GroupsPage() {
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-display text-3xl font-semibold text-primary-800 dark:text-primary-200">{t("groups.title")}</h1>
-          <p className="text-sm text-stone-500 mt-1">{t("groups.subtitle")}</p>
+          <Text k="groups.title" as="h1" className="font-display text-3xl font-semibold text-primary-800 dark:text-primary-200" />
+          <Text k="groups.subtitle" as="p" className="text-sm text-stone-500 mt-1" />
         </div>
         <Link href="/groups/create">
-          <Button size="sm"><Plus className="w-4 h-4" aria-hidden /> {t("groups.create_group")}</Button>
+          <Button size="sm" data-rl-text="groups.create_group"><Plus className="w-4 h-4" aria-hidden /> {t("groups.create_group")}</Button>
         </Link>
       </div>
 
@@ -114,7 +115,7 @@ export default function GroupsPage() {
           />
         </div>
         {hasFilters && (
-          <button onClick={clearAll} className="text-xs text-stone-400 hover:text-rust-500 ml-auto">{t("groups.clear_filters")}</button>
+          <button onClick={clearAll} data-rl-text="groups.clear_filters" className="text-xs text-stone-400 hover:text-rust-500 ml-auto">{t("groups.clear_filters")}</button>
         )}
       </div>
 

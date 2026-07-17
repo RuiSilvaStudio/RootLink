@@ -7,6 +7,7 @@ import { useLocale } from "@/lib/locale-context";
 import type { GroupContact, GroupBoardMember, GroupDocument, GroupChatLink } from "@/lib/groups-types";
 import { RootNav, Reveal } from "@/components/groups/RootNav";
 import { GroupPageHero, SectionHead } from "@/components/groups/GroupPageChrome";
+import { Text } from "@/components/ui/Text";
 import { MembersGate } from "@/components/groups/MembersGate";
 import { LoadError } from "@/components/studio/LoadError";
 import Link from "next/link";
@@ -82,9 +83,9 @@ export default function GroupAboutPage() {
       <RootNav sections={navSections} />
       <div className="max-w-4xl mx-auto px-4 pb-16">
         <GroupPageHero
-          eyebrow={t("groups.about_title")}
-          title={t("groups.pagehero_about_title")}
-          intro={group.description || t("groups.pagehero_about_intro")}
+          eyebrowKey="groups.about_title"
+          titleKey="groups.pagehero_about_title"
+          {...(group.description ? { intro: group.description } : { introKey: "groups.pagehero_about_intro" })}
         />
         <div className="space-y-14 pt-12">
         {/* About */}
@@ -99,7 +100,7 @@ export default function GroupAboutPage() {
         {/* Conduct */}
         {showConduct && (
           <Reveal id="conduta">
-            <SectionHead eyebrow={t("groups.manage.conduct_label")} title={t("groups.conduct_headline")} />
+            <SectionHead eyebrowKey="groups.manage.conduct_label" titleKey="groups.conduct_headline" />
             <div className="rounded-2xl border border-primary-100 dark:border-stone-800 bg-white dark:bg-stone-900 p-5 text-sm text-stone-600 dark:text-stone-300 font-serif leading-relaxed whitespace-pre-line">
               {group.conduct}
             </div>
@@ -109,7 +110,7 @@ export default function GroupAboutPage() {
         {/* Board — grouped by Órgão (Direção, Conselho Fiscal, …) */}
         {showBoard && (
           <Reveal id="orgaos">
-            <SectionHead eyebrow={t("groups.board_title")} title={t("groups.board_headline")} />
+            <SectionHead eyebrowKey="groups.board_title" titleKey="groups.board_headline" />
             <div className="space-y-8">
               {Object.entries(
                 board.reduce<Record<string, GroupBoardMember[]>>((acc, b) => {
@@ -143,7 +144,7 @@ export default function GroupAboutPage() {
         {/* Documents */}
         {showDocuments && (
           <Reveal id="documentos">
-            <SectionHead eyebrow={t("groups.documents_title")} title={t("groups.documents_headline")} />
+            <SectionHead eyebrowKey="groups.documents_title" titleKey="groups.documents_headline" />
             {!documentsVisible ? (
               <MembersGate title={t("groups.documents_title")} />
             ) : documents.length === 0 ? (
@@ -181,7 +182,7 @@ export default function GroupAboutPage() {
         {/* Contacts */}
         {showContacts && (
           <Reveal id="contactos">
-            <SectionHead eyebrow={t("groups.contacts_title")} title={t("groups.contacts_headline")} />
+            <SectionHead eyebrowKey="groups.contacts_title" titleKey="groups.contacts_headline" />
             {!contactsVisible ? (
               <MembersGate title={t("groups.contacts_title")} />
             ) : contacts.length === 0 ? (
@@ -213,7 +214,7 @@ export default function GroupAboutPage() {
         {/* Chats */}
         {showChats && (
           <Reveal id="conversas">
-            <SectionHead eyebrow={t("groups.chats_title")} title={t("groups.chats_headline")} />
+            <SectionHead eyebrowKey="groups.chats_title" titleKey="groups.chats_headline" />
             {!chatsVisible ? (
               <MembersGate title={t("groups.chats_title")} />
             ) : (

@@ -1171,7 +1171,15 @@
     "members_headline": "Who's here.",
     "gallery_headline": "Moments that stay.",
     "no_photos": "No photos yet.",
-    "snippet_gallery_headline": "Moments that stay."
+    "snippet_gallery_headline": "Moments that stay.",
+    "linked_courses": "Linked courses",
+    "course_label": "Course",
+    "no_courses": "No courses linked yet.",
+    "course_public": "Public",
+    "course_private": "Members only",
+    "link_first_course": "Link the first course",
+    "search_courses": "Search courses…",
+    "link_course": "Link course"
   },
   "messages": {
     "sign_in": "Sign in to view your messages.",

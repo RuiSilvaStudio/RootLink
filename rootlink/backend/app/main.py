@@ -643,6 +643,13 @@ async def lifespan(app: FastAPI):
                 ))
             except Exception as e:
                 print(f"subfield parent_id migration: {e}")
+            # Per-link visibility for courses (public vs group-private)
+            try:
+                await conn.execute(text(
+                    "ALTER TABLE group_content ADD COLUMN is_public BOOLEAN DEFAULT 1"
+                ))
+            except Exception as e:
+                print(f"group_content is_public migration: {e}")
             # Dedupe memberships then enforce one-row-per-user-per-group (S5).
             # Keeps the lowest id (earliest join) for each (group_id, user_id).
             try:

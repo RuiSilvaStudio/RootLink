@@ -17,6 +17,7 @@ import { useToast } from "@/lib/toast-context";
 import { Button } from "@/components/ui/Button";
 import { LoadError } from "@/components/studio/LoadError";
 import { safeImageUrl } from "@/lib/image-url";
+import { Text } from "@/components/ui/Text";
 import { Ticket } from "lucide-react";
 
 export default function GroupInvitePage() {
@@ -80,8 +81,9 @@ export default function GroupInvitePage() {
       <div className="w-full max-w-md">
         {invalid && (
           <div className="text-center">
-            <p className="font-display text-lg text-stone-500">{t("groups.invite.invalid")}</p>
-            <Link href="/groups" className="text-rust-500 text-sm hover:underline mt-2 inline-block">
+            <Text k="groups.invite.invalid" as="p" className="font-display text-lg text-stone-500" />
+            <Link href="/groups" data-rl-text="groups.back_to_groups"
+              className="text-rust-500 text-sm hover:underline mt-2 inline-block">
               ← {t("groups.back_to_groups")}
             </Link>
           </div>
@@ -110,7 +112,7 @@ export default function GroupInvitePage() {
                   <Ticket className="w-5 h-5 text-primary-500" aria-hidden />
                 )}
               </div>
-              <p className="text-xs font-display font-medium tracking-widest uppercase text-earth-500">{t("groups.invite.title")}</p>
+              <Text k="groups.invite.title" as="p" className="text-xs font-display font-medium tracking-widest uppercase text-earth-500" />
               <h1 className="font-display text-2xl font-semibold text-primary-800 dark:text-primary-200 mt-2">
                 {info.group.name}
               </h1>
@@ -123,19 +125,20 @@ export default function GroupInvitePage() {
                 {statusMessage ? (
                   <>
                     <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">{statusMessage}</p>
-                    <Link href={`/groups/${info.group.slug}`} className="text-rust-500 text-sm hover:underline mt-2 inline-block">
+                    <Link href={`/groups/${info.group.slug}`} data-rl-text="groups.invite.see_group"
+                      className="text-rust-500 text-sm hover:underline mt-2 inline-block">
                       {t("groups.invite.see_group")} →
                     </Link>
                   </>
                 ) : !authLoading && !user ? (
                   <>
-                    <p className="text-sm text-stone-500 mb-3">{t("groups.invite.login_first")}</p>
+                    <Text k="groups.invite.login_first" as="p" className="text-sm text-stone-500 mb-3" />
                     <Link href={`/auth/login?next=${encodeURIComponent(`/groups/invite/${token}`)}`}>
                       <Button>{t("groups.invite.login")}</Button>
                     </Link>
                   </>
                 ) : (
-                  <Button onClick={accept} disabled={accepting || authLoading} loading={accepting}>
+                  <Button onClick={accept} disabled={accepting || authLoading} loading={accepting} data-rl-text="groups.invite.accept">
                     {accepting ? t("groups.invite.accepting") : t("groups.invite.accept")}
                   </Button>
                 )}

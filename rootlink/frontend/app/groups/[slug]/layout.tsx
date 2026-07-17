@@ -70,8 +70,9 @@ export default function GroupLayout({ children }: { children: React.ReactNode })
     return (
       <div className="min-h-screen bg-cream dark:bg-stone-950 grid place-items-center">
         <div className="text-center">
-          <p className="font-display text-lg text-stone-500 dark:text-stone-400">{t("groups.not_found")}</p>
-          <Link href="/groups" className="text-rust-500 text-sm hover:underline mt-2 inline-block">
+          <p className="font-display text-lg text-stone-500 dark:text-stone-400" data-rl-text="groups.not_found">{t("groups.not_found")}</p>
+          <Link href="/groups" data-rl-text="groups.back_to_groups"
+            className="text-rust-500 text-sm hover:underline mt-2 inline-block">
             ← {t("groups.back_to_groups")}
           </Link>
         </div>
@@ -90,12 +91,12 @@ export default function GroupLayout({ children }: { children: React.ReactNode })
   }
 
   const tabs = [
-    { id: "landing", label: t("groups.tab_home"), href: `/groups/${slug}` },
-    { id: "about", label: t("groups.tab_about"), href: `/groups/${slug}/about` },
-    { id: "community", label: t("groups.tab_community"), href: `/groups/${slug}/community` },
-    { id: "calendar", label: t("groups.tab_calendar"), href: `/groups/${slug}/calendar` },
-    { id: "news", label: t("groups.tab_news"), href: `/groups/${slug}/news` },
-    { id: "programs", label: t("groups.tab_programs"), href: `/groups/${slug}/programs` },
+    { id: "landing", label: t("groups.tab_home"), key: "groups.tab_home", href: `/groups/${slug}` },
+    { id: "about", label: t("groups.tab_about"), key: "groups.tab_about", href: `/groups/${slug}/about` },
+    { id: "community", label: t("groups.tab_community"), key: "groups.tab_community", href: `/groups/${slug}/community` },
+    { id: "calendar", label: t("groups.tab_calendar"), key: "groups.tab_calendar", href: `/groups/${slug}/calendar` },
+    { id: "news", label: t("groups.tab_news"), key: "groups.tab_news", href: `/groups/${slug}/news` },
+    { id: "programs", label: t("groups.tab_programs"), key: "groups.tab_programs", href: `/groups/${slug}/programs` },
   ];
 
   return (
@@ -108,6 +109,7 @@ export default function GroupLayout({ children }: { children: React.ReactNode })
               <Link
                 key={tab.id}
                 href={tab.href}
+                data-rl-text={tab.key}
                 aria-current={activeTab === tab.id ? "page" : undefined}
                 className={`relative py-3 text-sm font-medium whitespace-nowrap transition-colors ${activeTab === tab.id ? "text-primary-700 dark:text-primary-300" : "text-stone-400 hover:text-stone-600 dark:hover:text-stone-300"}`}
               >
@@ -118,6 +120,7 @@ export default function GroupLayout({ children }: { children: React.ReactNode })
             {viewer.is_manager && (
               <Link
                 href={`/groups/${slug}/manage`}
+                data-rl-text="groups.tab_manage"
                 aria-current={activeTab === "manage" ? "page" : undefined}
                 className={`relative py-3 text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${activeTab === "manage" ? "text-primary-700 dark:text-primary-300" : "text-stone-400 hover:text-stone-600 dark:hover:text-stone-300"}`}
               >

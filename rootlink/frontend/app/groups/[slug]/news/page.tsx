@@ -10,6 +10,7 @@ import { MembersGate } from "@/components/groups/MembersGate";
 import { LoadError } from "@/components/studio/LoadError";
 import { Reveal } from "@/components/groups/RootNav";
 import { GroupPageHero } from "@/components/groups/GroupPageChrome";
+import { Text } from "@/components/ui/Text";
 import { safeImageUrl } from "@/lib/image-url";
 import { ArrowRight } from "lucide-react";
 
@@ -40,9 +41,9 @@ export default function GroupNewsPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 pb-16">
       <GroupPageHero
-        eyebrow={t("groups.news_title")}
-        title={t("groups.pagehero_news_title")}
-        intro={t("groups.pagehero_news_intro")}
+        eyebrowKey="groups.news_title"
+        titleKey="groups.pagehero_news_title"
+        introKey="groups.pagehero_news_intro"
       />
       <div className="pt-12">
         {!newsVisible ? (
@@ -55,7 +56,7 @@ export default function GroupNewsPage() {
           </div>
         ) : articles.length === 0 ? (
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <p className="text-sm text-stone-400 font-serif">{t("groups.no_articles")}</p>
+            <p className="text-sm text-stone-400 font-serif" data-rl-text="groups.no_articles">{t("groups.no_articles")}</p>
             {viewer.is_manager && (
               <Link href={`/groups/${group.slug}/manage`} className="text-[0.8rem] font-semibold text-rust-500 hover:text-rust-600 inline-flex items-center gap-1">
                 {t("groups.link_first_article")} <ArrowRight className="w-3 h-3" aria-hidden />

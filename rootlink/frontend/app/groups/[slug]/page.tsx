@@ -24,6 +24,7 @@ import { gsap, useGSAP, ScrollTrigger } from "@/lib/gsap";
 import { RootNav } from "@/components/groups/RootNav";
 import { MembersGate, RequestJoinButton } from "@/components/groups/MembersGate";
 import { CountUp } from "@/components/groups/CountUp";
+import { Text } from "@/components/ui/Text";
 import { ProgramCard } from "@/components/groups/ProgramCard";
 import { Button } from "@/components/ui/Button";
 import { safeImageUrl } from "@/lib/image-url";
@@ -298,11 +299,11 @@ export default function GroupLandingPage() {
                 <Button>{t("groups.tab_manage")} <ArrowRight className="w-4 h-4" aria-hidden /></Button>
               </Link>
             ) : viewer.is_member ? (
-              <Button variant="secondary" className="!border-cream/40 !text-cream hover:!bg-cream/10" onClick={leave} disabled={busy}>
+              <Button variant="secondary" className="!border-cream/40 !text-cream hover:!bg-cream/10" onClick={leave} disabled={busy} data-rl-text="groups.leave">
                 {t("groups.leave")}
               </Button>
             ) : group.is_open ? (
-              <Button onClick={join} disabled={busy} loading={busy}>
+              <Button onClick={join} disabled={busy} loading={busy} data-rl-text="groups.join">
                 {t("groups.join")} <ArrowRight className="w-4 h-4" aria-hidden />
               </Button>
             ) : (
@@ -375,9 +376,9 @@ export default function GroupLandingPage() {
         {showAbout && (
           <SnippetSection
             id="snip-sobre"
-            eyebrow={t("groups.about_title")}
-            headline={t("groups.snippet_about_headline")}
-            linkLabel={t("groups.see_page")}
+            eyebrowKey="groups.about_title"
+            headlineKey="groups.snippet_about_headline"
+            linkLabelKey="groups.see_page"
             href={`/groups/${group.slug}/about`}
           >
             {/* mockup .kicker — larger serif, measure-limited */}
@@ -400,9 +401,9 @@ export default function GroupLandingPage() {
         {showCommunity && (
           <SnippetSection
             id="snip-comunidade"
-            eyebrow={t("groups.community_title")}
-            headline={t("groups.snippet_community_headline")}
-            linkLabel={t("groups.see_page")}
+            eyebrowKey="groups.community_title"
+            headlineKey="groups.snippet_community_headline"
+            linkLabelKey="groups.see_page"
             href={`/groups/${group.slug}/community`}
             tinted
           >
@@ -448,9 +449,9 @@ export default function GroupLandingPage() {
         {showCalendar && (
           <SnippetSection
             id="snip-calendario"
-            eyebrow={t("groups.calendar_title")}
-            headline={t("groups.snippet_calendar_headline")}
-            linkLabel={t("groups.see_page")}
+            eyebrowKey="groups.calendar_title"
+            headlineKey="groups.snippet_calendar_headline"
+            linkLabelKey="groups.see_page"
             href={`/groups/${group.slug}/calendar`}
           >
             {!calendarVisible ? (
@@ -480,9 +481,9 @@ export default function GroupLandingPage() {
         {showNews && (
           <SnippetSection
             id="snip-noticias"
-            eyebrow={t("groups.news_title")}
-            headline={t("groups.snippet_news_headline")}
-            linkLabel={t("groups.see_page")}
+            eyebrowKey="groups.news_title"
+            headlineKey="groups.snippet_news_headline"
+            linkLabelKey="groups.see_page"
             href={`/groups/${group.slug}/news`}
             tinted
           >
@@ -510,9 +511,9 @@ export default function GroupLandingPage() {
         {showPrograms && (
           <SnippetSection
             id="snip-atividades"
-            eyebrow={t("groups.programs_title")}
-            headline={t("groups.snippet_programs_headline")}
-            linkLabel={t("groups.see_page")}
+            eyebrowKey="groups.programs_title"
+            headlineKey="groups.snippet_programs_headline"
+            linkLabelKey="groups.see_page"
             href={`/groups/${group.slug}/programs`}
           >
             {!programsVisible ? (
@@ -536,9 +537,9 @@ export default function GroupLandingPage() {
         {showGallery && (
           <SnippetSection
             id="snip-galeria"
-            eyebrow={t("groups.gallery_title")}
-            headline={t("groups.snippet_gallery_headline")}
-            linkLabel={t("groups.see_page")}
+            eyebrowKey="groups.gallery_title"
+            headlineKey="groups.snippet_gallery_headline"
+            linkLabelKey="groups.see_page"
             href={`/groups/${group.slug}/community#galeria`}
             tinted
           >
@@ -594,23 +595,20 @@ export default function GroupLandingPage() {
               </div>
             )}
             {/* quoteline (mockup) — display italic, soft + wonk axes */}
-            <p className="wonk italic font-display text-center text-primary-800 dark:text-primary-200 max-w-[26em] mx-auto text-[clamp(1.3rem,2.6vw,1.9rem)] leading-snug">
-              {t("groups.stats_quote")}
-            </p>
+            <Text k="groups.stats_quote" as="p" className="wonk italic font-display text-center text-primary-800 dark:text-primary-200 max-w-[26em] mx-auto text-[clamp(1.3rem,2.6vw,1.9rem)] leading-snug" />
           </section>
         )}
 
         {/* ── CTA ── */}
         {!viewer.is_member && (
-          <section className="py-16 text-center border-t border-primary-100 dark:border-stone-800">
-            <h2 className="font-display text-4xl sm:text-5xl font-semibold text-primary-800 dark:text-primary-200">
-              {t("groups.belong_title").split(" ").slice(0, -1).join(" ")}{" "}
-              <em className="wonk not-italic">{t("groups.belong_title").split(" ").slice(-1)}</em>
-            </h2>
+          <section className="py-16 text-center border-t border-primary-100 dark:border-stone-800" data-rl-component="GroupCTA">
+            <Text k="groups.belong_title" as="h2" className="font-display text-4xl sm:text-5xl font-semibold text-primary-800 dark:text-primary-200" style={{ fontVariationSettings: '"opsz" 144' }}>
+              {(() => { const w = t("groups.belong_title").trim().split(" "); const tail = w.pop(); return <>{w.join(" ")} <em className="wonk not-italic">{tail}</em></>; })()}
+            </Text>
             <p className="text-stone-500 mt-3 max-w-md mx-auto font-serif">{t("groups.belong_message", { name: group.name })}</p>
             <div className="mt-6">
               {group.is_open ? (
-                <Button size="lg" onClick={join} disabled={busy} loading={busy}>
+                <Button size="lg" onClick={join} disabled={busy} loading={busy} data-rl-text="groups.join">
                   {t("groups.join")} <ArrowRight className="w-4 h-4" aria-hidden />
                 </Button>
               ) : (
@@ -626,10 +624,11 @@ export default function GroupLandingPage() {
 
 /** Editorial snippet section — mockup .snippet: eyebrow + display headline
  * with the arrow link bottom-aligned to the right, hairline between sections. */
-function SnippetSection({ id, eyebrow, headline, linkLabel, href, tinted, children }: {
-  id: string; eyebrow: string; headline: string; linkLabel: string; href: string; tinted?: boolean; children: React.ReactNode;
+function SnippetSection({ id, eyebrowKey, headlineKey, linkLabelKey, href, tinted, children }: {
+  id: string; eyebrowKey: string; headlineKey: string; linkLabelKey: string; href: string; tinted?: boolean; children: React.ReactNode;
 }) {
   const ref = useRef<HTMLElement>(null);
+  const { t } = useLocale();
   useGSAP(() => {
     if (!ref.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     gsap.fromTo(ref.current, { opacity: 0, y: 28 }, {
@@ -646,16 +645,16 @@ function SnippetSection({ id, eyebrow, headline, linkLabel, href, tinted, childr
       {/* snippet-head: eyebrow + display headline, arrow link bottom-right */}
       <div className="flex items-end justify-between gap-4 mb-7">
         <div>
-          <p className="text-xs font-display font-semibold tracking-[0.22em] uppercase text-earth-500">{eyebrow}</p>
-          <h2
+          <Text k={eyebrowKey} as="p" className="text-xs font-display font-semibold tracking-[0.22em] uppercase text-earth-500" />
+          <Text
+            k={headlineKey}
+            as="h2"
             className="font-display font-[560] text-primary-800 dark:text-primary-200 mt-2 leading-[1.02] tracking-[-0.015em] text-[clamp(2rem,4.6vw,3.4rem)]"
             style={{ fontVariationSettings: '"opsz" 144' }}
-          >
-            {headline}
-          </h2>
+          />
         </div>
-        <Link href={href} className="text-[0.8rem] font-semibold text-rust-500 hover:text-rust-600 flex items-center gap-1.5 group shrink-0 mb-1.5">
-          {linkLabel} <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition" aria-hidden />
+        <Link href={href} data-rl-text={linkLabelKey} className="text-[0.8rem] font-semibold text-rust-500 hover:text-rust-600 flex items-center gap-1.5 group shrink-0 mb-1.5">
+          {t(linkLabelKey)} <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition" aria-hidden />
         </Link>
       </div>
       {children}

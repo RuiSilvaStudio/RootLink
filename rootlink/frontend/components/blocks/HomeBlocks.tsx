@@ -28,7 +28,7 @@ import { useLocale } from "@/lib/locale-context";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { StatCounter } from "@/components/ui/StatCounter";
-import { SectionHeader, IconContainer, LinkWithArrow } from "@/components/ui/DeFacto";
+import { SectionHeader, IconContainer } from "@/components/ui/DeFacto";
 import { Text } from "@/components/ui/Text";
 import { HeroParticleCanvas } from "@/components/ui/HeroParticleCanvas";
 import { ContentCardSkeleton } from "@/components/ui/LoadingSkeleton";
@@ -150,7 +150,9 @@ export function HomeCategoriesBlock({ props }: BlockProps) {
                 <Text as="p" k="home.discover_category" className="text-stone-500 dark:text-stone-400 font-serif leading-relaxed">
                   {t("home.discover_category", { category: (locale === "pt" ? fam.label_pt : fam.label).toLowerCase() })}
                 </Text>
-                <LinkWithArrow href={`/search?family=${fam.value}`} copyKey="home.explore">{t("home.explore")}</LinkWithArrow>
+                <span className="inline-flex items-center gap-2 text-sm font-display font-medium text-primary-600 mt-6 group-hover:gap-3 transition-all" data-rl-text="home.explore">
+                  {t("home.explore")} <ArrowRight className="w-3.5 h-3.5" />
+                </span>
               </Link>
             );
           }) : (

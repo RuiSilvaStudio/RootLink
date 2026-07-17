@@ -849,6 +849,7 @@ async def link_content(
     group_id: int,
     content_type: str,
     content_id: int,
+    is_public: bool = Query(True),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -868,11 +869,45 @@ async def link_content(
         )
     )
     if existing:
+        # Update visibility if it changed
+        if existing.is_public != is_public:
+            existing.is_public = is_public
+            await db.commit()
         return {"ok": True, "already_linked": True}
-    link = GroupContent(group_id=group_id, content_type=content_type, content_id=content_id, linked_by=current_user.id)
+    link = GroupContent(
+        group_id=group_id, content_type=content_type, content_id=content_id,
+        linked_by=current_user.id, is_public=is_public,
+    )
     db.add(link)
     await db.commit()
     return {"ok": True}
+
+
+@router.patch("/{group_id}/content/{content_type}/{content_id}")
+async def update_content_link(
+    group_id: int,
+    content_type: str,
+    content_id: int,
+    is_public: bool = Query(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Toggle the per-link visibility (public vs members-only) — used for courses."""
+    group = await _get_group_or_404(db, group_id, current_user)
+    if not await _can_manage_group(db, group, current_user):
+        raise HTTPException(status_code=403, detail="Not authorized")
+    link = await db.scalar(
+        select(GroupContent).where(
+            GroupContent.group_id == group_id,
+            GroupContent.content_type == content_type,
+            GroupContent.content_id == content_id,
+        )
+    )
+    if not link:
+        raise HTTPException(status_code=404, detail="Content link not found")
+    link.is_public = is_public
+    await db.commit()
+    return {"ok": True, "is_public": is_public}
 
 
 @router.delete("/{group_id}/content/{content_type}/{content_id}", status_code=204)
@@ -906,13 +941,27 @@ async def list_group_content(
     current_user: User | None = Depends(get_optional_user),
 ):
     group = await _get_group_or_404(db, group_id, current_user)
-    section = "calendar" if content_type == "event" else "news"
-    await _require_section(db, group, current_user, section)
+    # Courses use per-link is_public, not section visibility config
+    if content_type == "course":
+        is_manager, is_member = await _viewer(db, group, current_user)
+        if not (is_member or is_manager):
+            # Non-members only see public courses
+            section_filter = GroupContent.is_public == True  # noqa: E712
+        else:
+            section_filter = None  # members/managers see all
+    else:
+        # Events → "calendar" section, articles → "news" section
+        section = "calendar" if content_type == "event" else "news"
+        await _require_section(db, group, current_user, section)
+        section_filter = None  # section visibility already enforced above
+    stmt = select(GroupContent).where(
+        GroupContent.group_id == group_id,
+        GroupContent.content_type == content_type,
+    )
+    if section_filter is not None:
+        stmt = stmt.where(section_filter)
     result = await db.execute(
-        select(GroupContent).where(
-            GroupContent.group_id == group_id,
-            GroupContent.content_type == content_type,
-        ).order_by(GroupContent.created_at.desc()).offset(offset).limit(limit)
+        stmt.order_by(GroupContent.created_at.desc()).offset(offset).limit(limit)
     )
     links = result.scalars().all()
     # Enrich with the target item's title/date/image so the UI never shows
@@ -933,6 +982,7 @@ async def list_group_content(
         {
             "content_id": r.content_id,
             "linked_by": r.linked_by,
+            "is_public": r.is_public,
             "created_at": r.created_at.isoformat() if r.created_at else None,
             **details.get(r.content_id, {"title": None, "image_url": None, "date": None, "location": None}),
         }

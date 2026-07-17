@@ -1171,7 +1171,15 @@
     "members_headline": "Quem cá está.",
     "gallery_headline": "Momentos que ficam.",
     "no_photos": "Ainda não há fotografias.",
-    "snippet_gallery_headline": "Momentos que ficam."
+    "snippet_gallery_headline": "Momentos que ficam.",
+    "linked_courses": "Cursos ligados",
+    "course_label": "Curso",
+    "no_courses": "Ainda não há cursos ligados.",
+    "course_public": "Público",
+    "course_private": "Só membros",
+    "link_first_course": "Ligar o primeiro curso",
+    "search_courses": "Pesquisar cursos…",
+    "link_course": "Ligar curso"
   },
   "messages": {
     "sign_in": "Inicie sessão para ver as suas mensagens.",

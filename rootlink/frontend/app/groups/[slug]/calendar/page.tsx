@@ -10,6 +10,7 @@ import { MembersGate } from "@/components/groups/MembersGate";
 import { LoadError } from "@/components/studio/LoadError";
 import { Reveal } from "@/components/groups/RootNav";
 import { GroupPageHero } from "@/components/groups/GroupPageChrome";
+import { Text } from "@/components/ui/Text";
 import { ArrowRight, MapPin } from "lucide-react";
 
 export default function GroupCalendarPage() {
@@ -39,9 +40,9 @@ export default function GroupCalendarPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 pb-16">
       <GroupPageHero
-        eyebrow={t("groups.calendar_title")}
-        title={t("groups.pagehero_calendar_title")}
-        intro={t("groups.pagehero_calendar_intro")}
+        eyebrowKey="groups.calendar_title"
+        titleKey="groups.pagehero_calendar_title"
+        introKey="groups.pagehero_calendar_intro"
       />
       <div className="pt-12">
         {!calendarVisible ? (
@@ -54,7 +55,7 @@ export default function GroupCalendarPage() {
           </div>
         ) : events.length === 0 ? (
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <p className="text-sm text-stone-400 font-serif">{t("groups.no_events")}</p>
+            <p className="text-sm text-stone-400 font-serif" data-rl-text="groups.no_events">{t("groups.no_events")}</p>
             {viewer.is_manager && (
               <Link href={`/groups/${group.slug}/manage`} className="text-[0.8rem] font-semibold text-rust-500 hover:text-rust-600 inline-flex items-center gap-1">
                 {t("groups.link_first_event")} <ArrowRight className="w-3 h-3" aria-hidden />

@@ -240,8 +240,10 @@ export const api = {
       request<GroupMember>(`/api/groups/invite/${encodeURIComponent(token)}/accept`, { method: "POST" }),
 
     // Content linking
-    linkContent: (groupId: number, contentType: string, contentId: number) =>
-      request<{ ok: boolean }>(`/api/groups/${groupId}/content/${contentType}/${contentId}`, { method: "POST" }),
+    linkContent: (groupId: number, contentType: string, contentId: number, isPublic?: boolean) =>
+      request<{ ok: boolean }>(`/api/groups/${groupId}/content/${contentType}/${contentId}${isPublic !== undefined ? `?is_public=${isPublic}` : ""}`, { method: "POST" }),
+    updateContentLink: (groupId: number, contentType: string, contentId: number, isPublic: boolean) =>
+      request<{ ok: boolean; is_public: boolean }>(`/api/groups/${groupId}/content/${contentType}/${contentId}?is_public=${isPublic}`, { method: "PATCH" }),
     unlinkContent: (groupId: number, contentType: string, contentId: number) =>
       request<void>(`/api/groups/${groupId}/content/${contentType}/${contentId}`, { method: "DELETE" }),
     listGroupContent: (groupId: number, contentType: string) =>

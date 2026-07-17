@@ -347,13 +347,31 @@ async def cancel_rsvp(
 
 
 @router.get("/{event_id}/attendees", response_model=list[dict])
-async def list_attendees(event_id: int, db: AsyncSession = Depends(get_db)):
+async def list_attendees(
+    event_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User | None = Depends(get_optional_user),
+):
+    """Attendee list — names are public (the chip wall), emails are NOT.
+    Only the event owner or platform staff see email addresses."""
     result = await db.execute(
         select(User.id, User.name, User.email)
         .join(EventRSVP, User.id == EventRSVP.user_id)
         .where(EventRSVP.event_id == event_id)
     )
-    return [{"id": r[0], "name": r[1], "email": r[2]} for r in result.all()]
+    rows = result.all()
+    # Strip emails unless the caller has management rights (TECH_DEBT #8)
+    can_see_email = False
+    if current_user:
+        try:
+            await _check_event_owner(event_id, current_user, db)
+            can_see_email = True
+        except HTTPException:
+            can_see_email = bool(rank_at_least(current_user, Rank.moderator))
+    return [
+        {"id": r[0], "name": r[1], **({"email": r[2]} if can_see_email else {})}
+        for r in rows
+    ]
 
 
 # ── Venue ──────────────────────────────────────────────────────────────

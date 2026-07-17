@@ -221,4 +221,4 @@ Multiple named themes exist (Default, Christmas, Halloween). Each is a **full pa
 | `editor-mode` components | ✅ Live | Patterns reusable (portal-to-body, dirty-guard); components retired |
 | 6 seeded BlockPages | ✅ Live | Keep |
 
-**Scrapped:** `/studio/content` (namespace-tree form), `/studio/theming` (tabbed color panel). These are the dashboard-CMS forms the user rejected. Replace with the visual overlay + dashboard theme manager.
+**Revised (2026-07-17):** `/studio/content` is NOT scrapped — it is the live copy-management surface: a full PT+EN translation editor over every key in `messages/{pt,en}.json`, with side-by-side editing, auto-translate (Argos), save/revert, dirty guard, and Ctrl+S. It writes to the same `/api/copy` override layer as the visual overlay. The visual overlay is the *inline* editing convenience for public-facing pages; `/studio/content` is the *dashboard* editing surface for ALL copy (including back-office labels the overlay doesn't cover). `/studio/theming` was also un-scrapped and is the live theme token manager.

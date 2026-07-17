@@ -190,6 +190,11 @@ class GroupContent(TimestampMixin, Base):
 
     Supports multi-group per Q3.1 — an item can belong to multiple groups.
     Polymorphic: content_type discriminates which table content_id points to.
+
+    `is_public` controls per-link visibility: a course linked as private is
+    only visible to group members; a course linked as public is visible to
+    everyone. Events and articles ignore this flag (they follow the group's
+    section visibility config); courses use it for per-course control.
     """
     __tablename__ = "group_content"
 
@@ -198,6 +203,7 @@ class GroupContent(TimestampMixin, Base):
     content_type: Mapped[str] = mapped_column(String(50))
     content_id: Mapped[int] = mapped_column(Integer, index=True)
     linked_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    is_public: Mapped[bool] = mapped_column(Boolean, default=True, server_default="1")
 
 
 class GroupGalleryItem(TimestampMixin, Base):

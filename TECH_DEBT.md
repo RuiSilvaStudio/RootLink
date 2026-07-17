@@ -299,7 +299,7 @@ light-mode color that also looks acceptable in dark mode) would suddenly get a d
 dark color. Needs a full visual audit of the site in dark mode after the fix. Track which
 components use bare tokens without `dark:` variants before and after.
 
-## 8. Privacy — `GET /api/events/{id}/attendees` publicly leaks attendee emails (found 2026-07-16)
+## 8b. Privacy — `GET /api/events/{id}/attendees` publicly leaks attendee emails (found 2026-07-16, ✅ FIXED)
 Surfaced during the Groups backend security audit (same pattern as the groups S1 leak, now
 fixed for groups): `events.py:349-356` returns attendee rows including **email addresses**
 with no auth dependency. Fix: require authentication + event-owner/manager rights (or strip
@@ -314,7 +314,7 @@ invites) were written in pt-PT per product direction. Long-term the `message` co
 become a message KEY + params rendered through the frontend i18n system, so the bell speaks
 the viewer's language consistently. Platform-wide pass — not groups-specific.
 
-## 10. Home page hydration warning — nested `<a>` in `LinkWithArrow` (found 2026-07-16)
+## 10. Home page hydration warning — nested `<a>` in `LinkWithArrow` (found 2026-07-16, ✅ FIXED)
 Console on `/`: "In HTML, <a> cannot be a descendant of <a>. This will cause a hydration
 error." Component stack points at `LinkWithArrow` (DeFacto). Something renders a Next `Link`
 inside another anchor. Pre-existing (not from the Groups work — group pages emit 0 warnings).

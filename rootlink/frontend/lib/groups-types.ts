@@ -156,6 +156,7 @@ export interface GroupJoinRequest {
 export interface GroupContentLink {
   content_id: number;
   linked_by: number;
+  is_public: boolean;
   created_at: string | null;
   title: string | null;
   image_url: string | null;
