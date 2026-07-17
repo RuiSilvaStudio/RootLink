@@ -7,6 +7,7 @@ import { User, Building, Stethoscope, Check } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/locale-context";
+import { Text } from "@/components/ui/Text";
 
 const ACCOUNT_TYPES = [
   { value: "individual", icon: User, labelKey: "auth.type_individual", descKey: "auth.type_individual_desc" },
@@ -82,9 +83,7 @@ export default function RegisterPage() {
 
   return (
     <div className="max-w-md mx-auto mt-20 px-4">
-      <h1 className="text-3xl font-display font-bold text-stone-800 dark:text-stone-100 mb-2">
-        {t("auth.register_title")}
-      </h1>
+      <Text k="auth.register_title" as="h1" className="text-3xl font-display font-bold text-stone-800 dark:text-stone-100 mb-2" />
 
       {/* Step indicator */}
       <div className="flex items-center gap-2 mb-6">
@@ -100,7 +99,7 @@ export default function RegisterPage() {
       {/* Step 1: Account type */}
       {step === 1 && (
         <div className="space-y-4">
-          <p className="text-sm text-stone-500 dark:text-stone-400 font-serif">{t("auth.choose_account_type")}</p>
+          <Text k="auth.choose_account_type" as="p" className="text-sm text-stone-500 dark:text-stone-400 font-serif" />
           {ACCOUNT_TYPES.map((at) => {
             const Icon = at.icon;
             const isSelected = accountType === at.value;
@@ -120,19 +119,14 @@ export default function RegisterPage() {
                   <Icon className="w-6 h-6" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-display font-semibold text-stone-800 dark:text-stone-100">{t(at.labelKey)}</p>
-                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-serif">{t(at.descKey)}</p>
+                  <Text k={at.labelKey} as="p" className="font-display font-semibold text-stone-800 dark:text-stone-100" />
+                  <Text k={at.descKey} as="p" className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-serif" />
                 </div>
                 {isSelected && <Check className="w-5 h-5 text-primary-500 shrink-0 mt-1" />}
               </button>
             );
           })}
-          <button
-            onClick={() => setStep(2)}
-            className="w-full bg-primary-600 text-white py-2.5 rounded-lg hover:bg-primary-700 transition font-medium"
-          >
-            {t("auth.continue")}
-          </button>
+          <Text k="auth.continue" as="button" onClick={() => setStep(2)} className="w-full bg-primary-600 text-white py-2.5 rounded-lg hover:bg-primary-700 transition font-medium" />
         </div>
       )}
 
@@ -153,7 +147,7 @@ export default function RegisterPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.email")}</label>
+            <Text k="auth.email" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
             <input
               type="email"
               value={email}
@@ -164,7 +158,7 @@ export default function RegisterPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.password")}</label>
+              <Text k="auth.password" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
               <input
                 type="password"
                 value={password}
@@ -175,7 +169,7 @@ export default function RegisterPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.confirm_password")}</label>
+              <Text k="auth.confirm_password" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
               <input
                 type="password"
                 value={confirmPassword}
@@ -189,9 +183,9 @@ export default function RegisterPage() {
           {/* Organization fields */}
           {accountType === "organization" && (
             <div className="space-y-4 pt-2 border-t border-stone-200 dark:border-stone-700">
-              <p className="text-sm font-display font-semibold text-stone-700 dark:text-stone-300">{t("auth.organization_details")}</p>
+              <Text k="auth.organization_details" as="p" className="text-sm font-display font-semibold text-stone-700 dark:text-stone-300" />
               <div>
-                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.entity_type")}</label>
+                <Text k="auth.entity_type" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
                 <select
                   value={entityType}
                   onChange={(e) => setEntityType(e.target.value)}
@@ -204,7 +198,7 @@ export default function RegisterPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.registration_number")}</label>
+                <Text k="auth.registration_number" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
                 <input
                   type="text"
                   value={registrationNumber}
@@ -214,7 +208,7 @@ export default function RegisterPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.services")}</label>
+                <Text k="auth.services" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
                 <input
                   type="text"
                   value={services}
@@ -224,7 +218,7 @@ export default function RegisterPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.service_area")}</label>
+                <Text k="auth.service_area" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
                 <input
                   type="text"
                   value={serviceArea}
@@ -239,9 +233,9 @@ export default function RegisterPage() {
           {/* Practitioner fields */}
           {accountType === "practitioner" && (
             <div className="space-y-4 pt-2 border-t border-stone-200 dark:border-stone-700">
-              <p className="text-sm font-display font-semibold text-stone-700 dark:text-stone-300">{t("auth.practitioner_details")}</p>
+              <Text k="auth.practitioner_details" as="p" className="text-sm font-display font-semibold text-stone-700 dark:text-stone-300" />
               <div>
-                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.modality")}</label>
+                <Text k="auth.modality" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
                 <input
                   type="text"
                   value={modality}
@@ -251,7 +245,7 @@ export default function RegisterPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.certifications")}</label>
+                <Text k="auth.certifications" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
                 <input
                   type="text"
                   value={certifications}
@@ -264,26 +258,15 @@ export default function RegisterPage() {
           )}
 
           <div className="flex gap-2 pt-2">
-            <button
-              type="button"
-              onClick={() => setStep(1)}
-              className="px-4 py-2.5 rounded-lg border border-stone-300 dark:border-stone-600 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition text-sm font-medium"
-            >
-              {t("auth.back")}
-            </button>
-            <button
-              type="submit"
-              className="flex-1 bg-primary-600 text-white py-2.5 rounded-lg hover:bg-primary-700 transition font-medium"
-            >
-              {t("auth.create_account")}
-            </button>
+            <Text k="auth.back" as="button" type="button" onClick={() => setStep(1)} className="px-4 py-2.5 rounded-lg border border-stone-300 dark:border-stone-600 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition text-sm font-medium" />
+            <Text k="auth.create_account" as="button" type="submit" className="flex-1 bg-primary-600 text-white py-2.5 rounded-lg hover:bg-primary-700 transition font-medium" />
           </div>
         </form>
       )}
 
       <p className="mt-6 text-sm text-stone-500 dark:text-stone-400 text-center">
         {t("auth.has_account")}{" "}
-        <Link href="/auth/login" className="text-primary-600 hover:underline">
+        <Link href="/auth/login" data-rl-text="auth.sign_in_link" className="text-primary-600 hover:underline">
           {t("auth.sign_in_link")}
         </Link>
       </p>

@@ -10,6 +10,7 @@ import { useToast } from "@/lib/toast-context";
 import { usePermission } from "@/lib/use-permission";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { Text } from "@/components/ui/Text";
 
 // Post-Phase-6 decision (docs/roles-permissions/phase0-decisions.md Addendum
 // 5, decision 2): individual<->professional conversion now requires a
@@ -215,19 +216,17 @@ export default function EntityConvertPage() {
       <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/60 dark:bg-amber-900/20 dark:border-amber-700/40 text-sm text-amber-700 dark:text-amber-300 font-serif flex gap-2">
         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
         <div>
-          <p className="font-semibold mb-1">{t("entity_convert.one_way_title")}</p>
+          <p className="font-semibold mb-1"><Text k="entity_convert.one_way_title" as="span" /></p>
           <p>
-            {t("entity_convert.one_way_body")}
+            <Text k="entity_convert.one_way_body" as="span" />
           </p>
         </div>
       </div>
 
       {canConvertToProfessional && (
         <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6 space-y-4">
-          <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100">{t("entity_convert.to_professional_title")}</h2>
-          <p className="text-xs text-stone-400 font-serif">
-            {t("entity_convert.to_professional_hint")}
-          </p>
+          <Text k="entity_convert.to_professional_title" as="h2" className="font-display font-semibold text-stone-800 dark:text-stone-100" />
+          <Text k="entity_convert.to_professional_hint" as="p" className="text-xs text-stone-400 font-serif" />
           <input
             value={taxId}
             onChange={(e) => setTaxId(e.target.value)}
@@ -247,6 +246,7 @@ export default function EntityConvertPage() {
               disabled={!taxId || !activityRegNumber || previewProfLoading}
               loading={previewProfLoading}
               onClick={loadPreviewProfessional}
+              data-rl-text="entity_convert.show_comparison"
             >
               {t("entity_convert.show_comparison")}
             </Button>
@@ -262,10 +262,11 @@ export default function EntityConvertPage() {
                   disabled={!confirmedProf || submittingProf}
                   loading={submittingProf}
                   onClick={submitToProfessional}
+                  data-rl-text="entity_convert.confirm_to_professional"
                 >
                   {t("entity_convert.confirm_to_professional")}
                 </Button>
-                <Button variant="secondary" disabled={submittingProf} onClick={() => setPreviewProf(null)}>
+                <Button variant="secondary" disabled={submittingProf} onClick={() => setPreviewProf(null)} data-rl-text="common.cancel">
                   {t("common.cancel")}
                 </Button>
               </div>
@@ -276,13 +277,11 @@ export default function EntityConvertPage() {
 
       {canConvertToIndividual && (
         <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6 space-y-4">
-          <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100">{t("entity_convert.to_individual_title")}</h2>
-          <p className="text-xs text-stone-400 font-serif">
-            {t("entity_convert.to_individual_hint")}
-          </p>
+          <Text k="entity_convert.to_individual_title" as="h2" className="font-display font-semibold text-stone-800 dark:text-stone-100" />
+          <Text k="entity_convert.to_individual_hint" as="p" className="text-xs text-stone-400 font-serif" />
 
           {!previewInd ? (
-            <Button variant="secondary" disabled={previewIndLoading} loading={previewIndLoading} onClick={loadPreviewIndividual}>
+            <Button variant="secondary" disabled={previewIndLoading} loading={previewIndLoading} onClick={loadPreviewIndividual} data-rl-text="entity_convert.show_comparison">
               {t("entity_convert.show_comparison")}
             </Button>
           ) : (
@@ -293,10 +292,10 @@ export default function EntityConvertPage() {
                 {t("entity_convert.confirm_reviewed")}
               </label>
               <div className="flex gap-2">
-                <Button disabled={!confirmedInd || submittingInd} loading={submittingInd} onClick={submitToIndividual}>
+                <Button disabled={!confirmedInd || submittingInd} loading={submittingInd} onClick={submitToIndividual} data-rl-text="entity_convert.confirm_to_individual">
                   {t("entity_convert.confirm_to_individual")}
                 </Button>
-                <Button variant="secondary" disabled={submittingInd} onClick={() => setPreviewInd(null)}>
+                <Button variant="secondary" disabled={submittingInd} onClick={() => setPreviewInd(null)} data-rl-text="common.cancel">
                   {t("common.cancel")}
                 </Button>
               </div>
@@ -307,10 +306,8 @@ export default function EntityConvertPage() {
 
       {canConvertToOrganization && (
         <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6 space-y-4">
-          <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100">{t("entity_convert.to_organization_title")}</h2>
-          <p className="text-xs text-stone-400 font-serif">
-            {t("entity_convert.to_organization_hint")}
-          </p>
+          <Text k="entity_convert.to_organization_title" as="h2" className="font-display font-semibold text-stone-800 dark:text-stone-100" />
+          <Text k="entity_convert.to_organization_hint" as="p" className="text-xs text-stone-400 font-serif" />
           <input
             value={orgName}
             onChange={(e) => setOrgName(e.target.value)}
@@ -321,7 +318,7 @@ export default function EntityConvertPage() {
             <input type="checkbox" checked={confirmedOrg} onChange={(e) => setConfirmedOrg(e.target.checked)} className="w-4 h-4" />
             {t("entity_convert.confirm_org_reset")}
           </label>
-          <Button disabled={!confirmedOrg || !orgName.trim() || submittingOrg} loading={submittingOrg} onClick={submitToOrganization}>
+          <Button disabled={!confirmedOrg || !orgName.trim() || submittingOrg} loading={submittingOrg} onClick={submitToOrganization} data-rl-text="entity_convert.convert_to_organization">
             {t("entity_convert.convert_to_organization")}
           </Button>
         </div>

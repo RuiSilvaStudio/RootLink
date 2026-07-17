@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/locale-context";
 import { useToast } from "@/lib/toast-context";
 import { Button, EmptyState } from "@/components/ui";
+import { Text } from "@/components/ui/Text";
 import { ArticleListRow } from "@/components/cards/ArticleListRow";
 
 export default function MyArticlesPage() {
@@ -55,11 +56,11 @@ export default function MyArticlesPage() {
     <div className="max-w-4xl mx-auto px-4 sm:px-8 py-12">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-display font-bold text-stone-900 dark:text-stone-100">My Articles</h1>
-          <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">Drafts and published articles</p>
+          <Text k="articles.my.title" as="h1" defaultText="My Articles" className="text-2xl font-display font-bold text-stone-900 dark:text-stone-100" />
+          <Text k="articles.my.subtitle" as="p" defaultText="Drafts and published articles" className="text-sm text-stone-500 dark:text-stone-400 mt-1" />
         </div>
         <Link href="/articles/new">
-          <Button variant="primary" size="sm">
+          <Button variant="primary" size="sm" data-rl-text="articles.my.new_article">
             <Plus size={14} className="mr-1" />
             New Article
           </Button>
@@ -75,11 +76,11 @@ export default function MyArticlesPage() {
       ) : articles.length === 0 ? (
         <EmptyState
           icon={<FileText size={48} />}
-          title="No articles yet"
-          message="Write your first article to share knowledge with the community."
+          title={<Text k="articles.my.empty_title" as="span" defaultText="No articles yet" />}
+          message={<Text k="articles.my.empty_message" as="span" defaultText="Write your first article to share knowledge with the community." />}
           action={
             <Link href="/articles/new">
-              <Button variant="primary">
+              <Button variant="primary" data-rl-text="articles.my.write_article">
                 <Plus size={14} className="mr-1" />
                 Write an Article
               </Button>

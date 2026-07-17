@@ -34,6 +34,7 @@ import { ProfileRsvpRow } from "@/components/cards/ProfileRsvpRow";
 import { ProfileDonationRow } from "@/components/cards/ProfileDonationRow";
 import { ProfileEnrollmentRow } from "@/components/cards/ProfileEnrollmentRow";
 import { ProfileCommentRow } from "@/components/cards/ProfileCommentRow";
+import { Text } from "@/components/ui/Text";
 
 const TABS = ["about", "activity", "marketplace", "events", "discussions", "settings"] as const;
 type Tab = (typeof TABS)[number];
@@ -274,12 +275,12 @@ function ProfilePage() {
             <h1 className="text-2xl font-display font-bold text-stone-800 dark:text-stone-100 dark:text-stone-200 flex items-center gap-2">
               {profile.name}
               {profile.is_verified && (
-                <Badge variant="green" className="text-[10px]"><CheckCircle className="w-3 h-3 mr-0.5" /> {t("profile.verified")}</Badge>
+                <Badge variant="green" className="text-[10px]"><CheckCircle className="w-3 h-3 mr-0.5" /> <Text k="profile.verified" as="span" /></Badge>
               )}
             </h1>
             {profile.account_type !== "individual" && (
               <Badge variant={profile.account_type === "organization" ? "blue" : "earth"} className="mt-1 text-[10px]">
-                {profile.account_type === "organization" ? t("auth.type_organization") : t("auth.type_practitioner")}
+                {profile.account_type === "organization" ? <Text k="auth.type_organization" as="span" /> : <Text k="auth.type_practitioner" as="span" />}
               </Badge>
             )}
             {isOwnProfile && (
@@ -292,15 +293,15 @@ function ProfilePage() {
             )}
             {activity?.member_since && (
               <p className="text-xs text-stone-400 dark:text-stone-500 flex items-center gap-1 mt-1">
-                <Clock className="w-3 h-3" /> {t("profile.member_since")}: {new Date(activity.member_since).toLocaleDateString()}
+                <Clock className="w-3 h-3" /> <Text k="profile.member_since" as="span" />: {new Date(activity.member_since).toLocaleDateString()}
               </p>
             )}
             <div className="flex gap-4 mt-2 text-sm text-stone-500">
               <button onClick={() => setShowFollowers(!showFollowers)} className="hover:text-primary-600 transition">
-                <span className="font-medium text-stone-700 dark:text-stone-300">{activity?.followers?.length || 0}</span> {t("profile.followers")}
+                <span className="font-medium text-stone-700 dark:text-stone-300">{activity?.followers?.length || 0}</span> <Text k="profile.followers" as="span" />
               </button>
               <button onClick={() => setShowFollowing(!showFollowing)} className="hover:text-primary-600 transition">
-                <span className="font-medium text-stone-700 dark:text-stone-300">{activity?.following?.length || 0}</span> {t("profile.following")}
+                <span className="font-medium text-stone-700 dark:text-stone-300">{activity?.following?.length || 0}</span> <Text k="profile.following" as="span" />
               </button>
             </div>
           </div>
@@ -313,9 +314,9 @@ function ProfilePage() {
                   following ? "border border-stone-300 text-stone-600 dark:text-stone-300 hover:bg-stone-50" : "bg-primary-600 text-white hover:bg-primary-700"
                 }`}>
                 {following ? <UserMinus className="w-3 h-3" /> : <UserPlus className="w-3 h-3" />}
-                {following ? t("profile.unfollow") : t("profile.follow")}
+                {following ? <Text k="profile.unfollow" as="span" /> : <Text k="profile.follow" as="span" />}
               </button>
-              <Link href={`/messages?user=${profile.id}`}
+              <Link href={`/messages?user=${profile.id}`} data-rl-text="profile.message"
                 className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm border border-stone-300 text-stone-600 dark:text-stone-300 hover:bg-stone-50">
                 <MessageSquare className="w-3 h-3" /> {t("profile.message")}
               </Link>
@@ -324,7 +325,7 @@ function ProfilePage() {
           {isOwnProfile && (
             <button onClick={handleLogout}
               className="flex items-center gap-1 text-red-600 hover:text-red-700 text-sm">
-              <LogOut className="w-4 h-4" /> {t("profile.logout")}
+              <LogOut className="w-4 h-4" /> <Text k="profile.logout" as="span" />
             </button>
           )}
         </div>
@@ -333,7 +334,7 @@ function ProfilePage() {
       {/* Followers/following expandable lists */}
       {showFollowers && (
         <Card variant="plain" className="p-4 mb-4">
-          <p className="text-sm font-display font-semibold text-stone-700 dark:text-stone-300 mb-3">{t("profile.followers")}</p>
+          <Text k="profile.followers" as="p" className="text-sm font-display font-semibold text-stone-700 dark:text-stone-300 mb-3" />
           {activity?.followers?.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {activity.followers.map((f: any) => (
@@ -343,12 +344,12 @@ function ProfilePage() {
                 </Link>
               ))}
             </div>
-          ) : <p className="text-sm text-stone-400 dark:text-stone-500">{t("profile.no_followers")}</p>}
+          ) : <Text k="profile.no_followers" as="p" className="text-sm text-stone-400 dark:text-stone-500" />}
         </Card>
       )}
       {showFollowing && (
         <Card variant="plain" className="p-4 mb-4">
-          <p className="text-sm font-display font-semibold text-stone-700 dark:text-stone-300 mb-3">{t("profile.following")}</p>
+          <Text k="profile.following" as="p" className="text-sm font-display font-semibold text-stone-700 dark:text-stone-300 mb-3" />
           {activity?.following?.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {activity.following.map((f: any) => (
@@ -358,22 +359,22 @@ function ProfilePage() {
                 </Link>
               ))}
             </div>
-          ) : <p className="text-sm text-stone-400 dark:text-stone-500">{t("profile.no_following")}</p>}
+          ) : <Text k="profile.no_following" as="p" className="text-sm text-stone-400 dark:text-stone-500" />}
         </Card>
       )}
 
       {/* Stats row */}
       {activity && (
         <div className="flex gap-2 mb-6 flex-wrap">
-          {stats.content > 0 && <Badge variant="sage"><FileText className="w-3 h-3 mr-1" /> {stats.content} {t("profile.articles")}</Badge>}
-          {stats.events > 0 && <Badge variant="earth"><Calendar className="w-3 h-3 mr-1" /> {stats.events} {t("profile.events_created")}</Badge>}
-          {stats.groups > 0 && <Badge variant="blue"><Users className="w-3 h-3 mr-1" /> {stats.groups} {t("profile.groups_created")}</Badge>}
-          {stats.courses > 0 && <Badge variant="green"><BookOpen className="w-3 h-3 mr-1" /> {stats.courses} {t("profile.courses_created")}</Badge>}
-          {stats.comments > 0 && <Badge variant="stone"><MessageSquare className="w-3 h-3 mr-1" /> {stats.comments} {t("profile.comments")}</Badge>}
-          {stats.rsvps > 0 && <Badge variant="amber"><Calendar className="w-3 h-3 mr-1" /> {stats.rsvps} {t("profile.rsvps")}</Badge>}
-          {stats.tickets > 0 && <Badge variant="stone"><Ticket className="w-3 h-3 mr-1" /> {stats.tickets} {t("profile.tickets")}</Badge>}
-          {stats.donations > 0 && <Badge variant="earth"><Heart className="w-3 h-3 mr-1" /> {stats.donations} {t("profile.donations")}</Badge>}
-          {stats.groups_joined > 0 && <Badge variant="sage"><Users className="w-3 h-3 mr-1" /> {stats.groups_joined} {t("profile.groups_joined")}</Badge>}
+          {stats.content > 0 && <Badge variant="sage"><FileText className="w-3 h-3 mr-1" /> {stats.content} <Text k="profile.articles" as="span" /></Badge>}
+          {stats.events > 0 && <Badge variant="earth"><Calendar className="w-3 h-3 mr-1" /> {stats.events} <Text k="profile.events_created" as="span" /></Badge>}
+          {stats.groups > 0 && <Badge variant="blue"><Users className="w-3 h-3 mr-1" /> {stats.groups} <Text k="profile.groups_created" as="span" /></Badge>}
+          {stats.courses > 0 && <Badge variant="green"><BookOpen className="w-3 h-3 mr-1" /> {stats.courses} <Text k="profile.courses_created" as="span" /></Badge>}
+          {stats.comments > 0 && <Badge variant="stone"><MessageSquare className="w-3 h-3 mr-1" /> {stats.comments} <Text k="profile.comments" as="span" /></Badge>}
+          {stats.rsvps > 0 && <Badge variant="amber"><Calendar className="w-3 h-3 mr-1" /> {stats.rsvps} <Text k="profile.rsvps" as="span" /></Badge>}
+          {stats.tickets > 0 && <Badge variant="stone"><Ticket className="w-3 h-3 mr-1" /> {stats.tickets} <Text k="profile.tickets" as="span" /></Badge>}
+          {stats.donations > 0 && <Badge variant="earth"><Heart className="w-3 h-3 mr-1" /> {stats.donations} <Text k="profile.donations" as="span" /></Badge>}
+          {stats.groups_joined > 0 && <Badge variant="sage"><Users className="w-3 h-3 mr-1" /> {stats.groups_joined} <Text k="profile.groups_joined" as="span" /></Badge>}
         </div>
       )}
 
@@ -402,31 +403,31 @@ function ProfilePage() {
             {/* Entity-specific info */}
             {profile.account_type === "organization" && (
               <Card variant="plain" className="p-6">
-                <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3">{t("profile.entity_info")}</h3>
+                <Text k="profile.entity_info" as="h3" className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3" />
                 <div className="space-y-2 text-sm">
                   {profile.entity_type && (
                     <p className="flex items-center gap-2 text-stone-600 dark:text-stone-400 dark:text-stone-500">
                       <Building className="w-4 h-4 text-stone-400 dark:text-stone-500" />
-                      <span className="font-medium">{t("profile.entity_type")}:</span>
+                      <Text k="profile.entity_type" as="span" className="font-medium" />:
                       <Badge variant="blue" className="text-[10px]">{t(`auth.entity_${profile.entity_type}`)}</Badge>
                     </p>
                   )}
                   {profile.registration_number && (
                     <p className="flex items-center gap-2 text-stone-600 dark:text-stone-400 dark:text-stone-500">
                       <FileText className="w-4 h-4 text-stone-400 dark:text-stone-500" />
-                      <span className="font-medium">{t("auth.registration_number")}:</span> {profile.registration_number}
+                      <Text k="auth.registration_number" as="span" className="font-medium" />: {profile.registration_number}
                     </p>
                   )}
                   {profile.service_area && (
                     <p className="flex items-center gap-2 text-stone-600 dark:text-stone-400 dark:text-stone-500">
                       <MapPin className="w-4 h-4 text-stone-400 dark:text-stone-500" />
-                      <span className="font-medium">{t("auth.service_area")}:</span> {profile.service_area}
+                      <Text k="auth.service_area" as="span" className="font-medium" />: {profile.service_area}
                     </p>
                   )}
                 </div>
                 {profile.services?.length > 0 && (
                   <div className="mt-4">
-                    <p className="text-sm font-medium text-stone-500 mb-2">{t("auth.services")}</p>
+                    <Text k="auth.services" as="p" className="text-sm font-medium text-stone-500 mb-2" />
                     <div className="flex flex-wrap gap-2">
                       {profile.services.map((s: string) => (
                         <span key={s} className="text-xs bg-primary-100 dark:bg-primary-950/20 text-primary-700 px-3 py-1 rounded-full">{s}</span>
@@ -438,15 +439,15 @@ function ProfilePage() {
             )}
             {profile.account_type === "practitioner" && (
               <Card variant="plain" className="p-6">
-                <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3">{t("profile.practitioner_info")}</h3>
+                <Text k="profile.practitioner_info" as="h3" className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3" />
                 {profile.modality && (
                   <p className="text-sm text-stone-600 dark:text-stone-400 dark:text-stone-500 mb-2">
-                    <span className="font-medium">{t("auth.modality")}:</span> {profile.modality}
+                    <Text k="auth.modality" as="span" className="font-medium" />: {profile.modality}
                   </p>
                 )}
                 {profile.certifications?.length > 0 && (
                   <div className="mt-2">
-                    <p className="text-sm font-medium text-stone-500 mb-2">{t("auth.certifications")}</p>
+                    <Text k="auth.certifications" as="p" className="text-sm font-medium text-stone-500 mb-2" />
                     <div className="flex flex-wrap gap-2">
                       {profile.certifications.map((c: string) => (
                         <span key={c} className="text-xs bg-earth-100 text-earth-700 px-3 py-1 rounded-full">{c}</span>
@@ -458,13 +459,13 @@ function ProfilePage() {
             )}
             {profile.bio && (
               <Card variant="plain" className="p-6">
-                <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-2">{t("profile.about")}</h3>
+                <Text k="profile.about" as="h3" className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-2" />
                 <p className="text-stone-600 dark:text-stone-400 dark:text-stone-500 font-serif leading-relaxed">{profile.bio}</p>
               </Card>
             )}
             {profile.skills?.length > 0 && (
               <Card variant="plain" className="p-6">
-                <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3">{t("profile.skills")}</h3>
+                <Text k="profile.skills" as="h3" className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3" />
                 <div className="flex flex-wrap gap-2">
                   {profile.skills.map((s: string) => (
                     <span key={s} className="text-xs bg-primary-100 dark:bg-primary-950/20 text-primary-700 px-3 py-1 rounded-full">{s}</span>
@@ -474,7 +475,7 @@ function ProfilePage() {
             )}
             {profile.interests?.length > 0 && (
               <Card variant="plain" className="p-6">
-                <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3">{t("profile.interests")}</h3>
+                <Text k="profile.interests" as="h3" className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3" />
                 <div className="flex flex-wrap gap-2">
                   {profile.interests.map((s: string) => (
                     <span key={s} className="text-xs bg-stone-100 text-stone-600 dark:text-stone-300 px-3 py-1 rounded-full">{s}</span>
@@ -485,7 +486,7 @@ function ProfilePage() {
             {/* Groups joined */}
             {activity?.groups_joined?.length > 0 && (
               <Card variant="plain" className="p-6">
-                <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3">{t("profile.groups_joined")}</h3>
+                <Text k="profile.groups_joined" as="h3" className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3" />
                 <div className="grid sm:grid-cols-2 gap-3">
                   {activity.groups_joined.map((g: any) => (
                     <ProfileGroupMiniCard key={g.id} group={g} t={t} />
@@ -505,7 +506,7 @@ function ProfilePage() {
             {activity?.content?.length > 0 && (
               <div>
                 <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-primary-500" /> {t("profile.published_content")}
+                  <FileText className="w-4 h-4 text-primary-500" /> <Text k="profile.published_content" as="span" />
                 </h3>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {activity.content.map((c: any) => (
@@ -517,7 +518,7 @@ function ProfilePage() {
             {activity?.events?.length > 0 && (
               <div>
                 <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3 flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-earth-500" /> {t("profile.events_created")}
+                  <Calendar className="w-4 h-4 text-earth-500" /> <Text k="profile.events_created" as="span" />
                 </h3>
                 <div className="space-y-2">
                   {activity.events.map((e: any) => (
@@ -529,7 +530,7 @@ function ProfilePage() {
             {activity?.groups?.length > 0 && (
               <div>
                 <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3 flex items-center gap-2">
-                  <Users className="w-4 h-4 text-blue-500" /> {t("profile.groups_created")}
+                  <Users className="w-4 h-4 text-blue-500" /> <Text k="profile.groups_created" as="span" />
                 </h3>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {activity.groups.map((g: any) => (
@@ -541,7 +542,7 @@ function ProfilePage() {
             {activity?.courses?.length > 0 && (
               <div>
                 <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3 flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-green-500" /> {t("profile.courses_created")}
+                  <BookOpen className="w-4 h-4 text-green-500" /> <Text k="profile.courses_created" as="span" />
                 </h3>
                 <div className="space-y-2">
                   {activity.courses.map((c: any) => (
@@ -563,10 +564,10 @@ function ProfilePage() {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 flex items-center gap-2">
-                  <Package className="w-4 h-4 text-primary-500" /> {t("marketplace.my_listings")}
+                  <Package className="w-4 h-4 text-primary-500" /> <Text k="marketplace.my_listings" as="span" />
                 </h3>
                 <a href="/marketplace/create" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
-                  + {t("marketplace.list_item")}
+                  + <Text k="marketplace.list_item" as="span" />
                 </a>
               </div>
               {myListings.length > 0 ? (
@@ -576,7 +577,7 @@ function ProfilePage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-stone-400 dark:text-stone-500 py-4 text-center font-serif">{t("marketplace.no_listings")}</p>
+                <Text k="marketplace.no_listings" as="p" className="text-sm text-stone-400 dark:text-stone-500 py-4 text-center font-serif" />
               )}
             </div>
 
@@ -584,7 +585,7 @@ function ProfilePage() {
             {mySales.length > 0 && (
               <div>
                 <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3 flex items-center gap-2">
-                  <Tag className="w-4 h-4 text-earth-500" /> {t("marketplace.my_sales")}
+                  <Tag className="w-4 h-4 text-earth-500" /> <Text k="marketplace.my_sales" as="span" />
                 </h3>
                 <div className="space-y-2">
                   {mySales.map((sale: any) => (
@@ -598,7 +599,7 @@ function ProfilePage() {
             {myOrders.length > 0 && (
               <div>
                 <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3 flex items-center gap-2">
-                  <ShoppingCart className="w-4 h-4 text-blue-500" /> {t("marketplace.my_purchases")}
+                  <ShoppingCart className="w-4 h-4 text-blue-500" /> <Text k="marketplace.my_purchases" as="span" />
                 </h3>
                 <div className="space-y-2">
                   {myOrders.map((order: any) => (
@@ -610,8 +611,8 @@ function ProfilePage() {
 
             {/* Seller Stripe onboarding */}
             <div className="bg-primary-50/40 dark:bg-primary-900/10 rounded-2xl p-6 border border-primary-100/40 dark:border-primary-800/20">
-              <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-2">{t("marketplace.seller_setup")}</h3>
-              <p className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 font-serif mb-4">{t("marketplace.seller_setup_desc")}</p>
+              <Text k="marketplace.seller_setup" as="h3" className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-2" />
+              <Text k="marketplace.seller_setup_desc" as="p" className="text-sm text-stone-500 dark:text-stone-400 dark:text-stone-500 font-serif mb-4" />
               <a href="#" onClick={async (e) => {
                 e.preventDefault();
                 try {
@@ -621,12 +622,12 @@ function ProfilePage() {
                   addToast("error", t("marketplace.not_available_yet"));
                 }
               }} className="inline-flex items-center gap-2 text-sm font-display font-medium text-primary-600 hover:text-primary-700 transition">
-                <Building className="w-4 h-4" /> {t("marketplace.setup_stripe")}
+                <Building className="w-4 h-4" /> <Text k="marketplace.setup_stripe" as="span" />
               </a>
             </div>
 
             {!myListings.length && !myOrders.length && !mySales.length && (
-              <p className="text-center text-stone-400 dark:text-stone-500 py-8 font-serif">{t("marketplace.no_marketplace_activity")}</p>
+              <Text k="marketplace.no_marketplace_activity" as="p" className="text-center text-stone-400 dark:text-stone-500 py-8 font-serif" />
             )}
           </div>
         )}
@@ -638,7 +639,7 @@ function ProfilePage() {
             {activity?.tickets?.length > 0 && (
               <div>
                 <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3 flex items-center gap-2">
-                  <Ticket className="w-4 h-4 text-sky-500" /> {t("profile.my_tickets")}
+                  <Ticket className="w-4 h-4 text-sky-500" /> <Text k="profile.my_tickets" as="span" />
                 </h3>
                 <div className="space-y-2">
                   {activity.tickets.map((tk: any) => (
@@ -651,7 +652,7 @@ function ProfilePage() {
             {activity?.rsvps?.length > 0 && (
               <div>
                 <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3 flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-amber-500" /> {t("profile.my_rsvps")}
+                  <Calendar className="w-4 h-4 text-amber-500" /> <Text k="profile.my_rsvps" as="span" />
                 </h3>
                 <div className="space-y-2">
                   {activity.rsvps.map((r: any, i: number) => (
@@ -664,7 +665,7 @@ function ProfilePage() {
             {activity?.donations?.length > 0 && (
               <div>
                 <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3 flex items-center gap-2">
-                  <Heart className="w-4 h-4 text-rust-500" /> {t("profile.my_donations")}
+                  <Heart className="w-4 h-4 text-rust-500" /> <Text k="profile.my_donations" as="span" />
                 </h3>
                 <div className="space-y-2">
                   {activity.donations.map((d: any) => (
@@ -677,7 +678,7 @@ function ProfilePage() {
             {activity?.enrollments?.length > 0 && (
               <div>
                 <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3 flex items-center gap-2">
-                  <GraduationCap className="w-4 h-4 text-green-500" /> {t("profile.my_enrollments")}
+                  <GraduationCap className="w-4 h-4 text-green-500" /> <Text k="profile.my_enrollments" as="span" />
                 </h3>
                 <div className="space-y-2">
                   {activity.enrollments.map((e: any, i: number) => (
@@ -720,7 +721,7 @@ function ProfilePage() {
                   )}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">{t("profile.avatar")}</p>
+                  <Text k="profile.avatar" as="p" className="text-sm font-medium text-stone-700 dark:text-stone-300 mb-2" />
                   <ImageUpload
                     onUpload={(urls) => setAvatarUrl(urls.thumb)}
                     label={t("profile.upload_avatar")}
@@ -730,19 +731,19 @@ function ProfilePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("profile.name")}</label>
+                <Text k="profile.name" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
                 <input type="text" value={name} onChange={(e) => setName(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm text-stone-800 dark:text-stone-100 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("profile.bio")}</label>
+                <Text k="profile.bio" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
                 <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3}
                   placeholder={t("profile.bio_placeholder")}
                   className="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm text-stone-800 dark:text-stone-100 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-primary-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
-                  <MapPin className="w-3 h-3 inline mr-1" /> {t("profile.location")}
+                  <MapPin className="w-3 h-3 inline mr-1" /> <Text k="profile.location" as="span" />
                 </label>
                 <input type="text" value={location} onChange={(e) => setLocation(e.target.value)}
                   placeholder={t("profile.location_placeholder")}
@@ -750,20 +751,20 @@ function ProfilePage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("profile.skills")}</label>
+                  <Text k="profile.skills" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
                   <input type="text" value={skills} onChange={(e) => setSkills(e.target.value)}
                     placeholder={t("profile.skills_placeholder")}
                     className="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm text-stone-800 dark:text-stone-100 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("profile.interests")}</label>
+                  <Text k="profile.interests" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
                   <input type="text" value={interests} onChange={(e) => setInterests(e.target.value)}
                     placeholder={t("profile.interests_placeholder")}
                     className="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm text-stone-800 dark:text-stone-100 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("profile.website")}</label>
+                <Text k="profile.website" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
                 <input type="url" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)}
                   placeholder={t("profile.website_placeholder")}
                   className="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm text-stone-800 dark:text-stone-100 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-primary-500" />
@@ -771,15 +772,15 @@ function ProfilePage() {
               {/* Entity-specific edit fields */}
               {profile.account_type === "organization" && (
                 <div className="pt-4 border-t border-stone-200 dark:border-stone-700 space-y-4">
-                  <p className="text-sm font-display font-semibold text-stone-700 dark:text-stone-300">{t("profile.entity_info")}</p>
+                  <Text k="profile.entity_info" as="p" className="text-sm font-display font-semibold text-stone-700 dark:text-stone-300" />
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.services")}</label>
+                    <Text k="auth.services" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
                     <input type="text" value={servicesEdit} onChange={(e) => setServicesEdit(e.target.value)}
                       placeholder={t("auth.services_placeholder")}
                       className="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm text-stone-800 dark:text-stone-100 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-primary-500" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.service_area")}</label>
+                    <Text k="auth.service_area" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
                     <input type="text" value={serviceAreaEdit} onChange={(e) => setServiceAreaEdit(e.target.value)}
                       placeholder={t("auth.service_area_placeholder")}
                       className="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm text-stone-800 dark:text-stone-100 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-primary-500" />
@@ -788,15 +789,15 @@ function ProfilePage() {
               )}
               {profile.account_type === "practitioner" && (
                 <div className="pt-4 border-t border-stone-200 dark:border-stone-700 space-y-4">
-                  <p className="text-sm font-display font-semibold text-stone-700 dark:text-stone-300">{t("profile.practitioner_info")}</p>
+                  <Text k="profile.practitioner_info" as="p" className="text-sm font-display font-semibold text-stone-700 dark:text-stone-300" />
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.modality")}</label>
+                    <Text k="auth.modality" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
                     <input type="text" value={modalityEdit} onChange={(e) => setModalityEdit(e.target.value)}
                       placeholder={t("auth.modality_placeholder")}
                       className="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm text-stone-800 dark:text-stone-100 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-primary-500" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">{t("auth.certifications")}</label>
+                    <Text k="auth.certifications" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
                     <input type="text" value={certificationsEdit} onChange={(e) => setCertificationsEdit(e.target.value)}
                       placeholder={t("auth.certifications_placeholder")}
                       className="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-sm text-stone-800 dark:text-stone-100 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-primary-500" />
@@ -807,9 +808,9 @@ function ProfilePage() {
                 <input type="checkbox" checked={visibleInNetwork} onChange={(e) => setVisibleInNetwork(e.target.checked)}
                   className="w-4 h-4 rounded border-stone-300 text-primary-600 focus:ring-primary-500" />
                 {visibleInNetwork ? <Eye className="w-4 h-4 text-stone-400 dark:text-stone-500" /> : <EyeOff className="w-4 h-4 text-stone-400 dark:text-stone-500" />}
-                {t("profile.visible_in_network")}
+                <Text k="profile.visible_in_network" as="span" />
               </label>
-              <Button type="submit" disabled={saving} loading={saving}>
+              <Button type="submit" disabled={saving} loading={saving} data-rl-text={saving ? "profile.saving" : "profile.save_profile"}>
                 <Save className="w-4 h-4" /> {saving ? t("profile.saving") : t("profile.save_profile")}
               </Button>
             </form>
@@ -817,17 +818,17 @@ function ProfilePage() {
             {/* Security: self-service force-logout (session.revoke_own) */}
             <div className="bg-white dark:bg-stone-900 p-6 rounded-xl border border-stone-200 dark:border-stone-700">
               <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-1 flex items-center gap-2">
-                <Shield className="w-4 h-4 text-primary-500" /> {t("profile.security")}
+                <Shield className="w-4 h-4 text-primary-500" /> <Text k="profile.security" as="span" />
               </h3>
               <p className="text-sm text-stone-500 dark:text-stone-400 font-serif mb-4">
-                {t("profile.revoke_sessions_desc")}
+                <Text k="profile.revoke_sessions_desc" as="span" />
               </p>
               <button
                 type="button"
                 onClick={handleRevokeSessions}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg border border-red-300 dark:border-red-800/60 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition"
               >
-                <LogOut className="w-4 h-4" /> {t("profile.revoke_sessions")}
+                <LogOut className="w-4 h-4" /> <Text k="profile.revoke_sessions" as="span" />
               </button>
             </div>
 
@@ -870,7 +871,7 @@ function ProfilePage() {
             {activity?.bookmarks?.length > 0 && (
               <div>
                 <h3 className="font-display font-semibold text-stone-800 dark:text-stone-100 dark:text-stone-200 mb-3 flex items-center gap-2">
-                  <Bookmark className="w-4 h-4 text-primary-500" /> {t("profile.bookmarks")}
+                  <Bookmark className="w-4 h-4 text-primary-500" /> <Text k="profile.bookmarks" as="span" />
                 </h3>
                 <div className="space-y-2">
                   {activity.bookmarks.map((b: any) => (

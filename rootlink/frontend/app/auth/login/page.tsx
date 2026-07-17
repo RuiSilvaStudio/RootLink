@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/locale-context";
+import { Text } from "@/components/ui/Text";
 
 export default function LoginPage() {
   const { t } = useLocale();
@@ -35,9 +36,7 @@ export default function LoginPage() {
 
   return (
     <div className="max-w-md mx-auto mt-20 px-4">
-      <h1 className="text-3xl font-bold text-stone-800 dark:text-stone-100 font-serif mb-6">
-        {t("auth.sign_in_title")}
-      </h1>
+      <Text k="auth.sign_in_title" as="h1" className="text-3xl font-bold text-stone-800 dark:text-stone-100 font-serif mb-6" />
       {error && (
         <p className="bg-red-50 text-red-700 px-4 py-2 rounded-lg mb-4 text-sm">
           {error}
@@ -45,9 +44,7 @@ export default function LoginPage() {
       )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
-            {t("auth.email")}
-          </label>
+          <Text k="auth.email" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
           <input
             type="email"
             value={email}
@@ -59,9 +56,7 @@ export default function LoginPage() {
           {emailError && <p className="text-xs text-red-500 mt-1">{emailError}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
-            {t("auth.password")}
-          </label>
+          <Text k="auth.password" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
           <input
             type="password"
             value={password}
@@ -72,24 +67,14 @@ export default function LoginPage() {
           />
           {passwordError && <p className="text-xs text-red-500 mt-1">{passwordError}</p>}
           <p className="mt-1 text-right">
-            <a href="/auth/forgot-password" className="text-sm text-primary-600 hover:underline">
-              {t("auth.forgot_password")}
-            </a>
+            <Text k="auth.forgot_password" as="a" href="/auth/forgot-password" className="text-sm text-primary-600 hover:underline" />
           </p>
         </div>
-        <button
-          type="submit"
-          disabled={hasErrors}
-          className="w-full bg-primary-600 text-white py-2 rounded-lg hover:bg-primary-700 transition font-medium disabled:opacity-50"
-        >
-          {t("auth.sign_in")}
-        </button>
+        <Text k="auth.sign_in" as="button" type="submit" disabled={hasErrors} className="w-full bg-primary-600 text-white py-2 rounded-lg hover:bg-primary-700 transition font-medium disabled:opacity-50" />
       </form>
       <p className="mt-4 text-sm text-stone-500 text-center">
         {t("auth.no_account")}{" "}
-        <a href="/auth/register" className="text-primary-600 hover:underline">
-          {t("auth.register")}
-        </a>
+        <Text k="auth.register" as="a" href="/auth/register" className="text-primary-600 hover:underline" />
       </p>
     </div>
   );

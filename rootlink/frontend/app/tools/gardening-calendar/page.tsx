@@ -9,6 +9,7 @@ import { ShareButton } from "@/components/ShareButton";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Text } from "@/components/ui/Text";
 
 const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
@@ -84,7 +85,7 @@ function GardeningCalendarContent() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
-      <a href="/tools" className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-primary-700 mb-6 transition">
+      <a href="/tools" data-rl-text="tools.back" className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-primary-700 mb-6 transition">
         <ArrowLeft className="w-4 h-4" /> {t("tools.back")}
       </a>
 
@@ -94,8 +95,8 @@ function GardeningCalendarContent() {
             <Sprout className="w-5 h-5 text-green-600" />
           </div>
           <div>
-            <h1 className="text-3xl font-serif font-bold text-stone-800">{t("tools.calendar_title")}</h1>
-            <p className="text-stone-500 font-light">{t("tools.calendar_desc")}</p>
+            <Text k="tools.calendar_title" as="h1" className="text-3xl font-serif font-bold text-stone-800" />
+            <Text k="tools.calendar_desc" as="p" className="text-stone-500 font-light" />
           </div>
         </div>
         <ShareButton url={typeof window !== "undefined" ? window.location.href : ""} title="Gardening Calendar" />
@@ -103,7 +104,7 @@ function GardeningCalendarContent() {
 
       <div className="bg-stone-100/50 dark:bg-stone-800/50 border border-stone-200/40 dark:border-stone-700/40 rounded-2xl px-4 py-2.5 mb-8 text-xs text-stone-500 dark:text-stone-400 flex items-center justify-end gap-2">
         <span className="text-[10px]">🇵🇹</span>
-        <span className="font-light">{t("calc.portugal_disclaimer")}</span>
+        <Text k="calc.portugal_disclaimer" as="span" className="font-light" />
       </div>
 
       <div className="flex flex-wrap gap-3 mb-6">
@@ -148,21 +149,21 @@ function GardeningCalendarContent() {
         <div className="flex gap-3 mb-6 text-sm">
           {countSow > 0 && (
             <Badge variant="green" className="flex items-center gap-1.5 px-3 py-1.5">
-              <Sprout className="w-3.5 h-3.5" /> {countSow} {t("calendar.to_sow")}
+              <Sprout className="w-3.5 h-3.5" /> {countSow} <Text k="calendar.to_sow" as="span" />
             </Badge>
           )}
           {countTransplant > 0 && (
             <Badge variant="blue" className="flex items-center gap-1.5 px-3 py-1.5">
-              <Shovel className="w-3.5 h-3.5" /> {countTransplant} {t("calendar.to_transplant")}
+              <Shovel className="w-3.5 h-3.5" /> {countTransplant} <Text k="calendar.to_transplant" as="span" />
             </Badge>
           )}
           {countHarvest > 0 && (
             <Badge variant="earth" className="flex items-center gap-1.5 px-3 py-1.5">
-              <Apple className="w-3.5 h-3.5" /> {countHarvest} {t("calendar.to_harvest")}
+              <Apple className="w-3.5 h-3.5" /> {countHarvest} <Text k="calendar.to_harvest" as="span" />
             </Badge>
           )}
           {currentActive.length === 0 && (
-            <span className="text-stone-500 dark:text-stone-400 font-light">{t("calendar.nothing_this_month")}</span>
+            <Text k="calendar.nothing_this_month" as="span" className="text-stone-500 dark:text-stone-400 font-light" />
           )}
         </div>
       )}
@@ -173,28 +174,29 @@ function GardeningCalendarContent() {
           <div className="flex items-start gap-3">
             <Clock className="w-5 h-5 text-stone-500 dark:text-stone-400 mt-0.5 shrink-0" />
             <div className="text-sm text-stone-600 dark:text-stone-300 space-y-1 font-light">
-              <p>{t("calendar.tip_timing")}</p>
+              <Text k="calendar.tip_timing" as="p" />
               <p>{zone === "cool" ? t("calendar.tip_cool") : zone === "hot" ? t("calendar.tip_hot") : t("calendar.tip_temperate")}</p>
-              {countSow > 0 && <p>{t("calendar.tip_sow")}</p>}
-              {countTransplant > 0 && <p>{t("calendar.tip_transplant")}</p>}
-              {countHarvest > 0 && <p>{t("calendar.tip_harvest")}</p>}
+              {countSow > 0 && <Text k="calendar.tip_sow" as="p" />}
+              {countTransplant > 0 && <Text k="calendar.tip_transplant" as="p" />}
+              {countHarvest > 0 && <Text k="calendar.tip_harvest" as="p" />}
             </div>
           </div>
           <div className="border-t border-primary-50 mt-3 pt-3">
             <a href="/tools/monthly-checklist"
+              data-rl-text="calendar.to_do_link"
               className="inline-flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700 font-medium"
             >
               <Notebook className="w-4 h-4" />
               {t("calendar.to_do_link")}
             </a>
-            <span className="text-xs text-stone-500 dark:text-stone-400 ml-2 font-light">{t("calendar.to_do_desc")}</span>
+            <Text k="calendar.to_do_desc" as="span" className="text-xs text-stone-500 dark:text-stone-400 ml-2 font-light" />
           </div>
         </Card>
       )}
 
       {/* Loading */}
       {loading && (
-        <div className="text-center text-stone-500 dark:text-stone-400 py-16 font-light">
+        <div className="text-center text-stone-500 dark:text-stone-400 py-16 font-light" data-rl-text="common.loading">
           <Sprout className="w-8 h-8 mx-auto mb-3 text-stone-300 dark:text-stone-600 animate-pulse" />
           {t("common.loading")}
         </div>
@@ -223,17 +225,17 @@ function GardeningCalendarContent() {
                 </div>
                 <div className="flex gap-1.5 text-xs shrink-0">
                   {monthActive(p.sow_month_start, p.sow_month_end, currentMonth) && (
-                    <Badge variant="green" className="flex items-center gap-1">
+                    <Badge variant="green" className="flex items-center gap-1" data-rl-text="calendar.sow">
                       <Sprout className="w-3 h-3" /> {t("calendar.sow")}
                     </Badge>
                   )}
                   {monthActive(p.transplant_month_start, p.transplant_month_end, currentMonth) && (
-                    <Badge variant="blue" className="flex items-center gap-1">
+                    <Badge variant="blue" className="flex items-center gap-1" data-rl-text="calendar.transplant">
                       <Shovel className="w-3 h-3" /> {t("calendar.transplant")}
                     </Badge>
                   )}
                   {monthActive(p.harvest_month_start, p.harvest_month_end, currentMonth) && (
-                    <Badge variant="earth" className="flex items-center gap-1">
+                    <Badge variant="earth" className="flex items-center gap-1" data-rl-text="calendar.harvest">
                       <Apple className="w-3 h-3" /> {t("calendar.harvest")}
                     </Badge>
                   )}
@@ -245,7 +247,7 @@ function GardeningCalendarContent() {
                 <div className="border-t border-primary-50 dark:border-stone-800 px-4 py-4 bg-stone-50 dark:bg-stone-800/50">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                     <div className="md:col-span-2">
-                      <div className="text-xs text-stone-500 dark:text-stone-400 mb-2 font-medium">{t("calendar.month_bar")}</div>
+                      <div className="text-xs text-stone-500 dark:text-stone-400 mb-2 font-medium" data-rl-text="calendar.month_bar">{t("calendar.month_bar")}</div>
                       {[
                         { key: "sow", start: p.sow_month_start, end: p.sow_month_end, color: "bg-green-400", label: t("calendar.sow") },
                         { key: "transplant", start: p.transplant_month_start, end: p.transplant_month_end, color: "bg-blue-400", label: t("calendar.transplant") },
@@ -264,20 +266,20 @@ function GardeningCalendarContent() {
                       ))}
                     </div>
                     <div>
-                      <div className="text-xs text-stone-500 dark:text-stone-400 mb-1 font-medium">{t("calendar.spacing")}</div>
+                      <div className="text-xs text-stone-500 dark:text-stone-400 mb-1 font-medium" data-rl-text="calendar.spacing">{t("calendar.spacing")}</div>
                       <div className="font-medium text-sm text-stone-800 dark:text-stone-100">
                         {p.row_spacing_cm && p.plant_spacing_cm
                           ? `${p.row_spacing_cm} × ${p.plant_spacing_cm} cm`
                           : "—"}
                       </div>
                       {p.sowing_depth_cm != null && (
-                        <div className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-light">{t("calendar.sowing_depth")}: <strong className="font-medium text-stone-700 dark:text-stone-200">{p.sowing_depth_cm} cm</strong></div>
+                        <div className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-light"><Text k="calendar.sowing_depth" as="span" />: <strong className="font-medium text-stone-700 dark:text-stone-200">{p.sowing_depth_cm} cm</strong></div>
                       )}
                     </div>
                     <div>
                       {p.sowing_method && (
                         <div className="mb-1">
-                          <div className="text-xs text-stone-500 dark:text-stone-400 mb-1 font-medium">{t("calendar.method")}</div>
+                          <div className="text-xs text-stone-500 dark:text-stone-400 mb-1 font-medium" data-rl-text="calendar.method">{t("calendar.method")}</div>
                           <div className="font-medium text-sm text-stone-800 dark:text-stone-100">{p.sowing_method === "transplant" ? t("calendar.method_transplant") : t("calendar.method_direct")}</div>
                         </div>
                       )}
@@ -289,7 +291,7 @@ function GardeningCalendarContent() {
                       )}
                     </div>
                     <div>
-                      <div className="text-xs text-stone-500 dark:text-stone-400 mb-1 font-medium">{t("calendar.maturity")}</div>
+                      <div className="text-xs text-stone-500 dark:text-stone-400 mb-1 font-medium" data-rl-text="calendar.maturity">{t("calendar.maturity")}</div>
                       <div className="font-medium text-sm text-stone-800 dark:text-stone-100">
                         {p.days_to_maturity_min ? `${p.days_to_maturity_min}–${p.days_to_maturity_max ?? ""} ${t("calendar.days")}` : "—"}
                       </div>
@@ -306,6 +308,7 @@ function GardeningCalendarContent() {
                   </div>
                   <a
                     href={`/tools/irrigation-calculator?plant_id=${p.id}`}
+                    data-rl-text="calendar.calc_irrigation"
                     className="inline-flex items-center gap-1.5 text-xs bg-primary-100 dark:bg-primary-950/20 text-primary-700 hover:bg-primary-200 px-3 py-1.5 rounded-lg transition font-medium"
                   >
                     <Droplets className="w-3.5 h-3.5" />
@@ -323,7 +326,7 @@ function GardeningCalendarContent() {
       {!loading && currentActive.length === 0 && (
         <Card variant="plain" className="p-12 text-center">
           <Sprout className="w-12 h-12 mx-auto mb-3 text-stone-300 dark:text-stone-600" />
-          <p className="text-stone-500 dark:text-stone-400 font-light">{t("calendar.nothing_this_month")}</p>
+          <Text k="calendar.nothing_this_month" as="p" className="text-stone-500 dark:text-stone-400 font-light" />
         </Card>
       )}
     </div>

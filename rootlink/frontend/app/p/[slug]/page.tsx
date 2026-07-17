@@ -15,6 +15,7 @@ import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { BlockRenderer, type BlockSectionData } from "@/components/blocks";
 import { PageSkeleton } from "@/components/ui/LoadingSkeleton";
+import { Text } from "@/components/ui/Text";
 
 export default function BlockPage() {
   const params = useParams();
@@ -47,12 +48,8 @@ export default function BlockPage() {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center">
-          <h1 className="font-display text-2xl font-semibold text-stone-400 mb-2">
-            Page not found
-          </h1>
-          <p className="text-sm text-stone-400 font-serif">
-            The page &ldquo;{slug}&rdquo; doesn&apos;t exist or isn&apos;t published.
-          </p>
+          <Text k="page.not_found" as="h1" className="font-display text-2xl font-semibold text-stone-400 mb-2" />
+          <Text k="page.not_found_desc" as="p" className="text-sm text-stone-400 font-serif" />
         </div>
       </div>
     );

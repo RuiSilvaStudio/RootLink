@@ -12,6 +12,7 @@ import { usePermission } from "@/lib/use-permission";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { Text } from "@/components/ui/Text";
 
 const STATUS_VARIANT: Record<string, "green" | "amber" | "red" | "stone"> = {
   verified: "green",
@@ -151,7 +152,7 @@ export default function EntityDashboardPage() {
         )}
 
         {documents.length === 0 ? (
-          <p className="text-sm text-stone-400 font-serif">{t("entity_detail.no_documents")}</p>
+          <Text k="entity_detail.no_documents" as="p" className="text-sm text-stone-400 font-serif" />
         ) : (
           <ul className="space-y-2">
             {documents.map((d) => (
@@ -185,13 +186,13 @@ export default function EntityDashboardPage() {
             rows={2}
           />
           <div className="flex gap-2 flex-wrap">
-            <Button size="sm" onClick={() => act(() => api.entities.approveVerification(entityId, reason || undefined), t("entity_detail.entity_verified"))}>
+            <Button size="sm" onClick={() => act(() => api.entities.approveVerification(entityId, reason || undefined), t("entity_detail.entity_verified"))} data-rl-text="entity_detail.approve">
               {t("entity_detail.approve")}
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => act(() => api.entities.requestMoreInfo(entityId, reason || undefined), t("entity_detail.more_info_requested"))}>
+            <Button size="sm" variant="secondary" onClick={() => act(() => api.entities.requestMoreInfo(entityId, reason || undefined), t("entity_detail.more_info_requested"))} data-rl-text="entity_detail.request_more_info">
               {t("entity_detail.request_more_info")}
             </Button>
-            <Button size="sm" variant="danger" onClick={() => act(() => api.entities.rejectVerification(entityId, reason || undefined), t("entity_detail.verification_rejected"))}>
+            <Button size="sm" variant="danger" onClick={() => act(() => api.entities.rejectVerification(entityId, reason || undefined), t("entity_detail.verification_rejected"))} data-rl-text="entity_detail.reject">
               {t("entity_detail.reject")}
             </Button>
           </div>
@@ -205,9 +206,7 @@ export default function EntityDashboardPage() {
             <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-2 flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-rust-500" /> {t("entity_detail.dissolution_heading")}
             </h2>
-            <p className="text-xs text-stone-400 font-serif mb-3">
-              {t("entity_detail.dissolution_hint")}
-            </p>
+            <Text k="entity_detail.dissolution_hint" as="p" className="text-xs text-stone-400 font-serif mb-3" />
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
@@ -223,10 +222,10 @@ export default function EntityDashboardPage() {
               )}
               {isPlatformSuperAdmin && dissolutionPending && (
                 <>
-                  <Button size="sm" variant="danger" onClick={() => act(() => api.entities.approveDissolution(entityId, reason || undefined), t("entity_detail.dissolution_approved"))}>
+                  <Button size="sm" variant="danger" onClick={() => act(() => api.entities.approveDissolution(entityId, reason || undefined), t("entity_detail.dissolution_approved"))} data-rl-text="entity_detail.approve_dissolution">
                     {t("entity_detail.approve_dissolution")}
                   </Button>
-                  <Button size="sm" variant="secondary" onClick={() => act(() => api.entities.rejectDissolution(entityId, reason || undefined), t("entity_detail.dissolution_request_rejected"))}>
+                  <Button size="sm" variant="secondary" onClick={() => act(() => api.entities.rejectDissolution(entityId, reason || undefined), t("entity_detail.dissolution_request_rejected"))} data-rl-text="entity_detail.reject_dissolution_request">
                     {t("entity_detail.reject_dissolution_request")}
                   </Button>
                 </>
@@ -237,9 +236,9 @@ export default function EntityDashboardPage() {
 
       {dissolved && isPlatformSuperAdmin && (
         <section className="mb-8 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6">
-          <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-2">{t("entity_detail.reverse_dissolution_heading")}</h2>
-          <p className="text-xs text-stone-400 font-serif mb-3">{t("entity_detail.reverse_dissolution_hint")}</p>
-          <Button size="sm" variant="secondary" onClick={() => act(() => api.entities.reverseDissolution(entityId, reason || undefined), t("entity_detail.dissolution_reversed"))}>
+          <Text k="entity_detail.reverse_dissolution_heading" as="h2" className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-2" />
+          <Text k="entity_detail.reverse_dissolution_hint" as="p" className="text-xs text-stone-400 font-serif mb-3" />
+          <Button size="sm" variant="secondary" onClick={() => act(() => api.entities.reverseDissolution(entityId, reason || undefined), t("entity_detail.dissolution_reversed"))} data-rl-text="entity_detail.reverse_dissolution">
             {t("entity_detail.reverse_dissolution")}
           </Button>
         </section>
@@ -247,14 +246,14 @@ export default function EntityDashboardPage() {
 
       {isPlatformSuperAdmin && (
         <section className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6">
-          <h2 className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-2">{t("entity_detail.ban_heading")}</h2>
+          <Text k="entity_detail.ban_heading" as="h2" className="font-display font-semibold text-stone-800 dark:text-stone-100 mb-2" />
           <div className="flex gap-2">
             {!banned ? (
-              <Button size="sm" variant="danger" onClick={() => act(() => api.entities.ban(entityId, reason || undefined), t("entity_detail.entity_banned"))}>
+              <Button size="sm" variant="danger" onClick={() => act(() => api.entities.ban(entityId, reason || undefined), t("entity_detail.entity_banned"))} data-rl-text="entity_detail.ban_entity">
                 {t("entity_detail.ban_entity")}
               </Button>
             ) : (
-              <Button size="sm" variant="secondary" onClick={() => act(() => api.entities.unban(entityId, reason || undefined), t("entity_detail.entity_unbanned"))}>
+              <Button size="sm" variant="secondary" onClick={() => act(() => api.entities.unban(entityId, reason || undefined), t("entity_detail.entity_unbanned"))} data-rl-text="entity_detail.unban_entity">
                 {t("entity_detail.unban_entity")}
               </Button>
             )}

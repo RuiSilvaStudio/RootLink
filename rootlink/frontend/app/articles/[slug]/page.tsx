@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useLocale } from "@/lib/locale-context";
 import { Badge } from "@/components/ui";
+import { Text } from "@/components/ui/Text";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { toast } from "sonner";
 import ArticleEditor from "@/components/editor/ArticleEditor";
@@ -59,9 +60,11 @@ export default function ArticleViewPage() {
   if (error || !article) {
     return (
       <div className="max-w-3xl mx-auto px-4 sm:px-8 py-12 text-center">
-        <h1 className="text-2xl font-display font-bold text-stone-900 dark:text-stone-100 mb-2">Article not found</h1>
-        <p className="text-stone-500 dark:text-stone-400">This article may have been removed or is still in draft.</p>
-        <Link href="/" className="text-primary-600 hover:underline mt-4 inline-block">Go home</Link>
+        <Text k="articles.not_found_title" as="h1" defaultText="Article not found" className="text-2xl font-display font-bold text-stone-900 dark:text-stone-100 mb-2" />
+        <Text k="articles.not_found_message" as="p" defaultText="This article may have been removed or is still in draft." className="text-stone-500 dark:text-stone-400" />
+        <Link href="/" className="text-primary-600 hover:underline mt-4 inline-block">
+          <Text k="articles.go_home" as="span" defaultText="Go home" />
+        </Link>
       </div>
     );
   }
@@ -115,7 +118,7 @@ export default function ArticleViewPage() {
 
       <Breadcrumbs
         items={[
-          { label: "Articles", href: "/search?q=" },
+          { label: <Text k="articles.breadcrumb" as="span" defaultText="Articles" />, href: "/search?q=" },
           ...(article.family
             ? [{ label: article.family, href: `/search?family=${encodeURIComponent(article.family)}` }]
             : []),
@@ -129,13 +132,13 @@ export default function ArticleViewPage() {
             <Badge variant="sage">{article.category}</Badge>
           )}
           {article.is_boosted && (
-            <Badge variant="amber">Community Supported</Badge>
+            <Badge variant="amber"><Text k="articles.badge_community_supported" as="span" defaultText="Community Supported" /></Badge>
           )}
           {article.verification_status === "community_reviewed" && (
-            <Badge variant="green">Reviewed</Badge>
+            <Badge variant="green"><Text k="articles.badge_reviewed" as="span" defaultText="Reviewed" /></Badge>
           )}
           {article.verification_status === "cross_referenced" && (
-            <Badge variant="blue">Cross-referenced</Badge>
+            <Badge variant="blue"><Text k="articles.badge_cross_referenced" as="span" defaultText="Cross-referenced" /></Badge>
           )}
         </div>
 
@@ -192,7 +195,7 @@ export default function ArticleViewPage() {
               className="inline-flex items-center gap-1 text-xs text-primary-600 hover:underline"
             >
               <ExternalLink size={12} />
-              Original source
+              <Text k="articles.original_source" as="span" defaultText="Original source" />
             </a>
           )}
           {article.feed_source_id && article.feed_title && (
@@ -205,7 +208,7 @@ export default function ArticleViewPage() {
               }`}
             >
               {isSubscribed ? <Check size={12} /> : <Rss size={12} />}
-              {isSubscribed ? "Subscribed" : `Subscribe to ${article.feed_title}`}
+              {isSubscribed ? <Text k="articles.subscribed" as="span" defaultText="Subscribed" /> : `Subscribe to ${article.feed_title}`}
             </button>
           )}
         </div>
@@ -226,14 +229,14 @@ export default function ArticleViewPage() {
       ) : article.full_text ? (
         <div className="prose prose-stone dark:prose-invert max-w-none font-serif">
           <p className="text-stone-500 dark:text-stone-400 text-sm mb-4 italic">
-            Este artigo foi indexado de uma fonte externa.{" "}
+            <Text k="articles.indexed_notice" as="span" defaultText="Este artigo foi indexado de uma fonte externa." />{" "}
             <a
               href={article.canonical_url || article.source_url}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary-600 hover:underline"
             >
-              Ler artigo original
+              <Text k="articles.read_original" as="span" defaultText="Ler artigo original" />
             </a>
           </p>
           {article.full_text.split("\n").filter((p: string) => p.trim()).map((p: string, i: number) => (

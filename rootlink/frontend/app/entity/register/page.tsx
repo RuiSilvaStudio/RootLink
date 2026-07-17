@@ -9,6 +9,7 @@ import { useLocale } from "@/lib/locale-context";
 import { useToast } from "@/lib/toast-context";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { Text } from "@/components/ui/Text";
 
 export default function EntityRegisterPage() {
   const router = useRouter();
@@ -62,7 +63,7 @@ export default function EntityRegisterPage() {
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-5 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6">
         <div>
-          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t("entity_register.entity_type_label")}</label>
+          <Text k="entity_register.entity_type_label" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5" />
           <div className="flex gap-2 flex-wrap">
             {ENTITY_TYPES.map((et) => (
               <button
@@ -82,7 +83,7 @@ export default function EntityRegisterPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t("entity_register.name_label")}</label>
+          <Text k="entity_register.name_label" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5" />
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -94,7 +95,7 @@ export default function EntityRegisterPage() {
 
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t("entity_register.tax_id_label")}</label>
+            <Text k="entity_register.tax_id_label" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5" />
             <input
               value={taxId}
               onChange={(e) => setTaxId(e.target.value)}
@@ -103,7 +104,7 @@ export default function EntityRegisterPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t("entity_register.scheme_label")}</label>
+            <Text k="entity_register.scheme_label" as="label" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5" />
             <input
               value={taxScheme}
               onChange={(e) => setTaxScheme(e.target.value)}
@@ -113,11 +114,9 @@ export default function EntityRegisterPage() {
           </div>
         </div>
 
-        <p className="text-xs text-stone-400 dark:text-stone-500 font-serif">
-          {t("entity_register.footer_note")}
-        </p>
+        <Text k="entity_register.footer_note" as="p" className="text-xs text-stone-400 dark:text-stone-500 font-serif" />
 
-        <Button type="submit" disabled={submitting} loading={submitting}>
+        <Button type="submit" disabled={submitting} loading={submitting} data-rl-text="entity_register.submit">
           {t("entity_register.submit")}
         </Button>
       </form>

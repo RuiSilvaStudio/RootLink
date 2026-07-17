@@ -6,6 +6,7 @@ import Link from "next/link";
 import { MessageCircle, Send, ArrowLeft } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
+import { Text } from "@/components/ui/Text";
 
 function MessagesContent() {
   const router = useRouter();
@@ -75,14 +76,14 @@ function MessagesContent() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-20 text-center">
         <MessageCircle className="w-16 h-16 mx-auto mb-4 text-stone-300" />
-        <p className="text-stone-500">{t("messages.sign_in")}</p>
+        <Text k="messages.sign_in" as="p" className="text-stone-500" />
       </div>
     );
   }
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-stone-800 dark:text-stone-100 font-serif mb-8">{t("messages.title")}</h1>
+      <Text k="messages.title" as="h1" className="text-3xl font-bold text-stone-800 dark:text-stone-100 font-serif mb-8" />
 
       {showNew && recipient && (
         <div className="bg-white p-4 rounded-xl border border-stone-200 mb-6">
@@ -103,11 +104,11 @@ function MessagesContent() {
       )}
 
       {loading ? (
-        <p className="text-stone-500">{t("messages.loading")}</p>
+        <Text k="messages.loading" as="p" className="text-stone-500" />
       ) : conversations.length === 0 ? (
         <div className="text-center py-20 text-stone-00 dark:text-stone-500">
           <MessageCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
-          <p>{t("messages.no_conversations")}</p>
+          <Text k="messages.no_conversations" as="p" />
         </div>
       ) : (
         <div className="grid lg:grid-cols-3 gap-4">
@@ -169,7 +170,7 @@ function MessagesContent() {
               </div>
             ) : (
               <div className="bg-white rounded-xl border border-stone-200 min-h-[400px] flex items-center justify-center text-stone-00 dark:text-stone-500">
-                <p>{t("messages.select_conversation")}</p>
+                <Text k="messages.select_conversation" as="p" />
               </div>
             )}
           </div>
@@ -180,9 +181,8 @@ function MessagesContent() {
 }
 
 export default function MessagesPage() {
-  const { t } = useLocale();
   return (
-    <Suspense fallback={<div className="text-center py-20 text-stone-500">{t("messages.loading")}</div>}>
+    <Suspense fallback={<div className="text-center py-20 text-stone-500"><Text k="messages.loading" as="span" /></div>}>
       <MessagesContent />
     </Suspense>
   );

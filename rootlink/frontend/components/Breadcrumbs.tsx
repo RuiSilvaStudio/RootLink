@@ -1,9 +1,13 @@
 "use client";
 
+import { ReactNode } from "react";
 import Link from "next/link";
 import { ChevronRight, Home } from "lucide-react";
 
-export type Crumb = { label: string; href?: string };
+// label: string -> ReactNode: purely additive (a string is a valid ReactNode).
+// Lets pages pass `<Text k="x" as="span" defaultText="..." />` for a crumb so
+// the Content Studio overlay can edit it (data-rl-text on the rendered child).
+export type Crumb = { label: ReactNode; href?: string };
 
 export function Breadcrumbs({ items }: { items: Crumb[] }) {
   return (

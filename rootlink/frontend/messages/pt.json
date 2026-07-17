@@ -2003,5 +2003,9 @@
     "unban_entity": "Retirar banimento",
     "entity_banned": "Entidade banida",
     "entity_unbanned": "Banimento retirado"
+  },
+  "page": {
+    "not_found": "Página não encontrada",
+    "not_found_desc": "Esta página não existe ou ainda não foi publicada."
   }
 }

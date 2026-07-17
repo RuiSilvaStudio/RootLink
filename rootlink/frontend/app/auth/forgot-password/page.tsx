@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale-context";
+import { Text } from "@/components/ui/Text";
 
 // Dev-mode self-service password reset (product-approved): no email
 // infrastructure exists yet, so POST /api/auth/password/reset/request
@@ -93,9 +94,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="max-w-md mx-auto mt-20 px-4">
-      <h1 className="text-3xl font-display font-bold text-stone-800 dark:text-stone-100 mb-6">
-        {t("auth.forgot_title")}
-      </h1>
+      <Text k="auth.forgot_title" as="h1" className="text-3xl font-display font-bold text-stone-800 dark:text-stone-100 mb-6" />
 
       {error && (
         <p className="bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 px-4 py-2 rounded-lg mb-4 text-sm">
@@ -105,14 +104,10 @@ export default function ForgotPasswordPage() {
 
       {step === "request" && (
         <>
-          <p className="text-sm text-stone-500 dark:text-stone-400 font-serif mb-4">
-            {t("auth.forgot_intro")}
-          </p>
+          <Text k="auth.forgot_intro" as="p" className="text-sm text-stone-500 dark:text-stone-400 font-serif mb-4" />
           <form onSubmit={handleRequest} className="space-y-4">
             <div>
-              <label htmlFor="forgot-email" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
-                {t("auth.email")}
-              </label>
+              <Text k="auth.email" as="label" htmlFor="forgot-email" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
               <input
                 id="forgot-email"
                 type="email"
@@ -124,13 +119,7 @@ export default function ForgotPasswordPage() {
               />
               {emailError && <p className="text-xs text-red-500 mt-1">{emailError}</p>}
             </div>
-            <button
-              type="submit"
-              disabled={!!emailError || submitting}
-              className="w-full bg-primary-600 text-white py-2 rounded-lg hover:bg-primary-700 transition font-medium disabled:opacity-50"
-            >
-              {t("auth.forgot_submit")}
-            </button>
+            <Text k="auth.forgot_submit" as="button" type="submit" disabled={!!emailError || submitting} className="w-full bg-primary-600 text-white py-2 rounded-lg hover:bg-primary-700 transition font-medium disabled:opacity-50" />
           </form>
         </>
       )}
@@ -139,12 +128,12 @@ export default function ForgotPasswordPage() {
         <>
           <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-xl px-4 py-3 mb-4">
             <p className="text-sm text-amber-800 dark:text-amber-300 font-serif">
-              {t("auth.forgot_dev_note")}
+              <Text k="auth.forgot_dev_note" as="span" />
             </p>
             {issuedToken && (
               <>
                 <p className="text-xs font-medium text-amber-800 dark:text-amber-300 mt-3 mb-1">
-                  {t("auth.forgot_code_label")}
+                  <Text k="auth.forgot_code_label" as="span" />
                 </p>
                 <p className="font-mono text-xs text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800 border border-amber-200 dark:border-amber-800/40 rounded-lg px-3 py-2 break-all select-all">
                   {issuedToken}
@@ -154,9 +143,7 @@ export default function ForgotPasswordPage() {
           </div>
           <form onSubmit={handleConfirm} className="space-y-4">
             <div>
-              <label htmlFor="reset-token" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
-                {t("auth.reset_token")}
-              </label>
+              <Text k="auth.reset_token" as="label" htmlFor="reset-token" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
               <input
                 id="reset-token"
                 type="text"
@@ -168,9 +155,7 @@ export default function ForgotPasswordPage() {
               />
             </div>
             <div>
-              <label htmlFor="reset-new-password" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
-                {t("auth.new_password")}
-              </label>
+              <Text k="auth.new_password" as="label" htmlFor="reset-new-password" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
               <input
                 id="reset-new-password"
                 type="password"
@@ -182,9 +167,7 @@ export default function ForgotPasswordPage() {
               />
             </div>
             <div>
-              <label htmlFor="reset-confirm-password" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
-                {t("auth.confirm_password")}
-              </label>
+              <Text k="auth.confirm_password" as="label" htmlFor="reset-confirm-password" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" />
               <input
                 id="reset-confirm-password"
                 type="password"
@@ -195,36 +178,21 @@ export default function ForgotPasswordPage() {
                 className={inputClasses}
               />
             </div>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full bg-primary-600 text-white py-2 rounded-lg hover:bg-primary-700 transition font-medium disabled:opacity-50"
-            >
-              {t("auth.reset_submit")}
-            </button>
+            <Text k="auth.reset_submit" as="button" type="submit" disabled={submitting} className="w-full bg-primary-600 text-white py-2 rounded-lg hover:bg-primary-700 transition font-medium disabled:opacity-50" />
           </form>
         </>
       )}
 
       {step === "done" && (
         <div className="space-y-4">
-          <p className="bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-4 py-3 rounded-lg text-sm">
-            {t("auth.reset_success")}
-          </p>
-          <a
-            href="/auth/login"
-            className="block w-full bg-primary-600 text-white py-2 rounded-lg hover:bg-primary-700 transition font-medium text-center"
-          >
-            {t("auth.back_to_login")}
-          </a>
+          <Text k="auth.reset_success" as="p" className="bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-4 py-3 rounded-lg text-sm" />
+          <Text k="auth.back_to_login" as="a" href="/auth/login" className="block w-full bg-primary-600 text-white py-2 rounded-lg hover:bg-primary-700 transition font-medium text-center" />
         </div>
       )}
 
       {step !== "done" && (
         <p className="mt-4 text-sm text-stone-500 text-center">
-          <a href="/auth/login" className="text-primary-600 hover:underline">
-            {t("auth.back_to_login")}
-          </a>
+          <Text k="auth.back_to_login" as="a" href="/auth/login" className="text-primary-600 hover:underline" />
         </p>
       )}
     </div>

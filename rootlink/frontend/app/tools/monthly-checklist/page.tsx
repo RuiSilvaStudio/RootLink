@@ -9,6 +9,7 @@ import { ShareButton } from "@/components/ShareButton";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Text } from "@/components/ui/Text";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 
 const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -207,7 +208,7 @@ function MonthlyChecklistContent() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-8 py-12">
-      <a href="/tools" className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-primary-700 mb-6 transition">
+      <a href="/tools" data-rl-text="tools.back" className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-primary-700 mb-6 transition">
         <ArrowLeft className="w-4 h-4" /> {t("tools.back")}
       </a>
 
@@ -217,8 +218,8 @@ function MonthlyChecklistContent() {
             <Notebook className="w-5 h-5 text-purple-600" />
           </div>
           <div>
-            <h1 className="text-3xl font-serif font-bold text-stone-800">{t("tools.checklist_title")}</h1>
-            <p className="text-stone-500 font-light">{t("tools.checklist_desc")}</p>
+            <Text k="tools.checklist_title" as="h1" className="text-3xl font-serif font-bold text-stone-800" />
+            <Text k="tools.checklist_desc" as="p" className="text-stone-500 font-light" />
           </div>
         </div>
         <ShareButton url={typeof window !== "undefined" ? window.location.href : ""} title="Monthly Checklist" />
@@ -226,7 +227,7 @@ function MonthlyChecklistContent() {
 
       <div className="bg-stone-100/50 dark:bg-stone-800/50 border border-stone-200/40 dark:border-stone-700/40 rounded-2xl px-4 py-2.5 mb-8 text-xs text-stone-500 dark:text-stone-400 flex items-center justify-end gap-2">
         <span className="text-[10px]">🇹</span>
-        <span className="font-light">{t("calc.portugal_disclaimer")}</span>
+        <Text k="calc.portugal_disclaimer" as="span" className="font-light" />
       </div>
 
       {/* Month + Zone selector */}
@@ -243,7 +244,7 @@ function MonthlyChecklistContent() {
           ))}
         </Card>
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider px-1">{t("calc.zone")}</label>
+          <Text k="calc.zone" as="label" className="text-[10px] font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider px-1" />
           <select value={zone} onChange={(e) => setZone(e.target.value)}
             className="px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15">
             {ZONES.map(z => <option key={z.value} value={z.value}>{z.label}</option>)}
@@ -261,8 +262,8 @@ function MonthlyChecklistContent() {
               <BookOpen className="w-4 h-4 text-emerald-600" />
             </div>
             <div>
-              <span className="font-semibold text-emerald-800">{t("tools.farmers_guide_title")}</span>
-              <p className="text-xs text-emerald-600 font-light">{t("tools.farmers_guide_desc")}</p>
+              <Text k="tools.farmers_guide_title" as="span" className="font-semibold text-emerald-800" />
+              <Text k="tools.farmers_guide_desc" as="p" className="text-xs text-emerald-600 font-light" />
             </div>
           </div>
           <span className={`text-emerald-500 text-sm transition-transform ${guideExpanded ? "" : "rotate-180"}`}>▼</span>
@@ -271,7 +272,7 @@ function MonthlyChecklistContent() {
         {guideExpanded && (
           <div className="mt-3">
             {guideLoading && (
-              <div className="text-center text-stone-500 dark:text-stone-400 py-12 flex items-center justify-center gap-2 font-light">
+              <div className="text-center text-stone-500 dark:text-stone-400 py-12 flex items-center justify-center gap-2 font-light" data-rl-text="tools.farmers_guide_loading">
                 <Loader2 className="w-5 h-5 animate-spin" /> {t("tools.farmers_guide_loading")}
               </div>
             )}
@@ -281,7 +282,7 @@ function MonthlyChecklistContent() {
                 {categoryEntries.length === 0 && (
                   <Card variant="plain" className="p-8 text-center">
                     <BookOpen className="w-10 h-10 mx-auto mb-2 text-stone-300 dark:text-stone-600" />
-                    <p className="text-sm text-stone-500 dark:text-stone-400 font-light">{t("tools.farmers_guide_empty")}</p>
+                    <Text k="tools.farmers_guide_empty" as="p" className="text-sm text-stone-500 dark:text-stone-400 font-light" />
                   </Card>
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -345,14 +346,14 @@ function MonthlyChecklistContent() {
       <div className="border-t border-primary-50 pt-8">
         <div className="flex items-center gap-2 mb-1">
           <Notebook className="w-5 h-5 text-stone-500" />
-          <h2 className="text-xl font-bold text-stone-800 dark:text-stone-100 font-serif">{t("tools.farmers_guide_personal")}</h2>
+          <Text k="tools.farmers_guide_personal" as="h2" className="text-xl font-bold text-stone-800 dark:text-stone-100 font-serif" />
         </div>
-        <p className="text-xs text-stone-500 mb-4 font-light">{t("tools.farmers_guide_personal_desc")}</p>
+        <Text k="tools.farmers_guide_personal_desc" as="p" className="text-xs text-stone-500 mb-4 font-light" />
 
         {!isAuthenticated ? (
           <Card variant="plain" className="p-8 text-center">
             <LogIn className="w-10 h-10 mx-auto mb-2 text-stone-300" />
-            <p className="text-sm text-stone-500 font-light">{t("tools.farmers_guide_sign_in")}</p>
+            <Text k="tools.farmers_guide_sign_in" as="p" className="text-sm text-stone-500 font-light" />
           </Card>
         ) : (
           <>
@@ -360,7 +361,7 @@ function MonthlyChecklistContent() {
             {!loading && items.length > 0 && (
               <div className="flex items-center gap-3 mb-4 text-sm text-stone-500">
                 <Check className="w-4 h-4 text-green-600 shrink-0" />
-                <span className="font-light">{completedCount} / {items.length} {t("tools.checklist_progress")}</span>
+                <span className="font-light">{completedCount} / {items.length} <Text k="tools.checklist_progress" as="span" /></span>
                 <ProgressBar value={completedCount} max={items.length} size="sm" className="flex-1" />
               </div>
             )}
@@ -374,7 +375,7 @@ function MonthlyChecklistContent() {
                   placeholder={t("tools.checklist_placeholder")}
                   className="flex-1 px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15"
                 />
-              <Button type="submit" disabled={submitting || !newTask.trim()} loading={submitting}>
+              <Button type="submit" disabled={submitting || !newTask.trim()} loading={submitting} data-rl-text="tools.checklist_add">
                 <Plus className="w-4 h-4" />
                 {t("tools.checklist_add")}
               </Button>
@@ -382,7 +383,7 @@ function MonthlyChecklistContent() {
 
             {/* Checklist items */}
             {loading && (
-              <div className="text-center text-stone-500 dark:text-stone-400 py-12 flex items-center justify-center gap-2 font-light">
+              <div className="text-center text-stone-500 dark:text-stone-400 py-12 flex items-center justify-center gap-2 font-light" data-rl-text="common.loading">
                 <Loader2 className="w-5 h-5 animate-spin" /> {t("common.loading")}
               </div>
             )}
@@ -392,7 +393,7 @@ function MonthlyChecklistContent() {
                 {items.length === 0 && (
                   <Card variant="plain" className="p-12 text-center">
                     <Notebook className="w-12 h-12 mx-auto mb-3 text-stone-300 dark:text-stone-600" />
-                    <p className="text-stone-500 dark:text-stone-400 font-light">{t("tools.checklist_no_tasks")}</p>
+                    <Text k="tools.checklist_no_tasks" as="p" className="text-stone-500 dark:text-stone-400 font-light" />
                   </Card>
                 )}
                 {items.map(item => (

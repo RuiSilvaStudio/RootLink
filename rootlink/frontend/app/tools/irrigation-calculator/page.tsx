@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Search, Droplets, Ruler, ThermometerSun, ToggleLeft, ToggleRight, Leaf, ChevronRight } from "lucide-react";
 import { useLocale } from "@/lib/locale-context";
 import { Button } from "@/components/ui/Button";
+import { Text } from "@/components/ui/Text";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { Section } from "@/components/ui/Section";
@@ -159,7 +160,7 @@ function IrrigationCalculatorContent() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
-      <a href="/tools" className="inline-flex items-center gap-1 text-sm text-stone-500 dark:text-stone-400 hover:text-primary-700 dark:hover:text-primary-400 mb-6 transition">
+      <a href="/tools" data-rl-text="tools.back" className="inline-flex items-center gap-1 text-sm text-stone-500 dark:text-stone-400 hover:text-primary-700 dark:hover:text-primary-400 mb-6 transition">
         <ArrowLeft className="w-4 h-4" /> {t("tools.back")}
       </a>
 
@@ -169,8 +170,8 @@ function IrrigationCalculatorContent() {
             <Droplets className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <h1 className="text-3xl font-serif font-bold text-stone-800 dark:text-stone-100">{t("tools.irrigation_title")}</h1>
-            <p className="text-stone-500 dark:text-stone-400 font-light">{t("tools.irrigation_desc")}</p>
+            <Text k="tools.irrigation_title" as="h1" className="text-3xl font-serif font-bold text-stone-800 dark:text-stone-100" />
+            <Text k="tools.irrigation_desc" as="p" className="text-stone-500 dark:text-stone-400 font-light" />
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -187,14 +188,14 @@ function IrrigationCalculatorContent() {
 
       <div className="bg-stone-100/50 dark:bg-stone-800/50 border border-stone-200/40 dark:border-stone-700/40 rounded-2xl px-4 py-2.5 mb-8 text-xs text-stone-400 dark:text-stone-500 flex items-center justify-end gap-2">
         <span className="text-[10px]">🇵🇹</span>
-        <span className="font-light">{t("calc.portugal_disclaimer")}</span>
+        <Text k="calc.portugal_disclaimer" as="span" className="font-light" />
       </div>
 
       <div className="grid lg:grid-cols-5 gap-6">
         {/* Plant selector */}
         <div className="lg:col-span-2 space-y-4">
           <Card variant="plain" className="p-5">
-            <h2 className="font-semibold text-stone-700 dark:text-stone-300 mb-3 flex items-center gap-2 text-sm">
+            <h2 className="font-semibold text-stone-700 dark:text-stone-300 mb-3 flex items-center gap-2 text-sm" data-rl-text="calc.plant_search">
               <Search className="w-4 h-4" /> {t("calc.plant_search")}
             </h2>
             <input
@@ -231,9 +232,9 @@ function IrrigationCalculatorContent() {
           </div>
 
           <Card variant="plain" className="max-h-96 overflow-y-auto">
-            {searching && <p className="p-4 text-sm text-stone-400 dark:text-stone-500 text-center font-light">{t("common.loading")}</p>}
+            {searching && <Text k="common.loading" as="p" className="p-4 text-sm text-stone-400 dark:text-stone-500 text-center font-light" />}
             {!searching && plants.length === 0 && (
-              <p className="p-4 text-sm text-stone-400 dark:text-stone-500 text-center font-light">{t("calc.no_plants")}</p>
+              <Text k="calc.no_plants" as="p" className="p-4 text-sm text-stone-400 dark:text-stone-500 text-center font-light" />
             )}
             {plants.map((p) => (
               <button
@@ -290,16 +291,16 @@ function IrrigationCalculatorContent() {
               {/* Plant stats */}
               <div className="grid grid-cols-3 gap-2 mb-5">
                 <div className="bg-earth-50 dark:bg-earth-900/20 rounded-xl p-3 text-center">
-                  <div className="text-[10px] text-stone-500 dark:text-stone-400 font-medium">{t("calc.root_depth")}</div>
+                  <div className="text-[10px] text-stone-500 dark:text-stone-400 font-medium" data-rl-text="calc.root_depth">{t("calc.root_depth")}</div>
                   <div className="font-bold text-stone-800 dark:text-stone-100 text-lg">{selected.root_depth_cm ?? "—"}</div>
                   <div className="text-[9px] text-stone-400 dark:text-stone-500">cm</div>
                 </div>
                 <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 text-center">
-                  <div className="text-[10px] text-stone-500 dark:text-stone-400 font-medium">{t("calc.drought_tolerance")}</div>
+                  <div className="text-[10px] text-stone-500 dark:text-stone-400 font-medium" data-rl-text="calc.drought_tolerance">{t("calc.drought_tolerance")}</div>
                   <div className="text-xs font-bold text-stone-800 dark:text-stone-100">{t(`calc.tol_${selected.drought_tolerance || "medium"}`)}</div>
                 </div>
                 <div className="bg-stone-50 dark:bg-stone-800/50 rounded-xl p-3 text-center">
-                  <div className="text-[10px] text-stone-500 dark:text-stone-400 font-medium">{t("calc.spacing")}</div>
+                  <div className="text-[10px] text-stone-500 dark:text-stone-400 font-medium" data-rl-text="calc.spacing">{t("calc.spacing")}</div>
                   <div className="text-xs font-bold text-stone-800 dark:text-stone-100">
                     {selected.row_spacing_cm && selected.plant_spacing_cm
                       ? `${selected.row_spacing_cm}×${selected.plant_spacing_cm}`
@@ -310,7 +311,7 @@ function IrrigationCalculatorContent() {
 
               {/* Growth stage */}
               <div className="mb-5">
-                <label className="block text-sm font-medium text-stone-700 mb-2">{t("calc.growth_stage")}</label>
+                <Text k="calc.growth_stage" as="label" className="block text-sm font-medium text-stone-700 mb-2" />
                 <div className="flex gap-2">
                   {GROWTH_STAGES.map((s) => (
                     <button key={s} onClick={() => setStage(s)}
@@ -328,7 +329,7 @@ function IrrigationCalculatorContent() {
               {/* SIMPLE mode */}
               {simple && (
                   <div className="space-y-4 mb-5 p-5 bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-800">
-                    <h3 className="font-semibold text-sm text-blue-800 dark:text-blue-300">{t("calc.simple_title")}</h3>
+                    <Text k="calc.simple_title" as="h3" className="font-semibold text-sm text-blue-800 dark:text-blue-300" />
                     <div className="grid grid-cols-2 gap-3">
                       {[
                         { label: t("calc.climate_region"), value: climate, set: setClimate, opts: CLIMATES(t) },
@@ -356,7 +357,7 @@ function IrrigationCalculatorContent() {
               {!simple && (
                 <div className="mb-5">
                   <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
-                    {t("calc.eto")} <span className="text-xs text-stone-400 dark:text-stone-500 font-light">(mm/day)</span>
+                    <Text k="calc.eto" as="span" /> <span className="text-xs text-stone-400 dark:text-stone-500 font-light">(mm/day)</span>
                   </label>
                   <input type="number" step="0.1" value={etoManual}
                     onChange={(e) => setEtoManual(e.target.value)}
@@ -368,12 +369,12 @@ function IrrigationCalculatorContent() {
               {/* Area / count / flow */}
               <div className="grid grid-cols-3 gap-3 mb-5">
                 <div>
-                  <label className="block text-xs font-medium text-stone-600 dark:text-stone-400 mb-1">{t("calc.area")}</label>
+                  <Text k="calc.area" as="label" className="block text-xs font-medium text-stone-600 dark:text-stone-400 mb-1" />
                   <input type="number" step="0.1" value={area} onChange={(e) => setArea(e.target.value)}
                     placeholder="m²" className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-stone-600 dark:text-stone-400 mb-1">{t("calc.plants_count")}</label>
+                  <Text k="calc.plants_count" as="label" className="block text-xs font-medium text-stone-600 dark:text-stone-400 mb-1" />
                   <input type="number" value={count} onChange={(e) => setCount(e.target.value)}
                     placeholder={t("calc.count_placeholder")} className="w-full px-3 py-2 rounded-xl border border-primary-100 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15" />
                 </div>
@@ -384,7 +385,7 @@ function IrrigationCalculatorContent() {
                 </div>
               </div>
 
-              <Button onClick={handleCalc} disabled={loading || !etoValue} loading={loading} className="w-full">
+              <Button onClick={handleCalc} disabled={loading || !etoValue} loading={loading} className="w-full" data-rl-text="calc.calculate">
                 {t("calc.calculate")}
               </Button>
 
@@ -392,21 +393,21 @@ function IrrigationCalculatorContent() {
               {result && (
                 <div className="mt-6 space-y-4 animate-fade-in">
                   <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-5">
-                    <h3 className="font-semibold text-green-800 dark:text-green-300 mb-4">{t("calc.results")}</h3>
+                    <Text k="calc.results" as="h3" className="font-semibold text-green-800 dark:text-green-300 mb-4" />
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-white dark:bg-stone-900 rounded-xl p-4">
-                        <div className="text-xs text-stone-500 dark:text-stone-400 font-medium">{t("calc.etc")}</div>
+                        <div className="text-xs text-stone-500 dark:text-stone-400 font-medium" data-rl-text="calc.etc">{t("calc.etc")}</div>
                         <div className="text-2xl font-bold text-green-700 dark:text-green-300 mt-1">{result.etc_mm} <span className="text-sm font-normal text-stone-400 dark:text-stone-500">mm/day</span></div>
                       </div>
                       <div className="bg-white dark:bg-stone-900 rounded-xl p-4">
-                        <div className="text-xs text-stone-500 dark:text-stone-400 font-medium">{t("calc.water_per_plant")}</div>
+                        <div className="text-xs text-stone-500 dark:text-stone-400 font-medium" data-rl-text="calc.water_per_plant">{t("calc.water_per_plant")}</div>
                         <div className="text-2xl font-bold text-blue-700 dark:text-blue-300 mt-1">
                           {result.water_per_plant_liters != null ? `${result.water_per_plant_liters}` : "—"}
                           <span className="text-sm font-normal text-stone-400 dark:text-stone-500"> L/day</span>
                         </div>
                       </div>
                       <div className="bg-white dark:bg-stone-900 rounded-xl p-4 col-span-2">
-                        <div className="text-xs text-stone-500 dark:text-stone-400 font-medium">{t("calc.total_water")}</div>
+                        <div className="text-xs text-stone-500 dark:text-stone-400 font-medium" data-rl-text="calc.total_water">{t("calc.total_water")}</div>
                         <div className="text-2xl font-bold text-primary-700 dark:text-primary-300 mt-1">
                           {result.total_water_liters != null ? `${result.total_water_liters}` : "—"}
                           <span className="text-sm font-normal text-stone-400 dark:text-stone-500"> L/day</span>
@@ -422,11 +423,11 @@ function IrrigationCalculatorContent() {
 
                   {/* Practical advice */}
                   <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-5">
-                    <h3 className="font-semibold text-amber-800 dark:text-amber-300 mb-3">{t("calc.advice_title")}</h3>
+                    <Text k="calc.advice_title" as="h3" className="font-semibold text-amber-800 dark:text-amber-300 mb-3" />
                     <ul className="text-sm text-amber-700 dark:text-amber-300 space-y-2 font-light">
                       <li className="flex items-start gap-2"><ChevronRight className="w-4 h-4 shrink-0 mt-0.5" />{waterAdvice(t, irrEfficiency, isStony)}</li>
-                      {isStony && <li className="flex items-start gap-2"><ChevronRight className="w-4 h-4 shrink-0 mt-0.5" />{t("calc.advice_stony")}</li>}
-                      {irrEfficiency < 0.8 && <li className="flex items-start gap-2"><ChevronRight className="w-4 h-4 shrink-0 mt-0.5" />{t("calc.advice_drip")}</li>}
+                      {isStony && <li className="flex items-start gap-2" data-rl-text="calc.advice_stony"><ChevronRight className="w-4 h-4 shrink-0 mt-0.5" />{t("calc.advice_stony")}</li>}
+                      {irrEfficiency < 0.8 && <li className="flex items-start gap-2" data-rl-text="calc.advice_drip"><ChevronRight className="w-4 h-4 shrink-0 mt-0.5" />{t("calc.advice_drip")}</li>}
                       {rain !== "none" && (
                         <li className="flex items-start gap-2"><ChevronRight className="w-4 h-4 shrink-0 mt-0.5" />
                           {t("calc.advice_rain_adjust", { rain_label: RAIN(t).find((r: any) => r.value === rain)?.label ?? "", factor: ((RAIN(t).find((r: any) => r.value === rain)?.factor ?? 1) * 100) })}
@@ -445,7 +446,7 @@ function IrrigationCalculatorContent() {
 
                   {/* Technical details */}
                   <details className="text-xs text-stone-400 group">
-                    <summary className="cursor-pointer hover:text-stone-600 font-medium transition">{t("calc.technical_details")}</summary>
+                    <summary className="cursor-pointer hover:text-stone-600 font-medium transition" data-rl-text="calc.technical_details">{t("calc.technical_details")}</summary>
                     <div className="mt-2 space-y-1.5 p-4 bg-primary-50 rounded-xl">
                       <p>{t("calc.tech_eto", { value: etoValue })}</p>
                       <p>{t("calc.tech_soil_factor", { label: soilObj?.label ?? "", factor: soilFactor })}</p>
@@ -466,8 +467,8 @@ function IrrigationCalculatorContent() {
               <div className="w-16 h-16 rounded-2xl bg-primary-50 flex items-center justify-center mx-auto mb-4">
                 <Droplets className="w-8 h-8 text-primary-300" />
               </div>
-              <p className="text-stone-500 font-light">{t("calc.select_plant")}</p>
-              <p className="text-xs text-stone-400 mt-1.5 font-light">{t("calc.select_plant_hint")}</p>
+              <Text k="calc.select_plant" as="p" className="text-stone-500 font-light" />
+              <Text k="calc.select_plant_hint" as="p" className="text-xs text-stone-400 mt-1.5 font-light" />
             </Card>
           )}
         </div>

@@ -6,10 +6,13 @@ import Link from "next/link";
 import { Send } from "lucide-react";
 import { api } from "@/lib/api";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { useLocale } from "@/lib/locale-context";
+import { Text } from "@/components/ui/Text";
 
 export default function ConversationPage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useLocale();
   const [messages, setMessages] = useState<any[]>([]);
   const [conversation, setConversation] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -49,22 +52,22 @@ export default function ConversationPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <Breadcrumbs items={[
-        { label: "Messages", href: "/messages" },
-        { label: conversation?.other_user?.name || "Conversation" }
+        { label: t("messages.title"), href: "/messages" },
+        { label: conversation?.other_user?.name || t("messages.conversation") }
       ]} />
       <div className="flex items-center gap-3 mb-6">
         <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-950/20 flex items-center justify-center text-primary-700 font-medium">
           {other?.name?.[0]?.toUpperCase() || "?"}
         </div>
         <div>
-          <h1 className="text-xl font-bold text-stone-800">{other?.name || "Conversation"}</h1>
+          <h1 className="text-xl font-bold text-stone-800">{other?.name || t("messages.conversation")}</h1>
         </div>
       </div>
 
       <div className="bg-white rounded-xl border border-stone-200 min-h-[500px] flex flex-col">
         <div className="flex-1 p-4 space-y-3 overflow-y-auto max-h-[600px]">
           {messages.length === 0 ? (
-            <p className="text-stone-00 dark:text-stone-500 text-center py-10">No messages yet. Say hello!</p>
+            <Text k="messages.no_messages" as="p" className="text-stone-00 dark:text-stone-500 text-center py-10" />
           ) : (
             messages.map((msg: any) => (
               <div key={msg.id} className={`flex ${msg.sender_id === other?.id ? "justify-start" : "justify-end"}`}>
@@ -88,7 +91,7 @@ export default function ConversationPage() {
             value={body}
             onChange={(e) => setBody(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Type a message..."
+            placeholder={t("messages.type_message")}
             className="flex-1 px-3 py-2 rounded-lg border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
           <button onClick={handleSend} className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition">

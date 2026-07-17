@@ -3,9 +3,13 @@ import { Button } from "./Button";
 
 type Props = {
   icon?: ReactNode;
-  title: string;
-  message?: string;
-  subtitle?: string;
+  // string -> ReactNode: purely additive (a string is a valid ReactNode), so
+  // every existing `title={t("x")}` / `title="..."` call site keeps working.
+  // Lets pages pass `<Text k="x" as="span" defaultText="..." />` here so the
+  // Content Studio overlay can edit empty-state copy (data-rl-text on the child).
+  title: ReactNode;
+  message?: ReactNode;
+  subtitle?: ReactNode;
   action?: { label: string; onClick: () => void } | ReactNode;
   children?: ReactNode;
   className?: string;

@@ -31,6 +31,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { IconContainer, RankedListRow } from "@/components/ui/DeFacto";
+import { Text } from "@/components/ui/Text";
 
 type BlockProps = { props: Record<string, string> };
 
@@ -49,12 +50,12 @@ export function DonateHeroBlock({ props }: BlockProps) {
         inline
         className="mb-6"
       />
-      <h1 className="text-4xl font-display font-bold text-stone-900 dark:text-stone-100 mb-3">
+      <Text k="donate.hero_title" as="h1" className="text-4xl font-display font-bold text-stone-900 dark:text-stone-100 mb-3">
         {props.hero_title || t("donate.hero_title")}
-      </h1>
-      <p className="text-lg text-stone-600 dark:text-stone-400 font-serif max-w-2xl mx-auto">
+      </Text>
+      <Text k="donate.hero_subtitle" as="p" className="text-lg text-stone-600 dark:text-stone-400 font-serif max-w-2xl mx-auto">
         {props.hero_subtitle || t("donate.hero_subtitle")}
-      </p>
+      </Text>
     </div>
   );
 }
@@ -78,17 +79,17 @@ export function DonateBalanceBlock({ props }: BlockProps) {
     <div data-rl-component="DonateBalanceBlock" className="mb-10 p-6 rounded-2xl bg-primary-50 dark:bg-primary-900/20 border border-primary-200/40 dark:border-primary-800/30">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-stone-500 dark:text-stone-400">
+          <Text k="donate.your_balance" as="p" className="text-sm text-stone-500 dark:text-stone-400">
             {props.balance_label || t("donate.your_balance")}
-          </p>
+          </Text>
           <p className="text-3xl font-display font-bold text-primary-700 dark:text-primary-400">
             {balance.balance.toFixed(1)}
           </p>
         </div>
         <div className="text-right">
-          <p className="text-sm text-stone-500 dark:text-stone-400">
+          <Text k="donate.total_donated" as="p" className="text-sm text-stone-500 dark:text-stone-400">
             {props.total_donated_label || t("donate.total_donated")}
-          </p>
+          </Text>
           <p className="text-xl font-display font-semibold text-stone-700 dark:text-stone-300">
             €{balance.total_donated.toFixed(0)}
           </p>
@@ -98,7 +99,9 @@ export function DonateBalanceBlock({ props }: BlockProps) {
         <div className="mt-4 pt-4 border-t border-primary-200/40 dark:border-primary-800/30">
           <Badge variant="amber">
             <Sparkles size={12} className="mr-1" />
-            {props.boost_label || t("donate.boost_active_until")}{" "}
+            <Text k="donate.boost_active_until" as="span">
+              {props.boost_label || t("donate.boost_active_until")}
+            </Text>{" "}
             {new Date(balance.boost_expires_at).toLocaleDateString()}
           </Badge>
         </div>
@@ -144,9 +147,9 @@ export function DonateTiersBlock({ props }: BlockProps) {
   if (loading) {
     return (
       <div data-rl-component="DonateTiersBlock">
-        <h2 className="text-2xl font-display font-bold text-stone-900 dark:text-stone-100 mb-6">
+        <Text k="donate.donation_tiers" as="h2" className="text-2xl font-display font-bold text-stone-900 dark:text-stone-100 mb-6">
           {heading}
-        </h2>
+        </Text>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-40 rounded-2xl bg-stone-100 dark:bg-stone-800 animate-pulse" />
@@ -158,9 +161,9 @@ export function DonateTiersBlock({ props }: BlockProps) {
 
   return (
     <div data-rl-component="DonateTiersBlock">
-      <h2 className="text-2xl font-display font-bold text-stone-900 dark:text-stone-100 mb-6">
+      <Text k="donate.donation_tiers" as="h2" className="text-2xl font-display font-bold text-stone-900 dark:text-stone-100 mb-6">
         {heading}
-      </h2>
+      </Text>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
         {tiers.map((tier) => (
           <div
@@ -179,12 +182,19 @@ export function DonateTiersBlock({ props }: BlockProps) {
               {tier.description}
             </p>
             <div className="text-xs text-stone-500 dark:text-stone-500 mb-4">
-              {tier.points} {props.points_label || t("donate.points_label")} = {tier.points}{" "}
-              {props.days_label || t("donate.days_of_boost")}
+              {tier.points}{" "}
+              <Text k="donate.points_label" as="span">
+                {props.points_label || t("donate.points_label")}
+              </Text>{" "}
+              = {tier.points}{" "}
+              <Text k="donate.days_of_boost" as="span">
+                {props.days_label || t("donate.days_of_boost")}
+              </Text>
             </div>
             <Button
               variant="primary"
               size="sm"
+              data-rl-text="donate.donate_button"
               onClick={() => handleDonate(tier.euros, tier.name)}
               disabled={donating === tier.euros}
               className="w-full"
@@ -219,10 +229,10 @@ export function DonateLeaderboardBlock({ props }: BlockProps) {
   if (loading) {
     return (
       <div data-rl-component="DonateLeaderboardBlock">
-        <h2 className="text-2xl font-display font-bold text-stone-900 dark:text-stone-100 mb-6 flex items-center gap-2">
+        <Text k="donate.top_donors" as="h2" className="text-2xl font-display font-bold text-stone-900 dark:text-stone-100 mb-6 flex items-center gap-2">
           <Trophy className="w-6 h-6 text-amber-500" />
           {heading}
-        </h2>
+        </Text>
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-16 rounded-xl bg-stone-100 dark:bg-stone-800 animate-pulse" />
@@ -236,10 +246,10 @@ export function DonateLeaderboardBlock({ props }: BlockProps) {
 
   return (
     <div data-rl-component="DonateLeaderboardBlock">
-      <h2 className="text-2xl font-display font-bold text-stone-900 dark:text-stone-100 mb-6 flex items-center gap-2">
+      <Text k="donate.top_donors" as="h2" className="text-2xl font-display font-bold text-stone-900 dark:text-stone-100 mb-6 flex items-center gap-2">
         <Trophy className="w-6 h-6 text-amber-500" />
         {heading}
-      </h2>
+      </Text>
       <div className="space-y-2">
         {leaderboard.map((entry, i) => (
           <div
@@ -284,12 +294,12 @@ export function DonateHowItWorksBlock({ props }: BlockProps) {
   ];
   return (
     <div data-rl-component="DonateHowItWorksBlock" className="mt-12 p-6 rounded-2xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-700">
-      <h3 className="text-lg font-display font-semibold text-stone-900 dark:text-stone-100 mb-3">
+      <Text k="donate.how_it_works" as="h3" className="text-lg font-display font-semibold text-stone-900 dark:text-stone-100 mb-3">
         {props.heading || t("donate.how_it_works")}
-      </h3>
+      </Text>
       <ul className="space-y-2 text-sm text-stone-600 dark:text-stone-400 font-serif">
         {bullets.map((key, i) => (
-          <li key={key}>• {props[`how_${i + 1}`] || t(key)}</li>
+          <li key={key}>• <Text k={key} as="span">{props[`how_${i + 1}`] || t(key)}</Text></li>
         ))}
       </ul>
     </div>
@@ -311,12 +321,12 @@ export function LeaderboardHeroBlock({ props }: BlockProps) {
         inline
         className="mb-4"
       />
-      <h1 className="text-3xl font-display font-bold text-stone-900 dark:text-stone-100 mb-2">
+      <Text k="leaderboard.hero_title" as="h1" className="text-3xl font-display font-bold text-stone-900 dark:text-stone-100 mb-2">
         {props.hero_title || t("leaderboard.hero_title")}
-      </h1>
-      <p className="text-stone-600 dark:text-stone-400 font-serif">
+      </Text>
+      <Text k="leaderboard.hero_subtitle" as="p" className="text-stone-600 dark:text-stone-400 font-serif">
         {props.hero_subtitle || t("leaderboard.hero_subtitle")}
-      </p>
+      </Text>
     </div>
   );
 }
@@ -349,11 +359,11 @@ export function LeaderboardListBlock({ props }: BlockProps) {
     return (
       <div data-rl-component="LeaderboardListBlock" className="text-center py-12">
         <Heart className="w-12 h-12 text-stone-300 dark:text-stone-600 mx-auto mb-4" />
-        <p className="text-stone-500 dark:text-stone-400 font-serif">
+        <Text k="leaderboard.empty_state" as="p" className="text-stone-500 dark:text-stone-400 font-serif">
           {props.empty_state || t("leaderboard.empty_state")}
-        </p>
+        </Text>
         <Link href="/donate" className="mt-4 inline-block">
-          <Button variant="primary">{props.donate_now_label || t("leaderboard.donate_now")}</Button>
+          <Button variant="primary" data-rl-text="leaderboard.donate_now">{props.donate_now_label || t("leaderboard.donate_now")}</Button>
         </Link>
       </div>
     );
@@ -398,12 +408,12 @@ export function RankingHeroBlock({ props }: BlockProps) {
         inline
         className="mb-4"
       />
-      <h1 className="text-3xl font-display font-bold text-stone-900 dark:text-stone-100 mb-2">
+      <Text k="ranking.hero_title" as="h1" className="text-3xl font-display font-bold text-stone-900 dark:text-stone-100 mb-2">
         {props.hero_title || t("ranking.hero_title")}
-      </h1>
-      <p className="text-stone-600 dark:text-stone-400 font-serif">
+      </Text>
+      <Text k="ranking.hero_subtitle" as="p" className="text-stone-600 dark:text-stone-400 font-serif">
         {props.hero_subtitle || t("ranking.hero_subtitle")}
-      </p>
+      </Text>
     </div>
   );
 }
@@ -437,9 +447,9 @@ export function RankingDetailsBlock({ props }: BlockProps) {
   return (
     <div data-rl-component="RankingDetailsBlock" className="space-y-6">
       <div className="p-6 rounded-2xl bg-primary-50 dark:bg-primary-900/20 border border-primary-200/40 dark:border-primary-800/30">
-        <h2 className="text-lg font-display font-semibold text-stone-900 dark:text-stone-100 mb-3">
+        <Text k="ranking.formula" as="h2" className="text-lg font-display font-semibold text-stone-900 dark:text-stone-100 mb-3">
           {props.formula_label || t("ranking.formula")}
-        </h2>
+        </Text>
         <code className="block text-sm text-primary-700 dark:text-primary-400 bg-white dark:bg-stone-900 p-4 rounded-lg overflow-x-auto">
           {info.formula}
         </code>
@@ -467,26 +477,26 @@ export function RankingDetailsBlock({ props }: BlockProps) {
       </div>
 
       <div className="p-6 rounded-2xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-700">
-        <h2 className="text-lg font-display font-semibold text-stone-900 dark:text-stone-100 mb-4">
+        <Text k="ranking.details" as="h2" className="text-lg font-display font-semibold text-stone-900 dark:text-stone-100 mb-4">
           {props.details_label || t("ranking.details")}
-        </h2>
+        </Text>
         <ul className="space-y-2 text-sm text-stone-600 dark:text-stone-400 font-serif">
           <li>
-            • <strong>{props.boost_label || t("ranking.boost_label")}</strong>{" "}
+            • <Text k="ranking.boost_label" as="strong">{props.boost_label || t("ranking.boost_label")}</Text>{" "}
             {info.boost_slots_per_page}{" "}
-            {props.boost_text || t("ranking.boost_text")}{" "}
+            <Text k="ranking.boost_text" as="span">{props.boost_text || t("ranking.boost_text")}</Text>{" "}
             &ldquo;{info.boost_label}&rdquo;
           </li>
           <li>
-            • <strong>{props.time_decay_label || t("ranking.time_decay_label")}</strong>{" "}
-            {props.half_life_label || t("ranking.half_life_of")} {info.freshness_half_life}
+            • <Text k="ranking.time_decay_label" as="strong">{props.time_decay_label || t("ranking.time_decay_label")}</Text>{" "}
+            <Text k="ranking.half_life_of" as="span">{props.half_life_label || t("ranking.half_life_of")}</Text> {info.freshness_half_life}
           </li>
           <li>
-            • <strong>{props.rating_method_label || t("ranking.rating_method_label")}</strong>{" "}
+            • <Text k="ranking.rating_method_label" as="strong">{props.rating_method_label || t("ranking.rating_method_label")}</Text>{" "}
             {info.rating_method}
           </li>
           <li>
-            • <strong>{props.engagement_signals_label || t("ranking.engagement_signals_label")}</strong>{" "}
+            • <Text k="ranking.engagement_signals_label" as="strong">{props.engagement_signals_label || t("ranking.engagement_signals_label")}</Text>{" "}
             {info.engagement_signals}
           </li>
         </ul>
@@ -503,12 +513,12 @@ export function ToolsHeaderBlock({ props }: BlockProps) {
     <div data-rl-component="ToolsHeaderBlock" className="flex items-center gap-3 mb-2">
       <IconContainer icon={Wrench} size="md" shape="xl" bgColor="bg-primary-100 dark:bg-primary-950/20" iconColor="text-primary-500" />
       <div>
-        <h1 className="text-3xl font-serif font-bold text-stone-800">
+        <Text k="tools.title" as="h1" className="text-3xl font-serif font-bold text-stone-800">
           {props.title || t("tools.title")}
-        </h1>
-        <p className="text-stone-500 font-light">
+        </Text>
+        <Text k="tools.subtitle" as="p" className="text-stone-500 font-light">
           {props.subtitle || t("tools.subtitle")}
-        </p>
+        </Text>
       </div>
     </div>
   );
@@ -571,14 +581,16 @@ export function ToolsGridBlock({ props }: BlockProps) {
             className="p-6 sm:p-8 rounded-xl2 border border-primary-100 dark:border-stone-700 bg-white/50 dark:bg-stone-900/50 opacity-50 cursor-not-allowed"
           >
             <IconContainer icon={tool.icon} size="md" shape="xl" bgColor={tool.iconBg} iconColor={tool.iconColor} className="mb-4" />
-            <h3 className="text-lg font-serif font-bold text-stone-600 dark:text-stone-400 mb-2">
+            <Text k={tool.nameKey} as="h3" className="text-lg font-serif font-bold text-stone-600 dark:text-stone-400 mb-2">
               {t(tool.nameKey)}
-            </h3>
-            <p className="text-stone-500 dark:text-stone-400 text-sm font-light">
+            </Text>
+            <Text k={tool.descKey} as="p" className="text-stone-500 dark:text-stone-400 text-sm font-light">
               {t(tool.descKey)}
-            </p>
+            </Text>
             <Badge variant="stone" className="mt-3 text-[11px]">
-              {props.coming_soon_label || t("tools.coming_soon")}
+              <Text k="tools.coming_soon" as="span" defaultText="Coming soon">
+                {props.coming_soon_label || t("tools.coming_soon")}
+              </Text>
             </Badge>
           </div>
         ) : (
@@ -586,14 +598,14 @@ export function ToolsGridBlock({ props }: BlockProps) {
             className="card-lift p-6 sm:p-8 group"
           >
             <IconContainer icon={tool.icon} size="lg" shape="2xl" bgColor={tool.iconBg} iconColor={tool.iconColor} hoverScale className="mb-4" />
-            <h3 className="text-xl font-serif font-bold text-stone-800 dark:text-stone-100 mb-2">
+            <Text k={tool.nameKey} as="h3" className="text-xl font-serif font-bold text-stone-800 dark:text-stone-100 mb-2">
               {t(tool.nameKey)}
-            </h3>
-            <p className="text-stone-500 text-sm font-light leading-relaxed">
+            </Text>
+            <Text k={tool.descKey} as="p" className="text-stone-500 text-sm font-light leading-relaxed">
               {t(tool.descKey)}
-            </p>
+            </Text>
             <span className="inline-flex items-center gap-1 text-sm font-medium text-primary-500 mt-4 group-hover:gap-2 transition-all">
-              {props.open_tool_label || t("tools.open_tool")} <ArrowRight className="w-3.5 h-3.5" />
+              <Text k="tools.open_tool" as="span">{props.open_tool_label || t("tools.open_tool")}</Text> <ArrowRight className="w-3.5 h-3.5" />
             </span>
           </a>
         )
@@ -611,10 +623,10 @@ export function GroupsHeaderBlock({ props }: BlockProps) {
     <PageHeader
       data-rl-component="GroupsHeaderBlock"
       icon={<Users className="w-5 h-5 text-primary-500" />}
-      title={props.title || t("groups.title")}
-      subtitle={props.subtitle || t("groups.subtitle")}
+      title={<Text k="groups.title" as="span">{props.title || t("groups.title")}</Text>}
+      subtitle={<Text k="groups.subtitle" as="span">{props.subtitle || t("groups.subtitle")}</Text>}
       action={
-        <Button variant="primary" size="sm" onClick={() => router.push("/groups?new=1")}>
+        <Button variant="primary" size="sm" data-rl-text="groups.new_group" onClick={() => router.push("/groups?new=1")}>
           <Plus className="w-4 h-4" /> {props.new_group_label || t("groups.new_group")}
         </Button>
       }
@@ -632,34 +644,34 @@ export function GroupsHeroBlock({ props }: BlockProps) {
         <div className="flex items-start gap-3">
           <IconContainer icon={MessageCircle} size="md" shape="xl" bgColor="bg-primary-100 dark:bg-primary-900/30" iconColor="text-primary-600 dark:text-primary-400" />
           <div>
-            <h3 className="font-semibold text-stone-800 dark:text-stone-100 text-sm">
+            <Text k="groups.hero_discuss" as="h3" className="font-semibold text-stone-800 dark:text-stone-100 text-sm">
               {props.hero_discuss || t("groups.hero_discuss")}
-            </h3>
-            <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-light leading-relaxed">
+            </Text>
+            <Text k="groups.hero_discuss_desc" as="p" className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-light leading-relaxed">
               {props.hero_discuss_desc || t("groups.hero_discuss_desc")}
-            </p>
+            </Text>
           </div>
         </div>
         <div className="flex items-start gap-3">
           <IconContainer icon={Calendar} size="md" shape="xl" bgColor="bg-earth-100 dark:bg-earth-900/30" iconColor="text-earth-600 dark:text-earth-400" />
           <div>
-            <h3 className="font-semibold text-stone-800 dark:text-stone-100 text-sm">
+            <Text k="groups.hero_events" as="h3" className="font-semibold text-stone-800 dark:text-stone-100 text-sm">
               {props.hero_events || t("groups.hero_events")}
-            </h3>
-            <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-light leading-relaxed">
+            </Text>
+            <Text k="groups.hero_events_desc" as="p" className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-light leading-relaxed">
               {props.hero_events_desc || t("groups.hero_events_desc")}
-            </p>
+            </Text>
           </div>
         </div>
         <div className="flex items-start gap-3">
           <IconContainer icon={Users} size="md" shape="xl" bgColor="bg-green-100 dark:bg-green-900/30" iconColor="text-green-600 dark:text-green-400" />
           <div>
-            <h3 className="font-semibold text-stone-800 dark:text-stone-100 text-sm">
+            <Text k="groups.hero_network" as="h3" className="font-semibold text-stone-800 dark:text-stone-100 text-sm">
               {props.hero_network || t("groups.hero_network")}
-            </h3>
-            <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-light leading-relaxed">
+            </Text>
+            <Text k="groups.hero_network_desc" as="p" className="text-xs text-stone-500 dark:text-stone-400 mt-1 font-light leading-relaxed">
               {props.hero_network_desc || t("groups.hero_network_desc")}
-            </p>
+            </Text>
           </div>
         </div>
       </div>

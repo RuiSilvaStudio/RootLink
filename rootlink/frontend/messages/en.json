@@ -2003,5 +2003,9 @@
     "unban_entity": "Unban entity",
     "entity_banned": "Entity banned",
     "entity_unbanned": "Entity unbanned"
+  },
+  "page": {
+    "not_found": "Page not found",
+    "not_found_desc": "This page doesn't exist or hasn't been published yet."
   }
 }
