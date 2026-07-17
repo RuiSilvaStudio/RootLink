@@ -286,7 +286,7 @@ async def save_draft(
     return {"ok": True, "id": draft_id, "status": "draft"}
 
 
-@router.post("/drafts/{slug}/publish")
+@router.post("/drafts/{slug:path}/publish")
 async def publish_draft(
     slug: str,
     db: AsyncSession = Depends(get_db),
@@ -307,7 +307,7 @@ async def publish_draft(
     return {"ok": True, "id": row.id, "status": "published"}
 
 
-@router.delete("/drafts/{slug}", status_code=200)
+@router.delete("/drafts/{slug:path}", status_code=200)
 async def discard_draft(
     slug: str,
     db: AsyncSession = Depends(get_db),

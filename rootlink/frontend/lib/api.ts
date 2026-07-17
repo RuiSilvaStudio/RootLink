@@ -1219,9 +1219,9 @@ export const api = {
     save: (data: { page_slug: string; changes: any[] }) =>
       request<any>("/api/drafts", { method: "POST", body: JSON.stringify(data) }),
     publish: (slug: string) =>
-      request<any>(`/api/drafts/${encodeURIComponent(slug)}/publish`, { method: "POST" }),
+      request<any>(`/api/drafts/${encodeURI(slug)}/publish`, { method: "POST" }),
     discard: (slug: string) =>
-      request<any>(`/api/drafts/${encodeURIComponent(slug)}`, { method: "DELETE" }),
+      request<any>(`/api/drafts/${encodeURI(slug)}`, { method: "DELETE" }),
   },
 
   blocks: {
