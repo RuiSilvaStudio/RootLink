@@ -284,6 +284,26 @@ async def create_group(
     return group
 
 
+@router.get("/graduation-requests", response_model=list[GroupGraduationRequestResponse])
+async def list_graduation_requests(
+    status: str = Query("pending", max_length=20),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Super_admin: list graduation requests for review."""
+    if not rank_at_least(current_user, Rank.super_admin):
+        raise HTTPException(status_code=403, detail="Super admin only")
+    result = await db.execute(
+        select(GroupGraduationRequest)
+        .where(GroupGraduationRequest.status == status)
+        .order_by(GroupGraduationRequest.created_at.desc())
+        .offset(offset).limit(limit)
+    )
+    return result.scalars().all()
+
+
 @router.get("/{group_id}", response_model=GroupResponse)
 async def get_group(
     group_id: int,
@@ -1453,24 +1473,6 @@ async def get_graduation_status(
     return result.scalar_one_or_none()
 
 
-@router.get("/graduation-requests", response_model=list[GroupGraduationRequestResponse])
-async def list_graduation_requests(
-    status: str = Query("pending", max_length=20),
-    limit: int = Query(50, ge=1, le=200),
-    offset: int = Query(0, ge=0),
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """Super_admin: list graduation requests for review."""
-    if not rank_at_least(current_user, Rank.super_admin):
-        raise HTTPException(status_code=403, detail="Super admin only")
-    result = await db.execute(
-        select(GroupGraduationRequest)
-        .where(GroupGraduationRequest.status == status)
-        .order_by(GroupGraduationRequest.created_at.desc())
-        .offset(offset).limit(limit)
-    )
-    return result.scalars().all()
 
 
 @router.post("/graduation-requests/{request_id}/approve")
