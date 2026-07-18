@@ -224,9 +224,9 @@ export default function GroupLandingPage() {
       >
         <div className="text-center">
           <div className="overflow-hidden">
-            <span className="rl-pre-name inline-block font-display text-3xl sm:text-4xl font-semibold text-cream">{group.name}</span>
+            <span className="rl-pre-name inline-block font-display text-3xl sm:text-4xl font-semibold text-stone-100">{group.name}</span>
           </div>
-          <div className="rl-pre-line h-px bg-cream/40 mt-4 origin-left" />
+          <div className="rl-pre-line h-px bg-stone-300/40 mt-4 origin-left" />
         </div>
       </div>
 
@@ -248,11 +248,11 @@ export default function GroupLandingPage() {
 
         <div className="relative z-10 max-w-6xl mx-auto px-4 pb-14 pt-40 w-full">
           <div className="rl-hero-fade flex flex-wrap items-center gap-2 mb-4">
-            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${group.group_type === "structured" ? "bg-rust-500 text-cream" : "bg-emerald-600 text-cream"}`}>
+            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${group.group_type === "structured" ? "bg-rust-500 text-stone-100" : "bg-emerald-600 text-stone-100"}`}>
               {group.group_type === "structured" ? t("groups.type_structured") : t("groups.type_organic")}
             </span>
             {group.location && (
-              <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-cream/15 text-cream backdrop-blur flex items-center gap-1">
+              <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-stone-100/15 text-stone-100 backdrop-blur flex items-center gap-1">
                 <MapPin className="w-3 h-3" aria-hidden />{group.location}
               </span>
             )}
@@ -267,22 +267,22 @@ export default function GroupLandingPage() {
               <img
                 src={safeImageUrl(group.logo_url)}
                 alt=""
-                className="w-16 h-16 rounded-2xl object-cover border-2 border-cream/30 shadow shrink-0"
+                className="w-16 h-16 rounded-2xl object-cover border-2 border-stone-300/30 shadow shrink-0"
               />
             )}
             <div className="min-w-0">
-              <h1 className="font-display font-semibold text-cream text-4xl sm:text-5xl md:text-6xl leading-[1.05] tracking-[-0.01em]">
+              <h1 className="font-display font-semibold text-stone-100 text-4xl sm:text-5xl md:text-6xl leading-[1.05] tracking-[-0.01em]">
                 {group.name}
               </h1>
               {group.description && (
-                <p className="text-cream/80 text-sm sm:text-base mt-2 max-w-lg font-serif leading-relaxed">
+                <p className="text-stone-200 text-sm sm:text-base mt-2 max-w-lg font-serif leading-relaxed">
                   {group.description}
                 </p>
               )}
             </div>
           </div>
 
-          <div className="rl-hero-fade flex flex-wrap items-center gap-x-4 gap-y-1 text-cream/70 text-sm mb-7">
+          <div className="rl-hero-fade flex flex-wrap items-center gap-x-4 gap-y-1 text-stone-300 text-sm mb-7">
             {heroMeta.map((item, i) => (
               <span key={item} className="flex items-center gap-x-4">
                 {i > 0 && <span aria-hidden>·</span>}
@@ -299,9 +299,9 @@ export default function GroupLandingPage() {
                 <Button>{t("groups.tab_manage")} <ArrowRight className="w-4 h-4" aria-hidden /></Button>
               </Link>
             ) : viewer.is_member ? (
-              <Button variant="secondary" className="!border-cream/40 !text-cream hover:!bg-cream/10" onClick={leave} disabled={busy} data-rl-text="groups.leave">
+              <button className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium border border-stone-300/40 text-stone-100 hover:bg-stone-100/10 transition disabled:opacity-50" onClick={leave} disabled={busy} data-rl-text="groups.leave">
                 {t("groups.leave")}
-              </Button>
+              </button>
             ) : group.is_open ? (
               <Button onClick={join} disabled={busy} loading={busy} data-rl-text="groups.join">
                 {t("groups.join")} <ArrowRight className="w-4 h-4" aria-hidden />
@@ -310,28 +310,28 @@ export default function GroupLandingPage() {
               <RequestJoinButton size="md" hero />
             )}
             <Link href={`/groups/${group.slug}/about`}>
-              <Button variant="secondary" className="!border-cream/40 !text-cream hover:!bg-cream/10">{t("groups.tab_about")}</Button>
+              <button className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium border border-stone-300/40 text-stone-100 hover:bg-stone-100/10 transition">{t("groups.tab_about")}</button>
             </Link>
           </div>
 
           {/* Coming-up carousel */}
           {calendarVisible && events.length > 0 && nextEvent && (
             <div className="rl-hero-fade mt-8 max-w-md">
-              <p className="text-xs font-display font-medium tracking-widest uppercase text-cream/60 mb-2 flex items-center gap-1.5">
+              <p className="text-xs font-display font-medium tracking-widest uppercase text-stone-300 mb-2 flex items-center gap-1.5">
                 <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 {t("groups.upcoming_events")}
               </p>
               <Link
                 href={`/events/${nextEvent.content_id}`}
-                className="flex items-center gap-4 rounded-2xl bg-cream/10 backdrop-blur border border-cream/15 p-4 hover:bg-cream/15 transition"
+                className="flex items-center gap-4 rounded-2xl bg-stone-100/10 backdrop-blur border border-stone-300/15 p-4 hover:bg-stone-100/15 transition"
               >
                 <div className="text-center shrink-0">
-                  <p className="font-display text-2xl font-semibold text-cream leading-none">{fmtDay(nextEvent.date).day}</p>
-                  <p className="text-xs text-cream/60 uppercase">{fmtDay(nextEvent.date).mon}</p>
+                  <p className="font-display text-2xl font-semibold text-stone-100 leading-none">{fmtDay(nextEvent.date).day}</p>
+                  <p className="text-xs text-stone-300 uppercase">{fmtDay(nextEvent.date).mon}</p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-cream truncate">{nextEvent.title || `#${nextEvent.content_id}`}</p>
-                  <p className="text-xs text-cream/60">{[fmtFull(nextEvent.date), nextEvent.location].filter(Boolean).join(" · ")}</p>
+                  <p className="text-sm font-medium text-stone-100 truncate">{nextEvent.title || `#${nextEvent.content_id}`}</p>
+                  <p className="text-xs text-stone-300">{[fmtFull(nextEvent.date), nextEvent.location].filter(Boolean).join(" · ")}</p>
                 </div>
               </Link>
               {events.length > 1 && (
@@ -343,7 +343,7 @@ export default function GroupLandingPage() {
                       aria-selected={i === eventIndex}
                       aria-label={ev.title || String(ev.content_id)}
                       onClick={() => setEventIndex(i)}
-                      className={`h-1.5 rounded-full transition-all ${i === eventIndex ? "w-5 bg-cream" : "w-1.5 bg-cream/40 hover:bg-cream/60"}`}
+                      className={`h-1.5 rounded-full transition-all ${i === eventIndex ? "w-5 bg-stone-100" : "w-1.5 bg-stone-300/40 hover:bg-stone-300/60"}`}
                     />
                   ))}
                 </div>
