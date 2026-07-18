@@ -87,7 +87,10 @@ function LinkPanel({ group, kind }: { group: Group; kind: Kind }) {
     searchTimer.current = setTimeout(async () => {
       try {
         if (kind === "event") {
-          const events = await api.events.list(true);
+          // Show ALL events (past + future) so a group can document past
+          // activities too — upcoming=true would hide events whose date has
+          // passed, which made recently-held events un-linkable.
+          const events = await api.events.list(false);
           const q = query.toLowerCase();
           setResults(
             (events as Array<{ id: number; title: string; date?: string; location?: string }>)

@@ -64,6 +64,7 @@ function EventsContent() {
   const [showForm, setShowForm] = useState(false);
   const [category, setCategory] = useState("");
   const [family, setFamily] = useState("");
+  const [view, setView] = useState<"upcoming" | "past" | "all">("upcoming");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
@@ -101,7 +102,10 @@ function EventsContent() {
 
   const loadEvents = () => {
     setLoading(true);
-    api.events.list(true, category || undefined, undefined, undefined, family || undefined).then(setEvents).catch(() => {}).finally(() => setLoading(false));
+    // Always fetch ALL events (upcoming=false = no date filter). The view
+    // toggle (upcoming / past / all) partitions them client-side, so switching
+    // tabs is instant and there's no refetch flicker.
+    api.events.list(false, category || undefined, undefined, undefined, family || undefined).then(setEvents).catch(() => {}).finally(() => setLoading(false));
   };
 
   const handleFormFamilyChange = (famValue: string) => {
@@ -156,6 +160,15 @@ function EventsContent() {
     }
   };
 
+  const now = new Date();
+  const upcomingEvents = events
+    .filter(e => new Date(e.date) >= now)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const pastEvents = events
+    .filter(e => new Date(e.date) < now)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const visibleEvents = view === "upcoming" ? upcomingEvents : view === "past" ? pastEvents : [...upcomingEvents, ...pastEvents];
+
   return (
     <>
       {heroSections && heroSections.length > 0 && (
@@ -174,7 +187,25 @@ function EventsContent() {
         )}
       />
 
-      <div className="flex gap-2 mb-8 flex-wrap mt-8 items-center">
+      <div className="flex gap-2 mb-3 flex-wrap items-center">
+        <FilterPill
+          label={t("events.upcoming")}
+          active={view === "upcoming"}
+          onClick={() => setView("upcoming")}
+        />
+        <FilterPill
+          label={t("events.past")}
+          active={view === "past"}
+          onClick={() => setView("past")}
+        />
+        <FilterPill
+          label={t("events.all_events")}
+          active={view === "all"}
+          onClick={() => setView("all")}
+        />
+      </div>
+
+      <div className="flex gap-2 mb-8 flex-wrap items-center">
         <FilterPill
           label={t("events.all")}
           active={!family}
@@ -372,14 +403,14 @@ function EventsContent() {
             <div key={i} className="rounded-2xl bg-stone-100/60 animate-pulse h-72" />
           ))}
         </div>
-      ) : events.length === 0 ? (
+      ) : visibleEvents.length === 0 ? (
         <EmptyState
           icon={<Calendar className="w-7 h-7" />}
-          title={t("events.no_events")}
+          title={view === "past" ? t("events.no_past_events") : t("events.no_events")}
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {events.map((event, idx) => {
+          {visibleEvents.map((event, idx) => {
             const eventDate = new Date(event.date);
             const now = new Date();
             const isUpcoming = eventDate > now && idx === 0;
