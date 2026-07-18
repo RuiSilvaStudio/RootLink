@@ -265,14 +265,20 @@ async def save_draft(
     """
     existing = await db.scalar(select(PageDraft).where(PageDraft.page_slug == body.page_slug))
     if existing:
-        existing.changes = [c.model_dump() for c in body.changes]
+        # by_alias=True → camelCase keys (elementPath, oldValue, copyKey) so the
+        # frontend can read them back without a normalization layer (BUG D).
+        existing.changes = [c.model_dump(by_alias=True) for c in body.changes]
         existing.created_by = current_user.id
+        # Reset status to "draft" on every save — otherwise the first publish
+        # leaves the row at "published" forever and subsequent saves are
+        # stranded (the resume offer requires status="draft"). (BUG 12)
+        existing.status = "draft"
         draft_id = existing.id
     else:
         row = PageDraft(
             page_slug=body.page_slug,
             status="draft",
-            changes=[c.model_dump() for c in body.changes],
+            changes=[c.model_dump(by_alias=True) for c in body.changes],
             created_by=current_user.id,
         )
         db.add(row)
@@ -325,3 +331,30 @@ async def discard_draft(
         )
         await db.commit()
     return {"ok": True, "discarded": slug}
+
+@router.delete("/overrides/by-path")
+async def revert_override_by_path(
+    page_slug: str = Query(...),
+    element_path: str = Query(...),
+    property: str = Query(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.super_admin])),
+):
+    """Delete the published override for (page, element, property) — the
+    overlay's reset action also un-publishes, not just un-stages (BUG 2)."""
+    row = await db.scalar(
+        select(OverrideLog).where(
+            OverrideLog.page_slug == page_slug,
+            OverrideLog.element_path == element_path,
+            OverrideLog.property == property,
+        )
+    )
+    if row:
+        await db.delete(row)
+        await log_moderation(
+            db, action="revert_override", target_type="override", target_id=row.id,
+            actor_id=current_user.id,
+            meta={"page_slug": page_slug, "element_path": element_path, "property": property},
+        )
+        await db.commit()
+    return {"ok": True}

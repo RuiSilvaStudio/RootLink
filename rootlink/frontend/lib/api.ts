@@ -1165,6 +1165,8 @@ export const api = {
       request<any>("/api/overrides", { method: "POST", body: JSON.stringify(data) }),
     remove: (id: number) =>
       request<any>(`/api/overrides/${id}`, { method: "DELETE" }),
+    removeByPath: (pageSlug: string, elementPath: string, property: string) =>
+      request<{ ok: boolean }>(`/api/overrides/by-path?page_slug=${encodeURIComponent(pageSlug)}&element_path=${encodeURIComponent(elementPath)}&property=${encodeURIComponent(property)}`, { method: "DELETE" }),
     markStale: (id: number) =>
       request<any>(`/api/overrides/${id}/stale`, { method: "PUT" }),
   },

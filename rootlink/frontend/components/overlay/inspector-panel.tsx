@@ -96,8 +96,11 @@ const TEXT_PROPS = new Set([
 ]);
 const TEXT_GROUP: string[] = [
   "font-family", "font-size", "font-weight", "font-style",
-  "font-variation-soft", "font-variation-wonk",
-  "text-align", "color", "text-decoration", "letter-spacing", "line-height",
+  // letter-spacing / line-height removed — the spacing-stop slider emits raw
+  // numbers without units, producing invalid CSS the browser silently ignores.
+  // font-variation-soft / font-variation-wonk removed — dead config (no token
+  // mapping, always filtered out). Re-add when implemented end-to-end.
+  "text-align", "color", "text-decoration",
 ];
 
 const PROPERTY_CONFIG: Record<string, PropertyConfig> = {

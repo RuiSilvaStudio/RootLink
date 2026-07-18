@@ -426,6 +426,8 @@ export function injectSelectionAgent() {
     editing = el;
     el.contentEditable = "true";
     el.addEventListener("input", onTextEditInput);
+    // Store the original text so exitTextEdit can skip no-change commits (BUG 19)
+    el.setAttribute("data-rl-original-text", (el.innerText || "").trim());
     // Focus + place the caret at the end (React won't auto-focus an attribute
     // flip — see LESSONS.md #17).
     el.focus();
@@ -448,11 +450,16 @@ export function injectSelectionAgent() {
     el.removeEventListener("input", onTextEditInput);
     el.contentEditable = "false";
     // Persist: if the text has a copy key, commit to the copy system.
+    // Only commit if the text actually changed — a double-click + Esc without
+    // typing shouldn't count as a change (BUG 19).
     const key = el.getAttribute("data-rl-text");
     if (key) {
       const text = (el.innerText || "").trim();
-      const locale = localStorage.getItem("rootlink_locale") || "pt";
-      parent.postMessage({ type: "overlay:text-commit", key, text, locale }, "*");
+      const original = el.getAttribute("data-rl-original-text");
+      if (text !== original) {
+        const locale = localStorage.getItem("rootlink_locale") || "pt";
+        parent.postMessage({ type: "overlay:text-commit", key, text, locale }, "*");
+      }
     }
     if (selected) selectElement(selected, textTarget);
   }
@@ -679,16 +686,42 @@ export function injectSelectionAgent() {
   window.addEventListener("message", (e: MessageEvent) => {
     if (!e.data || typeof e.data !== "object") return;
     switch (e.data.type) {
+      case "overlay:apply-text":
+        // Re-apply a saved text change to the element with this copy key (BUG T1).
+        if (e.data.copyKey && e.data.text !== undefined) {
+          const target = document.querySelector(`[data-rl-text="${e.data.copyKey}"]`) as HTMLElement | null;
+          if (target) {
+            target.innerText = e.data.text;
+            target.setAttribute("data-rl-original-text", e.data.text);
+          }
+        }
+        break;
       case "overlay:apply-style":
         if (e.data.path) {
-          // Path-targeted apply (resume-draft): re-apply a saved change to a
-          // specific element without needing a selection. Doesn't touch the
-          // undo/redo stacks — these are saved changes, not new edits.
           const target = document.querySelector(e.data.path) as HTMLElement | null;
           if (target) {
-            target.style.setProperty(e.data.property, e.data.appliedValue ?? e.data.value);
-            const attr = tokenAttrFor(e.data.property);
-            if (attr) target.setAttribute(attr, e.data.value);
+            if (e.data.source === "resume") {
+              // Re-applying a saved change — don't touch the undo/redo stacks
+              target.style.setProperty(e.data.property, e.data.appliedValue ?? e.data.value);
+              const attr = tokenAttrFor(e.data.property);
+              if (attr) target.setAttribute(attr, e.data.value);
+            } else {
+              // New edit from the inspector — use the undo stack (BUG 10 fix:
+              // the style lands on the prompted element, not whatever is selected)
+              const css = e.data.appliedValue ?? e.data.value;
+              const existing = undoStack.find((u) => u.el === target && u.property === e.data.property);
+              if (!existing) {
+                undoStack.push({
+                  el: target,
+                  property: e.data.property,
+                  oldValue: target.style.getPropertyValue(e.data.property) || getComputedStyle(target).getPropertyValue(e.data.property),
+                });
+              }
+              target.style.setProperty(e.data.property, css);
+              const attr = tokenAttrFor(e.data.property);
+              if (attr) target.setAttribute(attr, e.data.value);
+              redoStack.length = 0;
+            }
           }
         } else {
           applyStyle(e.data.property, e.data.value, e.data.appliedValue);

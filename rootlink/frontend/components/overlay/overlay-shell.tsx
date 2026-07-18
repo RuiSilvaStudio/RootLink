@@ -27,7 +27,7 @@ export function OverlayShell() {
     pendingPrompt, confirmOverride, cancelOverride,
     draftChanges, saveDraft, publishDraft, discardDraft, clearDraftChanges, draftSaving, pageSlug,
     previewMode, setPreviewMode,
-    statusFlash, resumableDraft, resumeDraft, dismissResumable,
+    statusFlash, resumableDraft, resumeDraft, dismissResumable, saveState,
   } = useOverlay();
   const pathname = usePathname();
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -342,11 +342,21 @@ export function OverlayShell() {
             </button>
           </Tooltip>
 
-          {/* Draft controls */}
+          {/* Draft controls + autosave indicator (Canva/Figma pattern) */}
           {draftChanges.length > 0 && (
             <>
-              <span className="text-xs text-rust-400 font-medium">
-                {draftChanges.length} unsaved
+              <span className="text-xs font-medium flex items-center gap-1.5" role="status" aria-live="polite">
+                <span className="text-rust-400">{draftChanges.length} changes</span>
+                {saveState === "saving" && (
+                  <span className="text-stone-500 flex items-center gap-1">
+                    <span className="w-2.5 h-2.5 border border-stone-600 border-t-stone-300 rounded-full animate-spin" aria-hidden="true" /> Saving…
+                  </span>
+                )}
+                {saveState === "saved" && (
+                  <span className="text-emerald-400 flex items-center gap-1">
+                    <Check className="w-3 h-3" aria-hidden="true" /> Saved
+                  </span>
+                )}
               </span>
               <Tooltip content="Save draft" side="bottom">
                 <button
