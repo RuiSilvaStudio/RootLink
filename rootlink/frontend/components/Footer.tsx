@@ -127,13 +127,13 @@ function PlatformIndex({ open, onClose }: { open: boolean; onClose: () => void }
       ]},
     { id: "content", num: "05", emoji: "✏️", label: t("nav.articles"), gc: "#917a56",
       links: [
-        { href: "/articles", label: t("nav.articles") },
+        { href: "/feed", label: t("nav.articles") },
         { href: "/submit", label: t("nav.add_knowledge") },
       ]},
     { id: "account", num: "06", emoji: "👤", label: t("nav.profile"), gc: "#ad9a7a",
       links: [
         { href: "/profile", label: t("nav.my_profile") },
-        { href: "/settings", label: t("nav.settings") },
+        { href: "/profile?tab=settings", label: t("nav.settings") },
         { href: "/messages", label: t("nav.messages") },
         { href: "/notifications", label: t("nav.notifications") },
       ]},
@@ -286,7 +286,7 @@ export function Footer() {
             <FooterCol heading={t("nav.resources")}>
               {[
                 { href: "/submit",   key: "nav.add_knowledge" },
-                { href: "/articles", key: "nav.articles" },
+                { href: "/feed", key: "nav.articles" },
                 { href: "/learning", key: "nav.learning" },
                 { href: "/tools",    key: "nav.tools" },
               ].map(({ href, key }) => (

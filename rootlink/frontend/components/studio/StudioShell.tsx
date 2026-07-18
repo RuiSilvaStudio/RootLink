@@ -152,7 +152,7 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loading && !isSuperAdmin) {
-      router.replace("/auth/sign-in");
+      router.replace("/auth/login");
     }
   }, [loading, isSuperAdmin, router]);
 

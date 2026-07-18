@@ -46,6 +46,9 @@ export function ImageUpload({
   const [license, setLicense] = useState("own_work");
   const [credit, setCredit] = useState("");
   const [agreed, setAgreed] = useState(false);
+  const [uploadedUrls, setUploadedUrls] = useState<{
+    thumb: string; medium: string; large: string; original: string;
+  } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const validateFile = useCallback(
@@ -87,6 +90,7 @@ export function ImageUpload({
     async (file: File) => {
       setError(null);
       setPendingFile(null);
+      setUploadedUrls(null);
       if (preview) URL.revokeObjectURL(preview);
       setPreview(null);
 
@@ -145,9 +149,8 @@ export function ImageUpload({
 
       const data = await res.json();
       onUpload(data.asset.urls);
+      setUploadedUrls(data.asset.urls);
       setPendingFile(null);
-      if (preview) URL.revokeObjectURL(preview);
-      setPreview(null);
       setAgreed(false);
       setCredit("");
     } catch (e: any) {
@@ -156,7 +159,7 @@ export function ImageUpload({
     } finally {
       setUploading(false);
     }
-  }, [pendingFile, onUpload, onError, preview, requireLicense, license, credit]);
+  }, [pendingFile, onUpload, onError, requireLicense, license, credit]);
 
   const handleCancel = useCallback(() => {
     if (preview) URL.revokeObjectURL(preview);
@@ -166,6 +169,18 @@ export function ImageUpload({
     setAgreed(false);
     setCredit("");
     if (inputRef.current) inputRef.current.value = "";
+  }, [preview]);
+
+  const handleReplace = useCallback(() => {
+    if (preview) URL.revokeObjectURL(preview);
+    setPreview(null);
+    setPendingFile(null);
+    setUploadedUrls(null);
+    setAgreed(false);
+    setCredit("");
+    setError(null);
+    if (inputRef.current) inputRef.current.value = "";
+    inputRef.current?.click();
   }, [preview]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -256,6 +271,30 @@ export function ImageUpload({
             >
               <X className="w-3 h-3" />
               Cancel
+            </button>
+          </div>
+        </div>
+      ) : uploadedUrls && preview ? (
+        <div className="border-2 border-emerald-200 dark:border-emerald-800/50 rounded-xl p-4 bg-emerald-50/30 dark:bg-emerald-900/10">
+          <div className="relative inline-block w-full">
+            <img
+              src={preview}
+              alt="Uploaded cover"
+              className="max-h-32 rounded-lg object-contain mx-auto"
+            />
+          </div>
+          <div className="flex items-center justify-center gap-2 mt-3">
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+              <Check className="w-3.5 h-3.5" />
+              Uploaded
+            </span>
+            <button
+              type="button"
+              onClick={handleReplace}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700 transition"
+            >
+              <Upload className="w-3 h-3" />
+              Replace
             </button>
           </div>
         </div>

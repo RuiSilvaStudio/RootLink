@@ -93,7 +93,7 @@ export const BLOCK_REGISTRY: BlockType[] = [
       { name: "title", label: "Title", type: "text", default: "Join the community" },
       { name: "subtitle", label: "Subtitle", type: "textarea", default: "Create an account to start contributing." },
       { name: "button_text", label: "Button text", type: "text", default: "Sign up" },
-      { name: "button_href", label: "Button link", type: "text", default: "/auth/sign-in" },
+      { name: "button_href", label: "Button link", type: "text", default: "/auth/register" },
     ],
     Component: CtaBlock,
   },
