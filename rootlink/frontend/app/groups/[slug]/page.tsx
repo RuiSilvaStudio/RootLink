@@ -299,7 +299,7 @@ export default function GroupLandingPage() {
                 <Button>{t("groups.tab_manage")} <ArrowRight className="w-4 h-4" aria-hidden /></Button>
               </Link>
             ) : viewer.is_member ? (
-              <button className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium border border-stone-300/40 text-stone-100 hover:bg-stone-100/10 transition disabled:opacity-50" onClick={leave} disabled={busy} data-rl-text="groups.leave">
+              <button className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl2 text-base font-medium border border-stone-300/40 text-stone-100 hover:bg-stone-100/10 transition disabled:opacity-50" onClick={leave} disabled={busy} data-rl-text="groups.leave">
                 {t("groups.leave")}
               </button>
             ) : group.is_open ? (
@@ -310,7 +310,7 @@ export default function GroupLandingPage() {
               <RequestJoinButton size="md" hero />
             )}
             <Link href={`/groups/${group.slug}/about`}>
-              <button className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium border border-stone-300/40 text-stone-100 hover:bg-stone-100/10 transition">{t("groups.tab_about")}</button>
+              <button className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl2 text-base font-medium border border-stone-300/40 text-stone-100 hover:bg-stone-100/10 transition">{t("groups.tab_about")}</button>
             </Link>
           </div>
 
